@@ -56,7 +56,9 @@ function isRelevant(title, description, keywords = []) {
 
 function makeSlug(title, suffix) {
   const base = slugify(title, { lower: true, strict: true, locale: 'ru' });
-  return (base || 'news').substring(0, 80) + '-' + suffix;
+  // Use a short hash of the title for stable slugs (not timestamp-based)
+  const hash = suffix.toString().slice(-6);
+  return (base || 'news').substring(0, 80) + '-' + hash;
 }
 
 function extractImageFromRss(item) {
@@ -256,7 +258,9 @@ async function fetchSource(source) {
     const whenToSeekHelp = generateWhenToSeekHelp(title, rssDescription, fullText);
     const status = relevanceScore >= 0.25 ? 'published' : 'draft';
 
-    const slug = makeSlug(title, Date.now() + imported);
+    // Generate stable slug from URL hash so re-import doesn't change slugs
+    const urlHash = originalUrl.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+    const slug = makeSlug(title, Math.abs(urlHash));
     const publishedAt = item.pubDate ? new Date(item.pubDate).toISOString() : now;
     const metaTitle = title.substring(0, 65) + ' | ZakonExpert';
     const metaDesc = excerpt.substring(0, 155) || `Разбор новости: ${title.substring(0, 100)}`;
