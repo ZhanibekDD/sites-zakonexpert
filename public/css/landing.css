@@ -118,6 +118,20 @@ img { max-width: 100%; display: block; }
     object-fit: cover; object-position: center;
     display: block; border-radius: 0;
 }
+/* Full horizontal logo (new PNG with mark + text) */
+.brand-full-logo {
+    height: 48px; width: auto; display: block;
+    object-fit: contain;
+}
+.brand-full-logo--footer {
+    height: 42px;
+    opacity: 0.95;
+}
+/* When brand uses full logo — no need for extra padding */
+a.brand:has(.brand-full-logo),
+.brand:has(.brand-full-logo) {
+    gap: 0;
+}
 .brand-text { display: flex; flex-direction: column; gap: 2px; }
 .brand-title {
     font-size: 1.18rem; font-weight: 800; color: var(--ink-900); letter-spacing: -0.04em;
@@ -552,6 +566,8 @@ textarea.field-control, .contact-form-wrap textarea.form-control { min-height: 1
         padding: 22px;
     }
     .footer-bottom { flex-direction: column; align-items: flex-start; }
+    /* Logo mobile */
+    .brand-full-logo { height: 38px; }
     /* Dashboard mobile: keep 2-col grid, smaller cards */
     .hv-dashboard { max-width: 100%; }
     .hv-grid { gap: 8px; }
