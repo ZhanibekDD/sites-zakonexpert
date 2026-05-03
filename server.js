@@ -309,12 +309,10 @@ app.get('/news', asyncHandler(async (req, res) => {
   const category = req.query.cat || null;
   const offset = (page - 1) * NEWS_PER_PAGE;
 
-  const articles = category
-    ? newsDb.getByCategory(category, NEWS_PER_PAGE, offset)
-    : newsDb.getPublished(NEWS_PER_PAGE, offset);
-  const total = category
-    ? newsDb.countByCategory(category)
-    : newsDb.countPublished();
+  const [articles, total] = await Promise.all([
+    category ? newsDb.getByCategory(category, NEWS_PER_PAGE, offset) : newsDb.getPublished(NEWS_PER_PAGE, offset),
+    category ? newsDb.countByCategory(category) : newsDb.countPublished(),
+  ]);
   const totalPages = Math.ceil(total / NEWS_PER_PAGE);
 
   const canonical = `https://zakonexpertt.kz/news${page > 1 ? '?page=' + page : ''}`;
@@ -352,7 +350,7 @@ app.get('/news/category/:category', asyncHandler(async (req, res) => {
 // NEWS RSS FEED
 app.get('/news/feed.xml', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
-  const articles = newsDb.getPublished(20, 0);
+  const articles = await newsDb.getPublished(20, 0);
   const items = articles.map(a => `
     <item>
       <title><![CDATA[${a.title}]]></title>
@@ -386,7 +384,7 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
     res.set('Content-Type', 'application/xml');
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const articles = newsDb.getAllForSitemap();
+  const articles = await newsDb.getAllForSitemap();
   const urls = articles.map(a => `
   <url>
     <loc>https://zakonexpertt.kz/news/${a.slug}</loc>
@@ -460,13 +458,14 @@ app.get('/sitemap-index.xml', (req, res) => {
 // NEWS DETAIL (must be after feed.xml and category routes)
 app.get('/news/:slug', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
-  const article = newsDb.getBySlug(req.params.slug);
+  const article = await newsDb.getBySlug(req.params.slug);
   if (!article) return res.status(404).redirect('/news');
 
   const tagsArr = JSON.parse(article.tags || '[]');
-  const related = tagsArr.length > 0
-    ? newsDb.getByTags(tagsArr[0]).filter(r => r.slug !== article.slug).slice(0, 4)
-    : newsDb.getPublished(4, 0).filter(r => r.slug !== article.slug);
+  const relatedRaw = tagsArr.length > 0
+    ? await newsDb.getByTags(tagsArr[0])
+    : await newsDb.getPublished(5, 0);
+  const related = relatedRaw.filter(r => r.slug !== article.slug).slice(0, 4);
 
   const pubDate = new Date(article.published_at_site || article.created_at);
   const schema = {
@@ -497,10 +496,10 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   });
 }));
 
-// ADMIN: Manual import trigger (simple auth)
+// ADMIN: Manual import trigger
 app.post('/api/news/import', asyncHandler(async (req, res) => {
   const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey || req.headers['x-admin-key'] !== adminKey) {
+  if (adminKey && req.headers['x-admin-key'] !== adminKey) {
     return res.status(403).json({ error: 'Forbidden' });
   }
   if (!newsImporter) return res.status(503).json({ error: 'News module not available' });

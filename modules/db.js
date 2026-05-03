@@ -1,188 +1,82 @@
 /**
- * ZakonExpert — SQLite Database Module
- * Manages news articles storage
+ * ZakonExpert — Database Module (NeDB — pure JavaScript)
  */
-const Database = require('better-sqlite3');
+const Datastore = require('nedb-promises');
 const path = require('path');
 const fs = require('fs');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const DB_PATH = path.join(DATA_DIR, 'zakonexpert.db');
-const db = new Database(DB_PATH);
+const news = Datastore.create({
+  filename: path.join(DATA_DIR, 'news.db'),
+  autoload: true,
+});
 
-// Enable WAL mode for better concurrency
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS news (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    slug TEXT UNIQUE NOT NULL,
-    source_name TEXT,
-    source_url TEXT,
-    original_url TEXT UNIQUE,
-    excerpt TEXT,
-    ai_summary TEXT,
-    legal_commentary TEXT,
-    category TEXT DEFAULT 'general',
-    tags TEXT DEFAULT '[]',
-    status TEXT DEFAULT 'draft',
-    relevance_score REAL DEFAULT 0,
-    published_at_source TEXT,
-    published_at_site TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now')),
-    meta_title TEXT,
-    meta_description TEXT,
-    og_image TEXT,
-    image_url TEXT,
-    canonical_url TEXT
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_news_status ON news(status);
-  CREATE INDEX IF NOT EXISTS idx_news_category ON news(category);
-  CREATE INDEX IF NOT EXISTS idx_news_slug ON news(slug);
-  CREATE INDEX IF NOT EXISTS idx_news_published ON news(published_at_site DESC);
-
-  CREATE TABLE IF NOT EXISTS news_sources (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    base_url TEXT,
-    rss_url TEXT,
-    enabled INTEGER DEFAULT 1,
-    category TEXT DEFAULT 'general',
-    fetch_interval_minutes INTEGER DEFAULT 60,
-    last_fetched_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-`);
-
-// ---- News queries ----
-
-const stmts = {
-  insertNews: db.prepare(`
-    INSERT OR IGNORE INTO news
-      (title, slug, source_name, source_url, original_url, excerpt, ai_summary, legal_commentary,
-       category, tags, status, relevance_score, published_at_source, published_at_site,
-       meta_title, meta_description, og_image, image_url, canonical_url)
-    VALUES
-      (@title, @slug, @source_name, @source_url, @original_url, @excerpt, @ai_summary, @legal_commentary,
-       @category, @tags, @status, @relevance_score, @published_at_source, @published_at_site,
-       @meta_title, @meta_description, @og_image, @image_url, @canonical_url)
-  `),
-
-  getPublished: db.prepare(`
-    SELECT * FROM news WHERE status = 'published'
-    ORDER BY published_at_site DESC
-    LIMIT ? OFFSET ?
-  `),
-
-  countPublished: db.prepare(`SELECT COUNT(*) as cnt FROM news WHERE status = 'published'`),
-
-  getBySlug: db.prepare(`SELECT * FROM news WHERE slug = ? AND status = 'published'`),
-
-  getByCategory: db.prepare(`
-    SELECT * FROM news WHERE category = ? AND status = 'published'
-    ORDER BY published_at_site DESC
-    LIMIT ? OFFSET ?
-  `),
-
-  countByCategory: db.prepare(`SELECT COUNT(*) as cnt FROM news WHERE category = ? AND status = 'published'`),
-
-  getByTags: db.prepare(`
-    SELECT * FROM news WHERE tags LIKE ? AND status = 'published'
-    ORDER BY published_at_site DESC
-    LIMIT 6
-  `),
-
-  getLatest: db.prepare(`
-    SELECT id, title, slug, source_name, category, excerpt, published_at_site, og_image
-    FROM news WHERE status = 'published'
-    ORDER BY published_at_site DESC
-    LIMIT ?
-  `),
-
-  existsByUrl: db.prepare(`SELECT id FROM news WHERE original_url = ?`),
-
-  getAllForSitemap: db.prepare(`
-    SELECT slug, published_at_site, updated_at FROM news WHERE status = 'published'
-    ORDER BY published_at_site DESC
-  `),
-
-  updateSourceFetch: db.prepare(`
-    UPDATE news_sources SET last_fetched_at = datetime('now') WHERE id = ?
-  `),
-
-  getSources: db.prepare(`SELECT * FROM news_sources WHERE enabled = 1`),
-
-  publishDraft: db.prepare(`
-    UPDATE news SET status = 'published', published_at_site = datetime('now'), updated_at = datetime('now')
-    WHERE id = ?
-  `)
-};
+// Setup indexes on startup
+news.ensureIndex({ fieldName: 'original_url', unique: true, sparse: true }).catch(() => {});
+news.ensureIndex({ fieldName: 'slug', unique: true }).catch(() => {});
 
 module.exports = {
-  db,
-
-  // Insert a news article (returns info object)
-  insertNews(article) {
-    return stmts.insertNews.run(article);
+  async insertNews(article) {
+    try {
+      await news.insert(article);
+      return { changes: 1 };
+    } catch (e) {
+      if (e.errorType === 'uniqueViolated') return { changes: 0 };
+      throw e;
+    }
   },
 
-  // Check if URL already exists
-  existsByUrl(url) {
-    return !!stmts.existsByUrl.get(url);
+  async existsByUrl(url) {
+    const doc = await news.findOne({ original_url: url });
+    return !!doc;
   },
 
-  // Get published news with pagination
-  getPublished(limit = 20, offset = 0) {
-    return stmts.getPublished.all(limit, offset);
+  async getPublished(limit = 20, offset = 0) {
+    const docs = await news.find({ status: 'published' });
+    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    return docs.slice(offset, offset + limit);
   },
 
-  countPublished() {
-    return stmts.countPublished.get().cnt;
+  async countPublished() {
+    return news.count({ status: 'published' });
   },
 
-  // Get single article by slug
-  getBySlug(slug) {
-    return stmts.getBySlug.get(slug);
+  async getBySlug(slug) {
+    return news.findOne({ slug, status: 'published' });
   },
 
-  // Get by category with pagination
-  getByCategory(category, limit = 20, offset = 0) {
-    return stmts.getByCategory.all(category, limit, offset);
+  async getByCategory(category, limit = 20, offset = 0) {
+    const docs = await news.find({ category, status: 'published' });
+    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    return docs.slice(offset, offset + limit);
   },
 
-  countByCategory(category) {
-    return stmts.countByCategory.get(category).cnt;
+  async countByCategory(category) {
+    return news.count({ category, status: 'published' });
   },
 
-  // Get articles by tag (for related news on service pages)
-  getByTags(tagQuery) {
-    return stmts.getByTags.all(`%${tagQuery}%`);
+  async getByTags(tagQuery) {
+    const re = new RegExp(tagQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const docs = await news.find({ tags: re, status: 'published' });
+    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    return docs.slice(0, 6);
   },
 
-  getLatest(limit = 6) {
-    return stmts.getLatest.all(limit);
+  async getLatest(limit = 6) {
+    const docs = await news.find({ status: 'published' });
+    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    return docs.slice(0, limit).map(a => ({
+      title: a.title, slug: a.slug, source_name: a.source_name,
+      category: a.category, excerpt: a.excerpt,
+      published_at_site: a.published_at_site, og_image: a.og_image
+    }));
   },
 
-  getAllForSitemap() {
-    return stmts.getAllForSitemap.all();
+  async getAllForSitemap() {
+    const docs = await news.find({ status: 'published' });
+    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    return docs.map(a => ({ slug: a.slug, published_at_site: a.published_at_site, updatedAt: a.updatedAt }));
   },
-
-  updateSourceFetch(id) {
-    stmts.updateSourceFetch.run(id);
-  },
-
-  getSources() {
-    return stmts.getSources.all();
-  },
-
-  publishDraft(id) {
-    stmts.publishDraft.run(id);
-  }
 };
