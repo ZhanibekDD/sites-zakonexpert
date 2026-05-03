@@ -46,14 +46,14 @@ const body = `
         <!-- H1 -->
         <h1 itemprop="headline">${article.title}</h1>
 
-        <!-- EXCERPT -->
-        ${article.excerpt ? `<p class="news-lead" itemprop="description">${article.excerpt}</p>` : ''}
+        <!-- LEAD — краткий анонс под заголовком -->
+        ${article.excerpt && article.event_summary && !article.event_summary.startsWith(article.excerpt.substring(0,30)) ? `<p class="news-lead" itemprop="description">${article.excerpt}</p>` : ''}
 
-        <!-- 1. КОРОТКО О СОБЫТИИ -->
-        <div class="news-section-block">
+        <!-- 1. О СОБЫТИИ — полный текст -->
+        <div class="news-section-block news-section-block--main">
           <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            Коротко о событии
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            О событии
           </h2>
           ${(article.event_summary || article.original_excerpt || article.excerpt || '').split('\\n\\n').map(p => p.trim() ? `<p>${p.trim()}</p>` : '').join('')}
           <p class="news-source-ref">

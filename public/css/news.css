@@ -278,6 +278,19 @@
   color: #0f2044;
   margin-bottom: 0.75rem;
 }
+/* Главный блок "О событии" — читается как полноценная статья */
+.news-section-block--main {
+  margin-bottom: 2rem;
+}
+.news-section-block--main h2 {
+  font-size: 1.2rem;
+}
+.news-section-block--main p {
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #1e2d40;
+  margin-bottom: 1rem;
+}
 .news-source-ref {
   font-size: 0.8rem;
   color: #94a3b8;
