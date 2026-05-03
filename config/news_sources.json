@@ -1,6 +1,106 @@
 [
   {
-    "id": 2,
+    "id": "gnews-arrest",
+    "name": "Аресты счетов КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%B0%D1%80%D0%B5%D1%81%D1%82+%D1%81%D1%87%D0%B5%D1%82%D0%B0+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "bank",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["арест счета", "заблокировал", "счет", "банк"]
+  },
+  {
+    "id": "gnews-credit",
+    "name": "Кредиты и долги КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%BA%D1%80%D0%B5%D0%B4%D0%B8%D1%82+%D0%B4%D0%BE%D0%BB%D0%B3+%D0%B2%D0%B7%D1%8B%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D0%B5+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "кредит",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["кредит", "долг", "взыскание", "банк", "МФО"]
+  },
+  {
+    "id": "gnews-chsi",
+    "name": "ЧСИ и исполнительное производство",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%A7%D0%A1%D0%98+%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5+%D0%BF%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D0%BE+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "ЧСИ",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["ЧСИ", "исполнительное производство", "судебный исполнитель", "взыскание"]
+  },
+  {
+    "id": "gnews-mfo",
+    "name": "МФО займы Казахстан",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%9C%D0%A4%D0%9E+%D0%B7%D0%B0%D0%B9%D0%BC+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD+%D0%B7%D0%B0%D0%B4%D0%BE%D0%BB%D0%B6%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "кредит",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["МФО", "займ", "задолженность", "должник", "микрозаём"]
+  },
+  {
+    "id": "gnews-bankrupt",
+    "name": "Банкротство физлиц КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%B1%D0%B0%D0%BD%D0%BA%D1%80%D0%BE%D1%82%D1%81%D1%82%D0%B2%D0%BE+%D1%84%D0%B8%D0%B7%D0%BB%D0%B8%D1%86+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "банкротство",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["банкротство", "долг", "должник", "кредит"]
+  },
+  {
+    "id": "gnews-notarius",
+    "name": "Исполнительная надпись нотариус КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%BD%D0%BE%D1%82%D0%B0%D1%80%D0%B8%D1%83%D1%81+%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%BD%D0%B0%D0%B4%D0%BF%D0%B8%D1%81%D1%8C+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "нотариус",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["нотариус", "исполнительная надпись", "взыскание", "долг"]
+  },
+  {
+    "id": "gnews-kaspi",
+    "name": "Kaspi банк аресты",
+    "rss_url": "https://news.google.com/rss/search?q=Kaspi+%D0%B1%D0%B0%D0%BD%D0%BA+%D0%B7%D0%B0%D0%B4%D0%BE%D0%BB%D0%B6%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "bank",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["kaspi", "банк", "долг", "задолженность", "кредит"]
+  },
+  {
+    "id": "gnews-shtraf",
+    "name": "Штрафы должники КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D1%88%D1%82%D1%80%D0%B0%D1%84+%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D0%B8%D0%BA%D0%B8+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "штрафы",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["штраф", "должник", "взыскание", "административный"]
+  },
+  {
+    "id": "gnews-alimenty",
+    "name": "Алименты взыскание КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%B0%D0%BB%D0%B8%D0%BC%D0%B5%D0%BD%D1%82%D1%8B+%D0%B2%D0%B7%D1%8B%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D0%B5+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "алименты",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["алименты", "взыскание", "должник", "суд"]
+  },
+  {
+    "id": "gnews-zapret-avto",
+    "name": "Запрет авто ЧСИ КЗ",
+    "rss_url": "https://news.google.com/rss/search?q=%D0%B7%D0%B0%D0%BF%D1%80%D0%B5%D1%82+%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C+%D0%A7%D0%A1%D0%98+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
+    "enabled": true,
+    "category": "авто",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["запрет", "авто", "ЧСИ", "регистрационных действий"]
+  },
+  {
+    "id": "ranking",
     "name": "Ranking.kz",
     "base_url": "https://ranking.kz",
     "rss_url": "https://ranking.kz/rss",
@@ -9,64 +109,17 @@
     "allowed": true,
     "fetch_interval_minutes": 120,
     "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article__body", ".article__text", "[itemprop='articleBody']", ".article-content", ".content"],
-    "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "заем", "долг", "финансы"]
+    "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "заем", "долг", "финансы", "взыскание"]
   },
   {
-    "id": 4,
-    "name": "Kapital.kz",
-    "base_url": "https://kapital.kz",
-    "rss_url": "https://kapital.kz/feed",
-    "enabled": true,
-    "category": "finance",
-    "allowed": true,
-    "fetch_interval_minutes": 90,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".field-body", ".article-text", ".field-item", "[itemprop='articleBody']", ".article__text"],
-    "keywords": ["банк", "кредит", "должник", "арест", "исполнительное производство", "задолженность"]
-  },
-  {
-    "id": 6,
+    "id": "inbusiness",
     "name": "Inbusiness.kz",
     "base_url": "https://inbusiness.kz",
     "rss_url": "https://inbusiness.kz/rss",
     "enabled": true,
     "category": "finance",
     "allowed": true,
-    "fetch_interval_minutes": 90,
     "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-content", ".article-body-text", "[itemprop='articleBody']", ".content-article", ".entry-content"],
-    "keywords": ["банк", "должник", "арест", "кредит", "ЧСИ", "задолженность", "взыскание"]
-  },
-  {
-    "id": 8,
-    "name": "Kursiv.kz",
-    "base_url": "https://kursiv.kz",
-    "rss_url": "https://kursiv.kz/rss",
-    "enabled": true,
-    "category": "finance",
-    "allowed": true,
-    "fetch_interval_minutes": 90,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article__content", ".article-body", "[itemprop='articleBody']", ".content-body", ".entry-content"],
-    "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "задолженность", "долг", "взыскание", "займ"]
-  },
-  {
-    "id": 9,
-    "name": "Forbes.kz",
-    "base_url": "https://forbes.kz",
-    "rss_url": "https://forbes.kz/rss",
-    "enabled": true,
-    "category": "finance",
-    "allowed": true,
-    "fetch_interval_minutes": 120,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article__body", ".article-body", "[itemprop='articleBody']", ".article__content", ".entry-content"],
-    "keywords": ["банк", "кредит", "должник", "арест счета", "ЧСИ", "долг", "взыскание"]
+    "keywords": ["банк", "должник", "арест", "кредит", "ЧСИ", "задолженность", "взыскание", "МФО", "займ"]
   }
 ]

@@ -109,6 +109,16 @@ module.exports = {
     return { published, drafts, rejected, total: all };
   },
 
+  /** Delete ALL news articles (full reset) */
+  async clearAll() {
+    await news.remove({}, { multi: true });
+    // Compact file to free space
+    return new Promise((resolve) => {
+      news.persistence.compactDatafile();
+      setTimeout(resolve, 500);
+    });
+  },
+
   /** Remove draft/rejected articles and those with obviously irrelevant titles */
   async removeIrrelevant() {
     const irrelevantPatterns = [

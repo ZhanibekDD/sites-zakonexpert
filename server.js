@@ -524,6 +524,31 @@ app.get('/api/news/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
+// GET /api/news/clear?key=... — wipe ALL news and re-import
+app.get('/api/news/clear', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
+  await newsDb.clearAll();
+  logger.info('[Admin] News DB cleared by admin request');
+  res.json({ ok: true, message: 'All news deleted. Run /api/news/import to reload.' });
+}));
+
+// GET /api/news/reset?key=... — wipe ALL news AND immediately re-import
+app.get('/api/news/reset', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
+  await newsDb.clearAll();
+  logger.info('[Admin] News DB cleared, starting fresh import...');
+  // Run import in background, respond immediately
+  res.json({ ok: true, message: 'DB cleared. Import started in background. Check /api/news/status in 2-3 minutes.' });
+  try {
+    const count = await newsImporter.importAll();
+    logger.info(`[Admin] Fresh import done. Imported: ${count}`);
+  } catch (e) {
+    logger.error('[Admin] Fresh import failed: ' + e.message);
+  }
+}));
+
 // GET /api/news/status — show stats
 app.get('/api/news/status', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
