@@ -427,3 +427,18 @@
   .news-cta-block { padding: 1.5rem 1rem; }
   .news-cta-actions { flex-direction: column; }
 }
+
+/* ---- When to seek help block ---- */
+.news-when-help {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e8f0fe 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #1a3560;
+}
+.news-when-help h2 { color: #0f2044; margin-bottom: 0.75rem; font-size: 1.1rem; }
+.news-when-help p { color: #334155; margin-bottom: 1rem; }
+.news-when-help-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}

@@ -9,11 +9,34 @@ const serviceLinks = [
   { text: 'График оплаты задолженности', url: '/grafik-oplaty-zadolzhennosti' }
 ];
 
+// Generate "what to check" items based on tags
+const checkItems = [];
+if (tagsArr.includes('Kaspi') || tagsArr.includes('Halyk') || tagsArr.includes('Freedom') || tagsArr.includes('банк')) {
+  checkItems.push('Проверьте по ИИН — есть ли активные исполнительные производства');
+  checkItems.push('Уточните в банке, кем именно был наложен арест (ЧСИ, налоговая, суд)');
+}
+if (tagsArr.includes('кредит') || tagsArr.includes('арест счета')) {
+  checkItems.push('Проверьте, есть ли исполнительная надпись нотариуса по вашему договору');
+  checkItems.push('Сверьте сумму задолженности с тем, что указано в документах взыскателя');
+}
+if (tagsArr.includes('ЧСИ')) {
+  checkItems.push('Запросите у ЧСИ копии постановлений и расчёт суммы взыскания');
+  checkItems.push('Проверьте, соответствуют ли расходы ЧСИ нормам закона');
+}
+if (tagsArr.includes('авто')) {
+  checkItems.push('Проверьте наличие запрета регистрационных действий через базу ТС');
+}
+if (checkItems.length === 0) {
+  checkItems.push('Проверьте наличие исполнительных производств по своему ИИН');
+  checkItems.push('Уточните, нет ли ограничений на счета, авто или имущество');
+  checkItems.push('Если есть долг — установите тип исполнительного документа');
+}
+
 const body = `
 <section class="news-detail-hero">
   <div class="legal-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
-      <a href="/">Главная</a> / <a href="/news">Новости</a> / <span>${article.title.substring(0,50)}${article.title.length > 50 ? '…' : ''}</span>
+      <a href="/">Главная</a> / <a href="/news">Новости</a> / <span>${article.title.substring(0,55)}${article.title.length > 55 ? '…' : ''}</span>
     </nav>
   </div>
 </section>
@@ -21,8 +44,10 @@ const body = `
 <section class="news-detail-section">
   <div class="legal-container">
     <div class="news-detail-layout">
+
       <!-- Main content -->
       <article class="news-detail-main" itemscope itemtype="https://schema.org/NewsArticle">
+
         ${article.og_image ? `
         <div class="news-detail-img">
           <img src="${article.og_image}" alt="${article.title}" loading="lazy" itemprop="image" onerror="this.parentElement.style.display='none'">
@@ -31,44 +56,70 @@ const body = `
         <div class="news-detail-meta">
           <span class="news-source-badge"><i class="bi bi-newspaper"></i> ${article.source_name || 'Источник'}</span>
           <time class="news-date" datetime="${pubDate.toISOString()}" itemprop="datePublished">${pubDateStr}</time>
-          ${tagsArr.map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+          ${tagsArr.slice(0,4).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
         </div>
 
         <h1 itemprop="headline">${article.title}</h1>
 
+        <!-- КРАТКО -->
         ${article.excerpt ? `
-        <div class="news-kратко">
+        <div class="news-кратко">
           <strong>Кратко</strong>
           <p itemprop="description">${article.excerpt}</p>
         </div>` : ''}
 
+        <!-- ЧТО ПРОИЗОШЛО -->
         <div class="news-section-block">
           <h2>Что произошло</h2>
-          <p>${article.ai_summary || article.excerpt || ''}</p>
+          <p>${article.ai_summary && article.ai_summary !== article.excerpt ? article.ai_summary : (article.excerpt || '')}</p>
           <p class="news-source-ref">
             Источник: <a href="${article.original_url}" target="_blank" rel="noopener nofollow">${article.source_name}</a>
           </p>
         </div>
 
+        <!-- ПОЧЕМУ ЭТО ВАЖНО ДЛЯ ДОЛЖНИКОВ -->
+        <div class="news-section-block">
+          <h2>Почему это важно для должников</h2>
+          <p>${article.why_important || 'Понимание актуальных событий в финансово-правовой сфере помогает своевременно защитить свои активы и счета от возможных арестов и ограничений.'}</p>
+        </div>
+
+        <!-- КАК ЭТО МОЖЕТ ПОВЛИЯТЬ НА АРЕСТЫ СЧЕТОВ -->
+        <div class="news-section-block">
+          <h2>Как это может повлиять на аресты счетов</h2>
+          <p>${article.how_it_affects || 'Любые изменения в банковской и правовой сфере могут косвенно повлиять на ситуации с задолженностями и арестами. Полезно знать актуальный контекст.'}</p>
+        </div>
+
+        <!-- ЮРИДИЧЕСКИЙ КОММЕНТАРИЙ -->
         <div class="news-section-block news-commentary">
           <div class="news-commentary-header">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <h2>Юридический комментарий</h2>
           </div>
-          <p>${article.legal_commentary || 'Ситуации, связанные с арестами и ограничениями, требуют индивидуального анализа. Для оценки вашей ситуации необходим разбор документов.'}</p>
+          <p>${article.legal_commentary || 'Ситуации, связанные с арестами и ограничениями, требуют индивидуального анализа документов.'}</p>
         </div>
 
+        <!-- ЧТО ПРОВЕРИТЬ У СЕБЯ -->
         <div class="news-section-block">
           <h2>Что проверить у себя</h2>
           <ul class="news-checklist">
-            <li>Проверьте наличие исполнительных производств по своему ИИН</li>
-            <li>Установите тип исполнительного документа: надпись, решение суда или иное</li>
-            <li>Проверьте наличие ограничений на счета, авто или имущество</li>
-            <li>Уточните взыскателя и сумму задолженности</li>
+            ${checkItems.map(i => `<li>${i}</li>`).join('')}
           </ul>
           <a href="/#checker-section" class="news-inline-cta">Проверить по ИИН бесплатно →</a>
         </div>
 
+        <!-- КОГДА СТОИТ ОБРАТИТЬСЯ ЗА ПОМОЩЬЮ -->
+        <div class="news-section-block news-when-help">
+          <h2>Когда стоит обратиться за помощью</h2>
+          <p>${article.when_to_seek_help || 'Если вы видите себя в похожей ситуации — проверьте наличие исполнительных производств по своему ИИН. Раннее обнаружение позволяет принять меры до блокировки счетов и имущества.'}</p>
+          <div class="news-when-help-actions">
+            <a href="https://wa.me/77000300024?text=Читал+новость.+Хочу+проверить+свою+ситуацию." target="_blank" rel="noopener" class="btn-legal-cta">
+              <i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp
+            </a>
+            <a href="/#checker-section" class="btn-legal-outline">Проверить по ИИН</a>
+          </div>
+        </div>
+
+        <!-- SERVICE LINKS -->
         <div class="news-service-links">
           <h3>Полезные разделы по теме</h3>
           <div class="news-service-grid">
@@ -80,11 +131,12 @@ const body = `
           </div>
         </div>
 
+        <!-- SHARE -->
         <div class="news-share">
           <span>Поделиться:</span>
           <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' — https://zakonexpertt.kz/news/' + article.slug)}" target="_blank" rel="noopener" class="news-share-btn news-share-wa"><i class="bi bi-whatsapp"></i> WhatsApp</a>
           <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(article.title)}" target="_blank" rel="noopener" class="news-share-btn news-share-tg"><i class="bi bi-telegram"></i> Telegram</a>
-          <button class="news-share-btn news-share-copy" onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'"><i class="bi bi-link-45deg"></i> Копировать</button>
+          <button class="news-share-btn news-share-copy" onclick="navigator.clipboard.writeText(window.location.href);this.innerHTML='<i class=\\'bi bi-check\\'></i> Скопировано'"><i class="bi bi-link-45deg"></i> Ссылка</button>
         </div>
 
         <div class="legal-disclaimer">
@@ -107,22 +159,24 @@ const body = `
           <h3>Похожие материалы</h3>
           ${related.map(r => `
           <a href="/news/${r.slug}" class="news-related-item">
-            <span>${r.title.substring(0, 70)}${r.title.length > 70 ? '…' : ''}</span>
+            ${r.title.substring(0, 70)}${r.title.length > 70 ? '…' : ''}
           </a>`).join('')}
         </div>` : ''}
 
         <div class="news-topics">
-          <h3>Темы</h3>
+          <h3>Услуги</h3>
           <div class="news-topics-grid">
             <a href="/snyatie-aresta-so-scheta">Арест счёта</a>
-            <a href="/otmena-ispolnitelnoi-nadpisi">Исполнительная надпись</a>
+            <a href="/otmena-ispolnitelnoi-nadpisi">Исполнит. надпись</a>
             <a href="/snyatie-ogranichenii-chsi">ЧСИ</a>
             <a href="/snyatie-zapreta-na-avto">Авто</a>
             <a href="/arest-kaspi">Kaspi</a>
+            <a href="/arest-halyk-bank">Halyk</a>
             <a href="/grafik-oplaty-zadolzhennosti">График платежей</a>
           </div>
         </div>
       </aside>
+
     </div>
   </div>
 </section>
