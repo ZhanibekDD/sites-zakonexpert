@@ -47,6 +47,12 @@ const logger = winston.createLogger({
 });
 // --- КОНЕЦ: Настройка логгера Winston ---
 
+// Маскировка ИИН для безопасного логирования
+function maskIin(iin) {
+    const clean = String(iin || '').replace(/\D/g, '');
+    return clean.length >= 4 ? clean.slice(0, 4) + '********' : 'невалидный';
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -111,7 +117,7 @@ async function checkDebtorViaApi(iin) {
     if (formattedIIN.length !== 12) {
         // ИЗМЕНЕНО: logger.warn и ошибка
         const errorMsg = 'ИИН должен содержать 12 цифр';
-        logger.warn(`Попытка проверить должника с неверным ИИН: ${iin}`);
+        logger.warn(`Попытка проверить должника с неверным ИИН: ${maskIin(iin)}`);
         throw new Error(errorMsg);
     }
 
@@ -150,11 +156,10 @@ async function checkDebtorViaApi(iin) {
         throw new Error('Сервис временно недоступен. EGOV_API_KEY не настроен. Обратитесь через WhatsApp.');
     }
 
-    logger.info(`Отправка SOAP запроса для ИИН ${formattedIIN} на ${EGOV_API_URL}`);
+    logger.info(`Отправка SOAP запроса для ИИН ${maskIin(formattedIIN)} на ${EGOV_API_URL}`);
     try {
-        const response = await axios.post(EGOV_API_URL, soapBody, { headers, timeout: 30000 }); // Добавлен таймаут запроса
-        // ИЗМЕНЕНО: logger.info
-        logger.info(`SOAP ответ получен для ИИН ${formattedIIN}. Статус: ${response.status}`);
+        const response = await axios.post(EGOV_API_URL, soapBody, { headers, timeout: 30000 });
+        logger.info(`SOAP ответ получен для ИИН ${maskIin(formattedIIN)}. Статус: ${response.status}`);
 
         const parser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: true });
         const result = await parser.parseStringPromise(response.data);
@@ -178,7 +183,7 @@ async function checkDebtorViaApi(iin) {
         const statusCode = responseInfo?.status?.code;
         const statusMessage = responseInfo?.status?.message;
         // ИЗМЕНЕНО: logger.info
-        logger.info(`Результат проверки ИИН ${formattedIIN}: код статуса '${statusCode}', сообщение '${statusMessage}', должник найден (наличие rows): ${isDebtor}`);
+        logger.info(`Результат проверки ИИН ${maskIin(formattedIIN)}: статус '${statusCode}', должник: ${isDebtor}`);
 
         return {
             isDebtor: isDebtor,
@@ -187,7 +192,7 @@ async function checkDebtorViaApi(iin) {
 
     } catch (error) {
         // ИЗМЕНЕНО: logger.error
-        logger.error(`Ошибка при вызове API eGov или парсинге ответа для ИИН ${formattedIIN}:`, error);
+        logger.error(`Ошибка при вызове API eGov или парсинге ответа для ИИН ${maskIin(formattedIIN)}:`, error);
         if (error.response) {
             // Логируем статус и тело ответа, если ошибка от axios
             logger.error(`Статус ошибки от API: ${error.response.status}`);
@@ -238,6 +243,16 @@ app.post('/check', asyncHandler(async (req, res) => {
     }
 
 }));
+
+// Health-check для мониторинга сервиса
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'ZakonExpert',
+        egovKey: EGOV_API_KEY ? 'configured' : 'missing',
+        time: new Date().toISOString()
+    });
+});
 
 // --- ДОБАВЛЕНО: Централизованный обработчик ошибок Express ---
 // Он будет ловить ошибки, переданные через next(err)

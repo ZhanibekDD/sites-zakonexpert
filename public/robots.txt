@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /health
+
+Sitemap: https://zakonexpertt.kz/sitemap.xml

@@ -39,7 +39,7 @@
     <a class="brand" href="index.html">
       <span class="brand-mark"><span>ZE</span></span>
       <span class="brand-text">
-        <span class="brand-title">ZakonExpert</span>
+        <span class="brand-title"><em>Zakon</em><strong>Expert</strong></span>
         <span class="brand-subtitle">Снятие арестов и ограничений</span>
       </span>
     </a>
@@ -83,7 +83,7 @@
         <div class="hero-actions">
           <a class="btn-landing" href="contact.html"><i class="bi bi-chat-left-text"></i> Разобрать мою ситуацию</a>
           <a class="btn-outline-landing" href="#checker-section"><i class="bi bi-search"></i> Проверить по ИИН</a>
-          <a class="btn-outline-landing" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83%20%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2%2F%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D1%83." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+          <a class="btn-wa" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83%20%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2." target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp</a>
         </div>
         <div class="hero-trust-row">
           <div class="trust-badge"><i class="bi bi-geo-alt-fill"></i> Работаем по РК</div>
@@ -251,7 +251,7 @@
                 <label class="field-label" for="iin">Введите ИИН (12 цифр)</label>
                 <input class="form-control" type="text" id="iin" name="iin" inputmode="numeric" maxlength="12" placeholder="Например: 123456789012">
                 <div id="iin-validation" class="invalid-feedback" style="display:none;"></div>
-                <p class="checker-note">Проверка выполняется через базы данных Казахстана. Пожалуйста, дождитесь загрузки результатов.</p>
+                <p class="checker-note">Проверка выполняется через базы данных Казахстана. Пожалуйста, дождитесь загрузки результатов. ИИН используется только для проверки и не сохраняется. <a href="privacy.html" style="color:var(--sky-700);text-decoration:underline;font-weight:700;" target="_blank">Политика конфиденциальности</a>.</p>
               </div>
               <button id="search-button" type="submit"><i class="bi bi-search me-2"></i>Проверить</button>
             </form>
@@ -275,20 +275,13 @@
             <div id="results" class="mt-4">
               <section id="debtors-section" style="display:none;">
                 <h3>Найденные исполнительные производства</h3>
-                <div class="table-responsive">
-                  <table id="debtors-table" class="table">
-                    <thead>
-                      <tr>
-                        <th>Номер ИП</th><th>Дата</th><th>Сумма взыскания</th><th>Взыскатель</th><th>Орган</th><th>Исполнитель</th><th>Рекомендация</th><th>Действие</th>
-                      </tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
+                <p class="results-section-lead">Каждое производство требует отдельного правового разбора — нажмите «Разобрать», чтобы получить анализ конкретной ситуации.</p>
+                <div id="debtors-table" class="ip-cards-grid"></div>
               </section>
 
               <section id="restrictions-section" class="mt-4" style="display:none;">
-                <h3>Найденные ограничения</h3>
+                <h3>Дополнительные ограничения</h3>
+                <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям требуют отдельного правового анализа и не отображаются автоматически.</p>
                 <div class="table-responsive">
                   <table id="restrictions-table" class="table">
                     <thead>
@@ -477,7 +470,7 @@
   </div>
   <div class="landing-container footer-bottom">
     <span>© <span class="current-year"></span> ZakonExpert. Все права защищены.</span>
-    <span class="footer-note">Юридический сервис. Снятие арестов и ограничений по РК.</span>
+    <span class="footer-note"><a href="privacy.html" style="color:rgba(255,255,255,0.55);text-decoration:underline;">Политика конфиденциальности</a> · Казахстан, работаем по всему РК</span>
   </div>
 </footer>
 

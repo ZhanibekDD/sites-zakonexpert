@@ -300,61 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Расчет стоимости услуг ЧСИ
-     * @param {number} amount - Сумма долга
-     * @param {string} organ - Орган, выдавший документ
-     * @param {string} type - Тип документа
-     * @returns {number} - Стоимость услуг ЧСИ
-     */
-    function calculateServiceCost(amount, organ, type = 'имущественный') {
-        const MRP = 3692; // МРП на 2024 год
-        let cost = 0;
-
-        // Для исполнительных документов имущественного (денежного) характера
-        if (type === 'имущественный') {
-            if (amount <= 60 * MRP) { // до 60 МРП
-                cost = amount * 0.25;
-            } else if (amount <= 300 * MRP) { // от 60 до 300 МРП
-                cost = amount * 0.20;
-            } else if (amount <= 1000 * MRP) { // от 300 до 1000 МРП
-                cost = amount * 0.15;
-            } else if (amount <= 5000 * MRP) { // от 1000 до 5000 МРП
-                cost = amount * 0.10;
-            } else if (amount <= 10000 * MRP) { // от 5000 до 10000 МРП
-                cost = amount * 0.08;
-            } else if (amount <= 20000 * MRP) { // от 10000 до 20000 МРП
-                cost = amount * 0.05;
-            } else { // свыше 20000 МРП
-                cost = amount * 0.03;
-            }
-        }
-        // Для исполнительных документов неимущественного характера
-        else if (type === 'неимущественный') {
-            if (organ.toLowerCase().includes('выселени') || 
-                organ.toLowerCase().includes('вселени') || 
-                organ.toLowerCase().includes('обязани')) {
-                cost = 50 * MRP; // для физических лиц
-            } else if (organ.toLowerCase().includes('обеспечени') || 
-                       organ.toLowerCase().includes('освобождени')) {
-                cost = 10 * MRP; // для физических лиц
-            } else if (organ.toLowerCase().includes('общени') && 
-                       organ.toLowerCase().includes('ребенк')) {
-                cost = 20 * MRP; // ежемесячно
-            }
-        }
-        // Для исполнительных документов о взыскании периодических платежей
-        else if (type === 'периодический') {
-            if (organ.toLowerCase().includes('алимент') || 
-                organ.toLowerCase().includes('возмещени') || 
-                organ.toLowerCase().includes('увечь')) {
-                cost = 1 * MRP; // ежеквартально
-            }
-        }
-
-        return Math.round(cost);
-    }
-
-    /**
      * Определяет статус-рекомендацию для производства (без ложных обещаний)
      * @param {Object} debtorData - Данные производства
      * @returns {{ text: string, cls: string }} - текст и CSS-класс статуса
@@ -386,52 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Проверка активности производства по ipEndDate (используется внутренне)
-     */
-    function canBeCancelled(debtorData) {
-        if (!debtorData) return false;
-
-        // --- НАЧАЛО: Логика угадывания статуса и проверки --- 
-
-        // 1. Проверяем ipEndDate. Если дата есть, точно НЕ "На исполнении" (по нашей логике).
-        const ipEndDate = debtorData.ipEndDate;
-        if (ipEndDate && String(ipEndDate).trim() !== '' && !ipEndDate.includes('nil="true"')) { // Проверяем, что не null, не пустая строка и не содержит nil=true (на всякий случай)
-            // console.log(`Отмена невозможна: ipEndDate (${ipEndDate}) не пуста.`);
-            return false;
-        }
-        // Если ipEndDate пуста, ПРЕДПОЛАГАЕМ, что статус "На исполнении". Идем дальше.
-
-        // 2. Проверяем на исключения: гос. взыскатель, штраф, алименты
-        const creditor = (debtorData.recovererTitle || '').toLowerCase(); // Взыскатель
-        const category = (debtorData.categoryRu || '').toLowerCase(); // Категория
-        // const organ = (debtorData.ilOrganRu || '').toLowerCase(); // Орган, выдавший ИД (менее надежно для штрафов/алиментов)
-
-        const isStateCreditor = 
-               creditor.includes('государств') || 
-               creditor.includes('прокурор') ||
-               creditor.includes('министерство') ||
-               creditor.includes('акимат') ||
-               creditor.includes('департамент государственных доходов') || 
-               creditor.includes('дгд');
-               
-        const isFineOrAlimony = 
-               category.includes('штраф') || 
-               category.includes('алимент') ||
-               category.includes('административном правонарушении'); // Добавим проверку категории АП
-               // organ.includes('штраф') || organ.includes('алимент') || organ.includes('администрат');
-
-        if (isStateCreditor || isFineOrAlimony) {
-            // console.log(`Отмена невозможна: Гос. взыскатель (${isStateCreditor}) или Штраф/Алименты (${isFineOrAlimony}).`);
-            return false;
-        }
-        
-        // 3. Если дошли сюда (ipEndDate пуст И не было исключений) - считаем, что отменить МОЖНО.
-        // console.log('Отмена ВОЗМОЖНА (на основе предположений).');
-        return true;
-        // --- КОНЕЦ: Логика угадывания статуса и проверки --- 
-    }
-
-    /**
      * Отображение результатов поиска
      * @param {Object} data - Объект с результатами { debtors: [], restrictions: [] }
      */
@@ -445,20 +344,20 @@ document.addEventListener('DOMContentLoaded', function() {
         window.currentDebtorsData = debtors; 
         // ---------------------------------------------------
 
-        const debtorsTableBody = document.querySelector('#debtors-table tbody');
+        const debtorsContainer = document.getElementById('debtors-table');
         const restrictionsTableBody = document.querySelector('#restrictions-table tbody');
         const debtorsSection = document.getElementById('debtors-section');
         const restrictionsSection = document.getElementById('restrictions-section');
 
-        if (!debtorsTableBody || !restrictionsTableBody || !debtorsSection || !restrictionsSection) {
+        if (!debtorsContainer || !restrictionsTableBody || !debtorsSection || !restrictionsSection) {
             showErrorMessage(T.interfaceError);
             return;
         }
 
-        debtorsTableBody.innerHTML = '';
+        debtorsContainer.innerHTML = '';
         restrictionsTableBody.innerHTML = '';
 
-        // --- Отображение таблицы должников ---
+        // --- Отображение карточек исполнительных производств ---
         if (debtors && debtors.length > 0) {
             debtorsSection.style.display = 'block';
             debtors.forEach((debtor, index) => {
@@ -485,27 +384,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 const waText = `${T.waPrefix}\n${T.labels.debtorNum}: ${debtorNum}\n${T.labels.creditor}: ${creditor}`;
                 const waUrl = `https://wa.me/77000300024?text=${encodeURIComponent(waText)}`;
 
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td data-label="${T.labels.debtorNum}">${debtorNum}</td>
-                    <td data-label="${T.labels.date}">${debtorDate}</td>
-                    <td data-label="${T.labels.amount}">${formatAmount(debtorAmount)}</td>
-                    <td data-label="${T.labels.creditor}">${creditor}</td>
-                    <td data-label="${T.labels.organ}">${authority}</td>
-                    <td data-label="${T.labels.executor}">${executor}</td>
-                    <td data-label="${T.labels.status}"><span class="status ${statusCls}">${statusText}</span></td>
-                    <td data-label="${T.labels.action}" class="td-actions">
-                        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-resolve">${T.btnResolve}</a>
-                        <button
-                            class="btn btn-sm view-details-btn"
+                const card = document.createElement('div');
+                card.className = 'ip-card';
+                card.innerHTML = `
+                    <div class="ip-card-header">
+                        <div class="ip-card-id">
+                            <span class="ip-card-icon">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            </span>
+                            <span class="ip-card-num">${debtorNum}</span>
+                        </div>
+                        <span class="status ${statusCls}">${statusText}</span>
+                    </div>
+                    <div class="ip-card-body">
+                        <div class="ip-field">
+                            <span class="ip-label">${T.labels.date}</span>
+                            <span class="ip-value">${debtorDate}</span>
+                        </div>
+                        <div class="ip-field">
+                            <span class="ip-label">${T.labels.amount}</span>
+                            <span class="ip-value ip-value--amount">${formatAmount(debtorAmount)}</span>
+                        </div>
+                        <div class="ip-field ip-field--full">
+                            <span class="ip-label">${T.labels.creditor}</span>
+                            <span class="ip-value">${creditor}</span>
+                        </div>
+                        <div class="ip-field">
+                            <span class="ip-label">${T.labels.organ}</span>
+                            <span class="ip-value">${authority}</span>
+                        </div>
+                        <div class="ip-field">
+                            <span class="ip-label">${T.labels.executor}</span>
+                            <span class="ip-value">${executor}</span>
+                        </div>
+                    </div>
+                    <div class="ip-card-footer">
+                        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-resolve-card">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            ${T.btnResolve}
+                        </a>
+                        <button class="btn-details-card view-details-btn"
                             data-bs-toggle="modal"
                             data-bs-target="#debtorDetailsModal"
                             data-debtor-index="${index}">
                             ${T.details}
                         </button>
-                    </td>
+                    </div>
                 `;
-                debtorsTableBody.appendChild(row);
+                debtorsContainer.appendChild(card);
             });
         } else {
             debtorsSection.style.display = 'none';
@@ -562,25 +488,6 @@ document.addEventListener('DOMContentLoaded', function() {
         results.style.display = (debtors && debtors.length > 0) || (restrictions && restrictions.length > 0) ? 'block' : 'none';
     }
 
-    // НОВАЯ ФУНКЦИЯ для добавления data-label для мобильных
-    function addTableDataLabels() {
-        const table = document.querySelector('#results table');
-        if (!table) return;
-
-        const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
-        
-        table.querySelectorAll('tbody tr').forEach(row => {
-            // Пропускаем итоговую строку
-            if (row.classList.contains('table-info')) return;
-
-            Array.from(row.querySelectorAll('td')).forEach((td, index) => {
-                if (headers[index]) { // Проверяем, есть ли заголовок для этой колонки
-                    td.setAttribute('data-label', headers[index]);
-                }
-            });
-        });
-    }
-
     /**
      * Отображение сообщения об ошибке с CTA в WhatsApp
      */
@@ -607,27 +514,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const errorContainer = document.getElementById('error-message');
         const debtorsSection = document.getElementById('debtors-section');
         const restrictionsSection = document.getElementById('restrictions-section');
-        const debtorsTableBody = document.querySelector('#debtors-table tbody');
+        const debtorsContainer = document.getElementById('debtors-table');
         const restrictionsTableBody = document.querySelector('#restrictions-table tbody');
 
-        // Скрываем контейнер результатов
         if (resultsContainer) {
             resultsContainer.style.display = 'none';
         }
-        // Скрываем сообщение об ошибке
         if (errorContainer) {
             errorContainer.classList.add('d-none');
         }
-        // Скрываем секции
         if (debtorsSection) {
             debtorsSection.style.display = 'none';
         }
         if (restrictionsSection) {
             restrictionsSection.style.display = 'none';
         }
-        // Очищаем ТОЛЬКО тела таблиц
-        if (debtorsTableBody) {
-            debtorsTableBody.innerHTML = '';
+        if (debtorsContainer) {
+            debtorsContainer.innerHTML = '';
         }
         if (restrictionsTableBody) {
             restrictionsTableBody.innerHTML = '';

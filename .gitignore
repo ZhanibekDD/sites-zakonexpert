@@ -15,8 +15,7 @@ logs
 .env.test.local
 .env.production.local
 
-# Dependencies
-package-lock.json
+# Yarn lock (не используется)
 yarn.lock
 
 # OS files
