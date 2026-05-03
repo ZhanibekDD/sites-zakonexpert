@@ -1,6 +1,7 @@
+require('dotenv').config(); // загружает .env до всего остального
+
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
@@ -49,12 +50,18 @@ const logger = winston.createLogger({
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(helmet());
+// Middleware — порядок важен: helmet → compression → cors → body-parser → static
+app.use(helmet({
+    contentSecurityPolicy: false, // отключаем CSP чтобы не ломать CDN Bootstrap/Bootstrap-Icons
+}));
 app.use(compression());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpertt.kz
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+}));
+app.use(express.json()); // заменяет bodyParser.json()
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Увеличиваем таймауты для долгих запросов
 app.use((req, res, next) => {
@@ -84,29 +91,18 @@ const asyncHandler = fn => (req, res, next) =>
 
 // Конфигурация для API eGov
 const EGOV_API_URL = "https://data.egov.kz/egov-opendata-ws/ODWebServiceImpl";
-// ИЗМЕНЕНО: Возвращаем ключ API прямо в код
-const EGOV_API_KEY = "374f869ccd81431387ee8e872b6ea15d";
+const EGOV_API_KEY = process.env.EGOV_API_KEY;
 
-// Функция для проверки ограничений (ЗАГЛУШКА)
-async function checkRestrictions(iin) { // Убрали неиспользуемый параметр 'page'
-    try {
-        const formattedIIN = String(iin).replace(/[^\d]/g, '');
-        if (formattedIIN.length !== 12) {
-            // ИЗМЕНЕНО: Логируем через logger.warn и выбрасываем ошибку
-            const errorMsg = 'ИИН должен содержать 12 цифр';
-            logger.warn(`Попытка проверить ограничения с неверным ИИН: ${iin}`);
-            throw new Error(errorMsg);
-        }
-        // ИЗМЕНЕНО: logger.info и logger.warn
-        logger.info(`Вызов заглушки checkRestrictions для ИИН: ${formattedIIN}`);
-        logger.warn('ВНИМАНИЕ: Функция checkRestrictions не реализована для API, возвращает пустой результат.');
-        return [];
+// Проверка обязательных env-переменных при старте
+if (!EGOV_API_KEY) {
+    logger.error('КРИТИЧНО: Переменная окружения EGOV_API_KEY не задана. Функция проверки ИИН не будет работать. Задайте её в .env файле или в настройках сервера.');
+}
 
-    } catch (error) {
-        // ИЗМЕНЕНО: logger.error
-        logger.error('Ошибка в заглушке checkRestrictions:', error);
-        return [];
-    }
+// Функция для проверки дополнительных ограничений.
+// Источник данных не реализован — возвращает пустой массив.
+// Блок "Дополнительные ограничения" на фронте скрыт пока массив пуст.
+async function checkRestrictions(iin) {
+    return [];
 }
 
 // --- НАЧАЛО: Новая функция для проверки должника через API eGov ---
@@ -150,6 +146,10 @@ async function checkDebtorViaApi(iin) {
     };
 
     // ИЗМЕНЕНО: logger.info
+    if (!EGOV_API_KEY) {
+        throw new Error('Сервис временно недоступен. EGOV_API_KEY не настроен. Обратитесь через WhatsApp.');
+    }
+
     logger.info(`Отправка SOAP запроса для ИИН ${formattedIIN} на ${EGOV_API_URL}`);
     try {
         const response = await axios.post(EGOV_API_URL, soapBody, { headers, timeout: 30000 }); // Добавлен таймаут запроса
@@ -261,6 +261,6 @@ app.use((err, req, res, next) => {
 
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
-  // ИЗМЕНЕНО: logger.info
-  logger.info(`Сервер запущен на порту ${PORT} и доступен в локальной сети`);
+    logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
+    logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'задан ✓' : 'НЕ ЗАДАН — проверка ИИН не будет работать!'}`);
 });

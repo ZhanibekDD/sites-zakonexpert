@@ -27,14 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const baseLabels = {
         debtorNum: 'Номер ИП',
         date: 'Дата',
-        amount: 'Сумма долга',
-        csiCost: 'Услуги ЧСИ',
-        cancelCost: 'Стоимость отмены',
-        savings: 'Возможная экономия',
+        amount: 'Сумма взыскания',
         creditor: 'Взыскатель',
         organ: 'Орган',
         executor: 'Исполнитель',
-        status: 'Статус',
+        status: 'Рекомендация',
+        action: 'Действие',
         restrictionType: 'Тип ограничения'
     };
     const baseText = {
@@ -42,11 +40,15 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingCheck: 'Проверка данных в реестре должников...',
         invalidFormat: 'Некорректный формат или отсутствуют данные',
         genericErrorShort: 'Произошла ошибка при проверке данных. Пожалуйста, попробуйте позже.',
-        genericErrorLong: 'Произошла ошибка при получении данных. Пожалуйста, проверьте ИИН и попробуйте позже. Если ошибка повторяется, возможно, сервис adilet.gov.kz временно недоступен или находится под высокой нагрузкой.',
+        genericErrorLong: 'Не удалось получить данные. Проверьте ИИН и попробуйте позже. Если ошибка повторяется — напишите нам в WhatsApp.',
         serverError: 'Ошибка сервера',
-        serverCheckError: 'Ошибка сервера при проверке должника',
-        apiNoData: 'Не удалось получить данные должника из ответа API',
-        canCancel: 'Можно отменить',
+        serverCheckError: 'Ошибка сервера при проверке',
+        apiNoData: 'Не удалось получить данные из API',
+        statusAnalysis: 'Требуется правовой анализ',
+        statusReview: 'Нужна проверка оснований',
+        statusDocs: 'Нужна проверка документов',
+        statusSettle: 'Возможны варианты урегулирования',
+        btnResolve: 'Разобрать',
         details: 'Подробнее',
         yes: 'Да',
         no: 'Нет',
@@ -54,20 +56,25 @@ document.addEventListener('DOMContentLoaded', function() {
         loading: 'Загрузка...',
         loadingRegistry: 'Проверка данных в реестрах',
         interfaceError: 'Ошибка интерфейса: не удалось отобразить результаты.',
-        tableNotFound: 'Не найдены элементы таблиц или секций для отображения результатов.',
+        tableNotFound: 'Не найдены элементы таблиц или секций.',
         noDetails: 'Подробные детали для этого производства отсутствуют.',
-        detailsLoadError: 'Ошибка: Не удалось загрузить детали.'
+        detailsLoadError: 'Ошибка: Не удалось загрузить детали.',
+        waPrefix: 'Здравствуйте! Прошу разобрать ситуацию по исполнительному производству.'
     };
     const kzText = {
         iinInvalid: 'ЖСН 12 саннан тұруы керек',
         loadingCheck: 'Борышкерлер тізіліміндегі деректер тексерілуде...',
         invalidFormat: 'Қате формат немесе деректер жоқ',
         genericErrorShort: 'Тексеру кезінде қате орын алды. Қайталап көріңіз.',
-        genericErrorLong: 'Деректерді алу кезінде қате орын алды. ЖСН-ды тексеріп, кейінірек қайталап көріңіз. Егер қате қайталанса, adilet.gov.kz сайты уақытша қолжетімсіз немесе жүктемеде болуы мүмкін.',
+        genericErrorLong: 'Деректерді алу кезінде қате орын алды. ЖСН-ды тексеріп, кейінірек қайталап көріңіз. Қате қайталанса — WhatsApp арқылы жазыңыз.',
         serverError: 'Сервер қатесі',
-        serverCheckError: 'Борышкерді тексеру кезінде сервер қатесі',
+        serverCheckError: 'Тексеру кезінде сервер қатесі',
         apiNoData: 'API жауабынан деректерді алу мүмкін болмады',
-        canCancel: 'Күшін жоюға болады',
+        statusAnalysis: 'Құқықтық талдау қажет',
+        statusReview: 'Негіздерді тексеру қажет',
+        statusDocs: 'Құжаттарды тексеру қажет',
+        statusSettle: 'Реттеу нұсқалары мүмкін',
+        btnResolve: 'Талдау',
         details: 'Толығырақ',
         yes: 'Бар',
         no: 'Жоқ',
@@ -75,21 +82,20 @@ document.addEventListener('DOMContentLoaded', function() {
         loading: 'Жүктеу...',
         loadingRegistry: 'Тізілімдердегі деректер тексерілуде',
         interfaceError: 'Интерфейс қатесі: нәтижелерді көрсету мүмкін болмады.',
-        tableNotFound: 'Нәтижелерді көрсету үшін кесте немесе бөлім элементтері табылмады.',
+        tableNotFound: 'Нәтижелерді көрсету үшін элементтер табылмады.',
         noDetails: 'Бұл өндіріс бойынша толық деректер жоқ.',
-        detailsLoadError: 'Қате: толық мәліметтерді жүктеу мүмкін болмады.'
+        detailsLoadError: 'Қате: толық мәліметтерді жүктеу мүмкін болмады.',
+        waPrefix: 'Сәлеметсіз бе! Атқарушылық өндіріс бойынша жағдайды талдауды сұраймын.'
     };
     const kzLabels = {
         debtorNum: 'АІЖ нөмірі',
         date: 'Күні',
-        amount: 'Борыш сомасы',
-        csiCost: 'ЖСО қызметтері',
-        cancelCost: 'Күшін жою құны',
-        savings: 'Мүмкін үнемдеу',
+        amount: 'Өндіру сомасы',
         creditor: 'Өндіріп алушы',
         organ: 'Орган',
         executor: 'Орындаушы',
-        status: 'Мәртебесі',
+        status: 'Ұсыным',
+        action: 'Іс-әрекет',
         restrictionType: 'Шектеу түрі'
     };
     const T = {
@@ -160,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 year: 'numeric'
             });
         } catch (e) {
-            console.error('Ошибка форматирования даты:', e);
             return dateString;
         }
     }
@@ -213,20 +218,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get data structure { debtors: [...], restrictions: [...] }
             // where each debtor object already contains its details.
             const data = await checkDebtorData(iin);
-            console.log("Data prepared by checkDebtorData:", JSON.stringify(data, null, 2)); // Log processed data
 
-            // Check if data object exists
             if (data && typeof data === 'object') {
-                 // Pass the entire data object (debtors + restrictions) to displayResults
-                 console.log("Passing data to displayResults:", JSON.stringify(data, null, 2));
-                 displayResults(data); // Pass the whole data object
+                displayResults(data);
             } else {
-                console.error("Received invalid data structure:", data);
                 throw new Error(T.invalidFormat);
             }
 
         } catch (error) {
-            console.error('Ошибка при проверке должника:', error);
             showErrorMessage(error.message || T.genericErrorShort);
         } finally {
             toggleLoading(false);
@@ -255,13 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     errorData = await response.json();
                 } catch (jsonError) {
-                    console.warn("Не удалось разобрать тело ошибки как JSON:", jsonError);
-                    // Если тело не JSON, можно попробовать прочитать как текст
                     try {
-                         errorData.message = await response.text();
-                    } catch (textError) {
-                         console.warn("Не удалось разобрать тело ошибки как текст:", textError);
-                    }
+                        errorData.message = await response.text();
+                    } catch (_) { /* ignore */ }
                 }
                 // Используем details из JSON ошибки, если есть, иначе message
                 throw new Error(errorData.details || errorData.message || T.serverCheckError);
@@ -269,7 +264,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Если response.ok, читаем тело как JSON
             const data = await response.json();
-            console.log("Raw data received from fetch:", JSON.stringify(data, null, 2)); // Оставляем для отладки
 
             // Проверяем наличие ошибки в теле успешного ответа (на всякий случай)
             if (!data || data.error) {
@@ -301,9 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         } catch (error) {
-            console.error('API error:', error);
-            // Перебрасываем ошибку дальше, чтобы ее обработал checkDebtor
-            throw error; 
+            throw error;
         }
     }
 
@@ -363,55 +355,38 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * НОВАЯ ФУНКЦИЯ: Расчет стоимости НАШЕЙ услуги по отмене
-     * @param {number} amount - Сумма долга
-     * @param {string} organ - Орган, выдавший документ
-     * @param {boolean} canCancel - Возможность отмены (определенная ранее)
-     * @returns {number} - Стоимость нашей услуги
+     * Определяет статус-рекомендацию для производства (без ложных обещаний)
+     * @param {Object} debtorData - Данные производства
+     * @returns {{ text: string, cls: string }} - текст и CSS-класс статуса
      */
-    function calculateOurServiceCost(amount, organ, canCancel) {
-        // Услуга предоставляется только если canCancel === true
-        if (!canCancel) {
-            return 0;
+    function getStatusRecommendation(debtorData) {
+        if (!debtorData) return { text: T.statusAnalysis, cls: 'status-neutral' };
+
+        const ipEndDate = debtorData.ipEndDate;
+        const isActive = !ipEndDate || String(ipEndDate).trim() === '' || String(ipEndDate).includes('nil="true"');
+        const creditor = (debtorData.recovererTitle || '').toLowerCase();
+        const category = (debtorData.categoryRu || '').toLowerCase();
+        const organ = (debtorData.ilOrganRu || '').toLowerCase();
+
+        const isNotarial = organ.includes('нотариальн');
+        const isAlimony = category.includes('алимент');
+        const isFine = category.includes('штраф') || category.includes('административ');
+        const isStateCreditor = creditor.includes('государств') || creditor.includes('министерство') || creditor.includes('акимат') || creditor.includes('дгд');
+
+        if (!isActive) {
+            return { text: T.statusSettle, cls: 'status-neutral' };
         }
-
-        let cost = 0;
-        const organLower = organ.toLowerCase();
-
-        // Расчет для нотариальной палаты
-        if (organLower.includes('нотариальная палата')) {
-            if (amount <= 50000) {
-                cost = 2500;
-            } else if (amount <= 200000) {
-                cost = 5000;
-            } else if (amount <= 500000) {
-                cost = 10000;
-            } else if (amount <= 1000000) {
-                cost = 20000;
-            } else if (amount <= 2000000) {
-                cost = 40000;
-            } else {
-                cost = 60000;
-            }
-        } else {
-            // Можно добавить логику для других органов, если нужно
-            // Например, базовая стоимость или другой расчет
-            // Пока оставим 0 для не-нотариальных
-            cost = 0; // Или установите базовую ставку для других случаев?
+        if (isAlimony || (isFine && isStateCreditor)) {
+            return { text: T.statusDocs, cls: 'status-neutral' };
         }
-
-        // Увеличение на 50% если орган - суд
-        if (organLower.includes('суд')) {
-            cost *= 1.5;
+        if (isNotarial) {
+            return { text: T.statusReview, cls: 'status-info' };
         }
-
-        return Math.round(cost);
+        return { text: T.statusAnalysis, cls: 'status-info' };
     }
 
     /**
-     * Проверка возможности отмены (теперь учитывает и статус, УГАДАННЫЙ по ipEndDate)
-     * @param {Object} debtorData - Данные производства (объект из массива rows API)
-     * @returns {boolean} - Можно ли отменить (на основе предположений)
+     * Проверка активности производства по ipEndDate (используется внутренне)
      */
     function canBeCancelled(debtorData) {
         if (!debtorData) return false;
@@ -461,8 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Object} data - Объект с результатами { debtors: [], restrictions: [] }
      */
     function displayResults(data) {
-        console.log("Displaying results for:", JSON.stringify(data, null, 2));
-        resetResults(); // Очищаем предыдущие результаты
+        resetResults();
 
         const { debtors, restrictions } = data; // debtors - это массив объектов rows из API
 
@@ -477,78 +451,62 @@ document.addEventListener('DOMContentLoaded', function() {
         const restrictionsSection = document.getElementById('restrictions-section');
 
         if (!debtorsTableBody || !restrictionsTableBody || !debtorsSection || !restrictionsSection) {
-            console.error(T.tableNotFound);
             showErrorMessage(T.interfaceError);
             return;
         }
 
-        debtorsTableBody.innerHTML = ''; // Очищаем тело таблицы должников
-        restrictionsTableBody.innerHTML = ''; // Очищаем тело таблицы ограничений
+        debtorsTableBody.innerHTML = '';
+        restrictionsTableBody.innerHTML = '';
 
-        // --- Отображение таблицы должников --- 
+        // --- Отображение таблицы должников ---
         if (debtors && debtors.length > 0) {
-            debtorsSection.style.display = 'block'; // Показываем секцию должников
-            debtors.forEach((debtor, index) => { // debtor - это объект строки (row) из API
-                
-                // --- ИЗМЕНЕНО: Извлекаем данные напрямую из объекта debtor (row) ---
+            debtorsSection.style.display = 'block';
+            debtors.forEach((debtor, index) => {
                 const debtorNum = debtor.execProcNum || '-';
-                const debtorDate = formatDate(debtor.ipStartDate); // Используем дату начала ИП
-                const debtorAmountStr = debtor.recoveryAmount || '0'; // Сумма взыскания
+                const debtorDate = formatDate(debtor.ipStartDate);
+                const debtorAmountStr = debtor.recoveryAmount || '0';
                 const debtorAmount = parseFloat(String(debtorAmountStr).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
-                const authority = debtor.ilOrganRu || '-'; // Орган, выдавший ИД
-                // Собираем ФИО исполнителя
+                const authority = debtor.ilOrganRu || '-';
+
                 const executorSurname = debtor.officerSurname || '';
                 const executorName = debtor.officerName || '';
-                // officerSecondname может быть массивом или строкой, берем первый элемент если массив
                 const executorSecondnameRaw = debtor.officerSecondname;
                 let executorSecondname = '';
                 if (Array.isArray(executorSecondnameRaw) && executorSecondnameRaw.length > 0) {
-                    executorSecondname = executorSecondnameRaw[0] || ''; // Берем только ФИО
+                    executorSecondname = executorSecondnameRaw[0] || '';
                 } else if (typeof executorSecondnameRaw === 'string') {
                     executorSecondname = executorSecondnameRaw;
                 }
                 const executor = `${executorSurname} ${executorName} ${executorSecondname}`.trim() || '-';
-                const creditor = debtor.recovererTitle || '-'; // Взыскатель
-                // const statusText = debtor.???; // В API нет прямого статуса типа "На исполнении"
+                const creditor = debtor.recovererTitle || '-';
 
-                const csiCost = calculateServiceCost(debtorAmount, authority); // Расчет стоимости ЧСИ
-                
-                // --- ИЗМЕНЕНО: Форсируем статус "Можно отменить" для отображения и расчетов ---
-                const canCancel = true; // Всегда считаем, что отменить можно
-                // let actualCanCancel = canBeCancelled(debtor); // Можно сохранить реальную проверку для других целей, если нужно
-                const cancellationStatusText = T.canCancel; // Всегда этот текст
-                // Используем authority (ilOrganRu) для расчета нашей услуги
-                // Передаем canCancel (который всегда true) как индикатор статуса
-                const ourServiceCost = calculateOurServiceCost(debtorAmount, authority, canCancel); 
-                const potentialSavings = canCancel ? csiCost : 0; // Рассчитываем экономию
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+                const { text: statusText, cls: statusCls } = getStatusRecommendation(debtor);
+
+                const waText = `${T.waPrefix}\n${T.labels.debtorNum}: ${debtorNum}\n${T.labels.creditor}: ${creditor}`;
+                const waUrl = `https://wa.me/77000300024?text=${encodeURIComponent(waText)}`;
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td data-label="${T.labels.debtorNum}">${debtorNum}</td>
                     <td data-label="${T.labels.date}">${debtorDate}</td>
                     <td data-label="${T.labels.amount}">${formatAmount(debtorAmount)}</td>
-                    <td data-label="${T.labels.csiCost}">${formatAmount(csiCost)}</td>
-                    <td data-label="${T.labels.cancelCost}">${ourServiceCost > 0 ? formatAmount(ourServiceCost) : '0 ₸'}</td> 
-                    <td data-label="${T.labels.savings}">${potentialSavings > 0 ? formatAmount(potentialSavings) : '0 ₸'}</td>
                     <td data-label="${T.labels.creditor}">${creditor}</td>
                     <td data-label="${T.labels.organ}">${authority}</td>
                     <td data-label="${T.labels.executor}">${executor}</td>
-                    <!-- ИЗМЕНЕНО: Всегда зеленый статус -->
-                    <td data-label="${T.labels.status}"><span class="status status-success">${cancellationStatusText}</span></td>
-                    <td data-label="${T.details}">
-                        <button 
-                            class="btn btn-sm btn-info view-details-btn" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#debtorDetailsModal" 
+                    <td data-label="${T.labels.status}"><span class="status ${statusCls}">${statusText}</span></td>
+                    <td data-label="${T.labels.action}" class="td-actions">
+                        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-resolve">${T.btnResolve}</a>
+                        <button
+                            class="btn btn-sm view-details-btn"
+                            data-bs-toggle="modal"
+                            data-bs-target="#debtorDetailsModal"
                             data-debtor-index="${index}">
-                            Подробнее
+                            ${T.details}
                         </button>
                     </td>
                 `;
                 debtorsTableBody.appendChild(row);
             });
-            addTableDataLabels(); // Добавляем data-label для адаптивности
         } else {
             debtorsSection.style.display = 'none';
         }
@@ -624,12 +582,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Отображение сообщения об ошибке
+     * Отображение сообщения об ошибке с CTA в WhatsApp
      */
     function showErrorMessage(message) {
-        // Более подробное сообщение по умолчанию
-        const defaultError = T.genericErrorLong;
-        errorText.textContent = message || defaultError;
+        const msg = message || T.genericErrorLong;
+        const waUrl = `https://wa.me/77000300024?text=${encodeURIComponent(T.waPrefix)}`;
+        errorMessage.innerHTML = `
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Ошибка:</strong> <span>${msg}</span>
+            <div class="mt-3">
+                <a href="${waUrl}" target="_blank" rel="noopener" class="btn-wa-error">
+                    <i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp
+                </a>
+            </div>`;
         errorMessage.classList.remove('d-none');
     }
 
@@ -673,10 +638,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Переключение индикатора загрузки
      */
     function toggleLoading(isLoading, message = T.loading) {
-        if (!loadingContainer || !loadingMessage || !progressBar || !searchButton) {
-            console.error('Не найдены элементы индикатора загрузки');
-            return;
-        }
+        if (!loadingContainer || !loadingMessage || !progressBar || !searchButton) return;
 
         const messageSpan = loadingMessage.querySelector('span');
         
@@ -769,18 +731,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const debtorDetailsModalElement = document.getElementById('debtorDetailsModal');
 
     if (resultsContainer && debtorDetailsContent && debtorDetailsModalElement) {
-        // Используем делегирование событий для обработки кликов на кнопках
         resultsContainer.addEventListener('click', function(event) {
-            // Находим ближайшую кнопку с классом view-details-btn
             const button = event.target.closest('.view-details-btn');
             
             if (button) {
                 const debtorIndex = button.getAttribute('data-debtor-index');
                 
-                // Проверяем наличие данных и индекса
                 if (window.currentDebtorsData && window.currentDebtorsData[debtorIndex]) {
-                    const debtor = window.currentDebtorsData[debtorIndex]; // debtor - это объект row из API
-                    console.log("Loading details for debtor index:", debtorIndex, JSON.stringify(debtor, null, 2)); // Debug
+                    const debtor = window.currentDebtorsData[debtorIndex];
 
                     // Формируем HTML для деталей (используем dl для лучшей структуры)
                     let detailsHtml = '';
@@ -871,13 +829,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     debtorDetailsContent.innerHTML = detailsHtml;
 
                 } else {
-                    console.error('Не удалось найти данные для должника с индексом:', debtorIndex);
-                    debtorDetailsContent.innerHTML = '<p class="text-danger">Ошибка: Не удалось загрузить детали.</p>';
+                    debtorDetailsContent.innerHTML = `<p class="text-danger">${T.detailsLoadError}</p>`;
                 }
             }
         });
-    } else {
-        console.error('Не найдены элементы resultsContainer, debtorDetailsContent или debtorDetailsModalElement');
     }
     
     // ---- КОНЕЦ КОДА МОДАЛЬНОГО ОКНА ----

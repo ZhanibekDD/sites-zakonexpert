@@ -72,9 +72,35 @@
 .status {
     display: inline-flex; align-items: center; justify-content: center; min-height: 34px;
     padding: 0 14px; border-radius: 999px; font-weight: 800; font-size: 0.82rem; letter-spacing: 0.01em;
+    white-space: nowrap;
 }
 .status-success { background: rgba(42, 144, 92, 0.12); color: #157347; }
 .status-danger { background: rgba(220, 53, 69, 0.14); color: #b02a37; }
+.status-info { background: rgba(31, 108, 174, 0.1); color: var(--sky-800); }
+.status-neutral { background: rgba(16, 32, 51, 0.07); color: var(--ink-700); }
+
+/* Кнопка "Разобрать" — WhatsApp CTA в таблице */
+.btn-resolve {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 38px;
+    padding: 0 14px; border-radius: 999px; font-weight: 800; font-size: 0.84rem;
+    background: linear-gradient(135deg, #25D366, #1da851); color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+}
+.btn-resolve:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(37, 211, 102, 0.38); color: #fff; }
+
+/* Кнопка WhatsApp в блоке ошибки */
+.btn-wa-error {
+    display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px;
+    border-radius: 999px; font-weight: 800; font-size: 0.92rem;
+    background: linear-gradient(135deg, #25D366, #1da851); color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28); text-decoration: none;
+}
+.btn-wa-error:hover { color: #fff; transform: translateY(-1px); }
+
+/* Ячейка действий в таблице */
+.td-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
 #debtorDetailsModal .modal-content {
     border: 0; border-radius: 28px; overflow: hidden; box-shadow: 0 28px 64px rgba(12, 38, 63, 0.26);
