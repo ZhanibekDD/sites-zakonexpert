@@ -212,6 +212,116 @@ function generateWhenToSeekHelp(title, description, fullText) {
   return 'Обратитесь за анализом, если вы узнали себя в описанной ситуации — проверьте наличие исполнительных производств по своему ИИН. Большинство арестов выявляются именно так, ещё до того как деньги списаны.';
 }
 
+/**
+ * Transform news title into a legal-angle SEO headline unique to ZakonExpert.
+ * Never copies the original title verbatim.
+ */
+function generateLegalTitle(title, description) {
+  const text = (title + ' ' + (description || '')).toLowerCase();
+
+  if (text.includes('мошенни') || text.includes('серых') || text.includes('сомнительн') || text.includes('нелегальн')) {
+    return 'Займ у серого кредитора — что грозит вашим счетам и как проверить долг';
+  }
+  if (text.includes('стоп-кредит') || text.includes('stop kredit') || text.includes('stop-kredit')) {
+    return 'Сервис «Стоп-кредит» в Казахстане: как защититься от мошеннических займов и арестов';
+  }
+  if (text.includes('лицензир') && text.includes('банк')) {
+    return 'Лицензирование банков в Казахстане: что изменилось для должников и заёмщиков';
+  }
+  if (text.includes('арест счет') || text.includes('заблокировал') || text.includes('арест карт')) {
+    const bank = text.includes('kaspi') ? 'Kaspi' : text.includes('halyk') ? 'Halyk' : text.includes('freedom') ? 'Freedom' : 'банк';
+    return `Арест счёта в ${bank}: почему заблокировали и как снять ограничение`;
+  }
+  if (text.includes('исполнительн надпис') || text.includes('нотариус')) {
+    return 'Исполнительная надпись нотариуса в Казахстане: когда можно оспорить и снять арест';
+  }
+  if ((text.includes('штраф') && (text.includes('водител') || text.includes('пдд') || text.includes('дорог'))) || text.includes('штраф') && text.includes('нов')) {
+    return 'Новые штрафы в Казахстане: что делать, если долг по штрафу попал к ЧСИ';
+  }
+  if (text.includes('штраф') || text.includes('административ')) {
+    return 'Административный штраф у ЧСИ в Казахстане: как снять арест счёта после оплаты';
+  }
+  if (text.includes('доллар') || text.includes('инфляци') || text.includes('курс') || text.includes('тенге')) {
+    return 'Рост курса доллара в Казахстане: как инфляция влияет на долги и аресты счетов';
+  }
+  if (text.includes('кредит') && (text.includes('мфо') || text.includes('микро'))) {
+    return 'МФО и кредитные долги в Казахстане: когда банк подаёт на исполнительную надпись';
+  }
+  if (text.includes('кредит') || text.includes('займ') || text.includes('задолженность')) {
+    return 'Долг по кредиту в Казахстане: что делать, если банк передал дело в ЧСИ';
+  }
+  if (text.includes('банк') && (text.includes('лицензи') || text.includes('измен') || text.includes('регулир'))) {
+    return 'Изменения в банковской сфере Казахстана: что важно знать должнику';
+  }
+  if (text.includes('банк')) {
+    return 'Банки и должники в Казахстане: актуальная ситуация и права заёмщиков';
+  }
+  if (text.includes('имуществ') || text.includes('недвижим')) {
+    return 'Арест имущества в Казахстане: как снять ограничение и запрет на продажу';
+  }
+  if (text.includes('авто') || text.includes('транспорт')) {
+    return 'Запрет на авто в Казахстане: как снять ограничение от ЧСИ на регистрационные действия';
+  }
+  if (text.includes('алимент')) {
+    return 'Долг по алиментам в Казахстане: что делать, если ЧСИ арестовал счёт';
+  }
+  if (text.includes('самоуправлен') || text.includes('бюджет') || text.includes('финансиров')) {
+    return 'Финансирование и долги в Казахстане: как бюджетные изменения влияют на взыскание';
+  }
+  // generic fallback — add legal angle to original title
+  return title.substring(0, 70) + ' — разбор для должников';
+}
+
+/**
+ * Generate unique article content based on news summary.
+ * Does NOT copy original article. Creates our own legal analysis piece.
+ */
+function generateUniqueContent(originalTitle, rssDescription, scrapedSummary) {
+  const text = (originalTitle + ' ' + (rssDescription || '')).toLowerCase();
+  const intro = rssDescription ? rssDescription.substring(0, 300).trim() : '';
+
+  let sections = [];
+
+  // Opening: news context (short, attributed)
+  sections.push(`Поводом для этого материала послужила публикация в казахстанских СМИ о следующем: ${intro || originalTitle}. Ниже — разбор того, что это означает для людей с долгами и арестами счетов.`);
+
+  // Middle: legal analysis based on topic
+  if (text.includes('мошенни') || text.includes('серых') || text.includes('сомнительн')) {
+    sections.push('Займы у нелегальных или сомнительных кредиторов — особая зона риска. Такие кредиторы нередко оформляют задолженность через нотариуса в виде исполнительной надписи. При этом условия договора, проценты и комиссии могут быть оформлены с нарушениями. Главный вопрос — бесспорен ли долг? Если нет — есть основания для правового анализа и, при наличии оснований, для возражения на исполнительную надпись.');
+    sections.push('Исполнительная надпись применяется только по бесспорным требованиям (ст. 92-1 Закона РК «О нотариате»). Если должник не согласен с суммой, условиями или самим фактом долга — требование уже содержит признаки спорного. В таком случае у должника есть 10 рабочих дней с момента получения уведомления для подачи возражения нотариусу.');
+    sections.push('Важно понимать: возражение не означает автоматическую отмену исполнительной надписи. Нотариус рассматривает возражение и, если видит признаки спорности, выносит постановление об отмене в течение 3 рабочих дней. После этого взыскатель может защищать свою позицию только в судебном порядке — уже с полноценным рассмотрением доказательств.');
+  } else if (text.includes('стоп-кредит') || text.includes('стоп кредит')) {
+    sections.push('Сервис «Стоп-кредит» позволяет гражданам Казахстана запретить выдачу займов на своё имя — это защита от мошеннических кредитов. Однако важно понимать: если мошеннический кредит уже был выдан и по нему вынесена исполнительная надпись или возбуждено исполнительное производство — одного подключения к «Стоп-кредит» недостаточно.');
+    sections.push('В случае если арест счёта наложен по долгу, который вы не брали, необходимо: 1) установить номер исполнительного производства; 2) выяснить, на основании какого документа (исполнительная надпись или решение суда); 3) собрать доказательства того, что договор подписан не вами; 4) подать заявление о мошенничестве в правоохранительные органы; 5) одновременно начать процедуру оспаривания исполнительного документа.');
+    sections.push('Сам факт мошенничества — если подтверждён документально — является основанием для оспаривания долга. Но процедура зависит от типа документа: исполнительная надпись оспаривается через нотариуса или суд, судебное решение — через апелляцию или заявление об отмене в порядке ГПК РК.');
+  } else if (text.includes('доллар') || text.includes('инфляци') || text.includes('курс') || text.includes('тенге')) {
+    sections.push('Рост курса доллара и инфляция в Казахстане прямо влияют на должников. Долги, номинированные в тенге, в реальном выражении могут меняться, но исполнительные производства и суммы взыскания фиксируются в тенге по документам. При этом банки и МФО иногда начисляют дополнительные проценты и комиссии в период просрочки — суммы могут существенно расти.');
+    sections.push('Если вы видите, что сумма взыскания значительно превышает сумму основного долга — стоит запросить у ЧСИ или нотариуса подробный расчёт. Проценты, неустойки, комиссии банка и расходы ЧСИ — всё это должно быть прозрачно указано. При наличии ошибок в расчёте или завышенных сумм возможно оспаривание.');
+    sections.push('Особенно внимательно нужно проверять расходы ЧСИ — оплату деятельности частного судебного исполнителя. Эти суммы регулируются законодательством и не должны быть произвольными. Если расходы завышены или произведённые действия не соответствуют реальным — это повод для оспаривания постановления ЧСИ.');
+  } else if (text.includes('штраф') && (text.includes('водител') || text.includes('новые штрафы'))) {
+    sections.push('Новые штрафы для водителей — это административные санкции, которые, при неоплате, передаются на исполнение ЧСИ. В отличие от долгов по кредитам, административные штрафы не отменяются через возражение нотариусу — это отдельная правовая процедура.');
+    sections.push('Если штраф уже передан ЧСИ и на счёт наложен арест, важно понять: оплачен ли штраф ранее (нередко бывает, что оплата была, но информация не дошла до ЧСИ); не пропущен ли срок обжалования постановления (10 суток по КоАП РК); нет ли ошибок в передаче штрафа на исполнение.');
+    sections.push('После полной оплаты штрафа ЧСИ обязан прекратить производство и снять арест. Если этого не происходит — можно подать жалобу на действия ЧСИ. Мы помогаем разобраться в ситуации и убедиться, что снятие ареста произошло корректно и своевременно.');
+  } else if (text.includes('лицензир') && text.includes('банк')) {
+    sections.push('Изменения в системе лицензирования банков влияют на правила выдачи кредитов, требования к договорам и процедуры взыскания. Для должников это важно: если кредитор работал с нарушениями требований регулятора — это может быть аргументом при оспаривании условий договора или расчёта задолженности.');
+    sections.push('Исполнительная надпись нотариуса совершается на основании договора. Если договор заключён с организацией, у которой не было соответствующей лицензии или полномочий, — это ставит под сомнение правомерность самого обязательства. Такие обстоятельства требуют правового анализа документов.');
+    sections.push('Практика показывает: многие должники не знают, с кем именно заключили договор — с банком, МФО, коллектором или иной организацией. Уточнение правового статуса взыскателя — первый шаг при работе с долгом.');
+  } else if (text.includes('кредит') || text.includes('займ') || text.includes('задолженность')) {
+    sections.push('Задолженность по кредиту или займу — самая распространённая причина арестов счетов в Казахстане. Банки и МФО используют два основных пути взыскания: исполнительная надпись нотариуса (внесудебный путь) или обращение в суд. От типа документа зависит, какой инструмент защиты доступен должнику.');
+    sections.push('При исполнительной надписи — ключевой вопрос бесспорность требования. Долг является бесспорным, если: есть договор, должник был надлежаще уведомлён, сумма понятна и не оспаривается, срок платежа наступил, требование входит в перечень для исполнительной надписи. Если хотя бы один из этих элементов вызывает сомнение — есть основания для анализа.');
+    sections.push('При судебном взыскании — нужно смотреть на тип производства (упрощённое письменное или исковое), был ли ответчик надлежаще извещён, вступило ли решение в силу. Если должник не знал о суде — в ряде случаев можно поставить вопрос об отмене решения или восстановлении срока на обжалование.');
+  } else {
+    sections.push('Финансовая ситуация в Казахстане напрямую влияет на долговую нагрузку граждан. Изменения в банковской системе, рост инфляции, новые регуляторные решения — всё это меняет условия, при которых банки и МФО взыскивают долги. Должнику важно понимать не только сумму долга, но и механизм взыскания.');
+    sections.push('Большинство арестов счетов в Казахстане происходит на основании исполнительной надписи нотариуса или решения суда, переданных ЧСИ. Проверить наличие исполнительных производств можно по ИИН на портале egov.kz. Если производство есть — важно сразу установить: кто взыскатель, какой документ лежит в основе, какова сумма и расходы ЧСИ.');
+    sections.push('Законодательство Казахстана предоставляет должнику ряд инструментов защиты — возражение на исполнительную надпись, оспаривание решения суда, жалоба на действия ЧСИ, заявление о рассрочке исполнения. Выбор инструмента зависит от конкретной ситуации, документов и сроков.');
+  }
+
+  // Closing
+  sections.push('Если вы читаете эту публикацию и узнаёте себя в описанной ситуации — первый шаг прост: проверьте наличие исполнительных производств по своему ИИН. Мы поможем установить основание ареста, определить правовую позицию и принять меры в рамках закона.');
+
+  return sections.join('\n\n');
+}
+
 async function fetchSource(source) {
   if (!source.rss_url || !source.enabled) return 0;
 
@@ -236,45 +346,49 @@ async function fetchSource(source) {
     const rssDescription = (item.contentSnippet || item.content || item.summary || '').replace(/<[^>]+>/g, '').trim().substring(0, 600);
     if (!isRelevant(title, rssDescription, source.keywords || [])) continue;
 
-    // --- Fetch full article content ---
-    console.log(`[NewsImporter] Fetching full content: ${originalUrl}`);
+    // --- Fetch og:image from article page ---
+    console.log(`[NewsImporter] Fetching: ${originalUrl}`);
     const { fullText, ogImage: scrapedImage } = await fetchFullContent(originalUrl, source.content_selectors || []);
     await new Promise(r => setTimeout(r, 800)); // polite delay
-
-    // Use scraped content or fall back to RSS description
-    const articleContent = fullText && fullText.length > 200 ? fullText : rssDescription;
-
-    // Extract first paragraph as excerpt
-    const firstParagraph = articleContent.split('\n\n')[0] || rssDescription;
-    const excerpt = firstParagraph.substring(0, 350).trim();
 
     const rssImage = extractImageFromRss(item);
     const imageUrl = rssImage || scrapedImage || null;
 
-    const relevanceScore = calcRelevance(title, articleContent);
-    const tags = detectTags(title, articleContent);
-    const legalCommentary = generateLegalCommentary(title, rssDescription, fullText);
-    const whyImportant = generateWhyImportant(title, rssDescription, fullText);
-    const whenToSeekHelp = generateWhenToSeekHelp(title, rssDescription, fullText);
+    // Use RSS description + scraped first sentences as news summary (NOT full copy)
+    const scrapedSummary = fullText ? fullText.split('\n\n').slice(0, 3).join('\n\n').substring(0, 600) : '';
+    const newsSummary = rssDescription || scrapedSummary;
+
+    const relevanceScore = calcRelevance(title, newsSummary + ' ' + (scrapedSummary || ''));
+    const tags = detectTags(title, newsSummary + ' ' + (scrapedSummary || ''));
+
+    // Generate UNIQUE legal-angle content (our own article, not a copy)
+    const uniqueTitle = generateLegalTitle(title, newsSummary);
+    const uniqueContent = generateUniqueContent(title, newsSummary, scrapedSummary);
+    const legalCommentary = generateLegalCommentary(title, newsSummary, scrapedSummary);
+    const whyImportant = generateWhyImportant(title, newsSummary, scrapedSummary);
+    const whenToSeekHelp = generateWhenToSeekHelp(title, newsSummary, scrapedSummary);
+
+    const excerpt = newsSummary.substring(0, 280).trim();
     const status = relevanceScore >= 0.25 ? 'published' : 'draft';
 
     // Generate stable slug from URL hash so re-import doesn't change slugs
     const urlHash = originalUrl.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-    const slug = makeSlug(title, Math.abs(urlHash));
+    const slug = makeSlug(uniqueTitle, Math.abs(urlHash));
     const publishedAt = item.pubDate ? new Date(item.pubDate).toISOString() : now;
     const metaTitle = title.substring(0, 65) + ' | ZakonExpert';
     const metaDesc = excerpt.substring(0, 155) || `Разбор новости: ${title.substring(0, 100)}`;
     const canonicalUrl = `https://zakonexpertt.kz/news/${slug}`;
 
     const article = {
-      title,
+      title: uniqueTitle,           // SEO-transformed title
+      original_title: title,        // original source title
       slug,
       source_name: source.name,
       source_url: source.base_url,
       original_url: originalUrl,
       excerpt,
-      full_content: articleContent,
-      ai_summary: rssDescription.substring(0, 500),
+      full_content: uniqueContent,  // our own unique content
+      ai_summary: newsSummary.substring(0, 500),
       legal_commentary: legalCommentary,
       why_important: whyImportant,
       when_to_seek_help: whenToSeekHelp,
@@ -284,7 +398,7 @@ async function fetchSource(source) {
       relevance_score: relevanceScore,
       published_at_source: publishedAt,
       published_at_site: status === 'published' ? now : null,
-      meta_title: metaTitle,
+      meta_title: uniqueTitle.substring(0, 65) + ' | ZakonExpert',
       meta_description: metaDesc,
       og_image: imageUrl,
       image_url: imageUrl,
@@ -295,7 +409,7 @@ async function fetchSource(source) {
     const result = await db.insertNews(article);
     if (result.changes > 0) {
       imported++;
-      console.log(`[NewsImporter] Saved: "${title.substring(0, 60)}" (${articleContent.length} chars)`);
+      console.log(`[NewsImporter] Saved: "${uniqueTitle.substring(0, 60)}" (${uniqueContent.length} chars)`);
     }
   }
 
