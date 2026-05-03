@@ -1,9 +1,11 @@
 /**
  * ZakonExpert — Database Module (NeDB — pure JavaScript)
  */
+'use strict';
+
 const Datastore = require('nedb-promises');
-const path = require('path');
-const fs = require('fs');
+const path      = require('path');
+const fs        = require('fs');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -13,11 +15,12 @@ const news = Datastore.create({
   autoload: true,
 });
 
-// Setup indexes on startup
+// Indexes
 news.ensureIndex({ fieldName: 'original_url', unique: true, sparse: true }).catch(() => {});
-news.ensureIndex({ fieldName: 'slug', unique: true }).catch(() => {});
+news.ensureIndex({ fieldName: 'slug',         unique: true               }).catch(() => {});
 
 module.exports = {
+
   async insertNews(article) {
     try {
       await news.insert(article);
@@ -34,26 +37,9 @@ module.exports = {
   },
 
   async existsByGeneratedTitle(title) {
-    // Dedup: check if we already have an article with the same generated title
-    const normalized = title.toLowerCase().trim().substring(0, 60);
-    const all = await news.find({});
-    return all.some(a => a.title && a.title.toLowerCase().trim().substring(0, 60) === normalized);
-  },
-
-  async removeIrrelevant() {
-    // Delete draft articles and known irrelevant topics
-    const irrelevantPatterns = ['гороскоп', 'отпуск', 'туризм', 'рецепт', 'погода', 'кино', 'спорт'];
-    const all = await news.find({});
-    let removed = 0;
-    for (const doc of all) {
-      const titleLower = (doc.title || '').toLowerCase();
-      const isIrrelevant = irrelevantPatterns.some(p => titleLower.includes(p));
-      if (isIrrelevant || doc.status === 'draft') {
-        await news.remove({ _id: doc._id }, {});
-        removed++;
-      }
-    }
-    return removed;
+    const norm = title.toLowerCase().trim().substring(0, 60);
+    const all  = await news.find({});
+    return all.some(a => a.title && a.title.toLowerCase().trim().substring(0, 60) === norm);
   },
 
   async getPublished(limit = 20, offset = 0) {
@@ -91,15 +77,60 @@ module.exports = {
     const docs = await news.find({ status: 'published' });
     docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
     return docs.slice(0, limit).map(a => ({
-      title: a.title, slug: a.slug, source_name: a.source_name,
-      category: a.category, excerpt: a.excerpt,
-      published_at_site: a.published_at_site, og_image: a.og_image
+      title:            a.title,
+      slug:             a.slug,
+      source_name:      a.source_name,
+      category:         a.category,
+      excerpt:          a.excerpt,
+      category_cover:   a.category_cover,
+      og_image:         a.og_image,
+      published_at_site: a.published_at_site,
+      tags:             a.tags,
     }));
   },
 
   async getAllForSitemap() {
     const docs = await news.find({ status: 'published' });
     docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
-    return docs.map(a => ({ slug: a.slug, published_at_site: a.published_at_site, updatedAt: a.updatedAt }));
+    return docs.map(a => ({
+      slug:             a.slug,
+      published_at_site: a.published_at_site,
+      updatedAt:        a.updatedAt,
+    }));
+  },
+
+  async getStats() {
+    const [published, drafts, rejected, all] = await Promise.all([
+      news.count({ status: 'published' }),
+      news.count({ status: 'draft' }),
+      news.count({ status: 'rejected' }),
+      news.count({}),
+    ]);
+    return { published, drafts, rejected, total: all };
+  },
+
+  /** Remove draft/rejected articles and those with obviously irrelevant titles */
+  async removeIrrelevant() {
+    const irrelevantPatterns = [
+      'гороскоп', 'отпуск', 'туризм', 'рецепт', 'погода',
+      'кино', 'спорт', 'убийств', 'убит', 'нашли тело',
+      'нефть', 'опек', 'наркот',
+    ];
+    const all = await news.find({});
+    let removed = 0;
+    for (const doc of all) {
+      const titleLower = (doc.title || '').toLowerCase();
+      const isIrrelevant = irrelevantPatterns.some(p => titleLower.includes(p));
+      // Remove rejected articles and drafts older than 7 days
+      const isOldDraft = doc.status === 'draft'
+        && doc.imported_at
+        && (Date.now() - new Date(doc.imported_at).getTime()) > 7 * 24 * 3600 * 1000;
+
+      if (isIrrelevant || doc.status === 'rejected' || isOldDraft) {
+        await news.remove({ _id: doc._id }, {});
+        removed++;
+      }
+    }
+    return removed;
   },
 };

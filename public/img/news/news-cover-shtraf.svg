@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e2a47"/>
+      <stop offset="100%" style="stop-color:#1a2e4a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d7a742"/>
+      <stop offset="100%" style="stop-color:#f0c060"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#bg)"/>
+  <circle cx="160" cy="300" r="130" fill="rgba(215,167,66,0.05)"/>
+  <!-- Receipt icon -->
+  <g transform="translate(275,65)">
+    <path d="M30 20 L210 20 L210 250 L180 230 L150 250 L120 230 L90 250 L60 230 L30 250 Z" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+    <line x1="60" y1="70" x2="180" y2="70" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+    <line x1="60" y1="100" x2="180" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+    <line x1="60" y1="130" x2="140" y2="130" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+    <text x="120" y="185" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="url(#gold)" text-anchor="middle">¸</text>
+  </g>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">(B@0DK 8 '!</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <rect x="340" y="362" width="120" height="3" rx="2" fill="url(#gold)"/>
+</svg>

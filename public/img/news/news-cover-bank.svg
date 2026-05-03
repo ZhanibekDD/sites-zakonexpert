@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e2a47"/>
+      <stop offset="100%" style="stop-color:#1a3f6f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d7a742"/>
+      <stop offset="100%" style="stop-color:#f0c060"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#bg)"/>
+  <circle cx="650" cy="80" r="180" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="150" cy="350" r="120" fill="rgba(215,167,66,0.06)"/>
+  <!-- Bank icon -->
+  <g transform="translate(280,100)">
+    <rect x="20" y="80" width="200" height="130" rx="6" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <polygon points="120,20 20,80 220,80" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <rect x="50" y="105" width="30" height="80" fill="rgba(215,167,66,0.3)"/>
+    <rect x="105" y="105" width="30" height="80" fill="rgba(215,167,66,0.3)"/>
+    <rect x="160" y="105" width="30" height="80" fill="rgba(215,167,66,0.3)"/>
+    <rect x="20" y="185" width="200" height="10" rx="2" fill="url(#gold)"/>
+    <line x1="0" y1="210" x2="240" y2="210" stroke="url(#gold)" stroke-width="2" opacity="0.6"/>
+  </g>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">0=:8 8 4>;6=8:8</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <rect x="340" y="362" width="120" height="3" rx="2" fill="url(#gold)"/>
+</svg>

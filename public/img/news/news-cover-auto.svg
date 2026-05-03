@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e2a47"/>
+      <stop offset="100%" style="stop-color:#0c1f36"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d7a742"/>
+      <stop offset="100%" style="stop-color:#f0c060"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#bg)"/>
+  <circle cx="650" cy="350" r="150" fill="rgba(215,167,66,0.05)"/>
+  <!-- Car with lock icon -->
+  <g transform="translate(240,100)">
+    <!-- Car body -->
+    <path d="M20 160 L50 100 L270 100 L300 160 Z" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+    <path d="M80 100 L100 60 L220 60 L250 100" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+    <rect x="10" y="155" width="300" height="50" rx="8" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+    <circle cx="70" cy="210" r="25" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <circle cx="70" cy="210" r="15" fill="rgba(215,167,66,0.2)"/>
+    <circle cx="250" cy="210" r="25" fill="none" stroke="url(#gold)" stroke-width="3"/>
+    <circle cx="250" cy="210" r="15" fill="rgba(215,167,66,0.2)"/>
+    <!-- Lock overlay -->
+    <rect x="135" y="90" width="50" height="40" rx="6" fill="rgba(215,167,66,0.3)" stroke="url(#gold)" stroke-width="2"/>
+    <path d="M145 90 Q145 70 160 70 Q175 70 175 90" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <circle cx="160" cy="108" r="5" fill="url(#gold)"/>
+    <line x1="160" y1="113" x2="160" y2="120" stroke="url(#gold)" stroke-width="2"/>
+  </g>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">0?@5B =0 02B> 8 8<CI5AB2></text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <rect x="310" y="362" width="180" height="3" rx="2" fill="url(#gold)"/>
+</svg>

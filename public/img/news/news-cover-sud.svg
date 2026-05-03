@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0e2a47"/>
+      <stop offset="100%" style="stop-color:#0a1e33"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d7a742"/>
+      <stop offset="100%" style="stop-color:#f0c060"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="420" fill="url(#bg)"/>
+  <!-- Scales of justice -->
+  <g transform="translate(270,60)">
+    <line x1="120" y1="40" x2="120" y2="230" stroke="url(#gold)" stroke-width="3"/>
+    <line x1="40" y1="80" x2="200" y2="80" stroke="url(#gold)" stroke-width="3"/>
+    <line x1="40" y1="80" x2="40" y2="140" stroke="rgba(215,167,66,0.7)" stroke-width="2"/>
+    <line x1="200" y1="80" x2="200" y2="140" stroke="rgba(215,167,66,0.7)" stroke-width="2"/>
+    <path d="M10 140 Q40 160 70 140" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <path d="M170 140 Q200 160 230 140" fill="none" stroke="url(#gold)" stroke-width="2.5"/>
+    <path d="M10 140 Q40 120 70 140" fill="rgba(215,167,66,0.15)"/>
+    <path d="M170 140 Q200 120 230 140" fill="rgba(215,167,66,0.08)"/>
+    <rect x="100" y="228" width="40" height="12" rx="2" fill="url(#gold)"/>
+    <rect x="80" y="238" width="80" height="6" rx="2" fill="rgba(215,167,66,0.5)"/>
+    <!-- Crown atop -->
+    <polygon points="95,40 120,15 145,40" fill="url(#gold)"/>
+  </g>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">!C4 8 >160;>20=85 @5H5=89</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <rect x="330" y="362" width="140" height="3" rx="2" fill="url(#gold)"/>
+</svg>

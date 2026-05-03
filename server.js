@@ -496,15 +496,53 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   });
 }));
 
-// ADMIN: Manual import trigger
-app.post('/api/news/import', asyncHandler(async (req, res) => {
+// ADMIN KEY helper
+function checkAdminKey(req, res) {
   const adminKey = process.env.ADMIN_KEY;
-  if (adminKey && req.headers['x-admin-key'] !== adminKey) {
-    return res.status(403).json({ error: 'Forbidden' });
+  if (!adminKey) return true; // no key configured — open
+  const provided = req.headers['x-admin-key'] || req.query.key;
+  if (provided !== adminKey) {
+    res.status(403).json({ error: 'Forbidden — provide x-admin-key header or ?key= param' });
+    return false;
   }
+  return true;
+}
+
+// POST /api/news/import — manual trigger
+app.post('/api/news/import', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
   if (!newsImporter) return res.status(503).json({ error: 'News module not available' });
   const count = await newsImporter.importAll();
   res.json({ ok: true, imported: count });
+}));
+
+// GET /api/news/import?key=... — browser-friendly manual trigger
+app.get('/api/news/import', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!newsImporter) return res.status(503).json({ error: 'News module not available' });
+  const count = await newsImporter.importAll();
+  res.json({ ok: true, imported: count });
+}));
+
+// GET /api/news/status — show stats
+app.get('/api/news/status', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!newsDb) return res.status(503).json({ error: 'News DB not available' });
+  const stats    = await newsDb.getStats();
+  const importInfo = newsImporter ? newsImporter.getLastImportInfo() : {};
+  res.json({
+    ok: true,
+    ...stats,
+    sources: require('./config/news_sources.json').filter(s => s.enabled).length,
+    lastImportTime:  importInfo.lastImportTime  || null,
+    lastImportStats: importInfo.lastImportStats || null,
+    env: {
+      AUTO_PUBLISH_NEWS:    process.env.AUTO_PUBLISH_NEWS    || 'true',
+      NEWS_MIN_RELEVANCE:   process.env.NEWS_MIN_RELEVANCE   || '0.55',
+      NEWS_IMPORT_LIMIT:    process.env.NEWS_IMPORT_LIMIT    || '20',
+      NEWS_USE_SOURCE_IMAGES: process.env.NEWS_USE_SOURCE_IMAGES || 'false',
+    },
+  });
 }));
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====

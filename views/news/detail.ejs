@@ -1,48 +1,17 @@
 <%
-const tagsArr = JSON.parse(article.tags || '[]');
-const pubDate = article.published_at_site ? new Date(article.published_at_site) : new Date();
-const pubDateStr = pubDate.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
-
-// Format full content paragraphs into HTML
-function contentToHtml(text) {
-  if (!text) return '';
-  return text.split('\n\n')
-    .map(p => p.trim())
-    .filter(p => p.length > 30)
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('\n');
-}
-
-// Build checklist items based on tags
-const checkItems = [];
-if (tagsArr.includes('арест счета') || tagsArr.includes('банк') || tagsArr.includes('Kaspi') || tagsArr.includes('Halyk') || tagsArr.includes('Freedom')) {
-  checkItems.push('Проверьте наличие активных исполнительных производств по своему ИИН');
-  checkItems.push('Уточните в банке номер постановления ЧСИ и имя взыскателя');
-  checkItems.push('Проверьте, получали ли вы официальное уведомление нотариуса или ЧСИ');
-}
-if (tagsArr.includes('кредит') || tagsArr.includes('нотариус')) {
-  checkItems.push('Проверьте, есть ли исполнительная надпись нотариуса по вашему договору');
-  checkItems.push('Сверьте сумму задолженности с расчётом взыскателя — часто есть расхождения');
-  checkItems.push('Проверьте дату совершения надписи — 10 рабочих дней на возражение');
-}
-if (tagsArr.includes('ЧСИ')) {
-  checkItems.push('Запросите у ЧСИ полный расчёт суммы взыскания и расходов по производству');
-  checkItems.push('Проверьте соразмерность принятых мер сумме долга');
-}
-if (tagsArr.includes('авто')) {
-  checkItems.push('Проверьте наличие запрета регистрационных действий через базу МРЭО/электронное правительство');
-}
-if (checkItems.length === 0) {
-  checkItems.push('Проверьте наличие исполнительных производств по своему ИИН на egov.kz');
-  checkItems.push('Уточните, нет ли ограничений на счета, авто или имущество');
-  checkItems.push('Установите тип исполнительного документа — от этого зависит путь снятия');
-}
+const tagsArr   = JSON.parse(article.tags || '[]');
+const checkArr  = (() => { try { return JSON.parse(article.what_to_check || '[]'); } catch { return []; } })();
+const pubDate   = article.published_at_site ? new Date(article.published_at_site) : new Date();
+const pubDateStr = pubDate.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
+const coverImg  = article.og_image || article.category_cover || '/img/news/news-cover-default.svg';
 
 const body = `
 <section class="news-detail-hero">
   <div class="legal-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
-      <a href="/">Главная</a> / <a href="/news">Новости</a> / <span>${article.title.substring(0,55)}${article.title.length > 55 ? '…' : ''}</span>
+      <a href="/">Главная</a> /
+      <a href="/news">Новости</a> /
+      <span>${article.title.substring(0,60)}${article.title.length > 60 ? '…' : ''}</span>
     </nav>
   </div>
 </section>
@@ -51,66 +20,92 @@ const body = `
   <div class="legal-container">
     <div class="news-detail-layout">
 
-      <!-- MAIN ARTICLE -->
       <article class="news-detail-main" itemscope itemtype="https://schema.org/NewsArticle">
 
-        ${article.og_image ? `
-        <div class="news-detail-img">
-          <img src="${article.og_image}" alt="${article.title}" loading="lazy" itemprop="image" onerror="this.parentElement.style.display='none'">
-        </div>` : ''}
+        <!-- COVER IMAGE -->
+        <div class="news-detail-cover">
+          <img src="${coverImg}" alt="${article.title}" loading="lazy"
+               itemprop="image"
+               onerror="this.src='/img/news/news-cover-default.svg'">
+        </div>
 
+        <!-- META -->
         <div class="news-detail-meta">
-          <span class="news-source-badge"><i class="bi bi-newspaper"></i> ${article.source_name || 'Источник'}</span>
+          <span class="news-source-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2z"/><path d="M2 6h6"/></svg>
+            ${article.source_name || 'Источник'}
+          </span>
           <time class="news-date" datetime="${pubDate.toISOString()}" itemprop="datePublished">${pubDateStr}</time>
           ${tagsArr.slice(0,5).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
         </div>
 
+        <!-- H1 -->
         <h1 itemprop="headline">${article.title}</h1>
 
-        <!-- ПОЛНЫЙ ТЕКСТ СТАТЬИ -->
-        <div class="news-full-content" itemprop="articleBody">
-          ${article.full_content
-            ? contentToHtml(article.full_content)
-            : `<p>${article.excerpt || article.ai_summary || ''}</p>`
-          }
+        <!-- EXCERPT -->
+        ${article.excerpt ? `<p class="news-lead" itemprop="description">${article.excerpt}</p>` : ''}
+
+        <!-- 1. КОРОТКО О СОБЫТИИ -->
+        <div class="news-section-block">
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Коротко о событии
+          </h2>
+          <p>${article.event_summary || article.original_excerpt || article.excerpt || ''}</p>
           <p class="news-source-ref">
-            Источник: <a href="${article.original_url}" target="_blank" rel="noopener nofollow">${article.source_name}</a>
+            Источник: <a href="${article.original_url}" target="_blank" rel="nofollow noopener">${article.source_name || article.source_domain || 'СМИ'}</a>
           </p>
         </div>
 
         <hr class="news-divider">
 
-        <!-- ПОЧЕМУ ЭТО ВАЖНО ДЛЯ ДОЛЖНИКОВ -->
+        <!-- 2. ПОЧЕМУ ВАЖНО -->
         <div class="news-section-block">
-          <h2>Почему это важно для должников</h2>
-          <p>${article.why_important || 'Понимание актуальных событий в финансово-правовой сфере помогает своевременно защитить свои активы и счета от возможных арестов и ограничений.'}</p>
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Почему это важно для должников
+          </h2>
+          <p>${article.why_important || 'Понимание актуальных событий в финансово-правовой сфере помогает своевременно защитить свои счета, карты и имущество от арестов и ограничений.'}</p>
         </div>
 
-        <!-- ЮРИДИЧЕСКИЙ КОММЕНТАРИЙ -->
+        <!-- 3. ЮРИДИЧЕСКИЙ КОММЕНТАРИЙ -->
         <div class="news-section-block news-commentary">
           <div class="news-commentary-header">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <h2>Юридический комментарий ZakonExpert</h2>
           </div>
-          <p>${article.legal_commentary || 'Ситуации, связанные с арестами и ограничениями, требуют индивидуального анализа документов.'}</p>
+          <p>${article.legal_commentary || 'При любом аресте или ограничении важно: установить тип исполнительного документа, проверить основание взыскания и выбрать правильный правовой инструмент. Мы помогаем сделать это комплексно.'}</p>
         </div>
 
-        <!-- ЧТО ПРОВЕРИТЬ У СЕБЯ -->
+        <!-- 4. ЧТО ПРОВЕРИТЬ -->
         <div class="news-section-block">
-          <h2>Что проверить у себя прямо сейчас</h2>
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Что проверить у себя прямо сейчас
+          </h2>
           <ul class="news-checklist">
-            ${checkItems.map(i => `<li>${i}</li>`).join('')}
+            ${checkArr.length > 0
+              ? checkArr.map(i => `<li>${i}</li>`).join('')
+              : `<li>Проверьте наличие исполнительных производств по ИИН через egov.kz</li>
+                 <li>Уточните, нет ли ограничений на счета, авто или имущество</li>
+                 <li>Установите тип исполнительного документа — от него зависит путь снятия</li>`
+            }
           </ul>
           <a href="/#checker-section" class="news-inline-cta">Проверить по ИИН бесплатно →</a>
         </div>
 
-        <!-- КОГДА СТОИТ ОБРАТИТЬСЯ -->
+        <!-- 5. КОГДА ОБРАТИТЬСЯ -->
         <div class="news-section-block news-when-help">
-          <h2>Когда стоит обратиться за помощью</h2>
-          <p>${article.when_to_seek_help || 'Если вы видите себя в похожей ситуации — проверьте наличие исполнительных производств по своему ИИН. Раннее обнаружение позволяет принять меры до блокировки счетов.'}</p>
-          <div class="news-when-help-actions">
-            <a href="https://wa.me/77000300024?text=Читал+новость.+Хочу+проверить+свою+ситуацию." target="_blank" rel="noopener" class="btn-legal-cta">
-              <i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp
+          <h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Когда стоит обратиться за помощью
+          </h2>
+          <p>${article.when_to_seek_help || 'Если вы узнали себя в описанной ситуации — проверьте наличие исполнительных производств по ИИН. Большинство арестов выявляются именно так — до того как деньги списаны.'}</p>
+          <div class="news-cta-actions">
+            <a href="https://wa.me/77000300024?text=Читал+материал+на+ZakonExpert.+Хочу+проверить+свою+ситуацию."
+               target="_blank" rel="noopener" class="btn-legal-cta">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952C-.3 11.514.527 8.905 2.261 7.01 3.996 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
+              Написать в WhatsApp
             </a>
             <a href="/#checker-section" class="btn-legal-outline">Проверить по ИИН</a>
           </div>
@@ -122,19 +117,27 @@ const body = `
           <div class="news-service-grid">
             <a href="/snyatie-aresta-so-scheta" class="news-service-card">
               <span>Снятие ареста со счёта</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </a>
-            <a href="/arest-kaspi" class="news-service-card">
-              <span>Арест Kaspi</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/snyatie-ogranichenii-u-notariusa" class="news-service-card">
               <span>Исполнительная надпись</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="/snyatie-ogranichenii-chsi" class="news-service-card">
+              <span>ЧСИ и аресты</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/snyatie-zapreta-na-avto" class="news-service-card">
               <span>Запрет на авто</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="/ubrat-procenty-i-rashody-chsi" class="news-service-card">
+              <span>Расходы ЧСИ</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
+            <a href="/grafik-oplaty-zadolzhennosti" class="news-service-card">
+              <span>График платежей</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           </div>
         </div>
@@ -142,26 +145,34 @@ const body = `
         <!-- SHARE -->
         <div class="news-share">
           <span>Поделиться:</span>
-          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' — https://zakonexpertt.kz/news/' + article.slug)}" target="_blank" rel="noopener" class="news-share-btn news-share-wa"><i class="bi bi-whatsapp"></i> WhatsApp</a>
-          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(article.title)}" target="_blank" rel="noopener" class="news-share-btn news-share-tg"><i class="bi bi-telegram"></i> Telegram</a>
-          <button class="news-share-btn news-share-copy" onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'"><i class="bi bi-link-45deg"></i> Ссылка</button>
+          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' — https://zakonexpertt.kz/news/' + article.slug)}"
+             target="_blank" rel="noopener" class="news-share-btn news-share-wa">WhatsApp</a>
+          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(article.title)}"
+             target="_blank" rel="noopener" class="news-share-btn news-share-tg">Telegram</a>
+          <button class="news-share-btn news-share-copy"
+                  onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'">
+            Скопировать ссылку
+          </button>
         </div>
 
+        <!-- DISCLAIMER -->
         <div class="legal-disclaimer">
-          <strong>Важно:</strong> Данный материал носит информационный характер и не является юридической консультацией.
-          Для оценки вашей конкретной ситуации необходим анализ документов.
-          <a href="${article.original_url}" target="_blank" rel="noopener nofollow">Оригинал статьи на ${article.source_name} →</a>
+          <strong>Важно:</strong> Материал носит информационный характер и не является юридической консультацией.
+          Для оценки вашей ситуации необходим анализ документов.
+          Оригинальная публикация: <a href="${article.original_url}" target="_blank" rel="nofollow noopener">${article.source_name || 'источник'} →</a>
         </div>
 
       </article>
 
       <!-- SIDEBAR -->
       <aside class="news-detail-sidebar">
+
         <div class="news-cta-card">
           <h3>Есть арест или ограничение?</h3>
-          <p>Проверим по ИИН, установим основание и объясним шаги. Подаём документы сами.</p>
+          <p>Проверим по ИИН, установим основание и объясним правовой путь.</p>
           <a href="/#checker-section" class="btn-legal-cta d-block text-center mb-2">Проверить по ИИН</a>
-          <a href="https://wa.me/77000300024?text=Читал+новость.+Хочу+проверить+свою+ситуацию." target="_blank" rel="noopener" class="btn-legal-outline d-block text-center"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+          <a href="https://wa.me/77000300024?text=Читал+материал.+Хочу+разобрать+ситуацию."
+             target="_blank" rel="noopener" class="btn-legal-outline d-block text-center">WhatsApp</a>
         </div>
 
         ${related && related.length > 0 ? `
@@ -186,6 +197,16 @@ const body = `
             <a href="/grafik-oplaty-zadolzhennosti">График платежей</a>
           </div>
         </div>
+
+        <div class="news-laws-block">
+          <h3>Законы по теме</h3>
+          <a href="/zakony.html#ispolnitelnaya-nadpis">Исполнительная надпись</a>
+          <a href="/zakony.html#besspornost">Бесспорность долга</a>
+          <a href="/zakony.html#sud">Решение суда</a>
+          <a href="/zakony.html#alimenty">Алименты</a>
+          <a href="/zakony.html#shtrafy">Штрафы</a>
+        </div>
+
       </aside>
 
     </div>
@@ -193,4 +214,4 @@ const body = `
 </section>
 `;
 %>
-<%- include('layout', { title, description, canonical, ogType: 'article', ogImage: article.og_image, schema, body }) %>
+<%- include('layout', { title, description, canonical, ogType: 'article', ogImage: article.og_image || article.category_cover, schema, body }) %>

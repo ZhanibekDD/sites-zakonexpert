@@ -1,69 +1,145 @@
 <%
+const CATEGORIES = [
+  { slug: '',          label: 'Все' },
+  { slug: 'аресты',   label: 'Аресты счетов' },
+  { slug: 'finance',  label: 'Банки' },
+  { slug: 'chsi',     label: 'ЧСИ' },
+  { slug: 'notarius', label: 'Исп. надпись' },
+  { slug: 'sud',      label: 'Суд' },
+  { slug: 'alimenty', label: 'Алименты' },
+  { slug: 'shtrafy',  label: 'Штрафы' },
+  { slug: 'avto',     label: 'Авто и имущество' },
+  { slug: 'laws',     label: 'Законы' },
+];
+
+function getCoverForArticle(a) {
+  if (a.og_image) return a.og_image;
+  if (a.category_cover) return a.category_cover;
+  const tagsLower = (a.tags || '').toLowerCase();
+  if (tagsLower.includes('kaspi') || tagsLower.includes('halyk') || tagsLower.includes('freedom') || tagsLower.includes('банк')) return '/img/news/news-cover-bank.svg';
+  if (tagsLower.includes('чси')) return '/img/news/news-cover-chsi.svg';
+  if (tagsLower.includes('нотариус')) return '/img/news/news-cover-notarius.svg';
+  if (tagsLower.includes('суд')) return '/img/news/news-cover-sud.svg';
+  if (tagsLower.includes('штраф')) return '/img/news/news-cover-shtraf.svg';
+  if (tagsLower.includes('алимент')) return '/img/news/news-cover-alimenty.svg';
+  if (tagsLower.includes('авто')) return '/img/news/news-cover-auto.svg';
+  if (a.category === 'laws') return '/img/news/news-cover-notarius.svg';
+  if (a.category === 'finance') return '/img/news/news-cover-bank.svg';
+  return '/img/news/news-cover-default.svg';
+}
+
 const body = `
+<!-- NEWS HERO -->
 <section class="news-hero">
   <div class="legal-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
       <a href="/">Главная</a> / <span>Новости</span>
     </nav>
-    <h1>Новости по арестам счетов, ЧСИ и законодательству Казахстана</h1>
-    <p class="news-hero-lead">Актуальные материалы о банках, должниках, ЧСИ, исполнительных производствах и изменениях законодательства РК. Каждая статья — с юридическим комментарием.</p>
-    <div class="news-categories">
-      <a href="/news" class="${!currentCategory ? 'active' : ''}">Все</a>
-      <a href="/news/category/finance" class="${currentCategory === 'finance' ? 'active' : ''}">Финансы</a>
-      <a href="/news/category/laws" class="${currentCategory === 'laws' ? 'active' : ''}">Законы</a>
-      <a href="/news/category/news" class="${currentCategory === 'news' ? 'active' : ''}">Общество</a>
+    <h1>Новости и разборы по арестам счетов, ЧСИ и долгам в Казахстане</h1>
+    <p class="news-hero-lead">
+      Мы отслеживаем события в банках, судах, исполнительном производстве и законодательстве РК —
+      и объясняем, что это значит для должников. Каждый материал — уникальный юридический разбор ZakonExpert.
+    </p>
+
+    <!-- CATEGORY FILTERS -->
+    <div class="news-categories" role="navigation" aria-label="Фильтр по категориям">
+      ${CATEGORIES.map(c => `
+      <a href="${c.slug ? '/news?cat=' + c.slug : '/news'}"
+         class="${(!currentCategory && !c.slug) || currentCategory === c.slug ? 'active' : ''}"
+         aria-current="${(!currentCategory && !c.slug) || currentCategory === c.slug ? 'page' : 'false'}">
+        ${c.label}
+      </a>`).join('')}
     </div>
   </div>
 </section>
 
+<!-- NEWS GRID -->
 <section class="news-section">
   <div class="legal-container">
+
     ${articles.length === 0 ? `
     <div class="news-empty">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#94a3b8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="8" y1="13" x2="16" y2="13"/>
+        <line x1="8" y1="17" x2="12" y2="17"/>
+      </svg>
       <h2>Новости скоро появятся</h2>
-      <p>Запустите импорт: <code>node scripts/import_news.js</code></p>
+      <p>Мы отслеживаем события в финансово-правовой сфере Казахстана.<br>
+         А пока вы можете <a href="/#checker-section">проверить ИИН</a>
+         или прочитать <a href="/zakony.html">раздел законов</a>.</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
+        <a href="/#checker-section" class="btn-legal-cta">Проверить по ИИН</a>
+        <a href="/zakony.html" class="btn-legal-outline">Читать о законах</a>
+      </div>
     </div>
     ` : `
     <div class="news-grid">
-      ${articles.map(a => `
+      ${articles.map(a => {
+        const cover  = getCoverForArticle(a);
+        const tags   = (() => { try { return JSON.parse(a.tags || '[]'); } catch { return []; } })();
+        const dateStr = a.published_at_site
+          ? new Date(a.published_at_site).toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'})
+          : '';
+        return `
       <article class="news-card">
-        ${a.og_image ? `<div class="news-card-img"><img src="${a.og_image}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+        <div class="news-card-cover">
+          <img src="${cover}" alt="${a.title}" loading="lazy"
+               onerror="this.src='/img/news/news-cover-default.svg'">
+          <span class="news-card-category">${a.category === 'laws' ? 'Законы' : a.category === 'finance' ? 'Финансы' : 'Новости'}</span>
+        </div>
         <div class="news-card-body">
           <div class="news-card-meta">
-            <span class="news-source">${a.source_name || 'Источник'}</span>
-            <span class="news-date">${a.published_at_site ? new Date(a.published_at_site).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}) : ''}</span>
+            <span class="news-source">${a.source_name || 'ZakonExpert'}</span>
+            <time class="news-date">${dateStr}</time>
           </div>
-          <h2 class="news-card-title"><a href="/news/${a.slug}">${a.title}</a></h2>
-          <p class="news-card-excerpt">${(a.excerpt || '').substring(0, 160)}${a.excerpt && a.excerpt.length > 160 ? '…' : ''}</p>
+          <h2 class="news-card-title">
+            <a href="/news/${a.slug}">${a.title}</a>
+          </h2>
+          <p class="news-card-excerpt">${(a.excerpt || '').substring(0, 160)}${(a.excerpt || '').length > 160 ? '…' : ''}</p>
           <div class="news-card-footer">
             <a href="/news/${a.slug}" class="news-read-more">Читать разбор →</a>
-            ${JSON.parse(a.tags || '[]').slice(0,3).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+            <div class="news-card-tags">
+              ${tags.slice(0,3).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+            </div>
           </div>
         </div>
-      </article>
-      `).join('')}
+      </article>`;
+      }).join('')}
     </div>
     `}
 
+    <!-- PAGINATION -->
     ${totalPages > 1 ? `
     <nav class="news-pagination" aria-label="Пагинация">
-      ${currentPage > 1 ? `<a href="/news?page=${currentPage - 1}${currentCategory ? '&cat=' + currentCategory : ''}" class="news-page-btn">← Назад</a>` : ''}
+      ${currentPage > 1 ? `
+      <a href="/news?page=${currentPage - 1}${currentCategory ? '&cat=' + currentCategory : ''}"
+         class="news-page-btn">← Назад</a>` : ''}
       <span class="news-page-info">Страница ${currentPage} из ${totalPages}</span>
-      ${currentPage < totalPages ? `<a href="/news?page=${currentPage + 1}${currentCategory ? '&cat=' + currentCategory : ''}" class="news-page-btn">Вперёд →</a>` : ''}
+      ${currentPage < totalPages ? `
+      <a href="/news?page=${currentPage + 1}${currentCategory ? '&cat=' + currentCategory : ''}"
+         class="news-page-btn">Вперёд →</a>` : ''}
     </nav>
     ` : ''}
 
+    <!-- CTA BLOCK -->
     <div class="news-cta-block">
-      <h3>Есть арест или ограничение?</h3>
-      <p>Проверьте по ИИН или напишите нам — разберём ситуацию.</p>
-      <div class="news-cta-actions">
-        <a href="/#checker-section" class="btn-legal-cta">Проверить по ИИН</a>
-        <a href="https://wa.me/77000300024?text=Здравствуйте.+Нужна+помощь." target="_blank" rel="noopener" class="btn-legal-outline"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+      <div class="news-cta-inner">
+        <div>
+          <h3>Есть арест или ограничение?</h3>
+          <p>Проверьте по ИИН — мы установим основание и объясним правовой путь.</p>
+        </div>
+        <div class="news-cta-actions">
+          <a href="/#checker-section" class="btn-legal-cta">Проверить по ИИН</a>
+          <a href="https://wa.me/77000300024?text=Здравствуйте.+Читал+новости.+Нужна+консультация."
+             target="_blank" rel="noopener" class="btn-legal-outline">WhatsApp</a>
+        </div>
       </div>
     </div>
+
   </div>
 </section>
 `;
 %>
-<%- include('layout', { title, description, canonical, ogType: 'website', ogImage: null, schema, body }) %>
+<%- include('layout', { title, description, canonical, ogType: 'website', ogImage: '/img/zakonexpert-logo-kazakhstan.png', schema, body }) %>
