@@ -300,7 +300,7 @@ for (const [route, file] of Object.entries(servicePages)) {
 }
 
 // ===== NEWS ROUTES =====
-const NEWS_PER_PAGE = 12;
+const NEWS_PER_PAGE = 20;
 
 // NEWS LIST
 app.get('/news', asyncHandler(async (req, res) => {

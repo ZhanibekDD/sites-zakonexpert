@@ -33,6 +33,29 @@ module.exports = {
     return !!doc;
   },
 
+  async existsByGeneratedTitle(title) {
+    // Dedup: check if we already have an article with the same generated title
+    const normalized = title.toLowerCase().trim().substring(0, 60);
+    const all = await news.find({});
+    return all.some(a => a.title && a.title.toLowerCase().trim().substring(0, 60) === normalized);
+  },
+
+  async removeIrrelevant() {
+    // Delete draft articles and known irrelevant topics
+    const irrelevantPatterns = ['гороскоп', 'отпуск', 'туризм', 'рецепт', 'погода', 'кино', 'спорт'];
+    const all = await news.find({});
+    let removed = 0;
+    for (const doc of all) {
+      const titleLower = (doc.title || '').toLowerCase();
+      const isIrrelevant = irrelevantPatterns.some(p => titleLower.includes(p));
+      if (isIrrelevant || doc.status === 'draft') {
+        await news.remove({ _id: doc._id }, {});
+        removed++;
+      }
+    }
+    return removed;
+  },
+
   async getPublished(limit = 20, offset = 0) {
     const docs = await news.find({ status: 'published' });
     docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));

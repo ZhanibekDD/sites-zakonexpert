@@ -36,11 +36,27 @@ const RELEVANT_KEYWORDS = [
   'банк', 'кредит', 'долг', 'ограничение', 'взыскание', 'задолженность',
   'заблокировали', 'карту', 'карт', 'имущество', 'автомобил',
   'судебн', 'финансов', 'мошенничество', 'антифрод',
-  'kaspi', 'halyk', 'freedom', 'займ', 'заем', 'рассрочк', 'штраф'
+  'kaspi', 'halyk', 'freedom', 'займ', 'заем', 'рассрочк', 'штраф',
+  'банкротств', 'коллектор', 'приставы', 'взыскател', 'дебитор',
+  'просрочк', 'неплатёж', 'неплатеж', 'ипотек', 'поручитель'
+];
+
+// Topics that are always irrelevant regardless of any keyword match
+const IRRELEVANT_TOPICS = [
+  'гороскоп', 'зодиак', 'рецепт', 'погода', 'прогноз погоды',
+  'кино', 'фильм', 'сериал', 'концерт', 'музыка', 'певец', 'певица',
+  'спорт', 'футбол', 'хоккей', 'теннис', 'чемпионат', 'матч',
+  'туризм', 'отдых', 'отпуск', 'курорт', 'путешестви',
+  'кулинар', 'диета', 'похудени', 'красот', 'мода', 'стиль',
+  'свадьба', 'праздник', 'юбилей'
 ];
 
 function calcRelevance(title, description = '') {
   const text = (title + ' ' + description).toLowerCase();
+  // Strong negative check first
+  for (const bad of IRRELEVANT_TOPICS) {
+    if (text.includes(bad)) return 0;
+  }
   let score = 0;
   for (const kw of RELEVANT_KEYWORDS) {
     if (text.includes(kw.toLowerCase())) score += 1;
@@ -50,8 +66,14 @@ function calcRelevance(title, description = '') {
 
 function isRelevant(title, description, keywords = []) {
   const text = (title + ' ' + (description || '')).toLowerCase();
+  // Reject obviously irrelevant topics
+  for (const bad of IRRELEVANT_TOPICS) {
+    if (text.includes(bad)) return false;
+  }
+  // Require at least 2 keyword matches for weak sources, 1 for specific sources
   const allKw = [...RELEVANT_KEYWORDS, ...keywords.map(k => k.toLowerCase())];
-  return allKw.some(kw => text.includes(kw.toLowerCase()));
+  const matches = allKw.filter(kw => text.includes(kw.toLowerCase())).length;
+  return matches >= 1;
 }
 
 function makeSlug(title, suffix) {
@@ -336,6 +358,9 @@ async function fetchSource(source) {
   let imported = 0;
   const now = new Date().toISOString();
 
+  // Track generated titles in this batch to avoid same-batch duplicates
+  const batchTitles = new Set();
+
   for (const item of (feed.items || [])) {
     const title = (item.title || '').trim();
     const originalUrl = item.link || item.guid;
@@ -363,6 +388,12 @@ async function fetchSource(source) {
 
     // Generate UNIQUE legal-angle content (our own article, not a copy)
     const uniqueTitle = generateLegalTitle(title, newsSummary);
+
+    // Dedup by generated title — skip if same headline already saved or in this batch
+    const titleKey = uniqueTitle.toLowerCase().trim().substring(0, 60);
+    if (batchTitles.has(titleKey)) continue;
+    if (await db.existsByGeneratedTitle(uniqueTitle)) continue;
+    batchTitles.add(titleKey);
     const uniqueContent = generateUniqueContent(title, newsSummary, scrapedSummary);
     const legalCommentary = generateLegalCommentary(title, newsSummary, scrapedSummary);
     const whyImportant = generateWhyImportant(title, newsSummary, scrapedSummary);
@@ -418,13 +449,22 @@ async function fetchSource(source) {
 
 async function importAll() {
   console.log('[NewsImporter] Starting import at ' + new Date().toLocaleString('ru-RU'));
+
+  // Clean up irrelevant/draft articles before each import cycle
+  try {
+    const removed = await db.removeIrrelevant();
+    if (removed > 0) console.log(`[NewsImporter] Removed ${removed} irrelevant/draft articles`);
+  } catch (e) {
+    console.warn('[NewsImporter] Cleanup warning: ' + e.message);
+  }
+
   let total = 0;
   for (const source of sources) {
     if (!source.enabled) continue;
     const count = await fetchSource(source);
     console.log(`[NewsImporter] ${source.name}: imported ${count} articles`);
     total += count;
-    await new Promise(r => setTimeout(r, 3000)); // pause between sources
+    await new Promise(r => setTimeout(r, 2000)); // pause between sources
   }
   console.log(`[NewsImporter] Done. Total imported: ${total}`);
   return total;
