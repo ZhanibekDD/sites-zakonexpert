@@ -42,3 +42,6 @@ screenshots/
 *.7z
 *.tar
 *.tar.gz 
+img/*.jpeg
+img/*.jpg
+img/*.png
