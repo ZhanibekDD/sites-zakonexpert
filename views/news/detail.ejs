@@ -4,25 +4,29 @@ const checkArr  = (() => { try { return JSON.parse(article.what_to_check || '[]'
 const pubDate   = article.published_at_site ? new Date(article.published_at_site) : new Date();
 const pubDateStr = pubDate.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
 const coverImg  = article.og_image || article.category_cover || '/img/news/news-cover-default.svg';
+const sourceLink = article.source_url || article.original_url || '#';
 
 const body = `
+<!-- BREADCRUMB -->
 <section class="news-detail-hero">
   <div class="legal-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
-      <a href="/">Р“Р»Р°РІРЅР°СЏ</a> /
-      <a href="/news">РќРѕРІРѕСЃС‚Рё</a> /
-      <span>${article.title.substring(0,60)}${article.title.length > 60 ? 'вЂ¦' : ''}</span>
+      <a href="/">Главная</a> /
+      <a href="/news">Новости</a> /
+      <span>${article.title.substring(0,60)}${article.title.length > 60 ? '…' : ''}</span>
     </nav>
   </div>
 </section>
 
+<!-- MAIN CONTENT -->
 <section class="news-detail-section">
   <div class="legal-container">
     <div class="news-detail-layout">
 
+      <!-- ARTICLE -->
       <article class="news-detail-main" itemscope itemtype="https://schema.org/NewsArticle">
 
-        <!-- COVER IMAGE -->
+        <!-- COVER -->
         <div class="news-detail-cover">
           <img src="${coverImg}" alt="${article.title}" loading="lazy"
                itemprop="image"
@@ -33,7 +37,7 @@ const body = `
         <div class="news-detail-meta">
           <span class="news-source-badge">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2z"/><path d="M2 6h6"/></svg>
-            ${article.source_name || 'РСЃС‚РѕС‡РЅРёРє'}
+            ${article.source_name || 'Источник'}
           </span>
           <time class="news-date" datetime="${pubDate.toISOString()}" itemprop="datePublished">${pubDateStr}</time>
           ${tagsArr.slice(0,5).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
@@ -45,98 +49,113 @@ const body = `
         <!-- EXCERPT -->
         ${article.excerpt ? `<p class="news-lead" itemprop="description">${article.excerpt}</p>` : ''}
 
-        <!-- 1. РљРћР РћРўРљРћ Рћ РЎРћР‘Р«РўРР -->
+        <!-- 1. КОРОТКО О СОБЫТИИ -->
         <div class="news-section-block">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            РљРѕСЂРѕС‚РєРѕ Рѕ СЃРѕР±С‹С‚РёРё
+            Коротко о событии
           </h2>
-          <p>${article.event_summary || article.original_excerpt || article.excerpt || ''}</p>
+          ${(article.event_summary || article.original_excerpt || article.excerpt || '').split('\\n\\n').map(p => p.trim() ? `<p>${p.trim()}</p>` : '').join('')}
           <p class="news-source-ref">
-            РСЃС‚РѕС‡РЅРёРє: <a href="${(article.source_url || article.original_url)}" target="_blank" rel="nofollow noopener">${article.source_name || article.source_domain || 'РЎРњР'}</a>
+            Источник: <a href="${sourceLink}" target="_blank" rel="nofollow noopener">${article.source_name || article.source_domain || 'СМИ'}</a>
           </p>
         </div>
 
         <hr class="news-divider">
 
-        <!-- 2. РџРћР§Р•РњРЈ Р’РђР–РќРћ -->
+        <!-- 2. ПОЧЕМУ ВАЖНО -->
         <div class="news-section-block">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            РџРѕС‡РµРјСѓ СЌС‚Рѕ РІР°Р¶РЅРѕ РґР»СЏ РґРѕР»Р¶РЅРёРєРѕРІ
+            Почему это важно для должников
           </h2>
-          <p>${article.why_important || 'РџРѕРЅРёРјР°РЅРёРµ Р°РєС‚СѓР°Р»СЊРЅС‹С… СЃРѕР±С‹С‚РёР№ РІ С„РёРЅР°РЅСЃРѕРІРѕ-РїСЂР°РІРѕРІРѕР№ СЃС„РµСЂРµ РїРѕРјРѕРіР°РµС‚ СЃРІРѕРµРІСЂРµРјРµРЅРЅРѕ Р·Р°С‰РёС‚РёС‚СЊ СЃРІРѕРё СЃС‡РµС‚Р°, РєР°СЂС‚С‹ Рё РёРјСѓС‰РµСЃС‚РІРѕ РѕС‚ Р°СЂРµСЃС‚РѕРІ Рё РѕРіСЂР°РЅРёС‡РµРЅРёР№.'}</p>
+          ${(article.why_important || 'Понимание актуальных событий в финансово-правовой сфере помогает своевременно защитить свои счета, карты и имущество от арестов и ограничений.').split('\\n\\n').map(p => p.trim() ? `<p>${p.trim()}</p>` : '').join('')}
         </div>
 
-        <!-- 3. Р®Р РР”РР§Р•РЎРљРР™ РљРћРњРњР•РќРўРђР РР™ -->
+        <hr class="news-divider">
+
+        <!-- 3. ЮРИДИЧЕСКИЙ КОММЕНТАРИЙ -->
         <div class="news-section-block news-commentary">
           <div class="news-commentary-header">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <h2>Р®СЂРёРґРёС‡РµСЃРєРёР№ РєРѕРјРјРµРЅС‚Р°СЂРёР№ ZakonExpert</h2>
+            <h2>Юридический комментарий ZakonExpert</h2>
           </div>
-          <p>${article.legal_commentary || 'РџСЂРё Р»СЋР±РѕРј Р°СЂРµСЃС‚Рµ РёР»Рё РѕРіСЂР°РЅРёС‡РµРЅРёРё РІР°Р¶РЅРѕ: СѓСЃС‚Р°РЅРѕРІРёС‚СЊ С‚РёРї РёСЃРїРѕР»РЅРёС‚РµР»СЊРЅРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р°, РїСЂРѕРІРµСЂРёС‚СЊ РѕСЃРЅРѕРІР°РЅРёРµ РІР·С‹СЃРєР°РЅРёСЏ Рё РІС‹Р±СЂР°С‚СЊ РїСЂР°РІРёР»СЊРЅС‹Р№ РїСЂР°РІРѕРІРѕР№ РёРЅСЃС‚СЂСѓРјРµРЅС‚. РњС‹ РїРѕРјРѕРіР°РµРј СЃРґРµР»Р°С‚СЊ СЌС‚Рѕ РєРѕРјРїР»РµРєСЃРЅРѕ.'}</p>
+          ${(article.legal_commentary || 'При любом аресте или ограничении важно: установить тип исполнительного документа, проверить основание взыскания и выбрать правильный правовой инструмент.').split('\\n\\n').map(p => {
+            const trimmed = p.trim();
+            if (!trimmed) return '';
+            if (trimmed.startsWith('—') || trimmed.startsWith('•') || trimmed.startsWith('-')) {
+              const items = trimmed.split('\\n').filter(l => l.trim()).map(l => `<li>${l.replace(/^[—•-]\\s*/, '')}</li>`).join('');
+              return `<ul class="news-checklist">${items}</ul>`;
+            }
+            if (trimmed.startsWith('**')) {
+              return `<p><strong>${trimmed.replace(/\\*\\*/g, '')}</strong></p>`;
+            }
+            return `<p>${trimmed}</p>`;
+          }).join('')}
         </div>
 
-        <!-- 4. Р§РўРћ РџР РћР’Р•Р РРўР¬ -->
+        <hr class="news-divider">
+
+        <!-- 4. ЧТО ПРОВЕРИТЬ -->
         <div class="news-section-block">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            Р§С‚Рѕ РїСЂРѕРІРµСЂРёС‚СЊ Сѓ СЃРµР±СЏ РїСЂСЏРјРѕ СЃРµР№С‡Р°СЃ
+            Что проверить у себя прямо сейчас
           </h2>
           <ul class="news-checklist">
             ${checkArr.length > 0
               ? checkArr.map(i => `<li>${i}</li>`).join('')
-              : `<li>РџСЂРѕРІРµСЂСЊС‚Рµ РЅР°Р»РёС‡РёРµ РёСЃРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїСЂРѕРёР·РІРѕРґСЃС‚РІ РїРѕ РРРќ С‡РµСЂРµР· egov.kz</li>
-                 <li>РЈС‚РѕС‡РЅРёС‚Рµ, РЅРµС‚ Р»Рё РѕРіСЂР°РЅРёС‡РµРЅРёР№ РЅР° СЃС‡РµС‚Р°, Р°РІС‚Рѕ РёР»Рё РёРјСѓС‰РµСЃС‚РІРѕ</li>
-                 <li>РЈСЃС‚Р°РЅРѕРІРёС‚Рµ С‚РёРї РёСЃРїРѕР»РЅРёС‚РµР»СЊРЅРѕРіРѕ РґРѕРєСѓРјРµРЅС‚Р° вЂ” РѕС‚ РЅРµРіРѕ Р·Р°РІРёСЃРёС‚ РїСѓС‚СЊ СЃРЅСЏС‚РёСЏ</li>`
+              : `<li>Проверьте наличие исполнительных производств по ИИН через форму на сайте или egov.kz</li>
+                 <li>Установите тип исполнительного документа — от него зависит путь снятия</li>
+                 <li>Проверьте, нет ли ограничений на счета, автомобиль или имущество</li>`
             }
           </ul>
-          <a href="/#checker-section" class="news-inline-cta">РџСЂРѕРІРµСЂРёС‚СЊ РїРѕ РРРќ Р±РµСЃРїР»Р°С‚РЅРѕ в†’</a>
+          <a href="/#checker-section" class="news-inline-cta">Проверить по ИИН бесплатно →</a>
         </div>
 
-        <!-- 5. РљРћР“Р”Рђ РћР‘Р РђРўРРўР¬РЎРЇ -->
+        <!-- 5. КОГДА ОБРАТИТЬСЯ -->
         <div class="news-section-block news-when-help">
           <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            РљРѕРіРґР° СЃС‚РѕРёС‚ РѕР±СЂР°С‚РёС‚СЊСЃСЏ Р·Р° РїРѕРјРѕС‰СЊСЋ
+            Когда стоит обратиться за помощью
           </h2>
-          <p>${article.when_to_seek_help || 'Р•СЃР»Рё РІС‹ СѓР·РЅР°Р»Рё СЃРµР±СЏ РІ РѕРїРёСЃР°РЅРЅРѕР№ СЃРёС‚СѓР°С†РёРё вЂ” РїСЂРѕРІРµСЂСЊС‚Рµ РЅР°Р»РёС‡РёРµ РёСЃРїРѕР»РЅРёС‚РµР»СЊРЅС‹С… РїСЂРѕРёР·РІРѕРґСЃС‚РІ РїРѕ РРРќ. Р‘РѕР»СЊС€РёРЅСЃС‚РІРѕ Р°СЂРµСЃС‚РѕРІ РІС‹СЏРІР»СЏСЋС‚СЃСЏ РёРјРµРЅРЅРѕ С‚Р°Рє вЂ” РґРѕ С‚РѕРіРѕ РєР°Рє РґРµРЅСЊРіРё СЃРїРёСЃР°РЅС‹.'}</p>
+          ${(article.when_to_seek_help || 'Если вы узнали себя в описанной ситуации — проверьте наличие исполнительных производств по ИИН. Большинство арестов выявляются именно так — до того как деньги списаны.').split('\\n\\n').map(p => p.trim() ? `<p>${p.trim()}</p>` : '').join('')}
           <div class="news-cta-actions">
-            <a href="https://wa.me/77000300024?text=Р§РёС‚Р°Р»+РјР°С‚РµСЂРёР°Р»+РЅР°+ZakonExpert.+РҐРѕС‡Сѓ+РїСЂРѕРІРµСЂРёС‚СЊ+СЃРІРѕСЋ+СЃРёС‚СѓР°С†РёСЋ."
+            <a href="https://wa.me/77000300024?text=Читал+материал+на+ZakonExpert.+Хочу+проверить+свою+ситуацию."
                target="_blank" rel="noopener" class="btn-legal-cta">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952C-.3 11.514.527 8.905 2.261 7.01 3.996 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
-              РќР°РїРёСЃР°С‚СЊ РІ WhatsApp
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952-.3-2.49.527-5.099 2.261-6.994C4.295 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
+              Написать в WhatsApp
             </a>
-            <a href="/#checker-section" class="btn-legal-outline">РџСЂРѕРІРµСЂРёС‚СЊ РїРѕ РРРќ</a>
+            <a href="/#checker-section" class="btn-legal-outline">Проверить по ИИН</a>
           </div>
         </div>
 
         <!-- RELATED SERVICES -->
         <div class="news-service-links">
-          <h3>РџРѕР»РµР·РЅС‹Рµ СЂР°Р·РґРµР»С‹ РїРѕ С‚РµРјРµ</h3>
+          <h3>Полезные разделы по теме</h3>
           <div class="news-service-grid">
             <a href="/snyatie-aresta-so-scheta" class="news-service-card">
-              <span>РЎРЅСЏС‚РёРµ Р°СЂРµСЃС‚Р° СЃРѕ СЃС‡С‘С‚Р°</span>
+              <span>Снятие ареста со счёта</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
-            <a href="/snyatie-ogranichenii-u-notariusa" class="news-service-card">
-              <span>РСЃРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РЅР°РґРїРёСЃСЊ</span>
+            <a href="/otmena-ispolnitelnoi-nadpisi" class="news-service-card">
+              <span>Исполнительная надпись</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/snyatie-ogranichenii-chsi" class="news-service-card">
-              <span>Р§РЎР Рё Р°СЂРµСЃС‚С‹</span>
+              <span>ЧСИ и аресты</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/snyatie-zapreta-na-avto" class="news-service-card">
-              <span>Р—Р°РїСЂРµС‚ РЅР° Р°РІС‚Рѕ</span>
+              <span>Запрет на авто</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/ubrat-procenty-i-rashody-chsi" class="news-service-card">
-              <span>Р Р°СЃС…РѕРґС‹ Р§РЎР</span>
+              <span>Расходы ЧСИ</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
             <a href="/grafik-oplaty-zadolzhennosti" class="news-service-card">
-              <span>Р“СЂР°С„РёРє РїР»Р°С‚РµР¶РµР№</span>
+              <span>График платежей</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </a>
           </div>
@@ -144,69 +163,59 @@ const body = `
 
         <!-- SHARE -->
         <div class="news-share">
-          <span>РџРѕРґРµР»РёС‚СЊСЃСЏ:</span>
-          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' вЂ” https://zakonexpertt.kz/news/' + article.slug)}"
+          <span>Поделиться:</span>
+          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' — https://zakonexpertt.kz/news/' + article.slug)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-wa">WhatsApp</a>
           <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(article.title)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-tg">Telegram</a>
           <button class="news-share-btn news-share-copy"
-                  onclick="navigator.clipboard.writeText(window.location.href);this.textContent='РЎРєРѕРїРёСЂРѕРІР°РЅРѕ!'">
-            РЎРєРѕРїРёСЂРѕРІР°С‚СЊ СЃСЃС‹Р»РєСѓ
+                  onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'">
+            Скопировать ссылку
           </button>
         </div>
 
         <!-- DISCLAIMER -->
         <div class="legal-disclaimer">
-          <strong>Р’Р°Р¶РЅРѕ:</strong> РњР°С‚РµСЂРёР°Р» РЅРѕСЃРёС‚ РёРЅС„РѕСЂРјР°С†РёРѕРЅРЅС‹Р№ С…Р°СЂР°РєС‚РµСЂ Рё РЅРµ СЏРІР»СЏРµС‚СЃСЏ СЋСЂРёРґРёС‡РµСЃРєРѕР№ РєРѕРЅСЃСѓР»СЊС‚Р°С†РёРµР№.
-          Р”Р»СЏ РѕС†РµРЅРєРё РІР°С€РµР№ СЃРёС‚СѓР°С†РёРё РЅРµРѕР±С…РѕРґРёРј Р°РЅР°Р»РёР· РґРѕРєСѓРјРµРЅС‚РѕРІ.
-          РћСЂРёРіРёРЅР°Р»СЊРЅР°СЏ РїСѓР±Р»РёРєР°С†РёСЏ: <a href="${(article.source_url || article.original_url)}" target="_blank" rel="nofollow noopener">${article.source_name || 'РёСЃС‚РѕС‡РЅРёРє'} в†’</a>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <div>
+            <strong>Правовая оговорка ZakonExpert</strong>
+            <p>Материал подготовлен на основе публикации в СМИ и носит исключительно информационный и образовательный характер. Он не является юридической консультацией, правовым заключением или гарантией результата. Каждая ситуация индивидуальна и требует анализа конкретных документов. За правовой анализ вашей ситуации обратитесь к специалисту.</p>
+          </div>
         </div>
 
       </article>
 
       <!-- SIDEBAR -->
-      <aside class="news-detail-sidebar">
-
-        <div class="news-cta-card">
-          <h3>Р•СЃС‚СЊ Р°СЂРµСЃС‚ РёР»Рё РѕРіСЂР°РЅРёС‡РµРЅРёРµ?</h3>
-          <p>РџСЂРѕРІРµСЂРёРј РїРѕ РРРќ, СѓСЃС‚Р°РЅРѕРІРёРј РѕСЃРЅРѕРІР°РЅРёРµ Рё РѕР±СЉСЏСЃРЅРёРј РїСЂР°РІРѕРІРѕР№ РїСѓС‚СЊ.</p>
-          <a href="/#checker-section" class="btn-legal-cta d-block text-center mb-2">РџСЂРѕРІРµСЂРёС‚СЊ РїРѕ РРРќ</a>
-          <a href="https://wa.me/77000300024?text=Р§РёС‚Р°Р»+РјР°С‚РµСЂРёР°Р».+РҐРѕС‡Сѓ+СЂР°Р·РѕР±СЂР°С‚СЊ+СЃРёС‚СѓР°С†РёСЋ."
-             target="_blank" rel="noopener" class="btn-legal-outline d-block text-center">WhatsApp</a>
+      <aside class="news-sidebar">
+        <div class="news-sidebar-widget">
+          <h3>Проверить по ИИН</h3>
+          <p>Узнайте о текущих исполнительных производствах и ограничениях бесплатно.</p>
+          <a href="/#checker-section" class="btn-legal-cta" style="width:100%;text-align:center;">Проверить сейчас</a>
         </div>
-
-        ${related && related.length > 0 ? `
-        <div class="news-related">
-          <h3>РџРѕС…РѕР¶РёРµ РјР°С‚РµСЂРёР°Р»С‹</h3>
-          ${related.map(r => `
-          <a href="/news/${r.slug}" class="news-related-item">
-            ${r.title.substring(0, 70)}${r.title.length > 70 ? 'вЂ¦' : ''}
-          </a>`).join('')}
-        </div>` : ''}
-
-        <div class="news-topics">
-          <h3>Р Р°Р·РґРµР»С‹ СЃР°Р№С‚Р°</h3>
-          <div class="news-topics-grid">
-            <a href="/snyatie-aresta-so-scheta">РђСЂРµСЃС‚ СЃС‡С‘С‚Р°</a>
-            <a href="/snyatie-ogranichenii-u-notariusa">РќРѕС‚Р°СЂРёСѓСЃ</a>
-            <a href="/snyatie-ogranichenii-chsi">Р§РЎР</a>
-            <a href="/snyatie-zapreta-na-avto">РђРІС‚Рѕ</a>
-            <a href="/arest-kaspi">Kaspi</a>
-            <a href="/arest-halyk-bank">Halyk</a>
-            <a href="/ubrat-procenty-i-rashody-chsi">Р Р°СЃС…РѕРґС‹ Р§РЎР</a>
-            <a href="/grafik-oplaty-zadolzhennosti">Р“СЂР°С„РёРє РїР»Р°С‚РµР¶РµР№</a>
+        <div class="news-sidebar-widget">
+          <h3>Связаться с нами</h3>
+          <p>Опишите ситуацию — разберём основание и объясним шаги.</p>
+          <a href="https://wa.me/77000300024?text=Здравствуйте.+Хочу+разобраться+с+ситуацией." target="_blank" rel="noopener" class="news-sidebar-wa">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952-.3-2.49.527-5.099 2.261-6.994C4.295 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
+            Написать в WhatsApp
+          </a>
+          <a href="tel:+77000300024" class="news-sidebar-phone">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.87 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            +7 (700) 030-00-24
+          </a>
+        </div>
+        <div class="news-sidebar-widget">
+          <h3>Популярные темы</h3>
+          <div class="news-sidebar-tags">
+            <a href="/news?cat=аресты">Аресты счетов</a>
+            <a href="/news?cat=finance">Банки</a>
+            <a href="/news?cat=chsi">ЧСИ</a>
+            <a href="/news?cat=notarius">Исп. надпись</a>
+            <a href="/news?cat=alimenty">Алименты</a>
+            <a href="/news?cat=shtrafy">Штрафы</a>
+            <a href="/news?cat=avto">Авто</a>
           </div>
         </div>
-
-        <div class="news-laws-block">
-          <h3>Р—Р°РєРѕРЅС‹ РїРѕ С‚РµРјРµ</h3>
-          <a href="/zakony.html#ispolnitelnaya-nadpis">РСЃРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РЅР°РґРїРёСЃСЊ</a>
-          <a href="/zakony.html#besspornost">Р‘РµСЃСЃРїРѕСЂРЅРѕСЃС‚СЊ РґРѕР»РіР°</a>
-          <a href="/zakony.html#sud">Р РµС€РµРЅРёРµ СЃСѓРґР°</a>
-          <a href="/zakony.html#alimenty">РђР»РёРјРµРЅС‚С‹</a>
-          <a href="/zakony.html#shtrafy">РЁС‚СЂР°С„С‹</a>
-        </div>
-
       </aside>
 
     </div>
@@ -214,5 +223,4 @@ const body = `
 </section>
 `;
 %>
-<%- include('layout', { title, description, canonical, ogType: 'article', ogImage: article.og_image || article.category_cover, schema, body }) %>
-
+<%- include('layout', { title: article.meta_title || article.title, description: article.meta_description || article.excerpt || '', canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: article.og_image || article.category_cover || '/img/zakonexpert-logo-kazakhstan.png', schema, body }) %>
