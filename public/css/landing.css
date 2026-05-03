@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap&subset=cyrillic,cyrillic-ext,latin');
 
 :root {
     --sky-950: #0e2a47;
@@ -31,7 +31,7 @@ html { scroll-behavior: smooth; }
 
 body {
     margin: 0;
-    font-family: 'Manrope', sans-serif;
+    font-family: 'Manrope', Arial, 'Helvetica Neue', Roboto, 'Noto Sans', sans-serif;
     color: var(--ink-900);
     background:
         radial-gradient(circle at top right, rgba(85, 169, 230, 0.1), transparent 40%),
