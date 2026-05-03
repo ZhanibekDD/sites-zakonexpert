@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "name": "Zakon.kz",
+    "base_url": "https://www.zakon.kz",
+    "rss_url": "https://www.zakon.kz/rss.xml",
+    "enabled": true,
+    "category": "laws",
+    "allowed": true,
+    "fetch_interval_minutes": 60,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["арест", "счет", "должник", "ЧСИ", "нотариус", "исполнительный", "банк", "кредит", "долг", "ограничение", "взыскание"]
+  },
+  {
+    "id": 2,
+    "name": "Ranking.kz",
+    "base_url": "https://ranking.kz",
+    "rss_url": "https://ranking.kz/rss",
+    "enabled": true,
+    "category": "finance",
+    "allowed": true,
+    "fetch_interval_minutes": 120,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "заем", "долг", "финансы"]
+  },
+  {
+    "id": 3,
+    "name": "Forbes.kz",
+    "base_url": "https://forbes.kz",
+    "rss_url": "https://forbes.kz/rss",
+    "enabled": true,
+    "category": "finance",
+    "allowed": true,
+    "fetch_interval_minutes": 120,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["банк", "кредит", "должник", "арест счета", "ЧСИ", "долг", "взыскание"]
+  },
+  {
+    "id": 4,
+    "name": "Kapital.kz",
+    "base_url": "https://kapital.kz",
+    "rss_url": "https://kapital.kz/feed",
+    "enabled": true,
+    "category": "finance",
+    "allowed": true,
+    "fetch_interval_minutes": 90,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["банк", "кредит", "должник", "арест", "исполнительное производство", "задолженность"]
+  },
+  {
+    "id": 5,
+    "name": "Tengrinews.kz",
+    "base_url": "https://tengrinews.kz",
+    "rss_url": "https://tengrinews.kz/rss/",
+    "enabled": true,
+    "category": "news",
+    "allowed": true,
+    "fetch_interval_minutes": 60,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["арест счета", "должник", "ЧСИ", "исполнительное производство", "банк", "кредит", "нотариус", "арест имущества", "авто"]
+  },
+  {
+    "id": 6,
+    "name": "Inbusiness.kz",
+    "base_url": "https://inbusiness.kz",
+    "rss_url": "https://inbusiness.kz/rss",
+    "enabled": true,
+    "category": "finance",
+    "allowed": true,
+    "fetch_interval_minutes": 90,
+    "parser_type": "rss",
+    "respect_robots": true,
+    "keywords": ["банк", "должник", "арест", "кредит", "ЧСИ", "задолженность", "взыскание"]
+  }
+]

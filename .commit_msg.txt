@@ -1,0 +1,11 @@
+﻿feat: add news system, 7 SEO pages, form, sticky WA, clean URLs
+
+- SQLite news DB + RSS importer (node-cron, rss-parser)
+- /news, /news/:slug, /news/feed.xml routes with EJS templates
+- 13 clean URL service routes in server.js
+- 7 new service pages: arest-kaspi/halyk/freedom, zapret-avto, imushchestvo, notarius, rashody-chsi
+- Refactored index.html hero text, application form, sticky WhatsApp
+- sitemap-pages.xml, sitemap-news.xml dynamic generation
+- Added npm run import-news script
+- news.css design system
+- Sticky WhatsApp on all pages

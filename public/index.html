@@ -32,9 +32,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/landing.css?v=20260503-6">
-  <link rel="stylesheet" href="css/style.css?v=20260503-6">
-  <link rel="stylesheet" href="css/legal.css?v=20260503-6">
+  <link rel="stylesheet" href="css/landing.css?v=20260503-7">
+  <link rel="stylesheet" href="css/style.css?v=20260503-7">
+  <link rel="stylesheet" href="css/legal.css?v=20260503-7">
 </head>
 <body>
 <header class="site-header">
@@ -54,6 +54,7 @@
         <li><a class="nav-link active" href="index.html">Главная</a></li>
         <li><a class="nav-link" href="services.html">Услуги</a></li>
         <li><a class="nav-link" href="zakony.html">Законы</a></li>
+        <li><a class="nav-link" href="/news">Новости</a></li>
         <li><a class="nav-link" href="contact.html">Контакты</a></li>
       </ul>
     </nav>
@@ -80,12 +81,11 @@
           <span class="hero-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg> Работаем по Казахстану</span>
           <span class="hero-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Конфиденциально</span>
         </div>
-        <h1 class="hero-title">Снятие арестов<br>со счетов, карт, авто<br><span>и имущества в Казахстане</span></h1>
-        <p class="hero-text">Разбираем исполнительные производства, документы ЧСИ и нотариальные основания. Готовим правовую позицию и сопровождаем процесс до снятия ограничений или урегулирования ситуации.</p>
+        <h1 class="hero-title">Снимем арест со счетов<br>и ограничения по<br><span>исполнительной надписи</span></h1>
+        <p class="hero-text">Проверим основание ареста, подготовим документы и подадим возражение сами. Помогаем снять ограничения со счетов, авто, имущества и регистрационных действий.</p>
         <div class="hero-actions">
-          <a class="btn-landing" href="contact.html"><i class="bi bi-chat-left-text"></i> Разобрать мою ситуацию</a>
-          <a class="btn-outline-landing" href="#checker-section"><i class="bi bi-search"></i> Проверить по ИИН</a>
-          <a class="btn-wa" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83%20%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2." target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp</a>
+          <a class="btn-landing" href="#checker-section"><i class="bi bi-search"></i> Проверить арест</a>
+          <a class="btn-wa" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E." target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp</a>
         </div>
         <div class="hero-trust-row">
           <div class="trust-badge"><i class="bi bi-geo-alt-fill"></i> Работаем по РК</div>
@@ -518,16 +518,74 @@
     </div>
   </section>
 
+  <!-- APPLICATION FORM -->
+  <section class="section section-light" id="application-form">
+    <div class="landing-container">
+      <div class="text-center mb-5">
+        <span class="section-kicker">Заявка</span>
+        <h2 class="section-title">Получить бесплатную проверку</h2>
+        <p class="section-lead">Оставьте заявку — проверим по ИИН, установим основание и объясним шаги. Мы берём всё на себя.</p>
+      </div>
+      <div class="row justify-content-center">
+        <div class="col-lg-7">
+          <form class="ze-form" id="application-form-el" novalidate>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="ze-label" for="app-name">Имя *</label>
+                <input class="ze-input" type="text" id="app-name" name="name" placeholder="Ваше имя" required>
+              </div>
+              <div class="col-sm-6">
+                <label class="ze-label" for="app-phone">Телефон *</label>
+                <input class="ze-input" type="tel" id="app-phone" name="phone" placeholder="+7 (___) ___-__-__" required>
+              </div>
+              <div class="col-12">
+                <label class="ze-label" for="app-bank">Банк / тип ограничения</label>
+                <select class="ze-input" id="app-bank" name="bank">
+                  <option value="">Выберите или напишите</option>
+                  <option>Kaspi Bank</option>
+                  <option>Halyk Bank</option>
+                  <option>Freedom Bank</option>
+                  <option>Другой банк</option>
+                  <option>Авто / регистрационные действия</option>
+                  <option>Имущество / недвижимость</option>
+                  <option>Исполнительная надпись нотариуса</option>
+                  <option>График платежей</option>
+                  <option>Расходы ЧСИ</option>
+                  <option>Не знаю точно</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="ze-label" for="app-desc">Краткое описание ситуации</label>
+                <textarea class="ze-input" id="app-desc" name="description" rows="3" placeholder="Опишите кратко: что именно заблокировано, кто взыскатель, если знаете…"></textarea>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn-landing w-100" style="font-size:1rem;padding:0.85rem 2rem;">
+                  <i class="bi bi-send me-2"></i> Получить проверку
+                </button>
+                <p class="ze-form-note mt-2">Нажимая кнопку, вы соглашаетесь с <a href="privacy.html">политикой конфиденциальности</a>. Данные защищены.</p>
+              </div>
+            </div>
+          </form>
+          <div id="app-form-success" class="ze-form-success d-none">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+            <h3>Заявка отправлена!</h3>
+            <p>Мы свяжемся с вами в ближайшее время. Пока можете написать в <a href="https://wa.me/77000300024" target="_blank" rel="noopener">WhatsApp</a>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="section section-dark">
     <div class="landing-container">
       <div class="cta-block">
         <span class="section-kicker">Начните сейчас</span>
         <h2 class="section-title">Оставьте заявку — разберём вашу ситуацию</h2>
-        <p class="section-lead">Напишите нам или позвоните. Расскажите о проблеме — проанализируем ситуацию, объясним варианты и предложим реальный план действий.</p>
+        <p class="section-lead">Напишите нам или позвоните. Расскажем о возможных шагах, проанализируем документы и предложим реальный путь решения.</p>
         <div class="cta-actions mt-4">
-          <a class="btn-landing" href="contact.html"><i class="bi bi-chat-left-text"></i> Оставить заявку</a>
-          <a class="btn-outline-light" href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+          <a class="btn-landing" href="#application-form"><i class="bi bi-file-text"></i> Оставить заявку</a>
+          <a class="btn-outline-light" href="https://wa.me/77000300024?text=Здравствуйте.+Нужна+помощь+по+аресту." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
           <a class="btn-outline-light" href="tel:+77000300024"><i class="bi bi-telephone"></i> +7 (700) 030-00-24</a>
         </div>
       </div>
@@ -570,6 +628,7 @@
           <a href="index.html">Главная</a>
           <a href="services.html">Услуги</a>
           <a href="zakony.html">Законы</a>
+          <a href="/news">Новости</a>
           <a href="contact.html">Контакты</a>
         </div>
       </div>
@@ -589,9 +648,39 @@
   </div>
 </footer>
 
+<!-- Sticky WhatsApp -->
+<a href="https://wa.me/77000300024?text=Здравствуйте.+Хочу+разобраться+с+арестом+счётов." class="sticky-wa" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
+  <i class="bi bi-whatsapp"></i>
+</a>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/site.js?v=20260503-6"></script>
-<script src="js/main.js?v=20260503-6"></script>
+<script src="js/site.js?v=20260503-7"></script>
+<script src="js/main.js?v=20260503-7"></script>
+<script>
+// Application form handler
+const appForm = document.getElementById('application-form-el');
+const appSuccess = document.getElementById('app-form-success');
+if (appForm) {
+  appForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('app-name').value.trim();
+    const phone = document.getElementById('app-phone').value.trim();
+    if (!name || !phone) return;
+    const bank = document.getElementById('app-bank').value;
+    const desc = document.getElementById('app-desc').value.trim();
+    const msg = encodeURIComponent(
+      'Заявка с сайта ZakonExpert\n' +
+      'Имя: ' + name + '\n' +
+      'Телефон: ' + phone + '\n' +
+      (bank ? 'Банк/тип: ' + bank + '\n' : '') +
+      (desc ? 'Описание: ' + desc : '')
+    );
+    window.open('https://wa.me/77000300024?text=' + msg, '_blank');
+    appForm.classList.add('d-none');
+    if (appSuccess) appSuccess.classList.remove('d-none');
+  });
+}
+</script>
 </body>
 </html>
 

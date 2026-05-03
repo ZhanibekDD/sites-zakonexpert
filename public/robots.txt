@@ -1,7 +1,17 @@
 User-agent: *
 Allow: /
 
-Disallow: /node_modules/
-Disallow: /logs/
+# Static assets
+Allow: /css/
+Allow: /js/
+Allow: /img/
 
+# Admin/API paths — no index
+Disallow: /api/
+Disallow: /data/
+Disallow: /node_modules/
+
+# Sitemaps
 Sitemap: https://zakonexpertt.kz/sitemap.xml
+Sitemap: https://zakonexpertt.kz/sitemap-pages.xml
+Sitemap: https://zakonexpertt.kz/sitemap-news.xml

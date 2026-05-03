@@ -9,6 +9,7 @@ const compression = require('compression');
 const axios = require('axios');
 const xml2js = require('xml2js');
 const { v4: uuidv4 } = require('uuid');
+const cron = require('node-cron');
 const winston = require('winston');
 
 // --- ДОБАВЛЕНО: Настройка логгера Winston ---
@@ -47,6 +48,17 @@ const logger = winston.createLogger({
 });
 // --- КОНЕЦ: Настройка логгера Winston ---
 
+// Initialize DB and news importer
+let newsDb = null;
+let newsImporter = null;
+try {
+  newsDb = require('./modules/db');
+  newsImporter = require('./modules/news_importer');
+  logger.info('News module loaded ✓');
+} catch (e) {
+  logger.warn('News module not loaded: ' + e.message);
+}
+
 // Маскировка ИИН для безопасного логирования
 function maskIin(iin) {
     const clean = String(iin || '').replace(/\D/g, '');
@@ -55,6 +67,10 @@ function maskIin(iin) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Template engine for news pages
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
 
 // Middleware — порядок важен: helmet → compression → cors → body-parser → static
 app.use(helmet({
@@ -243,6 +259,268 @@ app.post('/check', asyncHandler(async (req, res) => {
     }
 
 }));
+
+// ===== SERVICE PAGE CLEAN URLS =====
+const servicePages = {
+  '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
+  '/otmena-ispolnitelnoi-nadpisi':     'ispolnitelnaya-nadpis.html',
+  '/vozrazhenie-na-ispolnitelnuyu-nadpis': 'spornost-dolga.html',
+  '/snyatie-ogranichenii-chsi':        'chsi-arest-schetov.html',
+  '/snyatie-zapreta-na-avto':          'snyatie-zapreta-na-avto.html',
+  '/snyatie-ogranicheniya-na-imushchestvo': 'snyatie-ogranicheniya-na-imushchestvo.html',
+  '/snyatie-zapreta-registracionnyh-deistvii': 'zapret-registracionnyh-deystviy.html',
+  '/snyatie-ogranichenii-u-notariusa': 'snyatie-ogranichenii-u-notariusa.html',
+  '/grafik-oplaty-zadolzhennosti':     'grafik-platezhey.html',
+  '/ubrat-procenty-i-rashody-chsi':    'ubrat-procenty-i-rashody-chsi.html',
+  '/arest-kaspi':                      'arest-kaspi.html',
+  '/arest-halyk-bank':                 'arest-halyk-bank.html',
+  '/arest-freedom-bank':               'arest-freedom-bank.html',
+  '/zakony':                           'zakony.html',
+  '/ispolnitelnaya-nadpis':            'ispolnitelnaya-nadpis.html',
+  '/besspornost-dolga':                'besspornost-dolga.html',
+  '/spornost-dolga':                   'spornost-dolga.html',
+  '/alimenty-i-aresty':                'alimenty-i-aresty.html',
+  '/shtrafy-i-aresty':                 'shtrafy-i-aresty.html',
+  '/zapret-registracionnyh-deystviy':  'zapret-registracionnyh-deystviy.html',
+  '/grafik-platezhey':                 'grafik-platezhey.html',
+  '/privacy':                          'privacy.html',
+  '/services':                         'services.html',
+  '/contact':                          'contact.html',
+};
+
+for (const [route, file] of Object.entries(servicePages)) {
+  app.get(route, (req, res) => {
+    const filePath = path.join(__dirname, 'public', file);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  });
+}
+
+// ===== NEWS ROUTES =====
+const NEWS_PER_PAGE = 12;
+
+// NEWS LIST
+app.get('/news', asyncHandler(async (req, res) => {
+  if (!newsDb) return res.status(503).send('News module not available');
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const category = req.query.cat || null;
+  const offset = (page - 1) * NEWS_PER_PAGE;
+
+  const articles = category
+    ? newsDb.getByCategory(category, NEWS_PER_PAGE, offset)
+    : newsDb.getPublished(NEWS_PER_PAGE, offset);
+  const total = category
+    ? newsDb.countByCategory(category)
+    : newsDb.countPublished();
+  const totalPages = Math.ceil(total / NEWS_PER_PAGE);
+
+  const canonical = `https://zakonexpertt.kz/news${page > 1 ? '?page=' + page : ''}`;
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Новости ZakonExpert',
+    url: 'https://zakonexpertt.kz/news',
+    numberOfItems: total,
+    itemListElement: articles.slice(0, 10).map((a, i) => ({
+      '@type': 'ListItem',
+      position: offset + i + 1,
+      url: `https://zakonexpertt.kz/news/${a.slug}`
+    }))
+  };
+
+  res.render('news/list', {
+    title: 'Новости по арестам счетов и ЧСИ | ZakonExpert',
+    description: 'Актуальные новости о банках, арестах счетов, ЧСИ, должниках и законах Казахстана. Юридические комментарии.',
+    canonical,
+    articles,
+    currentPage: page,
+    totalPages,
+    currentCategory: category,
+    schema,
+  });
+}));
+
+// NEWS CATEGORY
+app.get('/news/category/:category', asyncHandler(async (req, res) => {
+  if (!newsDb) return res.status(503).send('News module not available');
+  res.redirect(301, `/news?cat=${req.params.category}`);
+}));
+
+// NEWS RSS FEED
+app.get('/news/feed.xml', asyncHandler(async (req, res) => {
+  if (!newsDb) return res.status(503).send('News module not available');
+  const articles = newsDb.getPublished(20, 0);
+  const items = articles.map(a => `
+    <item>
+      <title><![CDATA[${a.title}]]></title>
+      <link>https://zakonexpertt.kz/news/${a.slug}</link>
+      <guid isPermaLink="true">https://zakonexpertt.kz/news/${a.slug}</guid>
+      <pubDate>${new Date(a.published_at_site || a.created_at).toUTCString()}</pubDate>
+      <description><![CDATA[${a.excerpt || ''}]]></description>
+      <category>${a.category || 'general'}</category>
+    </item>`).join('');
+
+  res.set('Content-Type', 'application/rss+xml; charset=utf-8');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ZakonExpert — Новости</title>
+    <link>https://zakonexpertt.kz/news</link>
+    <description>Новости об арестах счетов, ЧСИ и законодательстве Казахстана</description>
+    <language>ru</language>
+    <atom:link href="https://zakonexpertt.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
+    ${items}
+  </channel>
+</rss>`);
+}));
+
+// MAIN RSS FEED
+app.get('/feed.xml', (req, res) => res.redirect(301, '/news/feed.xml'));
+
+// SITEMAP-NEWS.XML
+app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
+  if (!newsDb) {
+    res.set('Content-Type', 'application/xml');
+    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+  const articles = newsDb.getAllForSitemap();
+  const urls = articles.map(a => `
+  <url>
+    <loc>https://zakonexpertt.kz/news/${a.slug}</loc>
+    <lastmod>${(a.updated_at || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>`).join('');
+
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+}));
+
+// SITEMAP-PAGES.XML
+app.get('/sitemap-pages.xml', (req, res) => {
+  const pages = [
+    { url: '/', priority: '1.0', freq: 'weekly' },
+    { url: '/services.html', priority: '0.9', freq: 'monthly' },
+    { url: '/contact.html', priority: '0.8', freq: 'monthly' },
+    { url: '/zakony.html', priority: '0.85', freq: 'weekly' },
+    { url: '/news', priority: '0.9', freq: 'daily' },
+    { url: '/snyatie-aresta-so-scheta', priority: '0.9', freq: 'monthly' },
+    { url: '/otmena-ispolnitelnoi-nadpisi', priority: '0.9', freq: 'monthly' },
+    { url: '/vozrazhenie-na-ispolnitelnuyu-nadpis', priority: '0.85', freq: 'monthly' },
+    { url: '/snyatie-ogranichenii-chsi', priority: '0.85', freq: 'monthly' },
+    { url: '/snyatie-zapreta-na-avto', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-ogranicheniya-na-imushchestvo', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-zapreta-registracionnyh-deistvii', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-ogranichenii-u-notariusa', priority: '0.8', freq: 'monthly' },
+    { url: '/grafik-oplaty-zadolzhennosti', priority: '0.8', freq: 'monthly' },
+    { url: '/ubrat-procenty-i-rashody-chsi', priority: '0.8', freq: 'monthly' },
+    { url: '/arest-kaspi', priority: '0.85', freq: 'monthly' },
+    { url: '/arest-halyk-bank', priority: '0.85', freq: 'monthly' },
+    { url: '/arest-freedom-bank', priority: '0.85', freq: 'monthly' },
+  ];
+  const today = new Date().toISOString().substring(0, 10);
+  const urls = pages.map(p => `
+  <url>
+    <loc>https://zakonexpertt.kz${p.url}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.freq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`).join('');
+
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+});
+
+// SITEMAP INDEX
+app.get('/sitemap-index.xml', (req, res) => {
+  const today = new Date().toISOString().substring(0, 10);
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-pages.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-news.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>`);
+});
+
+// NEWS DETAIL (must be after feed.xml and category routes)
+app.get('/news/:slug', asyncHandler(async (req, res) => {
+  if (!newsDb) return res.status(503).send('News module not available');
+  const article = newsDb.getBySlug(req.params.slug);
+  if (!article) return res.status(404).redirect('/news');
+
+  const tagsArr = JSON.parse(article.tags || '[]');
+  const related = tagsArr.length > 0
+    ? newsDb.getByTags(tagsArr[0]).filter(r => r.slug !== article.slug).slice(0, 4)
+    : newsDb.getPublished(4, 0).filter(r => r.slug !== article.slug);
+
+  const pubDate = new Date(article.published_at_site || article.created_at);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: article.title,
+    description: article.meta_description || article.excerpt,
+    url: `https://zakonexpertt.kz/news/${article.slug}`,
+    datePublished: pubDate.toISOString(),
+    dateModified: article.updated_at || pubDate.toISOString(),
+    publisher: {
+      '@type': 'Organization',
+      name: 'ZakonExpert',
+      url: 'https://zakonexpertt.kz'
+    },
+    image: article.og_image || 'https://zakonexpertt.kz/img/zakonexpert-logo-kazakhstan.png'
+  };
+
+  res.render('news/detail', {
+    title: article.meta_title || article.title + ' | ZakonExpert',
+    description: article.meta_description || article.excerpt || '',
+    canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
+    ogType: 'article',
+    ogImage: article.og_image,
+    article,
+    related,
+    schema,
+  });
+}));
+
+// ADMIN: Manual import trigger (simple auth)
+app.post('/api/news/import', asyncHandler(async (req, res) => {
+  const adminKey = process.env.ADMIN_KEY;
+  if (!adminKey || req.headers['x-admin-key'] !== adminKey) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  if (!newsImporter) return res.status(503).json({ error: 'News module not available' });
+  const count = await newsImporter.importAll();
+  res.json({ ok: true, imported: count });
+}));
+
+// ===== SCHEDULED NEWS IMPORT (every 2 hours) =====
+if (newsImporter) {
+  cron.schedule('0 */2 * * *', async () => {
+    logger.info('[Cron] Starting scheduled news import...');
+    try {
+      const count = await newsImporter.importAll();
+      logger.info(`[Cron] News import done. Imported: ${count}`);
+    } catch (e) {
+      logger.error('[Cron] News import failed: ' + e.message);
+    }
+  });
+  logger.info('News cron scheduled: every 2 hours');
+}
 
 // Health-check для мониторинга сервиса
 app.get('/health', (req, res) => {

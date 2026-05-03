@@ -1,0 +1,69 @@
+<%
+const body = `
+<section class="news-hero">
+  <div class="legal-container">
+    <nav aria-label="breadcrumb" class="news-breadcrumb">
+      <a href="/">Главная</a> / <span>Новости</span>
+    </nav>
+    <h1>Новости по арестам счетов, ЧСИ и законодательству Казахстана</h1>
+    <p class="news-hero-lead">Актуальные материалы о банках, должниках, ЧСИ, исполнительных производствах и изменениях законодательства РК. Каждая статья — с юридическим комментарием.</p>
+    <div class="news-categories">
+      <a href="/news" class="${!currentCategory ? 'active' : ''}">Все</a>
+      <a href="/news/category/finance" class="${currentCategory === 'finance' ? 'active' : ''}">Финансы</a>
+      <a href="/news/category/laws" class="${currentCategory === 'laws' ? 'active' : ''}">Законы</a>
+      <a href="/news/category/news" class="${currentCategory === 'news' ? 'active' : ''}">Общество</a>
+    </div>
+  </div>
+</section>
+
+<section class="news-section">
+  <div class="legal-container">
+    ${articles.length === 0 ? `
+    <div class="news-empty">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:#94a3b8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h2>Новости скоро появятся</h2>
+      <p>Запустите импорт: <code>node scripts/import_news.js</code></p>
+    </div>
+    ` : `
+    <div class="news-grid">
+      ${articles.map(a => `
+      <article class="news-card">
+        ${a.og_image ? `<div class="news-card-img"><img src="${a.og_image}" alt="${a.title}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+        <div class="news-card-body">
+          <div class="news-card-meta">
+            <span class="news-source">${a.source_name || 'Источник'}</span>
+            <span class="news-date">${a.published_at_site ? new Date(a.published_at_site).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}) : ''}</span>
+          </div>
+          <h2 class="news-card-title"><a href="/news/${a.slug}">${a.title}</a></h2>
+          <p class="news-card-excerpt">${(a.excerpt || '').substring(0, 160)}${a.excerpt && a.excerpt.length > 160 ? '…' : ''}</p>
+          <div class="news-card-footer">
+            <a href="/news/${a.slug}" class="news-read-more">Читать разбор →</a>
+            ${JSON.parse(a.tags || '[]').slice(0,3).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+          </div>
+        </div>
+      </article>
+      `).join('')}
+    </div>
+    `}
+
+    ${totalPages > 1 ? `
+    <nav class="news-pagination" aria-label="Пагинация">
+      ${currentPage > 1 ? `<a href="/news?page=${currentPage - 1}${currentCategory ? '&cat=' + currentCategory : ''}" class="news-page-btn">← Назад</a>` : ''}
+      <span class="news-page-info">Страница ${currentPage} из ${totalPages}</span>
+      ${currentPage < totalPages ? `<a href="/news?page=${currentPage + 1}${currentCategory ? '&cat=' + currentCategory : ''}" class="news-page-btn">Вперёд →</a>` : ''}
+    </nav>
+    ` : ''}
+
+    <div class="news-cta-block">
+      <h3>Есть арест или ограничение?</h3>
+      <p>Проверьте по ИИН или напишите нам — разберём ситуацию.</p>
+      <div class="news-cta-actions">
+        <a href="/#checker-section" class="btn-legal-cta">Проверить по ИИН</a>
+        <a href="https://wa.me/77000300024?text=Здравствуйте.+Нужна+помощь." target="_blank" rel="noopener" class="btn-legal-outline"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+`;
+%>
+<%- include('layout', { title, description, canonical, ogType: 'website', ogImage: null, schema, body }) %>

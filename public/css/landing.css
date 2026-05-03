@@ -803,3 +803,96 @@ textarea.field-control, .contact-form-wrap textarea.form-control { min-height: 1
     .legal-card { padding: 26px; }
     .btn-outline-light { width: 100%; justify-content: center; }
 }
+
+/* ===========================
+   STICKY WHATSAPP BUTTON
+=========================== */
+.sticky-wa {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9999;
+  width: 58px;
+  height: 58px;
+  background: #25d366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.7rem;
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.45);
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.sticky-wa:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 32px rgba(37, 211, 102, 0.55);
+  color: #fff;
+}
+
+/* ===========================
+   APPLICATION FORM
+=========================== */
+.ze-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 4px 24px rgba(15, 32, 68, 0.1);
+}
+.ze-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+.ze-input {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  color: #0f2044;
+  background: #f8fafd;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+.ze-input:focus {
+  outline: none;
+  border-color: #1a3560;
+  box-shadow: 0 0 0 3px rgba(26, 53, 96, 0.12);
+  background: #fff;
+}
+.ze-input::placeholder { color: #94a3b8; }
+select.ze-input { cursor: pointer; }
+textarea.ze-input { resize: vertical; min-height: 90px; }
+.ze-form-note {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0;
+}
+.ze-form-note a { color: #1a3560; }
+.ze-form-success {
+  text-align: center;
+  padding: 2.5rem 2rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(15, 32, 68, 0.1);
+}
+.ze-form-success h3 { font-size: 1.3rem; color: #0f2044; margin: 0.75rem 0 0.5rem; }
+.ze-form-success p { color: #64748b; }
+.ze-form-success a { color: #1a3560; font-weight: 600; }
+
+/* ===========================
+   LEGAL BREADCRUMB (service pages)
+=========================== */
+.legal-breadcrumb {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 0.75rem;
+}
+.legal-breadcrumb a { color: rgba(255,255,255,0.75); text-decoration: none; }
+.legal-breadcrumb a:hover { color: #fff; }
