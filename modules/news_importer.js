@@ -31,49 +31,76 @@ const GENERIC_SELECTORS = [
   'article .content', 'article p'
 ];
 
-const RELEVANT_KEYWORDS = [
-  'арест', 'счет', 'должник', 'чси', 'нотариус', 'исполнительн',
-  'банк', 'кредит', 'долг', 'ограничение', 'взыскание', 'задолженность',
-  'заблокировали', 'карту', 'карт', 'имущество', 'автомобил',
-  'судебн', 'финансов', 'мошенничество', 'антифрод',
-  'kaspi', 'halyk', 'freedom', 'займ', 'заем', 'рассрочк', 'штраф',
-  'банкротств', 'коллектор', 'приставы', 'взыскател', 'дебитор',
-  'просрочк', 'неплатёж', 'неплатеж', 'ипотек', 'поручитель'
+// High-confidence keywords — ONE match is enough to include
+const STRONG_KEYWORDS = [
+  'арест счет', 'арест карт', 'заблокировал', 'арестовал счет', 'арестован счет',
+  'чси', 'судебный исполнитель', 'исполнительное производство', 'исполнительная надпись',
+  'должник', 'взыскание', 'задолженность по кредит', 'задолженность по займ',
+  'коллектор', 'банкротств', 'рассрочка исполнения', 'снятие ареста',
+  'отмена исполнительной', 'возражение нотариусу', 'арест имуществ', 'арест авто',
+  'запрет регистрационных', 'судебный пристав', 'просрочк'
 ];
 
-// Topics that are always irrelevant regardless of any keyword match
+// Lower-confidence keywords — need 2+ matches to be relevant
+const WEAK_KEYWORDS = [
+  'арест', 'нотариус', 'кредит', 'долг', 'займ', 'заем', 'банк',
+  'ограничение', 'штраф', 'ипотек', 'поручитель', 'мошенничество',
+  'kaspi', 'halyk', 'freedom', 'антифрод', 'финансов',
+  'мфо', 'микрофинанс', 'микрокредит', 'заёмщик', 'заемщик',
+  'неплатеж', 'неплатёж', 'просрочка'
+];
+
+// Always reject these topics even if they match weak keywords
 const IRRELEVANT_TOPICS = [
   'гороскоп', 'зодиак', 'рецепт', 'погода', 'прогноз погоды',
   'кино', 'фильм', 'сериал', 'концерт', 'музыка', 'певец', 'певица',
   'спорт', 'футбол', 'хоккей', 'теннис', 'чемпионат', 'матч',
   'туризм', 'отдых', 'отпуск', 'курорт', 'путешестви',
   'кулинар', 'диета', 'похудени', 'красот', 'мода', 'стиль',
-  'свадьба', 'праздник', 'юбилей'
+  'свадьба', 'праздник', 'юбилей',
+  'убийств', 'убит', 'нашли тело', 'изрезанн', 'ранен',
+  'пожар', 'авари', 'дтп', 'стоматол', 'операц', 'больниц',
+  'нефть', 'опек', 'уголовн', 'задержан полиц', 'наркот'
 ];
+
+// Combined for calcRelevance scoring
+const RELEVANT_KEYWORDS = [...STRONG_KEYWORDS, ...WEAK_KEYWORDS];
 
 function calcRelevance(title, description = '') {
   const text = (title + ' ' + description).toLowerCase();
-  // Strong negative check first
   for (const bad of IRRELEVANT_TOPICS) {
     if (text.includes(bad)) return 0;
   }
   let score = 0;
   for (const kw of RELEVANT_KEYWORDS) {
-    if (text.includes(kw.toLowerCase())) score += 1;
+    if (text.includes(kw)) score += 1;
   }
   return Math.min(score / 3, 1);
 }
 
 function isRelevant(title, description, keywords = []) {
   const text = (title + ' ' + (description || '')).toLowerCase();
-  // Reject obviously irrelevant topics
+
+  // Hard reject irrelevant topics first
   for (const bad of IRRELEVANT_TOPICS) {
     if (text.includes(bad)) return false;
   }
-  // Require at least 2 keyword matches for weak sources, 1 for specific sources
-  const allKw = [...RELEVANT_KEYWORDS, ...keywords.map(k => k.toLowerCase())];
-  const matches = allKw.filter(kw => text.includes(kw.toLowerCase())).length;
-  return matches >= 1;
+
+  // One strong keyword is enough
+  for (const kw of STRONG_KEYWORDS) {
+    if (text.includes(kw)) return true;
+  }
+
+  // Per-source extra keywords (high confidence if source is specialized)
+  for (const kw of keywords.map(k => k.toLowerCase())) {
+    if (text.includes(kw) && (kw.includes('арест') || kw.includes('чси') || kw.includes('должник') || kw.includes('взыскан'))) {
+      return true;
+    }
+  }
+
+  // Weak keywords: require at least 2 matches
+  const weakMatches = WEAK_KEYWORDS.filter(kw => text.includes(kw)).length;
+  return weakMatches >= 2;
 }
 
 function makeSlug(title, suffix) {

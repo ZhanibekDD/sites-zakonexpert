@@ -1,19 +1,5 @@
 [
   {
-    "id": 1,
-    "name": "Zakon.kz",
-    "base_url": "https://www.zakon.kz",
-    "rss_url": "https://www.zakon.kz/rss.xml",
-    "enabled": true,
-    "category": "laws",
-    "allowed": true,
-    "fetch_interval_minutes": 60,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-text", ".article-body", "[itemprop='articleBody']", ".content-article", ".material-text"],
-    "keywords": ["арест", "счет", "должник", "ЧСИ", "нотариус", "исполнительный", "банк", "кредит", "долг", "ограничение", "взыскание"]
-  },
-  {
     "id": 2,
     "name": "Ranking.kz",
     "base_url": "https://ranking.kz",
@@ -26,20 +12,6 @@
     "respect_robots": true,
     "content_selectors": [".article__body", ".article__text", "[itemprop='articleBody']", ".article-content", ".content"],
     "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "заем", "долг", "финансы"]
-  },
-  {
-    "id": 3,
-    "name": "Forbes.kz",
-    "base_url": "https://forbes.kz",
-    "rss_url": "https://forbes.kz/rss",
-    "enabled": true,
-    "category": "finance",
-    "allowed": true,
-    "fetch_interval_minutes": 120,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article__body", ".article-body", "[itemprop='articleBody']", ".article__content", ".entry-content"],
-    "keywords": ["банк", "кредит", "должник", "арест счета", "ЧСИ", "долг", "взыскание"]
   },
   {
     "id": 4,
@@ -56,20 +28,6 @@
     "keywords": ["банк", "кредит", "должник", "арест", "исполнительное производство", "задолженность"]
   },
   {
-    "id": 5,
-    "name": "Tengrinews.kz",
-    "base_url": "https://tengrinews.kz",
-    "rss_url": "https://tengrinews.kz/rss/",
-    "enabled": true,
-    "category": "news",
-    "allowed": true,
-    "fetch_interval_minutes": 60,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".content-text", ".article-content", "[itemprop='articleBody']", ".article-body", ".news-text"],
-    "keywords": ["арест счета", "должник", "ЧСИ", "исполнительное производство", "банк", "кредит", "нотариус", "арест имущества", "авто"]
-  },
-  {
     "id": 6,
     "name": "Inbusiness.kz",
     "base_url": "https://inbusiness.kz",
@@ -84,20 +42,6 @@
     "keywords": ["банк", "должник", "арест", "кредит", "ЧСИ", "задолженность", "взыскание"]
   },
   {
-    "id": 7,
-    "name": "Liter.kz",
-    "base_url": "https://liter.kz",
-    "rss_url": "https://liter.kz/rss/news",
-    "enabled": true,
-    "category": "news",
-    "allowed": true,
-    "fetch_interval_minutes": 90,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-body", ".article__body", "[itemprop='articleBody']", ".content", ".news-body"],
-    "keywords": ["арест", "счет", "должник", "ЧСИ", "нотариус", "банк", "кредит", "долг", "взыскание", "судебный исполнитель"]
-  },
-  {
     "id": 8,
     "name": "Kursiv.kz",
     "base_url": "https://kursiv.kz",
@@ -105,7 +49,7 @@
     "enabled": true,
     "category": "finance",
     "allowed": true,
-    "fetch_interval_minutes": 120,
+    "fetch_interval_minutes": 90,
     "parser_type": "rss",
     "respect_robots": true,
     "content_selectors": [".article__content", ".article-body", "[itemprop='articleBody']", ".content-body", ".entry-content"],
@@ -113,58 +57,16 @@
   },
   {
     "id": 9,
-    "name": "Inform.kz",
-    "base_url": "https://www.inform.kz",
-    "rss_url": "https://www.inform.kz/rss/ru",
-    "enabled": true,
-    "category": "news",
-    "allowed": true,
-    "fetch_interval_minutes": 60,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-body", ".article__body", "[itemprop='articleBody']", ".news-body", ".content-text"],
-    "keywords": ["арест", "счет", "должник", "ЧСИ", "нотариус", "банк", "кредит", "долг", "взыскание", "исполнительное производство"]
-  },
-  {
-    "id": 10,
-    "name": "Zakon.kz-economy",
-    "base_url": "https://www.zakon.kz",
-    "rss_url": "https://www.zakon.kz/rss/economy.xml",
+    "name": "Forbes.kz",
+    "base_url": "https://forbes.kz",
+    "rss_url": "https://forbes.kz/rss",
     "enabled": true,
     "category": "finance",
     "allowed": true,
-    "fetch_interval_minutes": 90,
+    "fetch_interval_minutes": 120,
     "parser_type": "rss",
     "respect_robots": true,
-    "content_selectors": [".article-text", ".article-body", "[itemprop='articleBody']"],
-    "keywords": ["банк", "кредит", "должник", "арест", "взыскание", "долг", "задолженность"]
-  },
-  {
-    "id": 11,
-    "name": "Egov-news",
-    "base_url": "https://egov.kz",
-    "rss_url": "https://egov.kz/cms/ru/articles/rss",
-    "enabled": true,
-    "category": "laws",
-    "allowed": true,
-    "fetch_interval_minutes": 180,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-body", ".content", "[itemprop='articleBody']"],
-    "keywords": ["арест", "должник", "ЧСИ", "нотариус", "исполнительное производство", "взыскание", "арест счета"]
-  },
-  {
-    "id": 12,
-    "name": "Nationalbank.kz",
-    "base_url": "https://nationalbank.kz",
-    "rss_url": "https://nationalbank.kz/rss/ru/news.xml",
-    "enabled": true,
-    "category": "finance",
-    "allowed": true,
-    "fetch_interval_minutes": 240,
-    "parser_type": "rss",
-    "respect_robots": true,
-    "content_selectors": [".article-body", ".news-body", "[itemprop='articleBody']", ".content-text"],
-    "keywords": ["банк", "кредит", "должник", "арест", "задолженность", "коллектор", "взыскание"]
+    "content_selectors": [".article__body", ".article-body", "[itemprop='articleBody']", ".article__content", ".entry-content"],
+    "keywords": ["банк", "кредит", "должник", "арест счета", "ЧСИ", "долг", "взыскание"]
   }
 ]
