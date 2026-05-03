@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /health
+
+Disallow: /node_modules/
+Disallow: /logs/
 
 Sitemap: https://zakonexpertt.kz/sitemap.xml
