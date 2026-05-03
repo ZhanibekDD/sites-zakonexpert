@@ -1129,29 +1129,52 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
 .law-info-card--more:hover p { color: rgba(255,255,255,0.7); }
 
 /* NEWS CARD COVER (list page) */
+.news-card-cover-link {
+  display: block;
+  text-decoration: none;
+}
 .news-card-cover {
   position: relative;
   overflow: hidden;
   border-radius: 12px 12px 0 0;
-  height: 180px;
-  background: #0e2a47;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
 }
+.news-card-cover-link:hover .news-card-cover { opacity: 0.9; }
 .news-card-cover img {
   width: 100%; height: 100%;
   object-fit: cover;
 }
+.news-card-cover-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(215,167,66,0.25);
+}
+.news-card-cover-icon svg {
+  width: 48px;
+  height: 48px;
+}
 .news-card-category {
   position: absolute;
-  top: 10px; left: 10px;
+  top: 12px; left: 12px;
   font-size: 0.72rem;
-  font-weight: 700;
-  color: white;
-  background: rgba(14,42,71,0.75);
-  padding: 3px 10px;
+  font-weight: 800;
+  color: #f0c060;
+  background: rgba(0,0,0,0.35);
+  padding: 4px 12px;
   border-radius: 20px;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  border: 1px solid rgba(215,167,66,0.3);
 }
 
 /* NEWS DETAIL COVER */
