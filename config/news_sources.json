@@ -10,6 +10,7 @@
     "fetch_interval_minutes": 60,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".article-text", ".article-body", "[itemprop='articleBody']", ".content-article", ".material-text"],
     "keywords": ["арест", "счет", "должник", "ЧСИ", "нотариус", "исполнительный", "банк", "кредит", "долг", "ограничение", "взыскание"]
   },
   {
@@ -23,6 +24,7 @@
     "fetch_interval_minutes": 120,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".article__body", ".article__text", "[itemprop='articleBody']", ".article-content", ".content"],
     "keywords": ["банк", "кредит", "должник", "арест", "ЧСИ", "заем", "долг", "финансы"]
   },
   {
@@ -36,6 +38,7 @@
     "fetch_interval_minutes": 120,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".article__body", ".article-body", "[itemprop='articleBody']", ".article__content", ".entry-content"],
     "keywords": ["банк", "кредит", "должник", "арест счета", "ЧСИ", "долг", "взыскание"]
   },
   {
@@ -49,6 +52,7 @@
     "fetch_interval_minutes": 90,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".field-body", ".article-text", ".field-item", "[itemprop='articleBody']", ".article__text"],
     "keywords": ["банк", "кредит", "должник", "арест", "исполнительное производство", "задолженность"]
   },
   {
@@ -62,6 +66,7 @@
     "fetch_interval_minutes": 60,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".content-text", ".article-content", "[itemprop='articleBody']", ".article-body", ".news-text"],
     "keywords": ["арест счета", "должник", "ЧСИ", "исполнительное производство", "банк", "кредит", "нотариус", "арест имущества", "авто"]
   },
   {
@@ -75,6 +80,7 @@
     "fetch_interval_minutes": 90,
     "parser_type": "rss",
     "respect_robots": true,
+    "content_selectors": [".article-content", ".article-body-text", "[itemprop='articleBody']", ".content-article", ".entry-content"],
     "keywords": ["банк", "должник", "арест", "кредит", "ЧСИ", "задолженность", "взыскание"]
   }
 ]

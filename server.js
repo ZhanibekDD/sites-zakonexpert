@@ -507,9 +507,10 @@ app.post('/api/news/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
-// ===== SCHEDULED NEWS IMPORT (every 2 hours) =====
+// ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
 if (newsImporter) {
-  cron.schedule('0 */2 * * *', async () => {
+  // Run import every 4 hours
+  cron.schedule('0 */4 * * *', async () => {
     logger.info('[Cron] Starting scheduled news import...');
     try {
       const count = await newsImporter.importAll();
@@ -518,7 +519,21 @@ if (newsImporter) {
       logger.error('[Cron] News import failed: ' + e.message);
     }
   });
-  logger.info('News cron scheduled: every 2 hours');
+  logger.info('News cron scheduled: every 4 hours');
+
+  // Run initial import after 10 seconds of server start (if DB is empty)
+  setTimeout(async () => {
+    try {
+      const existing = await newsDb.countPublished();
+      if (existing === 0) {
+        logger.info('[Startup] No news found, running initial import...');
+        await newsImporter.importAll();
+        logger.info('[Startup] Initial import done.');
+      }
+    } catch (e) {
+      logger.warn('[Startup] Initial import check failed: ' + e.message);
+    }
+  }, 10000);
 }
 
 // Health-check для мониторинга сервиса
