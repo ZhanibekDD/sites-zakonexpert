@@ -587,3 +587,51 @@
   .news-grid { grid-template-columns: 1fr; }
   .news-cta-actions, .news-cta-strip-actions, .news-when-help-actions { flex-direction: column; }
 }
+
+/* ─── Cover block: CSS gradient + SVG icon fallback ─── */
+.news-featured-main-img-link { display: block; text-decoration: none; }
+.news-featured-main-img {
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.news-cover-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0;
+}
+.news-cover-icon-sm {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0;
+}
+.news-secondary-img { position: relative; }
+
+/* Card cover (grid) */
+.news-card-cover-link { display: block; text-decoration: none; }
+.news-card-cover {
+  height: 185px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.news-card-cover img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.3s;
+  display: block;
+  position: absolute; top: 0; left: 0;
+}
+.news-card:hover .news-card-cover img { transform: scale(1.04); }
+.news-card-cover-icon {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.news-card-cover .news-card-category {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(15,32,68,0.78);
+  color: #fff; font-size: 0.72rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 0.18rem 0.55rem; border-radius: 4px;
+  backdrop-filter: blur(3px);
+}

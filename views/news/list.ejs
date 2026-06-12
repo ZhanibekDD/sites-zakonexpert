@@ -12,20 +12,72 @@ const CATEGORIES = [
   { slug: 'laws',     label: 'Законы' },
 ];
 
-function getCoverForArticle(a) {
-  if (a.og_image) return a.og_image;
-  if (a.category_cover) return a.category_cover;
-  const tl = (a.tags || '').toLowerCase();
-  if (tl.includes('kaspi') || tl.includes('halyk') || tl.includes('freedom') || tl.includes('банк')) return '/img/news/news-cover-bank.svg';
-  if (tl.includes('чси')) return '/img/news/news-cover-chsi.svg';
-  if (tl.includes('нотариус')) return '/img/news/news-cover-notarius.svg';
-  if (tl.includes('суд')) return '/img/news/news-cover-sud.svg';
-  if (tl.includes('штраф')) return '/img/news/news-cover-shtraf.svg';
-  if (tl.includes('алимент')) return '/img/news/news-cover-alimenty.svg';
-  if (tl.includes('авто')) return '/img/news/news-cover-auto.svg';
-  if (a.category === 'laws') return '/img/news/news-cover-notarius.svg';
-  if (a.category === 'finance') return '/img/news/news-cover-bank.svg';
-  return '/img/news/news-cover-default.svg';
+/* CSS-градиент + inline SVG-иконка по категории */
+function getCoverBlock(a) {
+  const tags = (a.tags || '').toLowerCase();
+  const title = (a.title || '').toLowerCase();
+  const combined = tags + ' ' + title;
+
+  let theme = 'default';
+  if (combined.includes('kaspi') || combined.includes('halyk') || combined.includes('freedom') || combined.includes('банк') || a.category === 'finance') theme = 'bank';
+  else if (combined.includes('чси') || combined.includes('судебный исполнитель')) theme = 'chsi';
+  else if (combined.includes('нотариус') || combined.includes('надпись')) theme = 'notarius';
+  else if (combined.includes('суд') || combined.includes('решение суд')) theme = 'sud';
+  else if (combined.includes('штраф') || combined.includes('коап')) theme = 'shtraf';
+  else if (combined.includes('алимент')) theme = 'alimenty';
+  else if (combined.includes('авто') || combined.includes('запрет')) theme = 'auto';
+  else if (a.category === 'laws') theme = 'laws';
+
+  const themes = {
+    bank: {
+      grad: 'linear-gradient(135deg,#0e3a6e 0%,#1a5ca8 100%)',
+      label: 'Банки',
+      icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/><path d="M12 15h2"/>',
+    },
+    chsi: {
+      grad: 'linear-gradient(135deg,#1a2a4a 0%,#2d4a7a 100%)',
+      label: 'ЧСИ',
+      icon: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>',
+    },
+    notarius: {
+      grad: 'linear-gradient(135deg,#2a1a0e 0%,#7a4a1a 100%)',
+      label: 'Нотариус',
+      icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    },
+    sud: {
+      grad: 'linear-gradient(135deg,#1a0e2a 0%,#4a1a7a 100%)',
+      label: 'Суд',
+      icon: '<line x1="12" y1="20" x2="12" y2="4"/><line x1="4" y1="9" x2="20" y2="9"/><path d="M4 9 Q4 15 12 20 Q20 15 20 9"/>',
+    },
+    shtraf: {
+      grad: 'linear-gradient(135deg,#2a1a00 0%,#8a4400 100%)',
+      label: 'Штрафы',
+      icon: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    },
+    alimenty: {
+      grad: 'linear-gradient(135deg,#0e2a1a 0%,#1a5a3a 100%)',
+      label: 'Алименты',
+      icon: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    },
+    auto: {
+      grad: 'linear-gradient(135deg,#0e1a2a 0%,#1a3a5a 100%)',
+      label: 'Авто',
+      icon: '<path d="M5 17H3v-7l2.5-5h13l2.5 5v7h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><line x1="9" y1="17" x2="15" y2="17"/>',
+    },
+    laws: {
+      grad: 'linear-gradient(135deg,#1a2a0e 0%,#2a4a1a 100%)',
+      label: 'Законы',
+      icon: '<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>',
+    },
+    default: {
+      grad: 'linear-gradient(135deg,#0e2a47 0%,#163d65 100%)',
+      label: 'Новости',
+      icon: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/>',
+    },
+  };
+
+  const t = themes[theme] || themes.default;
+  return { grad: t.grad, label: t.label, icon: t.icon };
 }
 
 function getCatLabel(a) {
@@ -104,11 +156,15 @@ const body = `
 
       <!-- BIG FEATURED -->
       <article class="news-featured-main">
-        <div class="news-featured-main-img">
-          <img src="${getCoverForArticle(featured)}" alt="${featured.title}" loading="eager"
-               onerror="this.src='/img/news/news-cover-default.svg'">
-          <span class="news-featured-cat-badge">${getCatLabel(featured)}</span>
-        </div>
+        <a href="/news/${featured.slug}" class="news-featured-main-img-link">
+          <div class="news-featured-main-img" ${!featured.og_image ? `style="background:${getCoverBlock(featured).grad}"` : ''}>
+            ${featured.og_image
+              ? `<img src="${featured.og_image}" alt="${featured.title}" loading="eager">`
+              : `<div class="news-cover-icon"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.85)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${getCoverBlock(featured).icon}</svg></div>`
+            }
+            <span class="news-featured-cat-badge">${getCatLabel(featured)}</span>
+          </div>
+        </a>
         <div class="news-featured-main-body">
           <div class="news-featured-main-meta">
             <span class="news-source">${featured.source_name || 'ZakonExpert'}</span>
@@ -127,11 +183,15 @@ const body = `
       <!-- SECONDARY COLUMN -->
       ${secondary.length > 0 ? `
       <div class="news-featured-side">
-        ${secondary.map(a => `
+        ${secondary.map(a => {
+          const cb = getCoverBlock(a);
+          return `
         <a href="/news/${a.slug}" class="news-secondary-card">
-          <div class="news-secondary-img">
-            <img src="${getCoverForArticle(a)}" alt="${a.title}" loading="lazy"
-                 onerror="this.src='/img/news/news-cover-default.svg'">
+          <div class="news-secondary-img" ${!a.og_image ? `style="background:${cb.grad}"` : ''}>
+            ${a.og_image
+              ? `<img src="${a.og_image}" alt="${a.title}" loading="lazy">`
+              : `<div class="news-cover-icon-sm"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${cb.icon}</svg></div>`
+            }
           </div>
           <div class="news-secondary-body">
             <div class="news-secondary-meta">
@@ -144,7 +204,8 @@ const body = `
               ${getTags(a).slice(0,2).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
             </div>
           </div>
-        </a>`).join('')}
+        </a>`;
+        }).join('')}
       </div>
       ` : ''}
 
@@ -172,16 +233,20 @@ const body = `
     </div>
     <div class="news-grid">
       ${gridItems.map(a => {
-        const cover  = getCoverForArticle(a);
+        const cover  = getCoverBlock(a);
         const tags   = getTags(a);
         const dateStr = getDateStr(a, false);
         return `
       <article class="news-card">
-        <div class="news-card-img">
-          <img src="${cover}" alt="${a.title}" loading="lazy"
-               onerror="this.src='/img/news/news-cover-default.svg'">
-          <span class="news-card-category">${getCatLabel(a)}</span>
-        </div>
+        <a href="/news/${a.slug}" class="news-card-cover-link">
+          <div class="news-card-cover" ${!a.og_image ? `style="background:${cover.grad}"` : ''}>
+            ${a.og_image
+              ? `<img src="${a.og_image}" alt="${a.title}" loading="lazy">`
+              : `<div class="news-card-cover-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${cover.icon}</svg></div>`
+            }
+            <span class="news-card-category">${cover.label}</span>
+          </div>
+        </a>
         <div class="news-card-body">
           <div class="news-card-meta">
             <span class="news-source">${a.source_name || 'ZakonExpert'}</span>
