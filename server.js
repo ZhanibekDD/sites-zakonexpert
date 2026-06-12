@@ -48,6 +48,9 @@ const logger = winston.createLogger({
 });
 // --- КОНЕЦ: Настройка логгера Winston ---
 
+// Telegram notifications
+const telegram = require('./modules/telegram');
+
 // Initialize DB and news importer
 let newsDb = null;
 let newsImporter = null;
@@ -84,6 +87,30 @@ app.use(cors({
 }));
 app.use(express.json()); // заменяет bodyParser.json()
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ===== VISITOR TRACKING =====
+const TRACKED_PATHS = new Set([
+  '/', '/index.html',
+  '/services.html', '/contact.html', '/zakony.html',
+  '/arest-kaspi', '/arest-kaspi.html',
+  '/arest-halyk-bank', '/arest-halyk-bank.html',
+  '/arest-freedom-bank',
+  '/ispolnitelnaya-nadpis.html',
+  '/snyatie-zapreta-na-avto', '/snyatie-zapreta-na-avto.html',
+  '/snyatie-aresta-so-scheta', '/snyatie-aresta-so-scheta.html',
+  '/grafik-platezhey.html', '/grafik-oplaty-zadolzhennosti',
+  '/chsi-arest-schetov.html',
+  '/ubrat-procenty-i-rashody-chsi',
+  '/besspornost-dolga.html', '/otmena-resheniya-suda.html',
+]);
+app.use((req, res, next) => {
+  if (req.method === 'GET' && TRACKED_PATHS.has(req.path)) {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const ua = req.headers['user-agent'] || '';
+    telegram.notifyVisit(req.path, ip, ua);
+  }
+  next();
+});
 
 // Увеличиваем таймауты для долгих запросов
 app.use((req, res, next) => {
@@ -245,11 +272,17 @@ app.post('/check', asyncHandler(async (req, res) => {
         const restrictionsResult = await checkRestrictions(iin); // Вызываем заглушку
 
         res.json({
-            debtorInfo: debtorResult, // Возвращаем результат как есть
+            debtorInfo: debtorResult,
             restrictions: restrictionsResult
         });
-        // ИЗМЕНЕНО: Логируем успешный ответ
         logger.info(`Успешно отправлен ответ для ИИН ${iin.substring(0, 4)}********. Должник найден: ${debtorResult.isDebtor}`);
+
+        // Telegram: уведомление о проверке ИИН
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+        const ua = req.headers['user-agent'] || '';
+        const details = debtorResult.details;
+        const count = Array.isArray(details) ? details.length : (details ? 1 : 0);
+        telegram.notifyIinCheck(ip, ua, debtorResult.isDebtor, count, iin);
 
     } catch (error) {
         // Ошибка уже залогирована в checkDebtorViaApi или asyncHandler
@@ -549,6 +582,42 @@ app.get('/api/news/reset', asyncHandler(async (req, res) => {
   }
 }));
 
+// GET /api/news/fix-images?key=... — fetch og:image for existing articles that have none
+app.get('/api/news/fix-images', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!newsDb) return res.status(503).json({ error: 'News DB not available' });
+  res.json({ ok: true, message: 'Image fetch started in background. Check logs.' });
+  const axios = require('axios');
+  const cheerio = require('cheerio');
+  try {
+    const articles = await newsDb.getAllWithoutImage();
+    logger.info(`[fix-images] Found ${articles.length} articles without og_image`);
+    let updated = 0;
+    for (const a of articles) {
+      const url = a.source_url || a.original_url;
+      if (!url || url.startsWith('https://news.google.com')) continue;
+      try {
+        const resp = await axios.get(url, {
+          timeout: 8000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpert-NewsBot/1.0)' },
+          maxRedirects: 3,
+          maxContentLength: 300_000,
+        });
+        const $ = cheerio.load(resp.data);
+        const img = $('meta[property="og:image"]').attr('content');
+        if (img) {
+          await newsDb.updateOgImage(a._id, img);
+          updated++;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      } catch (_) {}
+    }
+    logger.info(`[fix-images] Done. Updated ${updated}/${articles.length}`);
+  } catch (e) {
+    logger.error('[fix-images] Error: ' + e.message);
+  }
+}));
+
 // GET /api/news/status — show stats
 app.get('/api/news/status', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
@@ -598,6 +667,39 @@ if (newsImporter) {
     }
   }, 10000);
 }
+
+// ===== APPLICATION FORM =====
+app.post('/api/application', asyncHandler(async (req, res) => {
+  const { name, phone, bank, description } = req.body;
+  if (!name || !phone) {
+    return res.status(400).json({ error: 'Имя и телефон обязательны' });
+  }
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  logger.info(`Новая заявка: ${name}, ${phone}, банк: ${bank || '—'}`);
+  telegram.notifyApplication({ name, phone, bank, description }, ip, ua);
+  res.json({ ok: true });
+}));
+
+// ===== TELEGRAM SETUP: определить CHAT_ID =====
+app.get('/api/telegram/setup', asyncHandler(async (req, res) => {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    return res.json({ ok: false, error: 'TELEGRAM_BOT_TOKEN не задан в .env' });
+  }
+  const chatId = await telegram.detectChatId();
+  if (!chatId) {
+    return res.json({
+      ok: false,
+      error: 'Сообщений не найдено. Напишите /start боту и обновите страницу.',
+      token_hint: `Бот токен задан ✓`,
+    });
+  }
+  // Авто-применяем в runtime (до перезапуска)
+  process.env.TELEGRAM_CHAT_ID = chatId;
+  await telegram.send(`✅ <b>ZakonExpert подключён!</b>\n\nChat ID: <code>${chatId}</code>\nТеперь уведомления будут приходить сюда.\n\n<i>Добавьте в .env:\nTELEGRAM_CHAT_ID=${chatId}</i>`);
+  res.json({ ok: true, chat_id: chatId, note: `Добавьте TELEGRAM_CHAT_ID=${chatId} в .env для постоянной работы` });
+}));
 
 // Health-check для мониторинга сервиса
 app.get('/health', (req, res) => {

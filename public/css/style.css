@@ -192,9 +192,48 @@
 }
 #debtorDetailsModal .modal-title { font-weight: 800; }
 #debtorDetailsModal .btn-close { filter: invert(1); opacity: 0.9; }
-#debtorDetailsContent { padding: 24px 26px 10px; }
+#debtorDetailsContent { padding: 18px 20px 10px; }
 #debtorDetailsContent dt { font-weight: 800; color: var(--sky-900); }
 #debtorDetailsContent dd { color: var(--ink-700); margin-bottom: 10px; }
+.mi-block {
+    background: rgba(16, 32, 51, 0.03);
+    border: 1px solid rgba(16, 32, 51, 0.08);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+}
+.mi-block:last-child { margin-bottom: 0; }
+.mi-block-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--sky-800);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(16, 32, 51, 0.07);
+}
+.mi-row {
+    display: flex;
+    gap: 10px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(16, 32, 51, 0.04);
+    align-items: baseline;
+}
+.mi-row:last-child { border-bottom: none; }
+.mi-label {
+    font-weight: 700;
+    color: var(--ink-500);
+    font-size: 0.78rem;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+.mi-value {
+    color: var(--ink-900);
+    font-size: 0.86rem;
+    word-break: break-word;
+    font-weight: 600;
+}
 #debtorDetailsModal .modal-footer {
     padding: 18px 26px 24px; border-top: 1px solid rgba(16, 32, 51, 0.08);
 }

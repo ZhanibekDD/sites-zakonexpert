@@ -643,89 +643,59 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (window.currentDebtorsData && window.currentDebtorsData[debtorIndex]) {
                     const debtor = window.currentDebtorsData[debtorIndex];
 
-                    // Формируем HTML для деталей (используем dl для лучшей структуры)
+                    // Формируем HTML для деталей — три блока: Должник, Взыскатель, Производство
                     let detailsHtml = '';
-                    // Проверяем, что debtor не пустой объект
                     if (debtor && Object.keys(debtor).length > 0) {
-                        detailsHtml = '<dl class="row">';
-                        
-                        // --- ИЗМЕНЕНО: Определяем порядок и названия полей на основе ключей API ---
-                        const fieldsMap = isKz ? {
-                            'execProcNum': 'АІЖ нөмірі',
-                            'ipStartDate': 'Іс жүргізу басталған күні',
-                            'ilDate': 'Атқарушылық құжат күні',
-                            'debtorIin': 'Борышкердің ЖСН',
-                            'debtorName': 'Борышкердің аты',
-                            'debtorSurname': 'Борышкердің тегі',
-                            'debtorSecondname': 'Борышкердің әкесінің аты',
-                            'debtorBin': 'Борышкердің БСН',
-                            'debtorTitle': 'Борышкер атауы (заңды тұлға)',
-                            'recovererTitle': 'Өндіріп алушы',
-                            'recovererBin': 'Өндіріп алушының БСН',
-                            'recovererTypeRu': 'Өндіріп алушы түрі',
-                            'ilOrganRu': 'Құжатты берген орган',
-                            'categoryRu': 'Санат',
-                            'recoveryAmount': 'Өндірілетін сома',
-                            'officerSurname': 'Орындаушының тегі',
-                            'officerName': 'Орындаушының аты',
-                            'officerSecondname': 'Орындаушының әкесінің аты',
-                            'disaNameRu': 'Атқарушылық іс жүргізу органы',
-                            'disaDepartmentNameRu': 'Атқарушылық іс жүргізу бөлімі',
-                            'disaDepartmentAddress': 'Бөлім мекенжайы'
-                        } : {
-                            'execProcNum': 'Номер ИП',
-                            'ipStartDate': 'Дата возбуждения',
-                            'ilDate': 'Дата ИД',
-                            'debtorIin': 'ИИН Должника',
-                            'debtorName': 'Имя Должника',
-                            'debtorSurname': 'Фамилия Должника',
-                            'debtorSecondname': 'Отчество Должника',
-                            'debtorBin': 'БИН Должника',
-                            'debtorTitle': 'Наименование Должника (юр.лицо)',
-                            'recovererTitle': 'Взыскатель',
-                            'recovererBin': 'БИН Взыскателя',
-                            'recovererTypeRu': 'Тип взыскателя',
-                            'ilOrganRu': 'Орган, выдавший ИД',
-                            'categoryRu': 'Категория',
-                            'recoveryAmount': 'Сумма взыскания',
-                            'officerSurname': 'Фамилия исполнителя',
-                            'officerName': 'Имя исполнителя',
-                            'officerSecondname': 'Отчество исполнителя',
-                            'disaNameRu': 'Орган исполнит. пр-ва',
-                            'disaDepartmentNameRu': 'Подразделение исполнит. пр-ва',
-                            'disaDepartmentAddress': 'Адрес подразделения'
-                        };
+                        // ФИО должника (объединяем три поля)
+                        const dSurname = debtor.debtorSurname || '';
+                        const dName    = debtor.debtorName    || '';
+                        let dSecond = '';
+                        if (Array.isArray(debtor.debtorSecondname)) dSecond = debtor.debtorSecondname[0] || '';
+                        else if (typeof debtor.debtorSecondname === 'string') dSecond = debtor.debtorSecondname;
+                        const dFio = [dSurname, dName, dSecond].filter(Boolean).join(' ');
 
-                        // Проходим по всем ключам из карты полей
-                        for (const key in fieldsMap) {
-                            if (debtor.hasOwnProperty(key) && debtor[key] != null && debtor[key] !== '') {
-                                let value = debtor[key];
-                                let displayKey = fieldsMap[key]; // Название поля
+                        // ФИО исполнителя (объединяем три поля)
+                        const exSurname = debtor.officerSurname || '';
+                        const exName    = debtor.officerName    || '';
+                        let exSecond = '';
+                        if (Array.isArray(debtor.officerSecondname)) exSecond = debtor.officerSecondname[0] || '';
+                        else if (typeof debtor.officerSecondname === 'string') exSecond = debtor.officerSecondname;
+                        const exFio = [exSurname, exName, exSecond].filter(Boolean).join(' ');
 
-                                // Особая обработка для дат и сумм
-                                if (key === 'ipStartDate' || key === 'ilDate' || key === 'banStartDate' || key === 'banEndDate') {
-                                    value = formatDate(value);
-                                } else if (key === 'recoveryAmount') {
-                                    value = formatAmount(value);
-                                } else if (key === 'officerSecondname' && Array.isArray(value)) {
-                                     // Если Отчество - массив, берем первый элемент (ФИО)
-                                     value = value[0] || '-';
-                                } else if (typeof value === 'object') {
-                                     // Пропускаем вложенные объекты типа ds:Signature
-                                     continue;
-                                }
-
-                                // Добавляем строку в dl список
-                                detailsHtml += `
-                                    <dt class="col-sm-4">${displayKey}</dt>
-                                    <dd class="col-sm-8">${value || '-'}</dd>
-                                `;
-                            }
+                        function miRow(label, value) {
+                            if (!value || value === '') return '';
+                            return `<div class="mi-row"><span class="mi-label">${label}</span><span class="mi-value">${value}</span></div>`;
                         }
-                        detailsHtml += '</dl>';
 
+                        const blockDebtor = `<div class="mi-block">
+                            <div class="mi-block-title">${isKz ? 'Борышкер' : 'Должник'}</div>
+                            ${miRow(isKz ? 'ТАӘ' : 'ФИО', dFio)}
+                            ${miRow(isKz ? 'ЖСН' : 'ИИН', debtor.debtorIin)}
+                            ${miRow(isKz ? 'БСН' : 'БИН', debtor.debtorBin)}
+                            ${miRow(isKz ? 'Атауы' : 'Наименование', debtor.debtorTitle)}
+                        </div>`;
+
+                        const blockCreditor = `<div class="mi-block">
+                            <div class="mi-block-title">${isKz ? 'Өндіріп алушы' : 'Взыскатель'}</div>
+                            ${miRow(isKz ? 'Атауы' : 'Наименование', debtor.recovererTitle)}
+                            ${miRow(isKz ? 'БСН' : 'БИН', debtor.recovererBin)}
+                        </div>`;
+
+                        const blockCase = `<div class="mi-block">
+                            <div class="mi-block-title">${isKz ? 'Атқарушылық іс жүргізу' : 'Производство'}</div>
+                            ${miRow(isKz ? 'АІЖ нөмірі' : 'Номер ИП', debtor.execProcNum)}
+                            ${miRow(isKz ? 'Басталған күні' : 'Дата возбуждения', debtor.ipStartDate ? formatDate(debtor.ipStartDate) : '')}
+                            ${miRow(isKz ? 'ИД күні' : 'Дата ИД', debtor.ilDate ? formatDate(debtor.ilDate) : '')}
+                            ${miRow(isKz ? 'Өндіру сомасы' : 'Сумма взыскания', debtor.recoveryAmount ? formatAmount(debtor.recoveryAmount) : '')}
+                            ${miRow(isKz ? 'Құжатты берген орган' : 'Орган, выдавший ИД', debtor.ilOrganRu)}
+                            ${miRow(isKz ? 'Атқарушылық іс жүргізу органы' : 'Орган исп. пр-ва', debtor.disaNameRu)}
+                            ${miRow(isKz ? 'Орындаушы' : 'Исполнитель', exFio)}
+                            ${miRow(isKz ? 'Мекенжайы' : 'Адрес', debtor.disaDepartmentAddress)}
+                        </div>`;
+
+                        detailsHtml = blockDebtor + blockCreditor + blockCase;
                     } else {
-                        detailsHtml = '<p class="text-muted">Подробные детали для этого производства отсутствуют.</p>';
+                        detailsHtml = `<p class="text-muted">${T.noDetails}</p>`;
                     }
                     
                     // Обновляем содержимое модального окна

@@ -109,6 +109,15 @@ module.exports = {
     return { published, drafts, rejected, total: all };
   },
 
+  async updateOgImage(id, ogImage) {
+    return news.update({ _id: id }, { $set: { og_image: ogImage } }, {});
+  },
+
+  async getAllWithoutImage() {
+    const docs = await news.find({ status: 'published', og_image: { $in: [null, undefined, ''] } });
+    return docs;
+  },
+
   /** Delete ALL news articles (full reset) */
   async clearAll() {
     await news.remove({}, { multi: true });

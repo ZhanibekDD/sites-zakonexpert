@@ -18,7 +18,6 @@ const sources = require('../config/news_sources.json');
 const AUTO_PUBLISH     = process.env.AUTO_PUBLISH_NEWS !== 'false';
 const MIN_RELEVANCE    = parseFloat(process.env.NEWS_MIN_RELEVANCE  || '0.3');
 const IMPORT_LIMIT     = parseInt(process.env.NEWS_IMPORT_LIMIT     || '50', 10);
-const USE_SOURCE_IMG   = process.env.NEWS_USE_SOURCE_IMAGES === 'true';
 
 // ─── RSS PARSER ───────────────────────────────────────────────────────────────
 const parser = new RSSParser({
@@ -366,7 +365,6 @@ function generateWhenToSeekHelp(origTitle, description) {
 
 // ─── IMAGE EXTRACTION ─────────────────────────────────────────────────────────
 function extractRssImage(item) {
-  if (!USE_SOURCE_IMG) return null;
   if (item.mediaContent?.['$']?.url)      return item.mediaContent['$'].url;
   if (item.mediaThumbnail?.['$']?.url)    return item.mediaThumbnail['$'].url;
   if (item.enclosure?.url)                return item.enclosure.url;
@@ -379,31 +377,55 @@ function extractRssImage(item) {
  * Does NOT store full article text — only uses it for analysis.
  */
 async function fetchPageMeta(url) {
-  try {
-    const resp = await axios.get(url, {
+  return new Promise((resolve) => {
+    const CancelToken = axios.CancelToken;
+    const source = CancelToken.source();
+    let chunks = [];
+    let totalBytes = 0;
+    const MAX_BYTES = 80_000; // read only first 80 KB — head section is always there
+
+    axios.get(url, {
       timeout: 10000,
+      responseType: 'stream',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpert-NewsBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
       },
-      maxRedirects: 3,
-      maxContentLength: 500_000, // only read first 500 KB
+      maxRedirects: 5,
+      cancelToken: source.token,
+    }).then(resp => {
+      resp.data.on('data', chunk => {
+        chunks.push(chunk);
+        totalBytes += chunk.length;
+        if (totalBytes >= MAX_BYTES) {
+          source.cancel('head_read');
+        }
+      });
+      resp.data.on('end', () => parse(Buffer.concat(chunks)));
+      resp.data.on('error', () => resolve({ ogImage: null, pageDesc: '' }));
+    }).catch(err => {
+      if (axios.isCancel(err) || chunks.length > 0) {
+        parse(Buffer.concat(chunks));
+      } else {
+        resolve({ ogImage: null, pageDesc: '' });
+      }
     });
 
-    const $ = cheerio.load(resp.data, { decodeEntities: true });
-    const ogImage = USE_SOURCE_IMG
-      ? ($('meta[property="og:image"]').attr('content') || null)
-      : null;
-
-    // Extract a short excerpt for better relevance scoring (NOT for storage)
-    const descMeta = $('meta[name="description"]').attr('content')
-      || $('meta[property="og:description"]').attr('content')
-      || '';
-
-    return { ogImage, pageDesc: descMeta.substring(0, 400) };
-  } catch {
-    return { ogImage: null, pageDesc: '' };
-  }
+    function parse(buf) {
+      try {
+        const html = buf.toString('utf8');
+        const $ = cheerio.load(html, { decodeEntities: true });
+        const ogImage = $('meta[property="og:image"]').attr('content') || null;
+        const descMeta = $('meta[name="description"]').attr('content')
+          || $('meta[property="og:description"]').attr('content')
+          || '';
+        resolve({ ogImage, pageDesc: descMeta.substring(0, 400) });
+      } catch {
+        resolve({ ogImage: null, pageDesc: '' });
+      }
+    }
+  });
 }
 
 // ─── FETCH SOURCE ─────────────────────────────────────────────────────────────
@@ -493,7 +515,7 @@ async function fetchSource(source) {
     const metaDesc     = excerpt.substring(0, 155) || `Разбор: ${legalTitle.substring(0, 100)}`;
 
     const rssImg = extractRssImage(item);
-    const ogImage = rssImg || (USE_SOURCE_IMG ? pageOgImg : null);
+    const ogImage = rssImg || pageOgImg || null;
 
     // Category cover image (our own SVG — always available)
     const categoryCover = `/img/news/news-cover-${getCoverName(tags)}.svg`;

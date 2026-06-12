@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -70,136 +70,88 @@
       </div>
       <div class="header-contacts">
         <a href="tel:+77000300024"><i class="bi bi-telephone"></i> +7 (700) 030-00-24</a>
-        <a href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+        <a class="header-wa-btn" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%B8%D1%82%D1%8C%20%D0%B0%D1%80%D0%B5%D1%81%D1%82." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать</a>
       </div>
     </div>
   </div>
 </header>
 
 <main>
-  <!-- HERO -->
-  <section class="hero">
-    <div class="landing-container hero-grid">
-      <div class="hero-panel fade-in-section">
-        <div class="hero-chip-row">
-          <span class="hero-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg> Работаем по Казахстану</span>
-          <span class="hero-chip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Конфиденциально</span>
+  <!-- SEARCH HERO — aisoip style, все ID сохранены -->
+  <section id="checker-section" class="search-hero">
+    <div class="landing-container">
+      <div class="search-hero-inner">
+
+        <div class="search-hero-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Онлайн-проверка
         </div>
-        <h1 class="hero-title">Снятие арестов со счетов,<br>карт, авто и имущества<br><span>в Казахстане</span></h1>
-        <p class="hero-text">Берём на себя правовой разбор, подготовку документов, подачу обращений и контроль снятия ограничений. Работаем в рамках законодательства Казахстана.</p>
-        <div class="hero-actions">
-          <a class="btn-landing" href="#checker-section"><i class="bi bi-search"></i> Проверить арест</a>
-          <a class="btn-wa" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E." target="_blank" rel="noopener"><i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp</a>
-        </div>
-        <div class="hero-trust-row">
-          <div class="trust-badge"><i class="bi bi-geo-alt-fill"></i> Работаем по РК</div>
-          <div class="trust-badge"><i class="bi bi-file-earmark-text"></i> Разбор документов</div>
-          <div class="trust-badge"><i class="bi bi-shield-lock"></i> Конфиденциально</div>
-          <div class="trust-badge"><i class="bi bi-laptop"></i> Без лишних визитов</div>
-        </div>
-        <div class="hero-stat-row">
-          <div class="hero-stat-item">
-            <span class="hero-stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 11 12 4 21 11"/><rect x="3" y="11" width="18" height="10"/><line x1="3" y1="21" x2="21" y2="21"/><line x1="7" y1="11" x2="7" y2="21"/><line x1="12" y1="11" x2="12" y2="21"/><line x1="17" y1="11" x2="17" y2="21"/></svg></span>
-            <span class="hero-stat-text">Аресты со счетов<br>и карт</span>
+
+        <h1 class="search-hero-title">Проверка исполнительных<br>производств по ИИН</h1>
+        <p class="search-hero-subtitle">Введите ИИН физического лица — получите данные из государственных реестров Казахстана бесплатно</p>
+
+        <form id="search-form" novalidate class="search-main-form">
+          <div class="search-row">
+            <input class="search-main-input" type="text" id="iin" name="iin"
+                   inputmode="numeric" maxlength="12"
+                   placeholder="ИИН — 12 цифр">
+            <button id="search-button" type="submit" class="search-main-btn">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Проверить
+            </button>
           </div>
-          <div class="hero-stat-sep"></div>
-          <div class="hero-stat-item">
-            <span class="hero-stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-7l2.5-5h13l2.5 5v7h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><line x1="9" y1="17" x2="15" y2="17"/></svg></span>
-            <span class="hero-stat-text">Запреты на авто<br>и имущество</span>
-          </div>
-          <div class="hero-stat-sep"></div>
-          <div class="hero-stat-item">
-            <span class="hero-stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="hero-stat-text">Производства<br>и расходы ЧСИ</span>
+          <div id="iin-validation" class="invalid-feedback" style="display:none; text-align:center; margin-top:8px;"></div>
+          <p class="search-note-text">ИИН используется только для проверки и не сохраняется. <a href="privacy.html" style="color:var(--sky-700)">Политика конфиденциальности</a></p>
+        </form>
+
+        <div class="search-loading" id="loading-container" style="display:none;">
+          <div class="d-flex align-items-center gap-3">
+            <div class="spinner-border" role="status" aria-hidden="true"></div>
+            <div class="w-100">
+              <p class="loading-message"><span>Загрузка данных...</span></p>
+              <div class="progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width:0%"></div>
+              </div>
+            </div>
           </div>
         </div>
+
+        <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i><strong>Ошибка:</strong> <span id="error-text"></span>
+        </div>
+
+        <div id="results" class="search-results-area">
+          <section id="debtors-section" style="display:none;">
+            <h3 class="results-title">Найденные исполнительные производства</h3>
+            <p class="results-section-lead">Каждое производство требует отдельного правового разбора — нажмите «Разобрать», чтобы получить анализ ситуации.</p>
+            <div id="debtors-table" class="ip-cards-grid"></div>
+          </section>
+
+          <section id="restrictions-section" class="mt-4" style="display:none;">
+            <h3>Дополнительные ограничения</h3>
+            <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям — требуют отдельного правового анализа.</p>
+            <div class="table-responsive">
+              <table id="restrictions-table" class="table">
+                <thead>
+                  <tr><th>Тип ограничения</th><th>Статус</th><th>Орган</th><th>Дата</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <div class="search-cta-bar">
+          <p>ЧСИ арестовал счёт или карту? Разберём бесплатно — 10–15 минут в WhatsApp</p>
+          <a href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83%20%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2%2F%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D1%83." class="btn-wa" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Написать в WhatsApp
+          </a>
+        </div>
+
       </div>
-
-      <aside class="hero-visual fade-in-section">
-
-        <!-- Premium Legal-Tech Dashboard -->
-        <div class="hv-dashboard">
-          <div class="hv-header">
-            <span class="hv-label">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-              Правовое сопровождение · Казахстан
-            </span>
-          </div>
-
-          <div class="hv-grid">
-            <!-- Счета и карты -->
-            <div class="hv-card hv-card--accounts">
-              <div class="hv-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 11 12 4 21 11"/><rect x="3" y="11" width="18" height="10"/><line x1="3" y1="21" x2="21" y2="21"/><line x1="7" y1="11" x2="7" y2="21"/><line x1="12" y1="11" x2="12" y2="21"/><line x1="17" y1="11" x2="17" y2="21"/></svg>
-              </div>
-              <div class="hv-card-body">
-                <span class="hv-card-title">Счета и карты</span>
-                <span class="hv-card-desc">Снятие ареста</span>
-              </div>
-              <span class="hv-status hv-status--ok">✓ Снято</span>
-            </div>
-
-            <!-- Авто -->
-            <div class="hv-card hv-card--car">
-              <div class="hv-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H3v-7l2.5-5h13l2.5 5v7h-2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-              </div>
-              <div class="hv-card-body">
-                <span class="hv-card-title">Авто</span>
-                <span class="hv-card-desc">Запрет снят</span>
-              </div>
-              <span class="hv-status hv-status--ok">✓ Снято</span>
-            </div>
-
-            <!-- Имущество -->
-            <div class="hv-card hv-card--property">
-              <div class="hv-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </div>
-              <div class="hv-card-body">
-                <span class="hv-card-title">Имущество</span>
-                <span class="hv-card-desc">Сопровождение</span>
-              </div>
-              <span class="hv-status hv-status--process">В работе</span>
-            </div>
-
-            <!-- ЧСИ / Документы -->
-            <div class="hv-card hv-card--docs">
-              <div class="hv-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              </div>
-              <div class="hv-card-body">
-                <span class="hv-card-title">ЧСИ / Нотариус</span>
-                <span class="hv-card-desc">Правовой анализ</span>
-              </div>
-              <span class="hv-status hv-status--analyze">Анализ</span>
-            </div>
-          </div>
-
-          <!-- Trust row -->
-          <div class="hv-trust">
-            <div class="hv-trust-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <span>Законно</span>
-            </div>
-            <div class="hv-trust-sep"></div>
-            <div class="hv-trust-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>Конфиденциально</span>
-            </div>
-            <div class="hv-trust-sep"></div>
-            <div class="hv-trust-item">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span>По всему РК</span>
-            </div>
-          </div>
-        </div>
-        <!-- /Dashboard -->
-
-      </aside>
     </div>
   </section>
-
   <!-- PROBLEMS -->
   <section class="section section-surface">
     <div class="landing-container">
@@ -338,82 +290,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           Разобраться в моей ситуации
         </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- IIN CHECKER — все ID сохранены -->
-  <section id="checker-section" class="section section-surface">
-    <div class="landing-container">
-      <span class="section-kicker">Онлайн-проверка</span>
-      <h2 class="section-title">Проверьте наличие исполнительных производств по ИИН</h2>
-      <p class="section-lead">Введите ИИН, чтобы бесплатно узнать о текущих исполнительных производствах и ограничениях. Результаты помогут понять масштаб ситуации и выбрать правильный шаг.</p>
-
-      <div class="checker-shell mt-4 fade-in-section">
-        <div class="checker-layout">
-          <div>
-            <form id="search-form" novalidate>
-              <div>
-                <label class="field-label" for="iin">Введите ИИН (12 цифр)</label>
-                <input class="form-control" type="text" id="iin" name="iin" inputmode="numeric" maxlength="12" placeholder="Например: 123456789012">
-                <div id="iin-validation" class="invalid-feedback" style="display:none;"></div>
-                <p class="checker-note">Проверка выполняется через базы данных Казахстана. Пожалуйста, дождитесь загрузки результатов. ИИН используется только для проверки и не сохраняется. <a href="privacy.html" style="color:var(--sky-700);text-decoration:underline;font-weight:700;" target="_blank">Политика конфиденциальности</a>.</p>
-              </div>
-              <button id="search-button" type="submit"><i class="bi bi-search me-2"></i>Проверить</button>
-            </form>
-
-            <div id="loading-container" style="display:none;">
-              <div class="d-flex align-items-center gap-3">
-                <div class="spinner-border" role="status" aria-hidden="true"></div>
-                <div class="w-100">
-                  <p class="loading-message"><span>Загрузка данных...</span></p>
-                  <div class="progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width:0%"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
-              <i class="bi bi-exclamation-triangle me-2"></i><strong>Ошибка:</strong> <span id="error-text"></span>
-            </div>
-
-            <div id="results" class="mt-4">
-              <section id="debtors-section" style="display:none;">
-                <h3>Найденные исполнительные производства</h3>
-                <p class="results-section-lead">Каждое производство требует отдельного правового разбора — нажмите «Разобрать», чтобы получить анализ конкретной ситуации.</p>
-                <div id="debtors-table" class="ip-cards-grid"></div>
-              </section>
-
-              <section id="restrictions-section" class="mt-4" style="display:none;">
-                <h3>Дополнительные ограничения</h3>
-                <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям требуют отдельного правового анализа и не отображаются автоматически.</p>
-                <div class="table-responsive">
-                  <table id="restrictions-table" class="table">
-                    <thead>
-                      <tr><th>Тип ограничения</th><th>Статус</th><th>Орган</th><th>Дата</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          <aside class="checker-side">
-            <h3>Что даёт проверка</h3>
-            <p>После проверки вы увидите исполнительные производства с суммами, взыскателями и исполнителями — и сможете сразу отправить запрос на разбор ситуации.</p>
-            <ul>
-              <li>Номера и даты исполнительных производств</li>
-              <li>Суммы взыскания и данные взыскателя</li>
-              <li>Кнопка «Разобрать» — напрямую в WhatsApp</li>
-            </ul>
-            <p class="checker-note" style="margin-top:14px;">Стоимость сопровождения определяется индивидуально после анализа документов.</p>
-            <div class="inline-links">
-              <a class="badge-outline" href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D1%81%D0%B8%D1%82%D1%83%D0%B0%D1%86%D0%B8%D1%8E%20%D0%BF%D0%BE%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83%20%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2%2F%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%BC%D1%83%20%D0%BF%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D1%83." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Разобрать ситуацию</a>
-            </div>
-          </aside>
-        </div>
       </div>
     </div>
   </section>
@@ -939,9 +815,9 @@
       <p class="mt-3">Профессиональное сопровождение по снятию арестов с банковских счетов, карт, имущества и авто. Работаем по всему Казахстану в рамках законодательства РК.</p>
     </div>
 
-    <div class="row g-4">
-      <div class="col-md-4">
-        <h3 class="h5 mb-3">Разделы</h3>
+    <div class="footer-cols">
+      <div>
+        <h3 class="footer-col-title">Разделы</h3>
         <div class="footer-links">
           <a href="/">Главная</a>
           <a href="/services.html">Услуги</a>
@@ -951,25 +827,25 @@
           <a href="/privacy.html">Конфиденциальность</a>
         </div>
       </div>
-      <div class="col-md-4">
-        <h3 class="h5 mb-3">Услуги</h3>
+      <div>
+        <h3 class="footer-col-title">Услуги</h3>
         <div class="footer-links">
-          <a href="/snyatie-aresta-so-scheta">Снятие ареста со счёта</a>
-          <a href="/otmena-ispolnitelnoi-nadpisi">Отмена исп. надписи</a>
-          <a href="/snyatie-ogranichenii-chsi">Ограничения ЧСИ</a>
-          <a href="/snyatie-zapreta-na-avto">Запрет на авто</a>
-          <a href="/arest-kaspi">Kaspi арест</a>
-          <a href="/grafik-oplaty-zadolzhennosti">График платежей</a>
+          <a href="/snyatie-aresta-so-scheta.html">Снятие ареста со счёта</a>
+          <a href="/ispolnitelnaya-nadpis.html">Отмена исп. надписи</a>
+          <a href="/chsi-arest-schetov.html">Ограничения ЧСИ</a>
+          <a href="/snyatie-zapreta-na-avto.html">Запрет на авто</a>
+          <a href="/arest-kaspi.html">Kaspi арест</a>
+          <a href="/grafik-platezhey.html">График платежей</a>
         </div>
       </div>
-      <div class="col-md-4">
-        <h3 class="h5 mb-3">Связь</h3>
+      <div>
+        <h3 class="footer-col-title">Связь</h3>
         <div class="footer-contacts">
           <a href="tel:+77000300024"><i class="bi bi-telephone me-2"></i>+7 (700) 030-00-24</a>
           <a href="mailto:stopnadpis@mail.ru"><i class="bi bi-envelope me-2"></i>stopnadpis@mail.ru</a>
           <a href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a>
         </div>
-        <p style="font-size:0.8rem;color:rgba(255,255,255,0.45);margin-top:12px">Работаем по всему Казахстану</p>
+        <p class="footer-region mt-3">Работаем по всему Казахстану</p>
       </div>
     </div>
   </div>
@@ -999,6 +875,15 @@ if (appForm) {
     if (!name || !phone) return;
     const bank = document.getElementById('app-bank').value;
     const desc = document.getElementById('app-desc').value.trim();
+
+    // Отправляем на сервер (Telegram уведомление)
+    fetch('/api/application', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, phone, bank, description: desc }),
+    }).catch(() => {});
+
+    // Открываем WhatsApp
     const msg = encodeURIComponent(
       'Заявка с сайта ZakonExpert\n' +
       'Имя: ' + name + '\n' +
