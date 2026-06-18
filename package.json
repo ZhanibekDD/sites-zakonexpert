@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "import-news": "node scripts/import_news.js",
     "import-notaries": "node scripts/import-notaries.js",
-    "import-bailiffs": "node scripts/import-bailiffs.js"
+    "import-bailiffs": "node scripts/import-bailiffs.js",
+    "import-lawyers": "node scripts/import-lawyers.js"
   },
   "dependencies": {
     "axios": "^1.9.0",

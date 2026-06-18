@@ -84,6 +84,17 @@ try {
   logger.warn('Bailiffs module not loaded: ' + e.message);
 }
 
+// Initialize lawyers DB
+let lawyersDb = null;
+let importLawyers = null;
+try {
+  lawyersDb  = require('./modules/lawyers-db');
+  ({ importLawyers } = require('./scripts/import-lawyers'));
+  logger.info('Lawyers module loaded ✓');
+} catch (e) {
+  logger.warn('Lawyers module not loaded: ' + e.message);
+}
+
 // Маскировка ИИН для безопасного логирования
 function maskIin(iin) {
     const clean = String(iin || '').replace(/\D/g, '');
@@ -438,6 +449,43 @@ app.get('/api/bailiffs/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
+// ===== LAWYER SEO PAGES =====
+
+app.get('/lawyer/:slug', asyncHandler(async (req, res) => {
+  if (!lawyersDb) return res.status(503).send('Lawyer module not available');
+  const lawyer = await lawyersDb.findBySlug(req.params.slug);
+  if (!lawyer) return res.status(404).redirect('/lawyer-search');
+  res.render('lawyer/page', { lawyer });
+}));
+
+app.get('/sitemap-lawyers.xml', asyncHandler(async (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  if (!lawyersDb) {
+    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+  const all = await lawyersDb.getAllSlugs();
+  const lastUpdated = await lawyersDb.getLastUpdated();
+  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
+  const urls = all.map(l => `
+  <url>
+    <loc>https://zakonexpertt.kz/lawyer/${l.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+}));
+
+app.get('/api/lawyers/import', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!importLawyers) return res.status(503).json({ error: 'Lawyer module not available' });
+  const count = await importLawyers();
+  res.json({ ok: true, imported: count });
+}));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
@@ -638,6 +686,10 @@ app.get('/sitemap-index.xml', (req, res) => {
     <loc>https://zakonexpertt.kz/sitemap-bailiffs.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-lawyers.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
 </sitemapindex>`);
 });
 
@@ -792,7 +844,7 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
   });
 }));
 
-// ===== NOTARY + BAILIFF DB: auto-import on startup if empty or CSV is newer =====
+// ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if empty or CSV is newer =====
 setTimeout(async () => {
   if (importNotaries) {
     try {
@@ -806,11 +858,17 @@ setTimeout(async () => {
       if (count > 0) logger.info(`[Bailiffs] DB ready: ${count} bailiffs`);
     } catch (e) { logger.warn('[Bailiffs] Startup import failed: ' + e.message); }
   }
+  if (importLawyers) {
+    try {
+      const count = await importLawyers();
+      if (count > 0) logger.info(`[Lawyers] DB ready: ${count} lawyers`);
+    } catch (e) { logger.warn('[Lawyers] Startup import failed: ' + e.message); }
+  }
 }, 5000);
 
 // Weekly re-import every Sunday at 03:00 (after pushing fresh CSVs to git)
 cron.schedule('0 3 * * 0', async () => {
-  logger.info('[Cron] Weekly notary+bailiff re-import starting...');
+  logger.info('[Cron] Weekly notary+bailiff+lawyer re-import starting...');
   if (importNotaries) {
     try { const n = await importNotaries(); logger.info(`[Cron] Notaries: ${n}`); }
     catch (e) { logger.error('[Cron] Notary re-import failed: ' + e.message); }
@@ -819,8 +877,12 @@ cron.schedule('0 3 * * 0', async () => {
     try { const n = await importBailiffs(); logger.info(`[Cron] Bailiffs: ${n}`); }
     catch (e) { logger.error('[Cron] Bailiff re-import failed: ' + e.message); }
   }
+  if (importLawyers) {
+    try { const n = await importLawyers(); logger.info(`[Cron] Lawyers: ${n}`); }
+    catch (e) { logger.error('[Cron] Lawyer re-import failed: ' + e.message); }
+  }
 });
-logger.info('Notary+Bailiff cron scheduled: every Sunday 03:00');
+logger.info('Notary+Bailiff+Lawyer cron scheduled: every Sunday 03:00');
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
 if (newsImporter) {
