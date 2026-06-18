@@ -47,148 +47,130 @@ const schema = {
   creator:   { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
 };
 
-// Bold punishment keywords wherever they appear in text
+// Bold only the most important punishment terms inline
 function boldPunishments(text) {
   return text
     .replace(/(пожизненным лишением свободы)/gi, '<strong>$1</strong>')
     .replace(/(лишением свободы)/gi, '<strong>$1</strong>')
-    .replace(/(лишение свободы)/gi, '<strong>$1</strong>')
     .replace(/(ограничением свободы)/gi, '<strong>$1</strong>')
-    .replace(/(ограничение свободы)/gi, '<strong>$1</strong>')
     .replace(/(смертной казнью)/gi, '<strong>$1</strong>')
     .replace(/(\bарестом\b)/gi, '<strong>$1</strong>')
     .replace(/(\bштрафом\b)/gi, '<strong>$1</strong>')
-    .replace(/(исправительными работами)/gi, '<strong>$1</strong>')
-    .replace(/(привлечением к общественным работам)/gi, '<strong>$1</strong>')
-    .replace(/(конфискацией имущества)/gi, '<strong>$1</strong>')
-    .replace(/(лишением права занимать[^,\.\n]{0,60})/gi, '<strong>$1</strong>');
+    .replace(/(конфискацией имущества)/gi, '<strong>$1</strong>');
 }
 
-// Parse article text into structured blocks
+// Format article text — clean, readable
 function formatLawText(text) {
   if (!text) return '<p style="color:#94a3b8;">Текст статьи не загружен. Запустите <code>npm run scrape-laws</code></p>';
   const lines = text.split('\n').filter(l => l.trim());
   let html = '';
+  let partOpen = false;
+
   for (const line of lines) {
     const l = line.trim();
 
-    // Skip footnote/amendment lines
+    // Skip footnotes
     if (/^Сноска\./i.test(l)) continue;
 
-    // Numbered main parts: "1. Убийство, то есть..."
+    // Numbered main part: "1. Текст части..."
     const partM = l.match(/^(\d+)\.\s+([\s\S]+)/);
     if (partM) {
-      const isSanction = /^наказывается|^наказываются|^влечёт|^влечет/i.test(partM[2].trim());
-      if (isSanction) {
-        html += `<div class="law-part"><span class="law-part-num">Часть ${partM[1]}</span><div class="law-sanction"><i class="bi bi-shield-exclamation me-2"></i>${boldPunishments(partM[2])}</div></div>`;
+      if (partOpen) html += '</div>';
+      html += `<div class="lp-block">`;
+      html += `<span class="lp-num">Часть ${partM[1]}</span>`;
+      const body = partM[2];
+      if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(body.trim())) {
+        html += `<p class="lp-sanction"><i class="bi bi-chevron-right"></i>${boldPunishments(body)}</p>`;
       } else {
-        html += `<div class="law-part"><span class="law-part-num">Часть ${partM[1]}</span><p>${boldPunishments(partM[2])}</p></div>`;
+        html += `<p class="lp-text">${boldPunishments(body)}</p>`;
       }
+      partOpen = true;
       continue;
     }
 
-    // Sub-items: "1) двух или более лиц;" or "а) совершённое..."
+    // Sub-items: "1) ..." or "а) ..."
     if (/^\d+\)\s/.test(l) || /^[а-яёa-z]\)\s/i.test(l)) {
-      html += `<p class="law-subitem">${boldPunishments(l)}</p>`;
+      html += `<p class="lp-item">${boldPunishments(l)}</p>`;
       continue;
     }
 
-    // Standalone sanction line
+    // Standalone sanction
     if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(l)) {
-      html += `<div class="law-sanction"><i class="bi bi-shield-exclamation me-2"></i>${boldPunishments(l)}</div>`;
+      html += `<p class="lp-sanction"><i class="bi bi-chevron-right"></i>${boldPunishments(l)}</p>`;
       continue;
     }
 
-    html += `<p>${boldPunishments(l)}</p>`;
+    html += `<p class="lp-text">${boldPunishments(l)}</p>`;
   }
+
+  if (partOpen) html += '</div>';
   return html || '<p style="color:#94a3b8;">Нет текста.</p>';
 }
 
-// Extract sanction lines for the top "Что грозит" box
-function extractSanctions(text) {
-  if (!text) return [];
-  return text.split('\n')
-    .map(l => l.trim())
-    .filter(l => /^наказывается|^наказываются|^влечёт|^влечет/i.test(l) && !l.startsWith('Сноска'))
-    .slice(0, 4);
-}
-
 const textFormatted = formatLawText(art.text);
-const sanctions     = extractSanctions(art.text);
 
 const body = `
 <style>
-  .law-part {
-    margin: 20px 0;
-    border: 1px solid #e2e8f0;
-    border-left: 4px solid #d7a742;
-    border-radius: 0 12px 12px 0;
-    background: #fffdf5;
+  /* Article text blocks */
+  .lp-block {
+    border: 1px solid #e8edf2;
+    border-radius: 12px;
+    margin: 16px 0;
     overflow: hidden;
   }
-  .law-part-num {
+  .lp-num {
     display: block;
-    padding: 8px 18px 6px;
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #fff;
-    background: #d7a742;
-  }
-  .law-part > p, .law-part > div.law-sanction {
-    margin: 0;
-    padding: 12px 18px 14px;
-  }
-  .law-part > p { color: #1e293b; line-height: 1.8; }
-  .law-subitem {
-    padding: 3px 0 3px 32px;
-    color: #334155;
-    margin: 2px 0;
-    line-height: 1.75;
-    position: relative;
-  }
-  .law-subitem::before { content: '—'; position: absolute; left: 14px; color: #94a3b8; }
-  .law-sanction {
-    background: #fff1f0;
-    border: 1.5px solid #fca5a5;
-    border-radius: 10px;
-    padding: 12px 16px;
-    color: #991b1b;
-    font-size: 0.95rem;
-    line-height: 1.7;
-    margin: 12px 0;
-  }
-  .law-sanction .bi { color: #dc2626; }
-  .law-sanction strong { color: #7f1d1d; }
-  .law-part > .law-sanction { border-radius: 0; border: none; border-top: 1px solid #fecaca; margin: 0; }
-  .law-penalty-box {
-    background: linear-gradient(135deg, #0f2044, #1a3a5c);
-    border-radius: 16px;
-    padding: 22px 24px;
-    color: #fff;
-    margin-bottom: 28px;
-  }
-  .law-penalty-title {
-    font-size: 0.72rem;
+    padding: 6px 16px;
+    font-size: 0.7rem;
     font-weight: 900;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: #d7a742;
-    margin-bottom: 12px;
+    color: #64748b;
+    background: #f8fafc;
+    border-bottom: 1px solid #e8edf2;
   }
-  .law-penalty-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    font-size: 0.88rem;
-    line-height: 1.65;
+  .lp-text {
+    margin: 0;
+    padding: 14px 16px;
+    font-size: 1rem;
+    line-height: 1.85;
+    color: #1e293b;
   }
-  .law-penalty-item:last-child { border-bottom: none; padding-bottom: 0; }
-  .law-penalty-item .bi { color: #d7a742; margin-top: 3px; flex-shrink: 0; font-size: 1rem; }
-  .law-penalty-item strong { color: #fde68a; }
+  .lp-item {
+    margin: 0;
+    padding: 4px 16px 4px 36px;
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: #334155;
+    position: relative;
+  }
+  .lp-item::before { content: '–'; position: absolute; left: 18px; color: #94a3b8; }
+  .lp-sanction {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 0.97rem;
+    line-height: 1.75;
+    color: #1e293b;
+    background: #fffbeb;
+    border-top: 1px solid #fde68a;
+    font-weight: 500;
+  }
+  .lp-sanction .bi { color: #d7a742; margin-right: 6px; font-size: 0.8rem; }
+  .lp-sanction strong { color: #92400e; }
+  /* Standalone sanction (no part wrapper) */
+  .law-text > .lp-sanction {
+    border-radius: 8px;
+    border: 1px solid #fde68a;
+    border-top: 1px solid #fde68a;
+    margin: 12px 0;
+  }
+  /* Standalone text without part wrapper */
+  .law-text > .lp-text {
+    padding: 4px 0;
+  }
+  .law-text > .lp-item {
+    padding-left: 20px;
+  }
 </style>
 
 <section class="law-hero">
@@ -209,44 +191,27 @@ const body = `
   <div class="landing-container">
     <div class="row g-4">
 
-      <!-- Article text -->
       <div class="col-lg-8">
-
-        ${sanctions.length > 0 ? `
-        <div class="law-penalty-box">
-          <div class="law-penalty-title"><i class="bi bi-exclamation-triangle me-1"></i>Что грозит — Статья ${art.num} ${art.codeName}</div>
-          ${sanctions.map((s, i) => `
-          <div class="law-penalty-item">
-            <i class="bi bi-chevron-right"></i>
-            <span><span style="font-size:0.72rem;color:#94a3b8;margin-right:6px;">Ч.${i+1}</span>${boldPunishments(s).replace(/<strong>/g,'<strong style="color:#fde68a;">')}</span>
-          </div>`).join('')}
-        </div>
-        ` : ''}
-
-        <h2 style="font-size:1rem;font-weight:800;color:#0f2044;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #f1f5f9;">
-          Текст статьи ${art.num} ${art.codeName}
-        </h2>
 
         <div class="law-text">
           ${textFormatted}
         </div>
 
-        <!-- Prev/Next navigation -->
-        <div style="display:flex;gap:10px;margin-top:36px;flex-wrap:wrap;">
-          ${adj.prev ? `<a href="/statya/${adj.prev.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;transition:.15s;" onmouseover="this.style.borderColor='#d7a742'" onmouseout="this.style.borderColor='#e2e8f0'">
-            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">← Предыдущая статья</div>
-            <div style="font-size:0.9rem;font-weight:700;">Ст. ${adj.prev.num} · ${adj.prev.title.slice(0,40)}</div>
+        <!-- Prev/Next -->
+        <div style="display:flex;gap:10px;margin-top:32px;flex-wrap:wrap;">
+          ${adj.prev ? `<a href="/statya/${adj.prev.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;">
+            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">← Предыдущая</div>
+            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.prev.num} · ${adj.prev.title.slice(0,40)}</div>
           </a>` : ''}
-          ${adj.next ? `<a href="/statya/${adj.next.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;text-align:right;transition:.15s;" onmouseover="this.style.borderColor='#d7a742'" onmouseout="this.style.borderColor='#e2e8f0'">
-            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">Следующая статья →</div>
-            <div style="font-size:0.9rem;font-weight:700;">Ст. ${adj.next.num} · ${adj.next.title.slice(0,40)}</div>
+          ${adj.next ? `<a href="/statya/${adj.next.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;text-align:right;">
+            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">Следующая →</div>
+            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.next.num} · ${adj.next.title.slice(0,40)}</div>
           </a>` : ''}
         </div>
 
-        <!-- Related articles -->
         ${related.length > 0 ? `
-        <div style="margin-top:36px;">
-          <h2 style="font-size:1rem;font-weight:800;margin-bottom:14px;color:#0f2044;">Рядом в кодексе</h2>
+        <div style="margin-top:32px;">
+          <h2 style="font-size:1rem;font-weight:800;margin-bottom:12px;color:#0f2044;">Рядом в кодексе</h2>
           <div class="law-results-grid">
             ${related.map(r => `
             <a href="/statya/${r.slug}" class="law-result-card">
@@ -258,12 +223,10 @@ const body = `
         </div>
         ` : ''}
 
-        <!-- Source note -->
-        <div style="margin-top:32px;padding:14px 18px;background:#f8fafc;border-radius:12px;font-size:0.82rem;color:#64748b;line-height:1.6;">
-          <i class="bi bi-info-circle me-2"></i>
-          Источник: ${codeFullNames[art.code] || art.codeName}. Актуальный текст — на
-          <a href="https://adilet.zan.kz" target="_blank" rel="noopener" style="color:#1a56db;">adilet.zan.kz</a>.
-          Текст носит информационный характер. Для применения в конкретной ситуации проконсультируйтесь с адвокатом.
+        <div style="margin-top:28px;padding:14px 18px;background:#f8fafc;border-radius:10px;font-size:0.8rem;color:#64748b;line-height:1.6;">
+          <i class="bi bi-info-circle me-2"></i>Источник: ${codeFullNames[art.code] || art.codeName}.
+          Актуальный текст — <a href="https://adilet.zan.kz" target="_blank" rel="noopener" style="color:#1a56db;">adilet.zan.kz</a>.
+          Для конкретной ситуации — проконсультируйтесь с адвокатом.
         </div>
       </div>
 
@@ -282,7 +245,6 @@ const body = `
             </a>
           </div>
 
-          <!-- Quick search -->
           <div class="law-nav-card">
             <div class="law-nav-title">Поиск по кодексу</div>
             <form action="/statyi" method="get" style="display:flex;gap:6px;margin-top:4px;">
@@ -292,7 +254,6 @@ const body = `
             </form>
           </div>
 
-          <!-- All articles link -->
           <div class="law-nav-card">
             <div class="law-nav-title">Все статьи ${art.codeName}</div>
             <a href="/statyi?code=${art.code}" class="law-nav-link" style="padding:10px 0;border:none;">
