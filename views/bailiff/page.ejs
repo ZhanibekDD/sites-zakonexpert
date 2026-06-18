@@ -22,11 +22,17 @@ const schema = {
   url: canonical,
 };
 
+function fmtPhone(raw) {
+  const d = (raw || '').replace(/\D/g, '');
+  if (d.length === 11) return '+7 (' + d.slice(1,4) + ') ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
+  if (d.length === 10) return '+7 (' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6,8) + '-' + d.slice(8,10);
+  return raw;
+}
 function fmtPhones(phones) {
   if (!phones || !phones.length) return '';
   return phones.map(p => {
     const digits = p.replace(/[^\d+]/g, '');
-    return `<a href="tel:${digits}" class="npage-phone-link">${p}</a>`;
+    return `<a href="tel:${digits}" class="npage-phone-link">${fmtPhone(p)}</a>`;
   }).join(', ');
 }
 
@@ -37,7 +43,7 @@ const body = `
     <nav class="npage-breadcrumb" aria-label="breadcrumb">
       <a href="/">Главная</a>
       <span class="npage-bc-sep">/</span>
-      <a href="/bailiff-search">Судебные исполнители</a>
+      <a href="/bailiffs">Судебные исполнители</a>
       <span class="npage-bc-sep">/</span>
       <span>${nameTitle}</span>
     </nav>

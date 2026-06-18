@@ -479,7 +479,7 @@ app.get('/lawyer-search', asyncHandler(async (req, res) => {
 app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
   if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
   const bailiff = await bailiffsDb.findBySlug(req.params.slug);
-  if (!bailiff) return res.status(404).redirect('/notary-search');
+  if (!bailiff) return res.status(404).redirect('/bailiff-search');
   res.render('bailiff/page', { bailiff });
 }));
 
