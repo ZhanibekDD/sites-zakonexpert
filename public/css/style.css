@@ -367,3 +367,87 @@
     .wa-all-inner { flex-direction: column; gap: 1rem; }
     .wa-btn-single { width: 100%; justify-content: center; }
 }
+
+/* ===== NOTARY SEO PAGES (/notary/:slug) ===== */
+.npage-wrap { padding: 2rem 0 4rem; }
+
+.npage-breadcrumb { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; }
+.npage-breadcrumb a { color: #64748b; text-decoration: none; }
+.npage-breadcrumb a:hover { text-decoration: underline; }
+.npage-bc-sep { margin: 0 0.4rem; }
+
+.npage-hero { margin-bottom: 1.5rem; }
+.npage-badges { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+
+.npage-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 0.28rem 0.7rem; border-radius: 999px;
+}
+.npage-badge--active   { background: #dcfce7; color: #166534; }
+.npage-badge--inactive { background: #fee2e2; color: #991b1b; }
+
+.npage-region-tag {
+  font-size: 0.8rem; color: #475569;
+  background: #f1f5f9; padding: 0.25rem 0.65rem; border-radius: 999px;
+}
+
+.npage-h1 {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 800; color: #0f2044; line-height: 1.25;
+  margin: 0;
+}
+
+.npage-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(15,32,68,0.08);
+  overflow: hidden; margin-bottom: 1.5rem;
+}
+.npage-row {
+  display: flex; align-items: flex-start; gap: 1rem;
+  padding: 1rem 1.4rem; border-bottom: 1px solid #f1f5f9;
+}
+.npage-row:last-child { border-bottom: none; }
+
+.npage-row-icon {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+  background: #eff6ff; color: #1a3560;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 2px;
+}
+.npage-row-body { display: flex; flex-direction: column; gap: 2px; }
+.npage-row-label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.npage-row-val   { font-size: 0.95rem; color: #1e293b; line-height: 1.4; }
+.npage-phone-link { color: #1a3560; text-decoration: none; font-weight: 600; }
+.npage-phone-link:hover { text-decoration: underline; }
+
+/* CTA advertising block */
+.npage-cta {
+  background: linear-gradient(120deg, #0f2044 0%, #1b4272 100%);
+  border-radius: 16px; padding: 2rem 2rem;
+  display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.npage-cta-left { flex: 1; min-width: 240px; }
+.npage-cta-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: #d7a742; font-weight: 700; margin-bottom: 0.4rem; }
+.npage-cta-title { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 800; color: #fff; margin: 0 0 0.5rem; line-height: 1.3; }
+.npage-cta-sub   { font-size: 0.9rem; color: rgba(255,255,255,0.75); margin: 0 0 1rem; }
+.npage-cta-tags  { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.npage-cta-tags span { font-size: 0.75rem; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 0.25rem 0.6rem; border-radius: 999px; }
+
+.npage-wa-btn {
+  display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;
+  background: #25d366; color: #fff;
+  padding: 0.85rem 1.6rem; border-radius: 999px;
+  font-weight: 700; font-size: 0.95rem; text-decoration: none;
+  transition: opacity 0.2s, transform 0.15s; white-space: nowrap;
+}
+.npage-wa-btn:hover { opacity: 0.9; transform: translateY(-2px); color: #fff; }
+
+.npage-source-note { font-size: 0.78rem; color: #94a3b8; text-align: center; }
+.npage-source-note a { color: #64748b; }
+
+@media (max-width: 640px) {
+  .npage-cta { flex-direction: column; gap: 1.25rem; }
+  .npage-wa-btn { width: 100%; justify-content: center; }
+}

@@ -62,6 +62,17 @@ try {
   logger.warn('News module not loaded: ' + e.message);
 }
 
+// Initialize notaries DB
+let notariesDb = null;
+let importNotaries = null;
+try {
+  notariesDb  = require('./modules/notaries-db');
+  ({ importNotaries } = require('./scripts/import-notaries'));
+  logger.info('Notaries module loaded ✓');
+} catch (e) {
+  logger.warn('Notaries module not loaded: ' + e.message);
+}
+
 // Маскировка ИИН для безопасного логирования
 function maskIin(iin) {
     const clean = String(iin || '').replace(/\D/g, '');
@@ -339,6 +350,46 @@ app.get('/api/notary-search', asyncHandler(async (req, res) => {
   }
 }));
 
+// ===== NOTARY SEO PAGES =====
+
+// Individual notary page
+app.get('/notary/:slug', asyncHandler(async (req, res) => {
+  if (!notariesDb) return res.status(503).send('Notary module not available');
+  const notary = await notariesDb.findBySlug(req.params.slug);
+  if (!notary) return res.status(404).redirect('/notary-search');
+  res.render('notary/page', { notary });
+}));
+
+// Sitemap for notary pages
+app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  if (!notariesDb) {
+    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+  const all = await notariesDb.getAllSlugs();
+  const lastUpdated = await notariesDb.getLastUpdated();
+  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
+  const urls = all.map(n => `
+  <url>
+    <loc>https://zakonexpertt.kz/notary/${n.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+}));
+
+// Admin: manual notary import trigger
+app.get('/api/notaries/import', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!importNotaries) return res.status(503).json({ error: 'Notary module not available' });
+  const count = await importNotaries();
+  res.json({ ok: true, imported: count });
+}));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
@@ -531,6 +582,10 @@ app.get('/sitemap-index.xml', (req, res) => {
     <loc>https://zakonexpertt.kz/sitemap-news.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-notaries.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
 </sitemapindex>`);
 });
 
@@ -684,6 +739,30 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
     },
   });
 }));
+
+// ===== NOTARY DB: auto-import on startup if empty or CSV is newer =====
+if (importNotaries) {
+  setTimeout(async () => {
+    try {
+      const count = await importNotaries();
+      if (count > 0) logger.info(`[Notaries] DB ready: ${count} notaries`);
+    } catch (e) {
+      logger.warn('[Notaries] Startup import failed: ' + e.message);
+    }
+  }, 5000);
+
+  // Re-import every Sunday at 03:00 (after user runs the parser script and pushes to git)
+  cron.schedule('0 3 * * 0', async () => {
+    logger.info('[Cron] Weekly notary re-import starting...');
+    try {
+      const count = await importNotaries();
+      logger.info(`[Cron] Notary re-import done: ${count} notaries`);
+    } catch (e) {
+      logger.error('[Cron] Notary re-import failed: ' + e.message);
+    }
+  });
+  logger.info('Notary cron scheduled: every Sunday 03:00');
+}
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
 if (newsImporter) {
