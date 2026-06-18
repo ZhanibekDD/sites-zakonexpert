@@ -31,27 +31,56 @@ function device(ua) {
 }
 
 const PAGE_LABELS = {
-  '/':                              'Главная',
-  '/index.html':                    'Главная',
-  '/services.html':                 'Услуги',
-  '/contact.html':                  'Контакты',
-  '/arest-kaspi':                   '🏦 Арест Kaspi',
-  '/arest-kaspi.html':              '🏦 Арест Kaspi',
-  '/arest-halyk-bank':              '🏦 Арест Halyk',
-  '/arest-halyk-bank.html':         '🏦 Арест Halyk',
-  '/arest-freedom-bank':            '🏦 Арест Freedom',
-  '/ispolnitelnaya-nadpis.html':    '📄 Исп. надпись',
-  '/snyatie-zapreta-na-avto.html':  '🚗 Запрет авто',
-  '/snyatie-zapreta-na-avto':       '🚗 Запрет авто',
-  '/grafik-platezhey.html':         '📅 График платежей',
-  '/grafik-oplaty-zadolzhennosti':  '📅 График платежей',
-  '/chsi-arest-schetov.html':       '⚖️ ЧСИ аресты',
-  '/ubrat-procenty-i-rashody-chsi': '💰 Расходы ЧСИ',
-  '/zakony.html':                   '📚 Законы',
-  '/besspornost-dolga.html':        '📋 Бесспорность долга',
-  '/otmena-resheniya-suda.html':    '🏛 Отмена решения суда',
-  '/snyatie-aresta-so-scheta':      '💳 Снятие ареста',
-  '/snyatie-aresta-so-scheta.html': '💳 Снятие ареста',
+  '/':                                     '🏠 Главная',
+  '/index.html':                           '🏠 Главная',
+  '/services.html':                        '📋 Услуги',
+  '/contact.html':                         '📞 Контакты',
+  '/advocate':                             '⚖️ Адвокат Маулен',
+  '/arest-kaspi':                          '🏦 Арест Kaspi',
+  '/arest-kaspi.html':                     '🏦 Арест Kaspi',
+  '/arest-halyk-bank':                     '🏦 Арест Halyk',
+  '/arest-halyk-bank.html':               '🏦 Арест Halyk',
+  '/arest-freedom-bank':                   '🏦 Арест Freedom',
+  '/arest-freedom-bank.html':              '🏦 Арест Freedom',
+  '/ispolnitelnaya-nadpis.html':           '📄 Исп. надпись',
+  '/otmena-ispolnitelnoi-nadpisi':         '📄 Исп. надпись',
+  '/snyatie-zapreta-na-avto.html':         '🚗 Запрет авто',
+  '/snyatie-zapreta-na-avto':              '🚗 Запрет авто',
+  '/zapret-registracionnyh-deystviy':      '🚗 Запрет рег. действий',
+  '/zapret-registracionnyh-deystviy.html': '🚗 Запрет рег. действий',
+  '/grafik-platezhey.html':                '📅 График платежей',
+  '/grafik-oplaty-zadolzhennosti':         '📅 График платежей',
+  '/grafik-platezhey':                     '📅 График платежей',
+  '/chsi-arest-schetov.html':              '⚖️ ЧСИ аресты',
+  '/chsi-arest-schetov':                   '⚖️ ЧСИ аресты',
+  '/ubtar-procenty-i-rashody-chsi':        '💰 Расходы ЧСИ',
+  '/ubrat-procenty-i-rashody-chsi':        '💰 Расходы ЧСИ',
+  '/zakony.html':                          '📚 Законы',
+  '/zakony':                               '📚 Законы',
+  '/statyi':                               '📚 Статьи законов',
+  '/news':                                 '📰 Новости',
+  '/besspornost-dolga.html':               '📋 Бесспорность долга',
+  '/besspornost-dolga':                    '📋 Бесспорность долга',
+  '/spornost-dolga':                       '📋 Спорность долга',
+  '/otmena-resheniya-suda.html':           '🏛 Отмена решения суда',
+  '/snyatie-aresta-so-scheta':             '💳 Снятие ареста',
+  '/snyatie-aresta-so-scheta.html':        '💳 Снятие ареста',
+  '/alimenty-i-aresty':                    '👶 Алименты и арест',
+  '/alimenty-i-aresty.html':              '👶 Алименты и арест',
+  '/shtrafy-i-aresty':                     '🚔 Штрафы и арест',
+  '/shtrafy-i-aresty.html':               '🚔 Штрафы и арест',
+  '/snyatie-ogranicheniya-na-imushchestvo':'🏠 Арест имущества',
+  '/snyatie-ogranichenii-u-notariusa':     '📝 Ограничения нотариуса',
+  '/ispolnitelnaya-nadpis':                '📄 Исп. надпись',
+  '/notaries':                             '📒 Каталог нотариусов',
+  '/notary-search':                        '🔍 Поиск нотариуса',
+  '/bailiffs':                             '📒 Каталог ЧСИ',
+  '/bailiff-search':                       '🔍 Поиск ЧСИ',
+  '/lawyers':                              '📒 Каталог адвокатов',
+  '/lawyer-search':                        '🔍 Поиск адвоката',
+  '/privacy.html':                         '🔒 Политика конф.',
+  '/privacy':                              '🔒 Политика конф.',
+  '/chsi-refinansirovanie':                '💼 ЧСИ Рефинансирование',
 };
 
 function pageLabel(url) {
@@ -73,7 +102,23 @@ async function send(text) {
   }
 }
 
-function notifyVisit(page, ip, ua) {
+function refSource(referer) {
+  if (!referer) return '';
+  try {
+    const host = new URL(referer).hostname.toLowerCase();
+    if (/google/i.test(host)) return '🔍 Google';
+    if (/yandex/i.test(host)) return '🔍 Яндекс';
+    if (/2gis|dgis/i.test(host)) return '🗺 2GIS';
+    if (/facebook|fb\.com/i.test(host)) return '📘 Facebook';
+    if (/instagram/i.test(host)) return '📸 Instagram';
+    if (/t\.me|telegram/i.test(host)) return '✈️ Telegram';
+    if (/whatsapp/i.test(host)) return '💬 WhatsApp';
+    if (host.includes('zakonexpertt.kz')) return '';
+    return `🔗 ${host}`;
+  } catch (_) { return ''; }
+}
+
+function notifyVisit(page, ip, ua, referer) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
@@ -86,14 +131,16 @@ function notifyVisit(page, ip, ua) {
   if (lastSeen && Date.now() - lastSeen < VISIT_COOLDOWN) return;
   visitCache.set(key, Date.now());
 
+  const src = refSource(referer);
   const lines = [
     `👁 <b>Новый посетитель</b>`,
     ``,
     `📄 Страница: <b>${esc(pageLabel(page))}</b>`,
+    src ? `📡 Источник: <b>${src}</b>` : null,
     `⏰ Время: ${now()}`,
     `🌐 IP: <code>${esc(realIp)}</code>`,
     `📱 ${esc(device(ua))}`,
-  ];
+  ].filter(v => v !== null);
   send(lines.join('\n')).catch(() => {});
 }
 

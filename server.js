@@ -134,22 +134,35 @@ app.use(express.static(path.join(__dirname, 'public')));
 const TRACKED_PATHS = new Set([
   '/', '/index.html',
   '/services.html', '/contact.html', '/zakony.html',
+  '/advocate',
   '/arest-kaspi', '/arest-kaspi.html',
   '/arest-halyk-bank', '/arest-halyk-bank.html',
-  '/arest-freedom-bank',
-  '/ispolnitelnaya-nadpis.html',
+  '/arest-freedom-bank', '/arest-freedom-bank.html',
+  '/ispolnitelnaya-nadpis.html', '/otmena-ispolnitelnoi-nadpisi',
   '/snyatie-zapreta-na-avto', '/snyatie-zapreta-na-avto.html',
+  '/zapret-registracionnyh-deystviy', '/zapret-registracionnyh-deystviy.html',
   '/snyatie-aresta-so-scheta', '/snyatie-aresta-so-scheta.html',
-  '/grafik-platezhey.html', '/grafik-oplaty-zadolzhennosti',
-  '/chsi-arest-schetov.html',
+  '/grafik-platezhey.html', '/grafik-oplaty-zadolzhennosti', '/grafik-platezhey',
+  '/chsi-arest-schetov.html', '/chsi-arest-schetov',
   '/ubrat-procenty-i-rashody-chsi',
-  '/besspornost-dolga.html', '/otmena-resheniya-suda.html',
+  '/besspornost-dolga.html', '/besspornost-dolga',
+  '/alimenty-i-aresty', '/alimenty-i-aresty.html',
+  '/shtrafy-i-aresty', '/shtrafy-i-aresty.html',
+  '/snyatie-ogranicheniya-na-imushchestvo',
+  '/snyatie-ogranichenii-u-notariusa',
+  '/otmena-resheniya-suda.html',
+  '/spornost-dolga',
+  '/chsi-refinansirovanie',
+  '/notaries', '/bailiffs', '/lawyers',
+  '/notary-search', '/bailiff-search', '/lawyer-search',
+  '/news', '/statyi',
 ]);
 app.use((req, res, next) => {
   if (req.method === 'GET' && TRACKED_PATHS.has(req.path)) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const ua = req.headers['user-agent'] || '';
-    telegram.notifyVisit(req.path, ip, ua);
+    const referer = req.headers['referer'] || req.headers['referrer'] || '';
+    telegram.notifyVisit(req.path, ip, ua, referer);
   }
   next();
 });
@@ -847,6 +860,7 @@ const servicePages = {
   '/shtrafy-i-aresty':                 'shtrafy-i-aresty.html',
   '/zapret-registracionnyh-deystviy':  'zapret-registracionnyh-deystviy.html',
   '/grafik-platezhey':                 'grafik-platezhey.html',
+  '/chsi-refinansirovanie':            'chsi-refinansirovanie.html',
   '/privacy':                          'privacy.html',
   '/services':                         'services.html',
   '/contact':                          'contact.html',
@@ -1001,6 +1015,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/spornost-dolga', priority: '0.75', freq: 'monthly' },
     { url: '/zapret-registracionnyh-deystviy', priority: '0.75', freq: 'monthly' },
     { url: '/grafik-platezhey', priority: '0.75', freq: 'monthly' },
+    { url: '/chsi-refinansirovanie', priority: '0.8', freq: 'monthly' },
     { url: '/privacy', priority: '0.3', freq: 'yearly' },
     // Законы — разделы
     { url: '/statyi', priority: '0.85', freq: 'weekly' },
