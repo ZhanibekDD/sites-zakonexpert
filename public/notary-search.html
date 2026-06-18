@@ -349,16 +349,15 @@ async function searchNotary() {
       const hoursPart = n.workHours ? `<span><i class="bi bi-clock"></i>${n.workHours}</span>` : '';
       const addrPart = n.address ? `<span><i class="bi bi-geo-alt"></i>${n.address}</span>` : '';
       const emailPart = n.email ? `<span><i class="bi bi-envelope"></i>${n.email}</span>` : '';
-      const enisBtn = n.url ? `<a href="${n.url}" target="_blank" rel="noopener" class="notary-btn-enis"><i class="bi bi-box-arrow-up-right"></i>ENIS.kz</a>` : '';
       const waBtn = n.phone ? `<a href="https://wa.me/${n.phone.replace(/\D/g,'')}?text=${waText}" target="_blank" rel="noopener" class="notary-btn-wa"><i class="bi bi-whatsapp"></i>WhatsApp</a>` : '';
       return `
         <div class="notary-item">
           <div class="notary-num">${i + 1}</div>
           <div class="notary-info">
-            <a href="${n.url || '#'}" target="_blank" rel="noopener" class="notary-name">${n.name}</a>
+            <span class="notary-name">${n.name}</span>
             <div class="notary-meta">${addrPart}${phonePart}${hoursPart}${emailPart}</div>
           </div>
-          <div class="notary-actions">${waBtn}${enisBtn}</div>
+          <div class="notary-actions">${waBtn}</div>
         </div>`;
     }).join('');
 
