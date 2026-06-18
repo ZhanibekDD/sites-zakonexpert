@@ -44,17 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Реестры dropdown — click-based on all screen sizes
+  // Реестры dropdown — hover on desktop, click on mobile
   (function() {
-    var toggle = document.querySelector('.nav-dropdown-toggle');
-    var li = toggle && toggle.closest('.nav-has-dropdown');
-    if (!toggle || !li) return;
-    toggle.addEventListener('click', function(e) {
-      e.preventDefault();
-      li.classList.toggle('open');
+    var dropdowns = document.querySelectorAll('.nav-has-dropdown');
+    dropdowns.forEach(function(li) {
+      var toggle = li.querySelector('.nav-dropdown-toggle');
+      if (!toggle) return;
+      // Mobile: click to toggle
+      toggle.addEventListener('click', function(e) {
+        var isMobile = window.innerWidth < 980;
+        if (isMobile) {
+          e.preventDefault();
+          li.classList.toggle('is-open');
+        }
+      });
     });
+    // Close on outside click
     document.addEventListener('click', function(e) {
-      if (!li.contains(e.target)) li.classList.remove('open');
+      dropdowns.forEach(function(li) {
+        if (!li.contains(e.target)) li.classList.remove('is-open');
+      });
     });
   })();
 

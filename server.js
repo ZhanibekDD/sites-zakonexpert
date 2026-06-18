@@ -548,6 +548,143 @@ app.get('/api/lawyers/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
+// ===== ADVOCATE PAGE =====
+app.get('/advocate', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'advocate.html'));
+});
+
+// ===== BANKRUPTCY CHECK (tazalau.qoldau.kz) =====
+app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
+  const iin = (req.query.iin || '').replace(/\D/g, '');
+  if (iin.length !== 12) return res.status(400).json({ error: 'Укажите корректный ИИН (12 цифр)' });
+
+  const cheerio = require('cheerio');
+  const HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml',
+    'Accept-Language': 'ru-RU,ru;q=0.9',
+    'Referer': 'https://tazalau.qoldau.kz/',
+  };
+
+  function parseHtmlTable(html) {
+    try {
+      const $ = cheerio.load(html);
+      const rows = [];
+      $('table tbody tr').each((i, tr) => {
+        const cells = [];
+        $(tr).find('td').each((j, td) => {
+          cells.push($(td).text().trim().replace(/\s+/g, ' '));
+        });
+        if (cells.some(c => c)) rows.push(cells);
+      });
+      const totalText = $('small').filter((i, el) => $(el).text().includes('Всего')).parent().text();
+      const total = parseInt(totalText.match(/\d+/)?.[0] || '0');
+      return { rows, total };
+    } catch (e) { return { rows: [], total: 0 }; }
+  }
+
+  const [r1, r2, r3] = await Promise.allSettled([
+    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy-and-insolvent?flApplicantIin=${iin}`, { headers: HEADERS, timeout: 15000 }),
+    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy/judicial?flApplicantXin=${iin}`, { headers: HEADERS, timeout: 15000 }),
+    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy/recovery?flApplicantXin=${iin}`, { headers: HEADERS, timeout: 15000 }),
+  ]);
+
+  res.json({
+    outOfCourt: r1.status === 'fulfilled' ? parseHtmlTable(r1.value.data) : { rows: [], total: 0, error: r1.reason?.message },
+    judicial:   r2.status === 'fulfilled' ? parseHtmlTable(r2.value.data) : { rows: [], total: 0, error: r2.reason?.message },
+    recovery:   r3.status === 'fulfilled' ? parseHtmlTable(r3.value.data) : { rows: [], total: 0, error: r3.reason?.message },
+  });
+}));
+
+// ===== EXECUTIVE INSCRIPTION CAPTCHA (enis.kz) =====
+const inscriptionSessions = new Map(); // sid → { cookie, captchaUrl }
+
+app.get('/api/inscription-session', asyncHandler(async (req, res) => {
+  const cheerio = require('cheerio');
+  const PAGE_URL = 'https://enis.kz/CheckExecutiveInscription';
+  try {
+    const r = await axios.get(PAGE_URL, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      maxRedirects: 5,
+    });
+    const setCookie = r.headers['set-cookie'];
+    const cookie = setCookie ? setCookie.map(c => c.split(';')[0]).join('; ') : '';
+    const $ = cheerio.load(r.data);
+    const captchaImg = $('img[src*="aptcha"], img[src*="captcha"], img[id*="captcha"], img[id*="Captcha"]').first().attr('src')
+      || $('img').filter((i, el) => /captcha/i.test($(el).attr('src') || '')).first().attr('src')
+      || $('img').filter((i, el) => /captcha/i.test($(el).attr('id') || '')).first().attr('src');
+    const token = $('input[name="__RequestVerificationToken"]').val() || '';
+    const sid = Math.random().toString(36).slice(2);
+    inscriptionSessions.set(sid, { cookie, captchaUrl: captchaImg ? new URL(captchaImg, PAGE_URL).href : null, token });
+    setTimeout(() => inscriptionSessions.delete(sid), 5 * 60 * 1000);
+    res.json({ sid, hasCaptcha: !!captchaImg, captchaUrl: captchaImg });
+  } catch (e) {
+    logger.error('[Inscription] Session fetch error:', e.message);
+    res.status(502).json({ error: 'Не удалось получить страницу enis.kz: ' + e.message });
+  }
+}));
+
+app.get('/api/inscription-captcha', asyncHandler(async (req, res) => {
+  const { sid } = req.query;
+  const sess = inscriptionSessions.get(sid);
+  if (!sess || !sess.captchaUrl) return res.status(404).send('Сессия не найдена');
+  try {
+    const r = await axios.get(sess.captchaUrl, {
+      responseType: 'arraybuffer', timeout: 10000,
+      headers: { 'Cookie': sess.cookie, 'Referer': 'https://enis.kz/CheckExecutiveInscription',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    });
+    res.set('Content-Type', r.headers['content-type'] || 'image/png');
+    res.set('Cache-Control', 'no-store');
+    res.send(r.data);
+  } catch (e) {
+    res.status(502).send('Ошибка получения капчи');
+  }
+}));
+
+app.post('/api/inscription-check', asyncHandler(async (req, res) => {
+  const { sid, iin, captcha } = req.body;
+  const sess = sid ? inscriptionSessions.get(sid) : null;
+  const formData = new URLSearchParams();
+  formData.append('ClientIIN', iin || '');
+  formData.append('Captcha', captcha || '');
+  formData.append('Check', 'Проверить');
+  if (sess?.token) formData.append('__RequestVerificationToken', sess.token);
+
+  const reqHeaders = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Referer': 'https://enis.kz/CheckExecutiveInscription',
+    'Origin': 'https://enis.kz',
+  };
+  if (sess?.cookie) reqHeaders['Cookie'] = sess.cookie;
+
+  try {
+    const r = await axios.post('https://enis.kz/CheckExecutiveInscription', formData.toString(), {
+      headers: reqHeaders, timeout: 15000, maxRedirects: 5,
+    });
+    const cheerio = require('cheerio');
+    const $ = cheerio.load(r.data);
+    const resultBlock = $('h3').filter((i, el) => $(el).text().includes('исполнительной надписи')).parent();
+    const html = resultBlock.html() || r.data;
+    const text = $('body').text();
+    const hasResult = /Дата совершения|Нотариус|исполнительн/i.test(text);
+    const wrongCaptcha = /неверн|капча|captcha|wrong/i.test(text);
+    if (wrongCaptcha) return res.json({ ok: false, error: 'Неверная капча. Попробуйте снова.' });
+    if (!hasResult) return res.json({ ok: false, error: 'Исполнительная надпись не найдена или ИИН неверен.', raw: text.substring(0, 500) });
+    const parsed = {};
+    html.replace(/<b>([^<]+):<\/b>\s*([^<\n]+)/g, (m, key, val) => { parsed[key.trim()] = val.trim(); });
+    res.json({ ok: true, parsed, html });
+  } catch (e) {
+    logger.error('[Inscription] Check error:', e.message);
+    res.status(502).json({ error: 'Ошибка запроса к enis.kz: ' + e.message });
+  }
+}));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
