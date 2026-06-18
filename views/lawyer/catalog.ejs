@@ -16,6 +16,12 @@ const canonical = region
 function titleCase(s) {
   return (s || '').toLowerCase().split(' ').map(function(w){ return w ? w[0].toUpperCase() + w.slice(1) : ''; }).join(' ');
 }
+function fmtPhone(raw) {
+  var d = (raw || '').replace(/\D/g, '');
+  if (d.length === 11) return '+7 (' + d.slice(1,4) + ') ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
+  if (d.length === 10) return '+7 (' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6,8) + '-' + d.slice(8,10);
+  return raw;
+}
 
 var breadcrumb = '<nav class="npage-breadcrumb" aria-label="breadcrumb">'
   + '<a href="/">Главная</a><span class="npage-bc-sep">/</span>'
@@ -44,7 +50,7 @@ if (region) {
       var name = titleCase(l.name);
       items += '<li class="registry-item"><a href="/lawyer/' + l.slug + '" class="registry-item-link">'
         + '<span class="registry-item-name">' + name + '</span>'
-        + (l.phones ? '<span class="registry-item-region">' + l.phones + '</span>' : '')
+        + (l.phones && l.phones.length ? '<span class="registry-item-region">' + fmtPhone(l.phones[0]) + '</span>' : '')
         + '</a></li>';
     }
     contentHtml = '<ul class="registry-list">' + items + '</ul>';
