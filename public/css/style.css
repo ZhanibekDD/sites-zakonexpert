@@ -386,6 +386,7 @@
 }
 .npage-badge--active   { background: #dcfce7; color: #166534; }
 .npage-badge--inactive { background: #fee2e2; color: #991b1b; }
+.npage-badge--chsi     { background: #fef3c7; color: #92400e; }
 
 .npage-region-tag {
   font-size: 0.8rem; color: #475569;

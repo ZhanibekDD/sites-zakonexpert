@@ -73,6 +73,17 @@ try {
   logger.warn('Notaries module not loaded: ' + e.message);
 }
 
+// Initialize bailiffs DB
+let bailiffsDb = null;
+let importBailiffs = null;
+try {
+  bailiffsDb  = require('./modules/bailiffs-db');
+  ({ importBailiffs } = require('./scripts/import-bailiffs'));
+  logger.info('Bailiffs module loaded ✓');
+} catch (e) {
+  logger.warn('Bailiffs module not loaded: ' + e.message);
+}
+
 // Маскировка ИИН для безопасного логирования
 function maskIin(iin) {
     const clean = String(iin || '').replace(/\D/g, '');
@@ -390,6 +401,43 @@ app.get('/api/notaries/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
+// ===== BAILIFF SEO PAGES =====
+
+app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
+  if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
+  const bailiff = await bailiffsDb.findBySlug(req.params.slug);
+  if (!bailiff) return res.status(404).redirect('/notary-search');
+  res.render('bailiff/page', { bailiff });
+}));
+
+app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  if (!bailiffsDb) {
+    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+  const all = await bailiffsDb.getAllSlugs();
+  const lastUpdated = await bailiffsDb.getLastUpdated();
+  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
+  const urls = all.map(b => `
+  <url>
+    <loc>https://zakonexpertt.kz/bailiff/${b.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+}));
+
+app.get('/api/bailiffs/import', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!importBailiffs) return res.status(503).json({ error: 'Bailiff module not available' });
+  const count = await importBailiffs();
+  res.json({ ok: true, imported: count });
+}));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
@@ -586,6 +634,10 @@ app.get('/sitemap-index.xml', (req, res) => {
     <loc>https://zakonexpertt.kz/sitemap-notaries.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-bailiffs.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
 </sitemapindex>`);
 });
 
@@ -740,29 +792,35 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
   });
 }));
 
-// ===== NOTARY DB: auto-import on startup if empty or CSV is newer =====
-if (importNotaries) {
-  setTimeout(async () => {
+// ===== NOTARY + BAILIFF DB: auto-import on startup if empty or CSV is newer =====
+setTimeout(async () => {
+  if (importNotaries) {
     try {
       const count = await importNotaries();
       if (count > 0) logger.info(`[Notaries] DB ready: ${count} notaries`);
-    } catch (e) {
-      logger.warn('[Notaries] Startup import failed: ' + e.message);
-    }
-  }, 5000);
-
-  // Re-import every Sunday at 03:00 (after user runs the parser script and pushes to git)
-  cron.schedule('0 3 * * 0', async () => {
-    logger.info('[Cron] Weekly notary re-import starting...');
+    } catch (e) { logger.warn('[Notaries] Startup import failed: ' + e.message); }
+  }
+  if (importBailiffs) {
     try {
-      const count = await importNotaries();
-      logger.info(`[Cron] Notary re-import done: ${count} notaries`);
-    } catch (e) {
-      logger.error('[Cron] Notary re-import failed: ' + e.message);
-    }
-  });
-  logger.info('Notary cron scheduled: every Sunday 03:00');
-}
+      const count = await importBailiffs();
+      if (count > 0) logger.info(`[Bailiffs] DB ready: ${count} bailiffs`);
+    } catch (e) { logger.warn('[Bailiffs] Startup import failed: ' + e.message); }
+  }
+}, 5000);
+
+// Weekly re-import every Sunday at 03:00 (after pushing fresh CSVs to git)
+cron.schedule('0 3 * * 0', async () => {
+  logger.info('[Cron] Weekly notary+bailiff re-import starting...');
+  if (importNotaries) {
+    try { const n = await importNotaries(); logger.info(`[Cron] Notaries: ${n}`); }
+    catch (e) { logger.error('[Cron] Notary re-import failed: ' + e.message); }
+  }
+  if (importBailiffs) {
+    try { const n = await importBailiffs(); logger.info(`[Cron] Bailiffs: ${n}`); }
+    catch (e) { logger.error('[Cron] Bailiff re-import failed: ' + e.message); }
+  }
+});
+logger.info('Notary+Bailiff cron scheduled: every Sunday 03:00');
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
 if (newsImporter) {
