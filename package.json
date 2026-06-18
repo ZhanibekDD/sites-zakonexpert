@@ -15,7 +15,8 @@
     "scrape-laws-upk": "node scripts/scrape-laws.js upk",
     "scrape-laws-koap": "node scripts/scrape-laws.js koap",
     "add-snippets": "node scripts/add-snippets.js",
-    "scrape-bailiff-emails": "node scripts/scrape-bailiff-emails.js"
+    "scrape-bailiff-emails": "node scripts/scrape-bailiff-emails.js",
+    "scrape-govkz-chsi": "node scripts/scrape-govkz-chsi.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
