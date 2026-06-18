@@ -1105,13 +1105,38 @@ function checkBankruptcyMain() {
     .then(function(d) {
       var totals = (d.outOfCourt.rows||[]).length + (d.judicial.rows||[]).length + (d.recovery.rows||[]).length;
       if (totals > 0) {
-        var parts = [];
-        if ((d.outOfCourt.rows||[]).length) parts.push('Внесудебное банкротство: ' + d.outOfCourt.total + ' зап.');
-        if ((d.judicial.rows||[]).length) parts.push('Судебное банкротство: ' + d.judicial.total + ' зап.');
-        if ((d.recovery.rows||[]).length) parts.push('Реабилитация: ' + d.recovery.total + ' зап.');
-        res.innerHTML = '<div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px 16px;color:#fca5a5;font-size:0.9rem;">'
-          + '<strong>⚠️ Найдены записи о банкротстве</strong><br><span style="opacity:0.8;">' + parts.join(' · ') + '</span>'
-          + '<br><a href="/advocate" style="color:#f0c040;font-weight:700;font-size:0.85rem;display:inline-block;margin-top:8px;">Проконсультироваться с адвокатом →</a></div>';
+        function renderSection(title, data) {
+          if (!(data.rows||[]).length) return '';
+          var html = '<div style="margin-top:12px;">'
+            + '<div style="font-weight:700;font-size:0.82rem;letter-spacing:0.06em;text-transform:uppercase;color:rgba(252,165,165,0.7);margin-bottom:6px;">'
+            + title + ' — ' + data.total + ' зап.</div>';
+          if ((data.headers||[]).length) {
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 10px;font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:4px;">';
+            data.headers.forEach(function(h){ html += '<span>' + h + '</span>'; });
+            html += '</div>';
+          }
+          data.rows.forEach(function(row, idx) {
+            html += '<div style="background:rgba(239,68,68,0.08);border-radius:6px;padding:8px 10px;margin-bottom:4px;font-size:0.82rem;line-height:1.5;">';
+            if ((data.headers||[]).length) {
+              row.forEach(function(cell, i) {
+                if (!cell) return;
+                html += '<div><span style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + (data.headers[i]||'') + ':</span> ' + cell + '</div>';
+              });
+            } else {
+              html += row.filter(Boolean).join(' · ');
+            }
+            html += '</div>';
+          });
+          return html + '</div>';
+        }
+        var html = '<div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px 18px;color:#fca5a5;">'
+          + '<strong style="font-size:0.95rem;">⚠️ Найдены записи о банкротстве</strong>'
+          + renderSection('Внесудебное банкротство', d.outOfCourt)
+          + renderSection('Судебное банкротство', d.judicial)
+          + renderSection('Реабилитация', d.recovery)
+          + '<a href="/advocate" style="color:#f0c040;font-weight:700;font-size:0.85rem;display:inline-block;margin-top:12px;">Проконсультироваться с адвокатом →</a>'
+          + '</div>';
+        res.innerHTML = html;
       } else {
         res.innerHTML = '<div style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:10px;padding:14px 16px;color:#b6f5cc;font-size:0.9rem;">✅ По данному ИИН записей о банкротстве не найдено.</div>';
       }

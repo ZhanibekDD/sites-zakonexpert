@@ -569,6 +569,14 @@ app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
   function parseHtmlTable(html) {
     try {
       const $ = cheerio.load(html);
+      const headers = [];
+      // Try thead th first, fallback to first tr > th
+      const headCells = $('table thead th').length
+        ? $('table thead th')
+        : $('table tr:first-child th');
+      headCells.each((i, th) => {
+        headers.push($(th).text().trim().replace(/\s+/g, ' '));
+      });
       const rows = [];
       $('table tbody tr').each((i, tr) => {
         const cells = [];
@@ -579,8 +587,8 @@ app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
       });
       const totalText = $('small').filter((i, el) => $(el).text().includes('Всего')).parent().text();
       const total = parseInt(totalText.match(/\d+/)?.[0] || '0');
-      return { rows, total };
-    } catch (e) { return { rows: [], total: 0 }; }
+      return { headers, rows, total };
+    } catch (e) { return { headers: [], rows: [], total: 0 }; }
   }
 
   const [r1, r2, r3] = await Promise.allSettled([
