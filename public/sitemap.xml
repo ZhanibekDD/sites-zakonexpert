@@ -2,10 +2,26 @@
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-pages.xml</loc>
-    <lastmod>2026-05-03</lastmod>
+    <lastmod>2026-06-19</lastmod>
   </sitemap>
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-news.xml</loc>
-    <lastmod>2026-05-03</lastmod>
+    <lastmod>2026-06-19</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-notaries.xml</loc>
+    <lastmod>2026-06-19</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-bailiffs.xml</loc>
+    <lastmod>2026-06-19</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-lawyers.xml</loc>
+    <lastmod>2026-06-19</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-laws.xml</loc>
+    <lastmod>2026-06-19</lastmod>
   </sitemap>
 </sitemapindex>

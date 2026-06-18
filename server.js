@@ -397,10 +397,17 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   if (!notariesDb) {
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const all = await notariesDb.getAllSlugs();
+  const [all, regions] = await Promise.all([notariesDb.getAllSlugs(), notariesDb.getRegions()]);
   const lastUpdated = await notariesDb.getLastUpdated();
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const urls = all.map(n => `
+  const regionUrls = regions.map(r => `
+  <url>
+    <loc>https://zakonexpertt.kz/notaries?region=${encodeURIComponent(r)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>`).join('');
+  const profileUrls = all.map(n => `
   <url>
     <loc>https://zakonexpertt.kz/notary/${n.slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -409,7 +416,8 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   </url>`).join('');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls}
+  ${regionUrls}
+  ${profileUrls}
 </urlset>`);
 }));
 
@@ -497,10 +505,17 @@ app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
   if (!bailiffsDb) {
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const all = await bailiffsDb.getAllSlugs();
+  const [all, regions] = await Promise.all([bailiffsDb.getAllSlugs(), bailiffsDb.getRegions()]);
   const lastUpdated = await bailiffsDb.getLastUpdated();
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const urls = all.map(b => `
+  const regionUrls = regions.map(r => `
+  <url>
+    <loc>https://zakonexpertt.kz/bailiffs?region=${encodeURIComponent(r)}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>`).join('');
+  const profileUrls = all.map(b => `
   <url>
     <loc>https://zakonexpertt.kz/bailiff/${b.slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -509,7 +524,8 @@ app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
   </url>`).join('');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls}
+  ${regionUrls}
+  ${profileUrls}
 </urlset>`);
 }));
 
@@ -543,6 +559,26 @@ app.get('/sitemap-lawyers.xml', asyncHandler(async (req, res) => {
     <lastmod>${lastmod}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>`).join('');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${urls}
+</urlset>`);
+}));
+
+app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
+  res.set('Content-Type', 'application/xml');
+  if (!lawsDb) {
+    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+  const all = await lawsDb.getAllSlugs();
+  const today = new Date().toISOString().substring(0, 10);
+  const urls = all.map(a => `
+  <url>
+    <loc>https://zakonexpertt.kz/statya/${a.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>`).join('');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -955,6 +991,13 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/arest-kaspi', priority: '0.85', freq: 'monthly' },
     { url: '/arest-halyk-bank', priority: '0.85', freq: 'monthly' },
     { url: '/arest-freedom-bank', priority: '0.85', freq: 'monthly' },
+    { url: '/statyi', priority: '0.85', freq: 'weekly' },
+    { url: '/statyi?code=uk', priority: '0.8', freq: 'monthly' },
+    { url: '/statyi?code=koap', priority: '0.8', freq: 'monthly' },
+    { url: '/statyi?code=gk', priority: '0.8', freq: 'monthly' },
+    { url: '/statyi?code=tk', priority: '0.8', freq: 'monthly' },
+    { url: '/statyi?code=sk', priority: '0.8', freq: 'monthly' },
+    { url: '/statyi?code=upk', priority: '0.75', freq: 'monthly' },
   ];
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
@@ -996,6 +1039,10 @@ app.get('/sitemap-index.xml', (req, res) => {
   </sitemap>
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-lawyers.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-laws.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
 </sitemapindex>`);

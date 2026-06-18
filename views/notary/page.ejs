@@ -8,23 +8,36 @@ const addrParts  = (notary.address || '').split(',');
 const cityHint   = addrParts[0] ? addrParts[0].trim() : notary.region;
 
 const pageTitle  = `Нотариус ${nameTitle} — ${notary.region} | ZakonExpert`;
-const pageDesc   = `Контакты нотариуса ${nameTitle}: адрес, телефон, режим работы. ${notary.region}. Данные обновляются еженедельно с enis.kz.`;
+const _addrSnippet = notary.address ? `Адрес: ${notary.address.slice(0,60)}. ` : '';
+const _phoneSnippet = notary.phone ? `Телефон: ${notary.phone.split(/[;,]/)[0].trim()}. ` : '';
+const pageDesc   = `Нотариус ${nameTitle} — ${notary.region}. ${_addrSnippet}${_phoneSnippet}Режим работы, лицензия и контакты. ZakonExpert Казахстан.`;
 const canonical  = `https://zakonexpertt.kz/notary/${notary.slug}`;
 
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'LegalService',
-  name: `Нотариус ${nameTitle}`,
-  description: `Частный нотариус. ${notary.region}.`,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: notary.address || '',
-    addressRegion: notary.region,
-    addressCountry: 'KZ',
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'LegalService',
+    name: `Нотариус ${nameTitle}`,
+    description: pageDesc,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: notary.address || '',
+      addressRegion: notary.region,
+      addressCountry: 'KZ',
+    },
+    ...(notary.phone ? { telephone: notary.phone.split(/[;,]/)[0].trim() } : {}),
+    url: canonical,
   },
-  ...(notary.phone ? { telephone: notary.phone.split(/[;,]/)[0].trim() } : {}),
-  url: canonical,
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpertt.kz/notaries' },
+      { '@type': 'ListItem', position: 3, name: `Нотариус ${nameTitle}`, item: canonical },
+    ],
+  },
+];
 
 // Format KZ phone number: 87011234567 → +7 (701) 123-45-67
 function fmtPhone(raw) {

@@ -4,14 +4,25 @@ const regions  = allRegions  || [];
 const bailiffs = regionItems || [];
 
 const pageTitle = region
-  ? ('Судебные исполнители ЧСИ — ' + region + ' | ZakonExpert')
-  : 'Частные судебные исполнители (ЧСИ) Казахстана по регионам | ZakonExpert';
+  ? ('ЧСИ ' + region + ' — контакты и адреса | ZakonExpert')
+  : 'Частные судебные исполнители (ЧСИ) Казахстана | ZakonExpert';
 const pageDesc = region
-  ? ('Список частных судебных исполнителей (ЧСИ) региона ' + region + '. Реестр ZakonExpert.')
-  : 'Полный реестр частных судебных исполнителей (ЧСИ) Казахстана по регионам. 2079 ЧСИ с адресами.';
+  ? ('Частные судебные исполнители (ЧСИ) ' + region + ': ' + bailiffs.length + ' специалистов с адресами, телефонами, лицензиями. Реестр ZakonExpert.')
+  : 'Реестр частных судебных исполнителей (ЧСИ) Казахстана — 2079 специалистов по всем регионам. Адреса, телефоны, лицензии.';
 const canonical = region
   ? ('https://zakonexpertt.kz/bailiffs?region=' + encodeURIComponent(region))
   : 'https://zakonexpertt.kz/bailiffs';
+const schema = region
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'ЧСИ', item: 'https://zakonexpertt.kz/bailiffs' },
+        { '@type': 'ListItem', position: 3, name: 'ЧСИ ' + region, item: canonical },
+      ],
+    }
+  : null;
 
 function titleCase(s) {
   return (s || '').toLowerCase().split(' ').map(function(w){ return w ? w[0].toUpperCase() + w.slice(1) : ''; }).join(' ');
@@ -90,4 +101,4 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + ctaHtml
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema: null, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

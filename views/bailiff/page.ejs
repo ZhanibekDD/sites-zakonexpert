@@ -4,23 +4,37 @@ const nameTitle = bailiff.name.toLowerCase()
   .split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ');
 
 const pageTitle = `ЧСИ ${nameTitle} — ${bailiff.region} | ZakonExpert`;
-const pageDesc  = `Частный судебный исполнитель ${nameTitle}: адрес, телефон, лицензия. ${bailiff.region}. Данные обновляются еженедельно.`;
+const _addrSnippet = bailiff.address ? `Адрес: ${bailiff.address.slice(0,60)}. ` : '';
+const _phoneSnippet = bailiff.phones && bailiff.phones.length ? `Телефон: ${bailiff.phones[0]}. ` : '';
+const _licSnippet = bailiff.license ? `Лицензия №${bailiff.license}. ` : '';
+const pageDesc  = `Частный судебный исполнитель ${nameTitle} — ${bailiff.region}. ${_addrSnippet}${_phoneSnippet}${_licSnippet}ZakonExpert Казахстан.`;
 const canonical = `https://zakonexpertt.kz/bailiff/${bailiff.slug}`;
 
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'LegalService',
-  name: `ЧСИ ${nameTitle}`,
-  description: `Частный судебный исполнитель. ${bailiff.region}.`,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: bailiff.address || '',
-    addressRegion: bailiff.region,
-    addressCountry: 'KZ',
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'LegalService',
+    name: `ЧСИ ${nameTitle}`,
+    description: pageDesc,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: bailiff.address || '',
+      addressRegion: bailiff.region,
+      addressCountry: 'KZ',
+    },
+    ...(bailiff.phones && bailiff.phones.length ? { telephone: bailiff.phones[0] } : {}),
+    url: canonical,
   },
-  ...(bailiff.phones && bailiff.phones.length ? { telephone: bailiff.phones[0] } : {}),
-  url: canonical,
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Судебные исполнители', item: 'https://zakonexpertt.kz/bailiffs' },
+      { '@type': 'ListItem', position: 3, name: `ЧСИ ${nameTitle}`, item: canonical },
+    ],
+  },
+];
 
 function fmtPhone(raw) {
   const d = (raw || '').replace(/\D/g, '');

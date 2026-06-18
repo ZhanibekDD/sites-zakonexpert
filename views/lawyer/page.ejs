@@ -4,23 +4,37 @@ const nameTitle = lawyer.name.toLowerCase()
   .split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ');
 
 const pageTitle = `Адвокат ${nameTitle} — ${lawyer.region} | ZakonExpert`;
-const pageDesc  = `Адвокат ${nameTitle}: адрес, телефон, лицензия. ${lawyer.region}. Данные обновляются еженедельно.`;
+const _addrSnippet = lawyer.address ? `Адрес: ${lawyer.address.slice(0,60)}. ` : '';
+const _phoneSnippet = lawyer.phones && lawyer.phones.length ? `Телефон: ${lawyer.phones[0]}. ` : '';
+const _licSnippet = lawyer.license ? `Лицензия №${lawyer.license}. ` : '';
+const pageDesc  = `Адвокат ${nameTitle} — ${lawyer.region}. ${_addrSnippet}${_phoneSnippet}${_licSnippet}ZakonExpert Казахстан.`;
 const canonical = `https://zakonexpertt.kz/lawyer/${lawyer.slug}`;
 
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'LegalService',
-  name: `Адвокат ${nameTitle}`,
-  description: `Адвокат Казахстана. ${lawyer.region}.`,
-  address: {
-    '@type': 'PostalAddress',
-    streetAddress: lawyer.address || '',
-    addressRegion: lawyer.region,
-    addressCountry: 'KZ',
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'LegalService',
+    name: `Адвокат ${nameTitle}`,
+    description: pageDesc,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: lawyer.address || '',
+      addressRegion: lawyer.region,
+      addressCountry: 'KZ',
+    },
+    ...(lawyer.phones && lawyer.phones.length ? { telephone: lawyer.phones[0] } : {}),
+    url: canonical,
   },
-  ...(lawyer.phones && lawyer.phones.length ? { telephone: lawyer.phones[0] } : {}),
-  url: canonical,
-};
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Адвокаты', item: 'https://zakonexpertt.kz/lawyers' },
+      { '@type': 'ListItem', position: 3, name: `Адвокат ${nameTitle}`, item: canonical },
+    ],
+  },
+];
 
 function fmtPhone(raw) {
   const d = (raw || '').replace(/\D/g, '');

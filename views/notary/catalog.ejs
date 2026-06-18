@@ -4,14 +4,25 @@ const regions  = allRegions  || [];
 const notaries = regionItems || [];
 
 const pageTitle = region
-  ? ('Нотариусы — ' + region + ' | ZakonExpert')
-  : 'Нотариусы Казахстана по регионам | ZakonExpert';
+  ? ('Нотариусы ' + region + ' — контакты и адреса | ZakonExpert')
+  : 'Нотариусы Казахстана — реестр всех регионов | ZakonExpert';
 const pageDesc = region
-  ? ('Список нотариусов региона ' + region + ' с адресами и телефонами. Реестр ZakonExpert.')
-  : 'Полный реестр нотариусов Казахстана по регионам. 6314 нотариусов с адресами, телефонами и email.';
+  ? ('Нотариусы ' + region + ': ' + notaries.length + ' специалистов с адресами, телефонами и режимом работы. Реестр обновляется еженедельно с enis.kz.')
+  : 'Реестр нотариусов Казахстана — 6314 нотариусов всех регионов. Адреса, телефоны, лицензии. Данные с enis.kz.';
 const canonical = region
   ? ('https://zakonexpertt.kz/notaries?region=' + encodeURIComponent(region))
   : 'https://zakonexpertt.kz/notaries';
+const schema = region
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpertt.kz/notaries' },
+        { '@type': 'ListItem', position: 3, name: 'Нотариусы ' + region, item: canonical },
+      ],
+    }
+  : null;
 
 function titleCase(s) {
   return (s || '').toLowerCase().split(' ').map(function(w){ return w ? w[0].toUpperCase() + w.slice(1) : ''; }).join(' ');
@@ -90,4 +101,4 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + ctaHtml
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema: null, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

@@ -15,3 +15,7 @@ Disallow: /node_modules/
 Sitemap: https://zakonexpertt.kz/sitemap.xml
 Sitemap: https://zakonexpertt.kz/sitemap-pages.xml
 Sitemap: https://zakonexpertt.kz/sitemap-news.xml
+Sitemap: https://zakonexpertt.kz/sitemap-notaries.xml
+Sitemap: https://zakonexpertt.kz/sitemap-bailiffs.xml
+Sitemap: https://zakonexpertt.kz/sitemap-lawyers.xml
+Sitemap: https://zakonexpertt.kz/sitemap-laws.xml
