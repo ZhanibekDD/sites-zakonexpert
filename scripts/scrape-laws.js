@@ -123,7 +123,7 @@ function parseArticles(html, law) {
   return articles;
 }
 
-async function scrapeLaw(law) {
+async function scrapeLaw(law, debug = false) {
   console.log(`\n📥 Загружаем ${law.codeName} — ${law.fullName}`);
   console.log(`   URL: ${law.url}`);
 
@@ -133,6 +133,24 @@ async function scrapeLaw(law) {
   } catch (e) {
     console.error(`   ❌ Ошибка загрузки: ${e.message}`);
     return 0;
+  }
+
+  if (debug) {
+    const cheerio = require('cheerio');
+    const $ = cheerio.load(html);
+    console.log(`\n🔍 DEBUG: HTML size = ${html.length} bytes`);
+    console.log(`   Body text (first 3000 chars):\n---`);
+    console.log($('body').text().replace(/\s+/g,' ').slice(0, 3000));
+    console.log(`---`);
+    // Find first 10 paragraphs
+    const paras = [];
+    $('p, td, div').each((_, el) => {
+      const t = $(el).text().trim().replace(/\s+/g,' ');
+      if (t.length > 10 && t.length < 500) paras.push(t);
+    });
+    console.log(`\n   First 20 text blocks:`);
+    paras.slice(0, 20).forEach((p,i) => console.log(`   [${i}] ${p.slice(0,120)}`));
+    process.exit(0);
   }
 
   const articles = parseArticles(html, law);
@@ -155,10 +173,12 @@ async function scrapeLaw(law) {
 }
 
 async function main() {
-  const filterCode = process.argv[2]; // e.g. "uk", "upk", "koap"
+  const filterCode = process.argv[2]; // e.g. "uk", "upk", "koap", "debug-uk"
+  const isDebug    = filterCode && filterCode.startsWith('debug-');
+  const codeFilter = isDebug ? filterCode.replace('debug-', '') : filterCode;
 
-  const toScrape = filterCode
-    ? LAWS.filter(l => l.code === filterCode)
+  const toScrape = codeFilter
+    ? LAWS.filter(l => l.code === codeFilter)
     : LAWS;
 
   if (!toScrape.length) {
@@ -168,7 +188,7 @@ async function main() {
 
   let total = 0;
   for (const law of toScrape) {
-    total += await scrapeLaw(law);
+    total += await scrapeLaw(law, isDebug);
     if (toScrape.length > 1) await new Promise(r => setTimeout(r, 3000)); // задержка между запросами
   }
 
