@@ -24,7 +24,7 @@ module.exports = {
   search(query, limit = 30) {
     if (!query || query.trim().length < 2) return Promise.resolve([]);
     const safe = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return db.find({ name: new RegExp(safe, 'i') }, { name: 1, slug: 1, region: 1, address: 1, _id: 0 }).limit(limit);
+    return db.find({ name: new RegExp(safe, 'i') }, { name: 1, slug: 1, region: 1, address: 1, email: 1, _id: 0 }).limit(limit);
   },
   async getRegions() {
     const all = await db.find({}, { region: 1, _id: 0 });

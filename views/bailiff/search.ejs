@@ -22,6 +22,7 @@ if (results !== null) {
       items += '<li class="registry-item"><a href="/bailiff/' + b.slug + '" class="registry-item-link">'
         + '<span class="registry-item-name">' + name + '</span>'
         + '<span class="registry-item-region">' + (b.region || '') + '</span>'
+        + (b.email ? '<span class="registry-item-email">' + b.email + '</span>' : '')
         + '</a></li>';
     }
     resultsHtml = '<p class="registry-count">Найдено: <strong>' + results.length + '</strong>' + countNote + '</p>'
