@@ -991,6 +991,18 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/arest-kaspi', priority: '0.85', freq: 'monthly' },
     { url: '/arest-halyk-bank', priority: '0.85', freq: 'monthly' },
     { url: '/arest-freedom-bank', priority: '0.85', freq: 'monthly' },
+    // Дополнительные сервисные страницы
+    { url: '/besspornost-dolga', priority: '0.8', freq: 'monthly' },
+    { url: '/alimenty-i-aresty', priority: '0.8', freq: 'monthly' },
+    { url: '/shtrafy-i-aresty', priority: '0.8', freq: 'monthly' },
+    { url: '/zakony', priority: '0.85', freq: 'weekly' },
+    { url: '/advocate', priority: '0.85', freq: 'monthly' },
+    { url: '/ispolnitelnaya-nadpis', priority: '0.85', freq: 'monthly' },
+    { url: '/spornost-dolga', priority: '0.75', freq: 'monthly' },
+    { url: '/zapret-registracionnyh-deystviy', priority: '0.75', freq: 'monthly' },
+    { url: '/grafik-platezhey', priority: '0.75', freq: 'monthly' },
+    { url: '/privacy', priority: '0.3', freq: 'yearly' },
+    // Законы — разделы
     { url: '/statyi', priority: '0.85', freq: 'weekly' },
     { url: '/statyi?code=uk', priority: '0.8', freq: 'monthly' },
     { url: '/statyi?code=koap', priority: '0.8', freq: 'monthly' },
