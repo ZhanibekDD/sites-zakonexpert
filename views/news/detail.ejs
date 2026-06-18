@@ -133,4 +133,4 @@ const body = `
 </section>
 `;
 %>
-<%- include('layout', { title: article.meta_title || article.title + ' | ZakonExpert', description: article.meta_desc || article.excerpt || '', canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: article.og_image || article.category_cover || '/img/zakonexpert-logo-kazakhstan.png', schema, body }) %>
+<%- include('layout', { title: article.meta_title || article.title + ' | ZakonExpert', description: article.meta_desc || article.excerpt || '', canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: article.og_image || article.category_cover || '/img/zakonexpert-logo-kazakhstan.png', schema, activeNav: 'news', body }) %>
