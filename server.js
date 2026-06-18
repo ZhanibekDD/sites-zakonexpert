@@ -579,7 +579,9 @@ app.get('/statyi', asyncHandler(async (req, res) => {
   const q    = (req.query.q    || '').trim();
   const code = (req.query.code || '').trim();
   const [articles, codes] = await Promise.all([
-    (q || code) ? lawsDb.search(q, code, 60) : Promise.resolve([]),
+    code && !q ? lawsDb.findByCode(code, 60)
+    : q        ? lawsDb.search(q, code, 60)
+    :            Promise.resolve([]),
     lawsDb.getCodes(),
   ]);
   res.render('laws/list', { q, code, articles, codes, total: articles.length });
