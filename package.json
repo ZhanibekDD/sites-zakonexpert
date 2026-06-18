@@ -14,7 +14,8 @@
     "scrape-laws-uk": "node scripts/scrape-laws.js uk",
     "scrape-laws-upk": "node scripts/scrape-laws.js upk",
     "scrape-laws-koap": "node scripts/scrape-laws.js koap",
-    "add-snippets": "node scripts/add-snippets.js"
+    "add-snippets": "node scripts/add-snippets.js",
+    "scrape-bailiff-emails": "node scripts/scrape-bailiff-emails.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
