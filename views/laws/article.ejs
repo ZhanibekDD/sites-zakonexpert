@@ -1,0 +1,160 @@
+<%
+const art     = locals.article;
+const adj     = locals.adjacent || {};
+const related = locals.related  || [];
+
+const codeFullNames = {
+  uk:   'Уголовный кодекс РК',
+  upk:  'Уголовно-процессуальный кодекс РК',
+  koap: 'Кодекс РК об административных правонарушениях',
+  gk:   'Гражданский кодекс РК',
+  sk:   'Кодекс РК о браке (супружестве) и семье',
+  tk:   'Трудовой кодекс РК',
+};
+
+const codeConsult = {
+  uk:   'Адвокат Маулен Ержанов — уголовные дела',
+  upk:  'Адвокат Маулен Ержанов — защита на всех стадиях процесса',
+  koap: 'Обжалование административных постановлений',
+  gk:   'Гражданско-правовые споры — адвокат и ZakonExpert',
+  sk:   'Семейные дела — развод, алименты, раздел имущества',
+  tk:   'Трудовые споры — незаконное увольнение, задержка зарплаты',
+};
+
+const waText = {
+  uk:   `Здравствуйте. Вопрос по статье ${art.num} УК РК — ${art.title}. Нужна консультация адвоката.`,
+  upk:  `Здравствуйте. Вопрос по статье ${art.num} УПК РК. Нужна консультация.`,
+  koap: `Здравствуйте. Вопрос по статье ${art.num} КоАП РК. Нужна консультация.`,
+  gk:   `Здравствуйте. Вопрос по статье ${art.num} ГК РК. Нужна консультация.`,
+  sk:   `Здравствуйте. Вопрос по статье ${art.num} СК РК — семейный вопрос. Нужна консультация.`,
+  tk:   `Здравствуйте. Вопрос по статье ${art.num} ТК РК — трудовой спор. Нужна консультация.`,
+};
+
+const pageTitle       = `Статья ${art.num} ${art.codeName} — ${art.title} | ZakonExpert Казахстан`;
+const pageDescription = `Статья ${art.num} ${art.codeName}: ${art.title}. ${(art.text||'').slice(0,160).replace(/\n/g,' ')}... Консультация адвоката по любой статье.`;
+const canonical       = `https://zakonexpertt.kz/statya/${art.slug}`;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'LegalDocument',
+  name: `Статья ${art.num} ${art.codeName} — ${art.title}`,
+  description: pageDescription,
+  url: canonical,
+  text: (art.text||'').slice(0, 500),
+  legislationIdentifier: `Статья ${art.num}`,
+  inLanguage: 'ru',
+  publisher: { '@type': 'GovernmentOrganization', name: 'Республика Казахстан' },
+  creator:   { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+};
+
+// Format article text: split into paragraphs
+const textParas = (art.text || '').split('\n').filter(p => p.trim()).map(p => `<p>${p.trim()}</p>`).join('');
+
+const body = `
+<section class="law-hero">
+  <div class="landing-container">
+    <div class="law-breadcrumb">
+      <a href="/">Главная</a> ›
+      <a href="/statyi">Законы</a> ›
+      <a href="/statyi?code=${art.code}">${art.codeName}</a> ›
+      Статья ${art.num}
+    </div>
+    <div class="law-art-num">Статья ${art.num} · ${art.codeName}</div>
+    <h1 class="law-art-title">${art.title}</h1>
+    <div class="law-art-meta">${codeFullNames[art.code] || art.codeName}</div>
+  </div>
+</section>
+
+<section class="law-body">
+  <div class="landing-container">
+    <div class="row g-4">
+
+      <!-- Article text -->
+      <div class="col-lg-8">
+        <div class="law-text">
+          ${textParas || '<p style="color:#94a3b8;">Текст статьи не загружен. Запустите парсер: <code>npm run scrape-laws</code></p>'}
+        </div>
+
+        <!-- Prev/Next navigation -->
+        <div style="display:flex;gap:10px;margin-top:32px;flex-wrap:wrap;">
+          ${adj.prev ? `<a href="/statya/${adj.prev.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;">
+            <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:3px;">← Предыдущая</div>
+            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.prev.num} · ${adj.prev.title.slice(0,40)}</div>
+          </a>` : ''}
+          ${adj.next ? `<a href="/statya/${adj.next.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;text-align:right;">
+            <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:3px;">Следующая →</div>
+            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.next.num} · ${adj.next.title.slice(0,40)}</div>
+          </a>` : ''}
+        </div>
+
+        <!-- Related articles -->
+        ${related.length > 0 ? `
+        <div style="margin-top:36px;">
+          <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:14px;color:#0f2044;">Рядом в кодексе</h2>
+          <div class="law-results-grid">
+            ${related.map(r => `
+            <a href="/statya/${r.slug}" class="law-result-card">
+              <div class="law-result-num">Статья ${r.num} · ${r.codeName}</div>
+              <div class="law-result-title">${r.title}</div>
+            </a>`).join('')}
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Source -->
+        <div style="margin-top:32px;padding:16px;background:#f8fafc;border-radius:12px;font-size:0.82rem;color:#64748b;">
+          <i class="bi bi-info-circle me-2"></i>
+          Источник: ${codeFullNames[art.code] || art.codeName}. Актуальный текст — на
+          <a href="https://adilet.zan.kz" target="_blank" rel="noopener" style="color:#1a56db;">adilet.zan.kz</a>.
+          Для применения в конкретной ситуации — проконсультируйтесь с адвокатом.
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-lg-4">
+        <div class="law-sidebar">
+          <div class="law-cta-card">
+            <div class="law-cta-title">Вопрос по статье ${art.num} ${art.codeName}?</div>
+            <div class="law-cta-sub">${codeConsult[art.code] || 'Получите консультацию по данной статье'}. Первичный разбор — бесплатно.</div>
+            <a href="https://wa.me/77000300024?text=${encodeURIComponent(waText[art.code] || `Здравствуйте. Вопрос по статье ${art.num} ${art.codeName}.`)}"
+               class="law-cta-btn" target="_blank" rel="noopener">
+              <i class="bi bi-whatsapp"></i> Написать в WhatsApp
+            </a>
+            <a href="tel:+77000300024" class="law-cta-btn" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);">
+              <i class="bi bi-telephone"></i> +7 (700) 030-00-24
+            </a>
+          </div>
+
+          <!-- Quick search -->
+          <div class="law-nav-card">
+            <div class="law-nav-title">Поиск по кодексу</div>
+            <form action="/statyi" method="get" style="display:flex;gap:6px;margin-top:4px;">
+              <input type="hidden" name="code" value="${art.code}">
+              <input class="law-search-input" type="text" name="q" placeholder="Статья или ключевое слово" style="font-size:0.85rem;padding:8px 12px;">
+              <button class="law-search-btn" type="submit" style="padding:8px 12px;"><i class="bi bi-search"></i></button>
+            </form>
+          </div>
+
+          <!-- About code -->
+          <div class="law-nav-card">
+            <div class="law-nav-title">Все статьи ${art.codeName}</div>
+            <a href="/statyi?code=${art.code}" class="law-nav-link" style="padding:10px 0;border:none;">
+              <i class="bi bi-list-ul me-2" style="color:#d7a742;"></i>
+              <span>Открыть список статей →</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+`;
+%>
+<%- include('layout', {
+  title: pageTitle,
+  description: pageDescription,
+  canonical,
+  schema,
+  activeNav: 'statyi',
+  body
+}) %>

@@ -9,7 +9,11 @@
     "import-news": "node scripts/import_news.js",
     "import-notaries": "node scripts/import-notaries.js",
     "import-bailiffs": "node scripts/import-bailiffs.js",
-    "import-lawyers": "node scripts/import-lawyers.js"
+    "import-lawyers": "node scripts/import-lawyers.js",
+    "scrape-laws": "node scripts/scrape-laws.js",
+    "scrape-laws-uk": "node scripts/scrape-laws.js uk",
+    "scrape-laws-upk": "node scripts/scrape-laws.js upk",
+    "scrape-laws-koap": "node scripts/scrape-laws.js koap"
   },
   "dependencies": {
     "axios": "^1.9.0",

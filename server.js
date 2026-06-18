@@ -95,6 +95,15 @@ try {
   logger.warn('Lawyers module not loaded: ' + e.message);
 }
 
+// Initialize laws DB
+let lawsDb = null;
+try {
+  lawsDb = require('./modules/laws-db');
+  logger.info('Laws module loaded ✓');
+} catch (e) {
+  logger.warn('Laws module not loaded: ' + e.message);
+}
+
 // Маскировка ИИН для безопасного логирования
 function maskIin(iin) {
     const clean = String(iin || '').replace(/\D/g, '');
@@ -552,6 +561,44 @@ app.get('/api/lawyers/import', asyncHandler(async (req, res) => {
 app.get('/advocate', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'advocate.html'));
 });
+
+// ===== LAWS PAGES =====
+
+// Search API (JSON)
+app.get('/api/statyi/search', asyncHandler(async (req, res) => {
+  if (!lawsDb) return res.json({ results: [] });
+  const q    = (req.query.q    || '').trim();
+  const code = (req.query.code || '').trim();
+  const results = await lawsDb.search(q, code, 30);
+  res.json({ results });
+}));
+
+// List / search page
+app.get('/statyi', asyncHandler(async (req, res) => {
+  if (!lawsDb) return res.redirect('/zakony.html');
+  const q    = (req.query.q    || '').trim();
+  const code = (req.query.code || '').trim();
+  const [articles, codes] = await Promise.all([
+    (q || code) ? lawsDb.search(q, code, 60) : Promise.resolve([]),
+    lawsDb.getCodes(),
+  ]);
+  res.render('laws/list', { q, code, articles, codes, total: articles.length });
+}));
+
+// Individual article page
+app.get('/statya/:slug', asyncHandler(async (req, res) => {
+  if (!lawsDb) return res.redirect('/statyi');
+  const article = await lawsDb.findBySlug(req.params.slug);
+  if (!article) return res.status(404).sendFile(path.join(__dirname, 'public', '404.html')).catch(() => res.status(404).send('Статья не найдена'));
+  const [adjacent, related, codes] = await Promise.all([
+    lawsDb.adjacent(article.code, article.numInt),
+    lawsDb.findByCode(article.code, 6).then(all =>
+      all.filter(a => a.slug !== article.slug && Math.abs(a.numInt - article.numInt) <= 5).slice(0, 4)
+    ),
+    lawsDb.getCodes(),
+  ]);
+  res.render('laws/article', { article, adjacent, related, codes });
+}));
 
 // ===== BANKRUPTCY CHECK (tazalau.qoldau.kz) =====
 app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
