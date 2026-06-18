@@ -69,8 +69,8 @@ function formatLawText(text) {
   for (const line of lines) {
     const l = line.trim();
 
-    // Skip footnotes
-    if (/^Сноска\./i.test(l)) continue;
+    // Skip footnote/amendment lines
+    if (/^Сноска/i.test(l)) continue;
 
     // Numbered main part: "1. Текст части..."
     const partM = l.match(/^(\d+)\.\s+([\s\S]+)/);
