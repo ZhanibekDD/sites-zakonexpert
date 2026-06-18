@@ -170,24 +170,10 @@
     <nav>
       <ul class="nav-links" data-nav-links>
         <li><a class="nav-link" href="/">Главная</a></li>
-        <li class="nav-services-dropdown dropdown">
-          <a class="nav-link dropdown-toggle" href="/services.html" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Услуги
-          </a>
-          <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="/snyatie-aresta-so-scheta"><i class="bi bi-bank me-2"></i>Снятие ареста со счёта</a></li>
-            <li><a class="dropdown-item" href="/otmena-ispolnitelnoi-nadpisi"><i class="bi bi-file-earmark-x me-2"></i>Отмена исп. надписи</a></li>
-            <li><a class="dropdown-item" href="/snyatie-ogranichenii-chsi"><i class="bi bi-shield-x me-2"></i>Ограничения ЧСИ</a></li>
-            <li><a class="dropdown-item" href="/snyatie-zapreta-na-avto"><i class="bi bi-car-front me-2"></i>Запрет на авто</a></li>
-            <li><a class="dropdown-item" href="/arest-kaspi"><i class="bi bi-credit-card me-2"></i>Арест Kaspi</a></li>
-            <li><a class="dropdown-item" href="/grafik-oplaty-zadolzhennosti"><i class="bi bi-calendar3 me-2"></i>График платежей</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="/services.html"><i class="bi bi-grid me-2"></i>Все услуги</a></li>
-          </ul>
-        </li>
+        <li><a class="nav-link" href="/services.html">Услуги</a></li>
         <li><a class="nav-link" href="/zakony.html">Законы</a></li>
         <li><a class="nav-link" href="/news">Новости</a></li>
-        <li><a class="nav-link active" href="/notary-search">Нотариус</a></li>
+        <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/notaries" aria-haspopup="true">Реестры <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/notaries">Нотариусы (каталог)</a></li><li><a href="/notary-search" class="active">— Поиск нотариуса</a></li><li><a href="/bailiffs">ЧСИ (каталог)</a></li><li><a href="/bailiff-search">— Поиск ЧСИ</a></li><li><a href="/lawyers">Адвокаты (каталог)</a></li><li><a href="/lawyer-search">— Поиск адвоката</a></li></ul></li>
         <li><a class="nav-link" href="/contact.html">Контакты</a></li>
       </ul>
     </nav>
@@ -277,6 +263,12 @@
           <a href="/notary-search">Поиск нотариуса</a>
           <a href="/news">Новости и разборы</a>
           <a href="/zakony.html">Законы РК</a>
+        </div>
+        <h3 class="footer-col-title" style="margin-top:1rem;">Реестры</h3>
+        <div class="footer-links">
+          <a href="/notaries">Нотариусы</a>
+          <a href="/bailiffs">Судебные исполнители</a>
+          <a href="/lawyers">Адвокаты</a>
         </div>
       </div>
       <div class="footer-col">
