@@ -360,13 +360,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // --- Отображение карточек исполнительных производств ---
         if (debtors && debtors.length > 0) {
             debtorsSection.style.display = 'block';
+
+            // Build single WhatsApp message with ALL arrests
+            const iinVal = document.getElementById('iin')?.value || '';
+            const waIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+            let waAllText = 'Здравствуйте! Прошу разобрать ситуацию по исполнительным производствам.\n';
+            if (iinVal) waAllText += `ИИН: ${iinVal}\n`;
+            waAllText += `\nНайдено производств: ${debtors.length}\n\n`;
+
             debtors.forEach((debtor, index) => {
                 const debtorNum = debtor.execProcNum || '-';
                 const debtorDate = formatDate(debtor.ipStartDate);
                 const debtorAmountStr = debtor.recoveryAmount || '0';
                 const debtorAmount = parseFloat(String(debtorAmountStr).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
                 const authority = debtor.ilOrganRu || '-';
-
                 const executorSurname = debtor.officerSurname || '';
                 const executorName = debtor.officerName || '';
                 const executorSecondnameRaw = debtor.officerSecondname;
@@ -378,11 +385,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const executor = `${executorSurname} ${executorName} ${executorSecondname}`.trim() || '-';
                 const creditor = debtor.recovererTitle || '-';
-
                 const { text: statusText, cls: statusCls } = getStatusRecommendation(debtor);
 
-                const waText = `${T.waPrefix}\n${T.labels.debtorNum}: ${debtorNum}\n${T.labels.creditor}: ${creditor}`;
-                const waUrl = `https://wa.me/77000300024?text=${encodeURIComponent(waText)}`;
+                // Accumulate into WhatsApp message
+                waAllText += `${index + 1}. № ${debtorNum}\n`;
+                waAllText += `   Взыскатель: ${creditor}\n`;
+                waAllText += `   Сумма: ${formatAmount(debtorAmount)}\n`;
+                waAllText += `   Орган: ${authority}\n`;
+                if (executor !== '-') waAllText += `   ЧСИ: ${executor}\n`;
+                waAllText += '\n';
 
                 const card = document.createElement('div');
                 card.className = 'ip-card';
@@ -419,10 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div class="ip-card-footer">
-                        <a href="${waUrl}" target="_blank" rel="noopener" class="btn-resolve-card">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                            ${T.btnResolve}
-                        </a>
                         <button class="btn-details-card view-details-btn"
                             data-bs-toggle="modal"
                             data-bs-target="#debtorDetailsModal"
@@ -433,8 +440,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 debtorsContainer.appendChild(card);
             });
+
+            // Single WhatsApp button after all cards
+            const waAllUrl = `https://wa.me/77000300024?text=${encodeURIComponent(waAllText)}`;
+            const waBlock = document.createElement('div');
+            waBlock.className = 'wa-all-block';
+            waBlock.innerHTML = `
+                <div class="wa-all-inner">
+                    <div class="wa-all-text">
+                        <strong>Нужна помощь по ${debtors.length > 1 ? 'этим производствам' : 'этому производству'}?</strong>
+                        <p>Напишем в WhatsApp — разберём каждое производство и объясним ваши права бесплатно</p>
+                    </div>
+                    <a href="${waAllUrl}" target="_blank" rel="noopener" class="wa-btn-single">
+                        ${waIcon} Написать в WhatsApp
+                    </a>
+                </div>
+            `;
+            debtorsSection.appendChild(waBlock);
+
         } else {
-            debtorsSection.style.display = 'none';
+            // No arrests found
+            debtorsSection.style.display = 'block';
+            const waNoArrestUrl = `https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.')}`;
+            debtorsContainer.innerHTML = `
+                <div class="no-arrests-block">
+                    <div class="no-arrests-icon">✅</div>
+                    <h3>У вас нет активных арестов</h3>
+                    <p>По данному ИИН исполнительных производств не найдено.</p>
+                    <p class="no-arrests-note">Если у вас непонятная ситуация — напишите нам, разберёмся бесплатно.</p>
+                    <a href="${waNoArrestUrl}" target="_blank" rel="noopener" class="wa-btn-single">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        Написать в WhatsApp
+                    </a>
+                </div>
+            `;
         }
 
         // --- Отображение таблицы ограничений (остается без изменений, т.к. restrictions пуст) ---
@@ -484,8 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
             restrictionsSection.style.display = 'none';
         }
 
-        // Показываем блок результатов только если есть хотя бы одна таблица
-        results.style.display = (debtors && debtors.length > 0) || (restrictions && restrictions.length > 0) ? 'block' : 'none';
+        results.style.display = 'block';
     }
 
     /**

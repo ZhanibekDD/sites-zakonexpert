@@ -293,6 +293,52 @@ app.post('/check', asyncHandler(async (req, res) => {
 
 }));
 
+// ===== NOTARY SEARCH =====
+app.get('/notary-search', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'notary-search.html'));
+});
+
+app.get('/api/notary-search', asyncHandler(async (req, res) => {
+  const cheerio = require('cheerio');
+  const { fio = '', phone = '', license = '', region = '0' } = req.query;
+  if (!fio && !phone && !license) {
+    return res.status(400).json({ error: 'Укажите ФИО, телефон или номер лицензии' });
+  }
+  const params = new URLSearchParams({ fio, region, city: '', phoneNumber: phone, licenseNumber: license });
+  const url = `https://enis.kz/NotarySearch/Details/?${params}`;
+  try {
+    const resp = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const $ = cheerio.load(resp.data);
+    const countText = $('b').filter((i, el) => $(el).text().includes('Найдено записей')).first().text();
+    const total = parseInt(countText.match(/\d+/)?.[0] || '0');
+    const notaries = [];
+    $('font[face="Arial"]').each((i, el) => {
+      const font = $(el);
+      const nameEl = font.find('a').first();
+      const name = nameEl.text().trim();
+      if (!name) return;
+      const href = nameEl.attr('href') || '';
+      const id = href.match(/\/(\d+)$/)?.[1] || '';
+      const inner = font.html() || '';
+      const parts = inner.split(/<br\s*\/?>/i);
+      let address = '', phone2 = '', workHours = '', email = '';
+      for (const part of parts) {
+        const clean = part.replace(/<[^>]+>/g, '').trim();
+        if (clean.startsWith('Адрес:')) address = clean.replace('Адрес:', '').trim();
+        else if (clean.startsWith('Телефон:')) phone2 = clean.replace('Телефон:', '').trim();
+        else if (clean.startsWith('Режим работы:')) workHours = clean.replace('Режим работы:', '').trim();
+        else if (clean.startsWith('Электронный адрес:')) email = clean.replace('Электронный адрес:', '').trim();
+      }
+      notaries.push({ id, name, address, phone: phone2, workHours, email,
+        url: id ? `https://enis.kz/Notary/Details/${id}` : '' });
+    });
+    res.json({ total, notaries });
+  } catch (e) {
+    logger.error('Notary search error:', e.message);
+    res.status(500).json({ error: 'Не удалось получить данные с enis.kz' });
+  }
+}));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',

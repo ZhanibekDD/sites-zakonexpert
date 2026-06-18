@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Поиск нотариуса в Казахстане — ZakonExpert</title>
+  <meta name="description" content="Найдите нотариуса в Казахстане по имени, телефону или номеру лицензии. База нотариусов РК через реестр ENIS.kz. Адрес, телефон, режим работы.">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="canonical" href="https://zakonexpertt.kz/notary-search">
+  <meta property="og:title" content="Поиск нотариуса в Казахстане — ZakonExpert">
+  <meta property="og:description" content="Найдите нотариуса в Казахстане по имени, телефону или номеру лицензии.">
+  <meta property="og:image" content="https://zakonexpertt.kz/img/zakonexpert-logo-kazakhstan.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/css/landing.css?v=20260618-1">
+  <link rel="stylesheet" href="/css/style.css?v=20260618-1">
+  <style>
+    /* ── Notary page specific ── */
+    .notary-hero {
+      background: linear-gradient(135deg, #0f2044 0%, #1a3560 100%);
+      padding: 3rem 0 2.5rem;
+      color: #fff;
+    }
+    .notary-hero h1 {
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800; line-height: 1.25; margin-bottom: 0.6rem;
+    }
+    .notary-hero p { color: rgba(255,255,255,0.78); font-size: 1rem; max-width: 560px; }
+    .notary-search-box {
+      background: #fff; border-radius: 16px;
+      padding: 1.75rem; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+      margin-top: 1.75rem;
+    }
+    .notary-search-box .form-label { font-weight: 600; color: #0f2044; font-size: 0.88rem; }
+    .notary-search-box .form-control {
+      border-radius: 10px; border: 1.5px solid #dde3ed;
+      font-size: 0.95rem; padding: 0.65rem 1rem;
+    }
+    .notary-search-box .form-control:focus { border-color: #1a3560; box-shadow: 0 0 0 3px rgba(26,53,96,0.12); }
+    .notary-search-btn {
+      background: #d7a742; color: #0f2044; border: none;
+      font-weight: 800; border-radius: 10px;
+      padding: 0.7rem 2rem; font-size: 0.95rem;
+      transition: background 0.18s, transform 0.18s;
+      width: 100%;
+    }
+    .notary-search-btn:hover { background: #c4943a; transform: translateY(-1px); }
+
+    .notary-section { padding: 2.5rem 0 4rem; background: #f5f7fa; }
+    .notary-results-title {
+      font-size: 1rem; font-weight: 700; color: #64748b;
+      margin-bottom: 1.25rem;
+    }
+    .notary-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.1rem; }
+
+    .notary-card {
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(15,32,68,0.08);
+      padding: 1.35rem 1.5rem;
+      display: flex; flex-direction: column; gap: 0.65rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .notary-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,32,68,0.13); }
+    .notary-card-name {
+      font-size: 1rem; font-weight: 800; color: #0f2044;
+      text-decoration: none;
+    }
+    .notary-card-name:hover { color: #1a3560; text-decoration: underline; }
+    .notary-card-row {
+      display: flex; align-items: flex-start; gap: 0.55rem;
+      font-size: 0.88rem; color: #334155;
+    }
+    .notary-card-row i { color: #1a3560; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .notary-card-phone {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #1a3560; font-weight: 700; text-decoration: none; font-size: 0.88rem;
+    }
+    .notary-card-phone:hover { color: #d7a742; }
+    .notary-card-footer {
+      margin-top: 0.5rem; padding-top: 0.75rem;
+      border-top: 1px solid #f1f5f9;
+      display: flex; gap: 0.6rem; flex-wrap: wrap;
+    }
+    .notary-btn-wa {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #25d366; color: #fff; border-radius: 8px;
+      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 700;
+      text-decoration: none; transition: opacity 0.18s;
+    }
+    .notary-btn-wa:hover { opacity: 0.88; color: #fff; }
+    .notary-btn-enis {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f0f5ff; color: #1a3560; border-radius: 8px;
+      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 600;
+      text-decoration: none; transition: background 0.18s;
+    }
+    .notary-btn-enis:hover { background: #dbeafe; color: #0f2044; }
+
+    /* CTA Advertising */
+    .notary-cta-block {
+      background: linear-gradient(135deg, #0f2044 0%, #1a3560 100%);
+      border-radius: 18px; padding: 2rem 2.5rem;
+      color: #fff; margin: 2rem 0;
+    }
+    .notary-cta-block h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .notary-cta-block p { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin-bottom: 1.25rem; }
+    .notary-cta-services {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem;
+    }
+    .notary-cta-tag {
+      background: rgba(215,167,66,0.2); color: #d7a742;
+      border-radius: 20px; padding: 0.25rem 0.85rem;
+      font-size: 0.82rem; font-weight: 600;
+    }
+    .notary-cta-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    /* Services nav dropdown */
+    .nav-services-dropdown .dropdown-menu {
+      border: none; box-shadow: 0 8px 24px rgba(15,32,68,0.13);
+      border-radius: 12px; padding: 0.5rem;
+      min-width: 260px;
+    }
+    .nav-services-dropdown .dropdown-item {
+      border-radius: 8px; padding: 0.5rem 0.9rem;
+      font-size: 0.88rem; font-weight: 500; color: #0f2044;
+      transition: background 0.15s;
+    }
+    .nav-services-dropdown .dropdown-item:hover { background: #f0f5ff; color: #1a3560; }
+    .nav-services-dropdown .dropdown-item i { width: 20px; }
+
+    .notary-empty {
+      text-align: center; padding: 3rem 1.5rem;
+      background: #fff; border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(15,32,68,0.07);
+    }
+    .notary-empty p { color: #64748b; margin: 0.5rem 0 0; }
+
+    .notary-loading { text-align: center; padding: 2rem; color: #64748b; }
+    .notary-loading .spinner-border { color: #1a3560; width: 2rem; height: 2rem; }
+
+    @media (max-width: 640px) {
+      .notary-cards { grid-template-columns: 1fr; }
+      .notary-cta-block { padding: 1.5rem 1.25rem; }
+      .notary-cta-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="landing-container nav-shell">
+    <a class="brand" href="/">
+      <img src="/img/zakonexpert-logo-kazakhstan.png"
+           alt="ZakonExpert — снятие ареста со счетов в Казахстане"
+           class="brand-full-logo">
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Меню" data-nav-toggle>
+      <i class="bi bi-list fs-4"></i>
+    </button>
+    <nav>
+      <ul class="nav-links" data-nav-links>
+        <li><a class="nav-link" href="/">Главная</a></li>
+        <li class="nav-services-dropdown dropdown">
+          <a class="nav-link dropdown-toggle" href="/services.html" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Услуги
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/snyatie-aresta-so-scheta"><i class="bi bi-bank me-2"></i>Снятие ареста со счёта</a></li>
+            <li><a class="dropdown-item" href="/otmena-ispolnitelnoi-nadpisi"><i class="bi bi-file-earmark-x me-2"></i>Отмена исп. надписи</a></li>
+            <li><a class="dropdown-item" href="/snyatie-ogranichenii-chsi"><i class="bi bi-shield-x me-2"></i>Ограничения ЧСИ</a></li>
+            <li><a class="dropdown-item" href="/snyatie-zapreta-na-avto"><i class="bi bi-car-front me-2"></i>Запрет на авто</a></li>
+            <li><a class="dropdown-item" href="/arest-kaspi"><i class="bi bi-credit-card me-2"></i>Арест Kaspi</a></li>
+            <li><a class="dropdown-item" href="/grafik-oplaty-zadolzhennosti"><i class="bi bi-calendar3 me-2"></i>График платежей</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/services.html"><i class="bi bi-grid me-2"></i>Все услуги</a></li>
+          </ul>
+        </li>
+        <li><a class="nav-link" href="/zakony.html">Законы</a></li>
+        <li><a class="nav-link" href="/news">Новости</a></li>
+        <li><a class="nav-link active" href="/notary-search">Нотариус</a></li>
+        <li><a class="nav-link" href="/contact.html">Контакты</a></li>
+      </ul>
+    </nav>
+    <div class="header-side">
+      <div class="header-contacts">
+        <a href="tel:+77000300024"><i class="bi bi-telephone"></i> +7 (700) 030-00-24</a>
+        <a href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="notary-hero">
+    <div class="landing-container">
+      <nav aria-label="breadcrumb" style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:0.6rem;">
+        <a href="/" style="color:rgba(255,255,255,0.72);text-decoration:none;">Главная</a> / <span>Поиск нотариуса</span>
+      </nav>
+      <h1>Поиск нотариуса в Казахстане</h1>
+      <p>База нотариусов РК из реестра ENIS.kz — адрес, телефон, режим работы</p>
+
+      <div class="notary-search-box">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">ФИО нотариуса</label>
+            <input type="text" id="notary-fio" class="form-control" placeholder="Например: Иванов Иван Иванович">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Телефон (необязательно)</label>
+            <input type="text" id="notary-phone" class="form-control" placeholder="87001234567">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button id="notary-search-btn" class="notary-search-btn" onclick="searchNotary()">
+              <i class="bi bi-search me-1"></i> Найти
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="notary-section">
+    <div class="landing-container">
+
+      <!-- CTA Block (advertising) -->
+      <div class="notary-cta-block">
+        <h3>Нотариус выдал исполнительную надпись?</h3>
+        <p>Исполнительная надпись нотариуса — это основание для ареста счёта или авто. Мы поможем её оспорить или снять ограничения законным путём.</p>
+        <div class="notary-cta-services">
+          <span class="notary-cta-tag">Снятие ареста со счёта</span>
+          <span class="notary-cta-tag">Отмена исп. надписи</span>
+          <span class="notary-cta-tag">Запрет на авто</span>
+          <span class="notary-cta-tag">Работа с ЧСИ</span>
+        </div>
+        <div class="notary-cta-actions">
+          <a href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.+%D0%9D%D0%BE%D1%82%D0%B0%D1%80%D0%B8%D1%83%D1%81+%D0%B2%D1%8B%D0%B4%D0%B0%D0%BB+%D0%B8%D1%81%D0%BF.+%D0%BD%D0%B0%D0%B4%D0%BF%D0%B8%D1%81%D1%8C.+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C."
+             target="_blank" rel="noopener" class="btn-legal-cta">
+            <i class="bi bi-whatsapp me-1"></i> Проконсультироваться
+          </a>
+          <a href="/otmena-ispolnitelnoi-nadpisi" class="btn-legal-outline">Узнать об отмене надписи →</a>
+        </div>
+      </div>
+
+      <!-- Search results -->
+      <div id="notary-results-area"></div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="landing-footer">
+  <div class="footer-top-line"></div>
+  <div class="landing-container footer-shell">
+    <div class="footer-brand">
+      <div class="brand">
+        <img src="/img/zakonexpert-logo-kazakhstan.png" alt="ZakonExpert логотип" class="brand-full-logo brand-full-logo--footer">
+      </div>
+      <p class="mt-3">Профессиональное сопровождение по снятию арестов со счетов, карт, авто и имущества. Работаем по всему Казахстану.</p>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h3 class="footer-col-title">Инструменты</h3>
+        <div class="footer-links">
+          <a href="/#checker-section">Проверить ИИН</a>
+          <a href="/notary-search">Поиск нотариуса</a>
+          <a href="/news">Новости и разборы</a>
+          <a href="/zakony.html">Законы РК</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3 class="footer-col-title">Услуги</h3>
+        <div class="footer-links">
+          <a href="/snyatie-aresta-so-scheta">Снятие ареста со счёта</a>
+          <a href="/otmena-ispolnitelnoi-nadpisi">Отмена исп. надписи</a>
+          <a href="/snyatie-ogranichenii-chsi">Ограничения ЧСИ</a>
+          <a href="/snyatie-zapreta-na-avto">Запрет на авто</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h3 class="footer-col-title">Связь</h3>
+        <div class="footer-contacts">
+          <a href="tel:+77000300024"><i class="bi bi-telephone me-2"></i>+7 (700) 030-00-24</a>
+          <a href="mailto:stopnadpis@mail.ru"><i class="bi bi-envelope me-2"></i>stopnadpis@mail.ru</a>
+          <a href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="landing-container footer-bottom">
+    <span>© <span class="current-year"></span> ZakonExpert. Все права защищены.</span>
+    <span class="footer-note"><a href="/privacy.html" style="color:rgba(255,255,255,0.55);text-decoration:underline;">Политика конфиденциальности</a> · Казахстан</span>
+  </div>
+</footer>
+
+<a href="https://wa.me/77000300024?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C+%D0%BF%D0%BE+%D0%B0%D1%80%D0%B5%D1%81%D1%82%D0%B0%D0%BC." class="sticky-wa" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <i class="bi bi-whatsapp"></i>
+</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/site.js?v=20260618-1"></script>
+<script>
+async function searchNotary() {
+  const fio = document.getElementById('notary-fio').value.trim();
+  const phone = document.getElementById('notary-phone').value.trim();
+  const area = document.getElementById('notary-results-area');
+
+  if (!fio && !phone) {
+    area.innerHTML = `<div class="notary-empty"><p>Введите ФИО или телефон нотариуса</p></div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="notary-loading"><div class="spinner-border" role="status"></div><p class="mt-2">Поиск в реестре нотариусов...</p></div>`;
+
+  try {
+    const params = new URLSearchParams({ fio, phone });
+    const resp = await fetch(`/api/notary-search?${params}`);
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      area.innerHTML = `<div class="notary-empty"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#f59e0b;"></i><p>${data.error || 'Ошибка поиска'}</p></div>`;
+      return;
+    }
+
+    if (!data.notaries || data.notaries.length === 0) {
+      area.innerHTML = `
+        <div class="notary-empty">
+          <i class="bi bi-search" style="font-size:2.5rem;color:#cbd5e1;"></i>
+          <h3 style="font-size:1.1rem;font-weight:700;color:#0f2044;margin:0.75rem 0 0.4rem;">Нотариусы не найдены</h3>
+          <p>Попробуйте изменить запрос или проверьте правильность написания ФИО</p>
+        </div>`;
+      return;
+    }
+
+    const cards = data.notaries.map(n => {
+      const waText = encodeURIComponent(`Здравствуйте! Нашёл вас через ZakonExpert. Хочу узнать о ваших услугах.\nНотариус: ${n.name}`);
+      const phoneLink = n.phone ? `<a href="tel:${n.phone}" class="notary-card-phone"><i class="bi bi-telephone-fill"></i>${n.phone}</a>` : '';
+      const emailRow = n.email ? `<div class="notary-card-row"><i class="bi bi-envelope"></i><span>${n.email}</span></div>` : '';
+      const hoursRow = n.workHours ? `<div class="notary-card-row"><i class="bi bi-clock"></i><span>${n.workHours}</span></div>` : '';
+      const addrRow = n.address ? `<div class="notary-card-row"><i class="bi bi-geo-alt"></i><span>${n.address}</span></div>` : '';
+      const enisBtn = n.url ? `<a href="${n.url}" target="_blank" rel="noopener" class="notary-btn-enis"><i class="bi bi-box-arrow-up-right"></i>ENIS.kz</a>` : '';
+      const waBtn = n.phone ? `<a href="https://wa.me/${n.phone.replace(/\D/g,'')}?text=${waText}" target="_blank" rel="noopener" class="notary-btn-wa"><i class="bi bi-whatsapp"></i>WhatsApp</a>` : '';
+      return `
+        <div class="notary-card">
+          <a href="${n.url || '#'}" target="_blank" rel="noopener" class="notary-card-name">${n.name}</a>
+          ${addrRow}${phoneLink ? `<div>${phoneLink}</div>` : ''}${hoursRow}${emailRow}
+          <div class="notary-card-footer">${waBtn}${enisBtn}</div>
+        </div>`;
+    }).join('');
+
+    area.innerHTML = `
+      <p class="notary-results-title">Найдено нотариусов: <strong>${data.total}</strong></p>
+      <div class="notary-cards">${cards}</div>`;
+
+  } catch (e) {
+    area.innerHTML = `<div class="notary-empty"><i class="bi bi-wifi-off" style="font-size:2rem;color:#f59e0b;"></i><p>Не удалось выполнить поиск. Попробуйте позже.</p></div>`;
+  }
+}
+
+// Search on Enter
+document.getElementById('notary-fio').addEventListener('keydown', e => { if (e.key === 'Enter') searchNotary(); });
+document.getElementById('notary-phone').addEventListener('keydown', e => { if (e.key === 'Enter') searchNotary(); });
+document.querySelector('.current-year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
