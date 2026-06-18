@@ -604,6 +604,52 @@ app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
   });
 }));
 
+// ===== ERDR CHECK (service.prosecutor.kz) =====
+app.get('/api/erdr-check', asyncHandler(async (req, res) => {
+  const erdr = (req.query.erdr || '').trim();
+  const iin  = (req.query.iin  || '').replace(/\D/g, '');
+  if (!erdr && iin.length !== 12) {
+    return res.status(400).json({ error: 'Укажите номер ЕРДР или ИИН (12 цифр)' });
+  }
+
+  const cheerio = require('cheerio');
+  const HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'ru-RU,ru;q=0.9,kk;q=0.8',
+    'Referer': 'https://service.prosecutor.kz/ru/service/erd',
+  };
+
+  function parseErdrTable(html) {
+    const $ = cheerio.load(html);
+    const headers = [];
+    $('table thead th, table tr:first-child th').each((i, th) => {
+      headers.push($(th).text().trim().replace(/\s+/g, ' '));
+    });
+    const rows = [];
+    $('table tbody tr').each((i, tr) => {
+      const cells = [];
+      $(tr).find('td').each((j, td) => cells.push($(td).text().trim().replace(/\s+/g, ' ')));
+      if (cells.some(c => c)) rows.push(cells);
+    });
+    return { headers, rows };
+  }
+
+  try {
+    let url;
+    if (erdr) {
+      url = `https://service.prosecutor.kz/ru/service/erd?regNumber=${encodeURIComponent(erdr)}`;
+    } else {
+      url = `https://service.prosecutor.kz/ru/service/erd?iin=${iin}`;
+    }
+    const r = await axios.get(url, { headers: HEADERS, timeout: 20000 });
+    const { headers, rows } = parseErdrTable(r.data);
+    return res.json({ headers, rows, query: erdr || iin });
+  } catch (e) {
+    return res.status(502).json({ error: 'Не удалось получить данные от service.prosecutor.kz: ' + e.message });
+  }
+}));
+
 // ===== EXECUTIVE INSCRIPTION CAPTCHA (enis.kz) =====
 const inscriptionSessions = new Map(); // sid → { cookie, captchaUrl }
 

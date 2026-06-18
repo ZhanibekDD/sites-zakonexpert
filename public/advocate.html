@@ -446,6 +446,28 @@
   </div>
 </section>
 
+<!-- ══ CHECK TOOL: ERDR ══ -->
+<section class="section section-muted" id="erdr-section">
+  <div class="landing-container">
+    <span class="section-kicker">Онлайн-проверка</span>
+    <h2 class="section-title">Проверка по реестру ЕРДР</h2>
+    <div class="adv-tool-section">
+      <div class="adv-tool-heading">Единый реестр досудебных расследований</div>
+      <div class="adv-tool-sub">Официальные данные service.prosecutor.kz — проверьте, зарегистрировано ли дело, по номеру ЕРДР или ИИН участника.</div>
+      <div class="adv-form-row" style="margin-top:16px;">
+        <input type="text" class="adv-form-input" id="erdrNumber" placeholder="Номер ЕРДР (напр. 7511000000000)" maxlength="30" style="flex:2;">
+        <span style="display:flex;align-items:center;color:rgba(255,255,255,0.4);font-size:0.85rem;flex-shrink:0;">или</span>
+        <input type="text" class="adv-form-input" id="erdrIin" placeholder="ИИН — 12 цифр" maxlength="12" inputmode="numeric" style="flex:1;min-width:150px;">
+        <button class="adv-btn-check" onclick="checkErdr()"><i class="bi bi-search me-2"></i>Проверить</button>
+      </div>
+      <div id="erdrResult" style="margin-top:12px;"></div>
+      <p style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-top:10px;">
+        <i class="bi bi-info-circle me-1"></i>Данные публичные. Если дело не найдено — это не значит, что расследования нет: часть сведений ограничена в доступе.
+      </p>
+    </div>
+  </div>
+</section>
+
 <!-- ══ CHECK TOOL: INSCRIPTION ══ -->
 <section class="section">
   <div class="landing-container">
@@ -620,6 +642,42 @@ function submitInscription() {
 
 document.getElementById('inscIin') && document.getElementById('inscIin').addEventListener('input', function(){ this.value=this.value.replace(/\D/g,''); });
 document.getElementById('inscCaptcha') && document.getElementById('inscCaptcha').addEventListener('keydown', function(e){ if(e.key==='Enter') submitInscription(); });
+
+// ── ЕРДР check ──
+function checkErdr() {
+  var erdr = (document.getElementById('erdrNumber').value || '').trim();
+  var iin  = (document.getElementById('erdrIin').value  || '').replace(/\D/g,'');
+  var res  = document.getElementById('erdrResult');
+  if (!erdr && iin.length !== 12) {
+    res.innerHTML = '<div class="adv-result error">Введите номер ЕРДР или 12-значный ИИН</div>'; return;
+  }
+  res.innerHTML = '<div class="adv-tool-loading">⏳ Проверяем по реестру ЕРДР...</div>';
+  var params = erdr ? ('erdr=' + encodeURIComponent(erdr)) : ('iin=' + iin);
+  fetch('/api/erdr-check?' + params)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.error) { res.innerHTML = '<div class="adv-result error">' + d.error + '</div>'; return; }
+      if (!(d.rows||[]).length) {
+        res.innerHTML = '<div class="adv-result ok">✅ По данному запросу записей в ЕРДР не найдено.</div>'; return;
+      }
+      var html = '<div class="adv-result ok"><div style="font-weight:700;margin-bottom:10px;">📋 Найдено записей: ' + d.rows.length + '</div>';
+      d.rows.forEach(function(row){
+        html += '<div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:10px 12px;margin-bottom:6px;font-size:0.85rem;line-height:1.6;">';
+        if ((d.headers||[]).length) {
+          row.forEach(function(cell, i){ if(cell) html += '<div><span style="color:rgba(255,255,255,0.4);font-size:0.75rem;">'+(d.headers[i]||'')+':</span> '+cell+'</div>'; });
+        } else {
+          html += row.filter(Boolean).join(' · ');
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      res.innerHTML = html;
+    })
+    .catch(function(e){ res.innerHTML = '<div class="adv-result error">Ошибка: ' + e.message + '</div>'; });
+}
+document.getElementById('erdrIin') && document.getElementById('erdrIin').addEventListener('input', function(){ this.value=this.value.replace(/\D/g,''); });
+document.getElementById('erdrNumber') && document.getElementById('erdrNumber').addEventListener('keydown', function(e){ if(e.key==='Enter') checkErdr(); });
+document.getElementById('erdrIin') && document.getElementById('erdrIin').addEventListener('keydown', function(e){ if(e.key==='Enter') checkErdr(); });
 </script>
 </body>
 </html>
