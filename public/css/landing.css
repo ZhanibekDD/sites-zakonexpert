@@ -1650,7 +1650,7 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
     line-height: 1.6;
 }
 .search-results-area {
-    max-width: 960px;
+    max-width: 1100px;
     margin: 36px auto 0;
     text-align: left;
 }

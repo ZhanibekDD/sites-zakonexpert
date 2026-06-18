@@ -115,7 +115,7 @@ async function importNotaries() {
   let skipped = 0;
 
   for (const row of rows) {
-    // Columns: Область(0), №(1), ФИО(2), Лицензия(3), Дата(4), Адрес(5), Контакты(6), Режим(7)
+    // Columns: Область(0), №(1), ФИО(2), Лицензия(3), Дата(4), Адрес(5), Телефон(6), Email(7), Режим(8)
     const region   = (row[0] || '').trim();
     const num      = (row[1] || '').trim();
     const name     = (row[2] || '').trim();
@@ -123,7 +123,8 @@ async function importNotaries() {
     const licDate  = (row[4] || '').trim();
     const address  = (row[5] || '').trim();
     const phone    = (row[6] || '').replace(/,\s*$/, '').trim();
-    const schedule = (row[7] || '').trim().replace(/\s+/g, ' ');
+    const email    = (row[7] || '').trim().toLowerCase();
+    const schedule = (row[8] || '').trim().replace(/\s+/g, ' ');
 
     // Skip header and junk rows — valid data rows have a numeric № column
     if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
@@ -153,6 +154,7 @@ async function importNotaries() {
       active: isActive,
       address,
       phone,
+      email: email || null,
       schedule,
       slug,
       csvMtime,

@@ -315,6 +315,9 @@
 }
 .ip-list-meta span { white-space: nowrap; }
 .ip-amount { font-weight: 800; color: #b91c1c; }
+.ip-amount--fee { color: #b45309; }
+.ip-chsi-fee { background: #fef3c7; border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.ip-fee-note { font-size: 0.75rem; color: #92400e; font-weight: 400; }
 .ip-list-action { flex-shrink: 0; padding-top: 2px; }
 @media (max-width: 640px) {
     .ip-list-item { flex-wrap: wrap; }

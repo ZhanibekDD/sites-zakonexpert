@@ -407,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ip-list-meta">
                             <span><b>${T.labels.creditor}:</b> ${creditor}</span>
                             <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
+                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Гонорар ЧСИ (~10%):</b> <span class="ip-amount ip-amount--fee">${formatAmount(Math.max(debtorAmount * 0.1, 19660))}</span> <span class="ip-fee-note">ориентировочно</span></span>` : ''}
                             <span><b>${T.labels.date}:</b> ${debtorDate}</span>
                             <span><b>${T.labels.organ}:</b> ${authority}</span>
                             ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${executor}</span>` : ''}
