@@ -1,20 +1,21 @@
 'use strict';
 /**
- * Scraper: emails ЧСИ с kredit-zakryt.kz
- * Запуск: node scripts/scrape-bailiff-emails.js
- * Возобновление: повторный запуск — пропускает уже обработанные
+ * Scraper: emails ЧСИ с kredit-zakryt.kz  — многопоточный режим
+ * Запуск:  node scripts/scrape-bailiff-emails.js
+ * Возобновление: повторный запуск пропускает уже обработанные URL
  */
 
-const axios    = require('axios');
-const cheerio  = require('cheerio');
-const path     = require('path');
-const fs       = require('fs');
+const axios     = require('axios');
+const cheerio   = require('cheerio');
+const path      = require('path');
+const fs        = require('fs');
 const Datastore = require('nedb-promises');
 
-const BASE     = 'https://kredit-zakryt.kz';
-const LIST_URL = `${BASE}/spisok-chastnyh-sudebnyh-ispolnitelej-respubliki-kazahstan/`;
-const DELAY    = 1200; // мс между запросами
-const PROGRESS = path.join(__dirname, '..', 'data', 'bailiff-email-progress.json');
+const BASE       = 'https://kredit-zakryt.kz';
+const LIST_URL   = `${BASE}/spisok-chastnyh-sudebnyh-ispolnitelej-respubliki-kazahstan/`;
+const CONCURRENCY = 10;   // параллельных запросов
+const TIMEOUT     = 20000;
+const PROGRESS    = path.join(__dirname, '..', 'data', 'bailiff-email-progress.json');
 
 const db = Datastore.create({
   filename: path.join(__dirname, '..', 'data', 'bailiffs.db'),
@@ -28,50 +29,56 @@ const HEADERS = {
   'Referer':         'https://www.google.com/',
 };
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Пул из CONCURRENCY параллельных воркеров
+async function poolRun(items, concurrency, fn) {
+  const results = [];
+  let idx = 0;
+
+  async function worker() {
+    while (idx < items.length) {
+      const i = idx++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, worker);
+  await Promise.all(workers);
+  return results;
+}
 
 async function get(url) {
-  const r = await axios.get(url, { headers: HEADERS, timeout: 30000 });
+  const r = await axios.get(url, { headers: HEADERS, timeout: TIMEOUT });
   return r.data;
 }
 
-// ── Шаг 1: собрать все URL профилей ──────────────────────────────────────────
 async function getProfileUrls() {
-  console.log('📋 Загружаем список ЧСИ...');
+  process.stdout.write('📋 Загружаем список ЧСИ... ');
   const html = await get(LIST_URL);
   const $    = cheerio.load(html);
   const urls = new Set();
-
   $('a[href]').each((_, el) => {
     const href = $(el).attr('href') || '';
-    // Профили ЧСИ — вложенные страницы с определённым паттерном URL
-    if (
-      href.includes('chastnyj-sudebnyj-ispolnitel') ||
-      href.startsWith(LIST_URL) && href !== LIST_URL
-    ) {
+    if (href.includes('chastnyj-sudebnyj-ispolnitel') && href.startsWith(BASE)) {
       urls.add(href.split('?')[0].replace(/\/$/, '') + '/');
     }
   });
-
-  return [...urls].filter(u => u.startsWith(BASE));
+  const arr = [...urls];
+  console.log(`${arr.length} профилей`);
+  return arr;
 }
 
-// ── Шаг 2: парсить профиль ЧСИ ───────────────────────────────────────────────
 function parseProfile(html) {
   const $    = cheerio.load(html);
   const text = $('body').text().replace(/\s+/g, ' ');
 
-  // Email
-  const emailM = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-  const email  = emailM ? emailM[0].toLowerCase() : null;
+  const emailM  = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+  const email   = emailM ? emailM[0].toLowerCase() : null;
 
-  // Номер лицензии (формат: "Номер лицензии: 109")
-  const licM   = text.match(/номер\s+лицензии\s*[:\-]?\s*(\d{2,5})/i)
-              || text.match(/лицензи[яи]\s*[№:#]?\s*(\d{2,5})/i);
+  const licM    = text.match(/номер\s+лицензии\s*[:\-]?\s*(\d{2,5})/i)
+               || text.match(/лицензи[яи]\s*[№:#]?\s*(\d{2,5})/i);
   const license = licM ? licM[1] : null;
 
-  // Телефоны — нормализовать к +7XXXXXXXXXX
-  const phones = [];
+  const phones  = [];
   const phoneRe = /(?:\+7|8)[\s\-\(]{0,2}\d{3}[\s\-\)]{0,2}\d{3}[\s\-]\d{2}[\s\-]\d{2}/g;
   let m;
   while ((m = phoneRe.exec(text)) !== null) {
@@ -82,95 +89,102 @@ function parseProfile(html) {
   return { email, license, phones: [...new Set(phones)] };
 }
 
-// ── Шаг 3: матчить с нашей базой и обновлять ─────────────────────────────────
 async function updateDb(data) {
   if (!data.email && !data.phones.length) return false;
+  if (!data.license) return false;
 
-  let found = null;
-
-  // Сначала по номеру лицензии (надёжнее)
-  if (data.license) {
-    found = await db.findOne({ license: data.license });
-  }
-
+  const found = await db.findOne({ license: data.license });
   if (!found) return false;
 
   const upd = {};
-  if (data.email && !found.email)     upd.email  = data.email;
+  if (data.email  && !found.email)          upd.email  = data.email;
   if (data.phones.length && !found.phones?.length) upd.phones = data.phones;
 
-  if (Object.keys(upd).length) {
-    await db.update({ _id: found._id }, { $set: upd });
-    return true;
-  }
-  return false;
+  if (!Object.keys(upd).length) return false;
+  await db.update({ _id: found._id }, { $set: upd });
+  return true;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
-  // Загрузить прогресс (чтобы возобновить)
   const done = fs.existsSync(PROGRESS)
     ? JSON.parse(fs.readFileSync(PROGRESS, 'utf8'))
     : {};
 
-  // Получить список URLs
   let urls;
   if (done.__urls) {
     urls = done.__urls;
-    console.log(`📂 Возобновление — найдено ${urls.length} URL в кэше`);
+    const remaining = urls.filter(u => done[u] === undefined).length;
+    console.log(`📂 Возобновление: ${urls.length} URL, осталось: ${remaining}`);
   } else {
     urls = await getProfileUrls();
     done.__urls = urls;
     fs.writeFileSync(PROGRESS, JSON.stringify(done));
-    console.log(`🔗 Найдено профилей: ${urls.length}`);
   }
 
-  let processed = 0, updated = 0, withEmail = 0, errors = 0;
+  const todo  = urls.filter(u => done[u] === undefined);
   const total = urls.length;
+  console.log(`🚀 Многопоточно [${CONCURRENCY} потоков] — обрабатываем ${todo.length} из ${total}\n`);
 
-  for (const url of urls) {
-    if (done[url] !== undefined) { processed++; continue; } // уже обработан
+  // Счётчики (shared state — Node.js однопоточный, гонок нет)
+  let processed = 0, updated = 0, withEmail = 0, errors = 0;
+  const startAt = Date.now();
 
+  // Мьютекс для записи прогресса (чтобы не перезаписывать одновременно)
+  let saving = false;
+  async function saveProgress() {
+    if (saving) return;
+    saving = true;
+    fs.writeFileSync(PROGRESS, JSON.stringify(done));
+    saving = false;
+  }
+
+  await poolRun(todo, CONCURRENCY, async (url) => {
     try {
       const html = await get(url);
       const data = parseProfile(html);
 
       done[url] = data.email || null;
-
       if (data.email) withEmail++;
+
       const changed = await updateDb(data);
       if (changed) {
         updated++;
-        console.log(`✉️  [${updated}] ${data.license || '???'} → ${data.email}`);
+        process.stdout.write(`✉️  лиц.${data.license} → ${data.email}\n`);
       }
 
       processed++;
 
-      // Сохранять прогресс каждые 20 запросов
-      if (processed % 20 === 0) {
-        fs.writeFileSync(PROGRESS, JSON.stringify(done));
-        const pct = Math.round(processed / total * 100);
-        console.log(`[${processed}/${total}] ${pct}% | email найдено: ${withEmail} | обновлено в БД: ${updated} | ошибок: ${errors}`);
+      // Прогресс каждые 50 запросов
+      if (processed % 50 === 0) {
+        await saveProgress();
+        const elapsed = Math.round((Date.now() - startAt) / 1000);
+        const rps     = (processed / elapsed).toFixed(1);
+        const eta     = Math.round((todo.length - processed) / rps);
+        const pct     = Math.round(processed / todo.length * 100);
+        console.log(`[${processed}/${todo.length}] ${pct}% | ${rps} req/s | ETA ~${eta}s | email: ${withEmail} | обновлено: ${updated}`);
       }
-
-      await sleep(DELAY);
     } catch (e) {
       errors++;
       done[url] = 'error';
-      console.error(`❌ ${url.slice(BASE.length)}: ${e.message}`);
-      await sleep(DELAY * 2);
+      // Тихо — не флудить консоль, только критические
+      if (errors <= 10 || errors % 50 === 0) {
+        process.stderr.write(`❌ [${errors}] ${url.split('/').slice(-2,-1)[0].slice(0,30)}: ${e.message}\n`);
+      }
     }
-  }
+  });
 
-  fs.writeFileSync(PROGRESS, JSON.stringify(done));
+  await saveProgress();
 
-  const total_with_email = await db.count({ email: { $exists: true } });
-  console.log(`\n✅ Готово!`);
-  console.log(`   Обработано: ${processed}/${total}`);
-  console.log(`   Email найдено на сайте: ${withEmail}`);
-  console.log(`   Обновлено в нашей БД:  ${updated}`);
-  console.log(`   Ошибок: ${errors}`);
-  console.log(`   Итого записей с email в БД: ${total_with_email}`);
+  const elapsed = Math.round((Date.now() - startAt) / 1000);
+  const totalEmail = await db.count({ email: { $exists: true } });
+
+  console.log(`\n✅ Готово за ${elapsed}с`);
+  console.log(`   Обработано:          ${processed} / ${todo.length}`);
+  console.log(`   Email найдено:       ${withEmail}`);
+  console.log(`   Обновлено в БД:      ${updated}`);
+  console.log(`   Ошибок:              ${errors}`);
+  console.log(`   Всего с email в БД:  ${totalEmail}`);
   process.exit(0);
 }
 
