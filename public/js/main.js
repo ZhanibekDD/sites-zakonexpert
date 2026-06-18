@@ -407,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ip-list-meta">
                             <span><b>${T.labels.creditor}:</b> ${creditor}</span>
                             <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
-                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Услуга ЧСИ</b> <a href="https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте! Хочу сэкономить на услугах ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">— сэкономим →</a></span>` : ''}
+                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Услуга ЧСИ</b> <a href="https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">— убрать проценты ЧСИ →</a></span>` : ''}
                             <span><b>${T.labels.date}:</b> ${debtorDate}</span>
                             <span><b>${T.labels.organ}:</b> ${authority}</span>
                             ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${executor}</span>` : ''}
@@ -553,6 +553,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (debtorsContainer) {
             debtorsContainer.innerHTML = '';
+        }
+        if (debtorsSection) {
+            debtorsSection.querySelectorAll('.wa-all-block').forEach(el => el.remove());
         }
         if (restrictionsTableBody) {
             restrictionsTableBody.innerHTML = '';
