@@ -24,7 +24,16 @@ module.exports = {
   search(query, limit = 30) {
     if (!query || query.trim().length < 2) return Promise.resolve([]);
     const safe = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(safe, 'i');
-    return db.find({ name: regex }, { name: 1, slug: 1, region: 1, address: 1, _id: 0 }).limit(limit);
+    return db.find({ name: new RegExp(safe, 'i') }, { name: 1, slug: 1, region: 1, address: 1, _id: 0 }).limit(limit);
+  },
+  async getRegions() {
+    const all = await db.find({}, { region: 1, _id: 0 });
+    const counts = {};
+    all.forEach(d => { if (d.region) counts[d.region] = (counts[d.region] || 0) + 1; });
+    return Object.entries(counts).map(([region, count]) => ({ region, count })).sort((a, b) => b.count - a.count);
+  },
+  findByRegion(region, limit = 200) {
+    const safe = region.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return db.find({ region: new RegExp('^' + safe + '$', 'i') }, { name: 1, slug: 1, phones: 1, address: 1, _id: 0 }).limit(limit);
   },
 };

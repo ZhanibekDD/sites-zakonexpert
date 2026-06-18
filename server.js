@@ -424,6 +424,44 @@ app.get('/bailiff-search', asyncHandler(async (req, res) => {
   res.render('bailiff/search', { query: q, results });
 }));
 
+// ===== CATALOG PAGES =====
+
+app.get('/notaries', asyncHandler(async (req, res) => {
+  const region = (req.query.region || '').trim();
+  if (!notariesDb) return res.status(503).send('Notary module not available');
+  if (region) {
+    const regionItems = await notariesDb.findByRegion(region);
+    const allRegions = await notariesDb.getRegions();
+    return res.render('notary/catalog', { selectedRegion: region, allRegions, regionItems });
+  }
+  const allRegions = await notariesDb.getRegions();
+  res.render('notary/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+}));
+
+app.get('/bailiffs', asyncHandler(async (req, res) => {
+  const region = (req.query.region || '').trim();
+  if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
+  if (region) {
+    const regionItems = await bailiffsDb.findByRegion(region);
+    const allRegions = await bailiffsDb.getRegions();
+    return res.render('bailiff/catalog', { selectedRegion: region, allRegions, regionItems });
+  }
+  const allRegions = await bailiffsDb.getRegions();
+  res.render('bailiff/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+}));
+
+app.get('/lawyers', asyncHandler(async (req, res) => {
+  const region = (req.query.region || '').trim();
+  if (!lawyersDb) return res.status(503).send('Lawyer module not available');
+  if (region) {
+    const regionItems = await lawyersDb.findByRegion(region);
+    const allRegions = await lawyersDb.getRegions();
+    return res.render('lawyer/catalog', { selectedRegion: region, allRegions, regionItems });
+  }
+  const allRegions = await lawyersDb.getRegions();
+  res.render('lawyer/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+}));
+
 // ===== LAWYER SEARCH =====
 app.get('/lawyer-search', asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
@@ -658,6 +696,12 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/contact.html', priority: '0.8', freq: 'monthly' },
     { url: '/zakony.html', priority: '0.85', freq: 'weekly' },
     { url: '/news', priority: '0.9', freq: 'daily' },
+    { url: '/notaries', priority: '0.85', freq: 'weekly' },
+    { url: '/bailiffs', priority: '0.85', freq: 'weekly' },
+    { url: '/lawyers', priority: '0.85', freq: 'weekly' },
+    { url: '/notary-search', priority: '0.8', freq: 'weekly' },
+    { url: '/bailiff-search', priority: '0.8', freq: 'weekly' },
+    { url: '/lawyer-search', priority: '0.8', freq: 'weekly' },
     { url: '/snyatie-aresta-so-scheta', priority: '0.9', freq: 'monthly' },
     { url: '/otmena-ispolnitelnoi-nadpisi', priority: '0.9', freq: 'monthly' },
     { url: '/vozrazhenie-na-ispolnitelnuyu-nadpis', priority: '0.85', freq: 'monthly' },

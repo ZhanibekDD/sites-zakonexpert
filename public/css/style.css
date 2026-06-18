@@ -525,3 +525,25 @@
   .registry-search-row { flex-direction: column; }
   .registry-item-link { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
 }
+
+/* ===== CATALOG PAGES (region grids) ===== */
+.catalog-region-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.catalog-region-card {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  padding: 1.1rem 1.25rem; background: #f8fafc;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  text-decoration: none; transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.catalog-region-card:hover { background: #eff6ff; border-color: #1a3560; transform: translateY(-2px); }
+.catalog-region-card--chsi:hover { background: #fdf4ff; border-color: #7c3aed; }
+.catalog-region-card--lawyer:hover { background: #f5f3ff; border-color: #5b21b6; }
+.catalog-region-name { font-weight: 700; color: #1e293b; font-size: 0.97rem; }
+.catalog-region-count { font-size: 0.82rem; color: #64748b; }
+@media (max-width: 600px) {
+  .catalog-region-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+}
