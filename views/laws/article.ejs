@@ -31,7 +31,7 @@ const waText = {
 };
 
 const pageTitle       = `Статья ${art.num} ${art.codeName} — ${art.title} | ZakonExpert Казахстан`;
-const pageDescription = `Статья ${art.num} ${art.codeName}: ${art.title}. ${(art.text||'').slice(0,160).replace(/\n/g,' ')}... Консультация адвоката по любой статье.`;
+const pageDescription = `Статья ${art.num} ${art.codeName} РК: ${art.title}. Что грозит, наказание, санкция. ${(art.text||'').slice(0,130).replace(/\n/g,' ')}… Консультация адвоката Казахстан.`;
 const canonical       = `https://zakonexpertt.kz/statya/${art.slug}`;
 
 const schema = {
@@ -47,10 +47,61 @@ const schema = {
   creator:   { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
 };
 
-// Format article text: split into paragraphs
-const textParas = (art.text || '').split('\n').filter(p => p.trim()).map(p => `<p>${p.trim()}</p>`).join('');
+// Parse and format article text into structured parts
+function formatLawText(text) {
+  if (!text) return '<p class="text-muted">Текст статьи не загружен. Запустите <code>npm run scrape-laws</code></p>';
+  const lines = text.split('\n').filter(l => l.trim());
+  let html = '';
+  for (const line of lines) {
+    const l = line.trim();
+    // Numbered main parts: "1. Убийство..." or "1. Деяние..."
+    const partM = l.match(/^(\d+)\.\s+([\s\S]+)/);
+    if (partM) {
+      html += `<div class="law-part"><span class="law-part-num">Часть ${partM[1]}</span><p>${partM[2]}</p></div>`;
+      continue;
+    }
+    // Sub-items: "1) двух или более лиц;" or "а) совершённое..."
+    if (/^\d+\)\s/.test(l) || /^[а-яёa-z]\)\s/i.test(l)) {
+      html += `<p class="law-subitem">${l}</p>`;
+      continue;
+    }
+    // Sanction / punishment lines
+    if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(l)) {
+      html += `<div class="law-sanction"><i class="bi bi-shield-exclamation me-2"></i>${l}</div>`;
+      continue;
+    }
+    html += `<p>${l}</p>`;
+  }
+  return html;
+}
+
+// Extract just the sanction lines for the prominent top box
+function extractSanctions(text) {
+  if (!text) return [];
+  return text.split('\n')
+    .map(l => l.trim())
+    .filter(l => /^наказывается|^наказываются|^влечёт|^влечет/i.test(l))
+    .slice(0, 4);
+}
+
+const textFormatted = formatLawText(art.text);
+const sanctions     = extractSanctions(art.text);
 
 const body = `
+<style>
+  .law-part { margin:18px 0; padding:14px 18px 10px; border-left:3px solid #d7a742; background:#fffdf4; border-radius:0 10px 10px 0; }
+  .law-part-num { display:block; font-size:0.72rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:#b8860b; margin-bottom:6px; }
+  .law-part p { margin:0; color:#1e293b; line-height:1.8; }
+  .law-subitem { padding-left:28px; color:#334155; margin:3px 0; line-height:1.7; }
+  .law-sanction { margin:14px 0; padding:12px 16px; background:#fff1f0; border:1.5px solid #fca5a5; border-radius:10px; color:#991b1b; font-weight:700; font-size:0.95rem; line-height:1.6; }
+  .law-sanction .bi { color:#dc2626; }
+  .law-penalty-box { background:linear-gradient(135deg,#0f2044,#1a3a5c); border-radius:16px; padding:22px 24px; color:#fff; margin-bottom:28px; }
+  .law-penalty-title { font-size:0.72rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; color:#d7a742; margin-bottom:10px; }
+  .law-penalty-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.08); font-size:0.9rem; line-height:1.6; }
+  .law-penalty-item:last-child { border-bottom:none; padding-bottom:0; }
+  .law-penalty-item .bi { color:#d7a742; margin-top:3px; flex-shrink:0; }
+</style>
+
 <section class="law-hero">
   <div class="landing-container">
     <div class="law-breadcrumb">
@@ -71,8 +122,18 @@ const body = `
 
       <!-- Article text -->
       <div class="col-lg-8">
+
+        ${sanctions.length > 0 ? `
+        <div class="law-penalty-box">
+          <div class="law-penalty-title"><i class="bi bi-exclamation-triangle me-1"></i>Что грозит — Статья ${art.num} ${art.codeName}</div>
+          ${sanctions.map(s => `<div class="law-penalty-item"><i class="bi bi-dot"></i><span>${s}</span></div>`).join('')}
+        </div>
+        ` : ''}
+
+        <h2 style="font-size:1.05rem;font-weight:800;color:#0f2044;margin-bottom:16px;">Текст статьи ${art.num} ${art.codeName}</h2>
+
         <div class="law-text">
-          ${textParas || '<p style="color:#94a3b8;">Текст статьи не загружен. Запустите парсер: <code>npm run scrape-laws</code></p>'}
+          ${textFormatted}
         </div>
 
         <!-- Prev/Next navigation -->
@@ -96,6 +157,7 @@ const body = `
             <a href="/statya/${r.slug}" class="law-result-card">
               <div class="law-result-num">Статья ${r.num} · ${r.codeName}</div>
               <div class="law-result-title">${r.title}</div>
+              ${r.snippet ? `<div class="law-result-snippet">${r.snippet.slice(0,120)}…</div>` : ''}
             </a>`).join('')}
           </div>
         </div>

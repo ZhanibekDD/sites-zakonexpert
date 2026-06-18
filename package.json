@@ -13,7 +13,8 @@
     "scrape-laws": "node scripts/scrape-laws.js",
     "scrape-laws-uk": "node scripts/scrape-laws.js uk",
     "scrape-laws-upk": "node scripts/scrape-laws.js upk",
-    "scrape-laws-koap": "node scripts/scrape-laws.js koap"
+    "scrape-laws-koap": "node scripts/scrape-laws.js koap",
+    "add-snippets": "node scripts/add-snippets.js"
   },
   "dependencies": {
     "axios": "^1.9.0",

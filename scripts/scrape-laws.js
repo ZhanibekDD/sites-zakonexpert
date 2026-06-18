@@ -93,8 +93,8 @@ function parseArticles(html, law) {
   let cur        = null;
   let chapter    = '';
 
-  // Walk h3 + p + b in document order
-  $('h3, p, b, span').each((_, el) => {
+  // Walk h3 + p + li + b in document order
+  $('h3, p, li, b, span').each((_, el) => {
     const tag  = el.tagName.toLowerCase();
     const raw  = $(el).text();
     // Normalize: replace &nbsp; sequences and collapse whitespace
@@ -127,8 +127,8 @@ function parseArticles(html, law) {
       return;
     }
 
-    // Article body paragraph
-    if (cur && tag === 'p' && cur.text.length < 10000) {
+    // Article body: paragraphs and list items
+    if (cur && (tag === 'p' || tag === 'li') && cur.text.length < 12000) {
       cur.text += (cur.text ? '\n' : '') + text;
     }
   });
@@ -174,6 +174,13 @@ async function scrapeLaw(law, debug = false) {
   for (const art of articles) {
     const numSlug = art.num.replace(/\./g, '-');
     art.slug = `${law.shortName}-${numSlug}`;
+    // Generate short snippet for list cards (no re-scrape needed later)
+    if (art.text) {
+      let sn = art.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+      const ls = sn.lastIndexOf(' ');
+      if (ls > 200) sn = sn.slice(0, ls);
+      art.snippet = sn;
+    }
     try {
       await lawsDb.upsert(art);
       saved++;

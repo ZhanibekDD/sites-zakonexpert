@@ -85,6 +85,7 @@ const body = `
             <a href="/statya/${a.slug}" class="law-result-card">
               <div class="law-result-num">Статья ${a.num} · ${a.codeName}</div>
               <div class="law-result-title">${a.title}</div>
+              ${a.snippet ? `<div class="law-result-snippet">${a.snippet.slice(0,180)}…</div>` : ''}
             </a>`).join('')}
           </div>
         ` : (q || code) ? `
