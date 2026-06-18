@@ -21,4 +21,10 @@ module.exports = {
   count()           { return db.count({}); },
   getAllSlugs()      { return db.find({}, { slug: 1, name: 1, region: 1, updatedAt: 1, _id: 0 }); },
   getLastUpdated()  { return db.findOne({}, { updatedAt: 1, _id: 0 }).then(d => d ? d.updatedAt : null); },
+  search(query, limit = 30) {
+    if (!query || query.trim().length < 2) return Promise.resolve([]);
+    const safe = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(safe, 'i');
+    return db.find({ name: regex }, { name: 1, slug: 1, region: 1, address: 1, _id: 0 }).limit(limit);
+  },
 };

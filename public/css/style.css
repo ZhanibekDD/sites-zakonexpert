@@ -453,3 +453,71 @@
   .npage-cta { flex-direction: column; gap: 1.25rem; }
   .npage-wa-btn { width: 100%; justify-content: center; }
 }
+
+/* ===== NAV DROPDOWN (Реестры) ===== */
+.nav-has-dropdown { position: relative; }
+.nav-dropdown-toggle { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.nav-dropdown-toggle svg { transition: transform 0.2s; }
+.nav-has-dropdown:hover .nav-dropdown-toggle svg,
+.nav-has-dropdown.open .nav-dropdown-toggle svg { transform: rotate(180deg); }
+.nav-dropdown-menu {
+  display: none;
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: #0f2044; border-radius: 10px;
+  padding: 0.4rem 0; min-width: 240px;
+  list-style: none; margin: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  z-index: 200;
+}
+.nav-has-dropdown:hover .nav-dropdown-menu,
+.nav-has-dropdown.open .nav-dropdown-menu { display: block; }
+.nav-dropdown-menu li a {
+  display: block; padding: 0.55rem 1.2rem;
+  color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.92rem;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-dropdown-menu li a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+@media (max-width: 900px) {
+  .nav-dropdown-menu {
+    position: static; transform: none;
+    box-shadow: none; background: rgba(255,255,255,0.06);
+    border-radius: 8px; margin: 0.25rem 0 0.5rem 1rem;
+    padding: 0.25rem 0;
+  }
+  .nav-has-dropdown:hover .nav-dropdown-menu { display: none; }
+  .nav-has-dropdown.open .nav-dropdown-menu { display: block; }
+}
+
+/* ===== REGISTRY SEARCH PAGES ===== */
+.registry-search-form { margin-bottom: 2rem; }
+.registry-search-row {
+  display: flex; gap: 0.75rem; max-width: 600px;
+}
+.registry-search-input {
+  flex: 1; padding: 0.75rem 1rem; border: 2px solid #e2e8f0;
+  border-radius: 10px; font-size: 1rem; outline: none;
+  transition: border-color 0.2s;
+}
+.registry-search-input:focus { border-color: #1a3560; }
+.registry-search-btn {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.5rem; background: #1a3560; color: #fff;
+  border: none; border-radius: 10px; font-size: 1rem;
+  cursor: pointer; font-weight: 600; transition: background 0.2s;
+}
+.registry-search-btn:hover { background: #0f2044; }
+.registry-count { color: #64748b; font-size: 0.9rem; margin-bottom: 1rem; }
+.registry-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.registry-item-link {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.8rem 1.2rem; background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 10px; text-decoration: none; transition: background 0.15s, border-color 0.15s;
+}
+.registry-item-link:hover { background: #eff6ff; border-color: #1a3560; }
+.registry-item-name { font-weight: 600; color: #1e293b; font-size: 0.97rem; }
+.registry-item-region { font-size: 0.82rem; color: #64748b; }
+.registry-empty { padding: 2rem; text-align: center; color: #475569; }
+@media (max-width: 600px) {
+  .registry-search-row { flex-direction: column; }
+  .registry-item-link { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+}

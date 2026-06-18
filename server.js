@@ -412,6 +412,30 @@ app.get('/api/notaries/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
+// ===== BAILIFF SEARCH =====
+app.get('/bailiff-search', asyncHandler(async (req, res) => {
+  const q = (req.query.q || '').trim();
+  let results = null;
+  if (q.length >= 2 && bailiffsDb) {
+    results = await bailiffsDb.search(q);
+  } else if (q.length >= 2) {
+    results = [];
+  }
+  res.render('bailiff/search', { query: q, results });
+}));
+
+// ===== LAWYER SEARCH =====
+app.get('/lawyer-search', asyncHandler(async (req, res) => {
+  const q = (req.query.q || '').trim();
+  let results = null;
+  if (q.length >= 2 && lawyersDb) {
+    results = await lawyersDb.search(q);
+  } else if (q.length >= 2) {
+    results = [];
+  }
+  res.render('lawyer/search', { query: q, results });
+}));
+
 // ===== BAILIFF SEO PAGES =====
 
 app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
