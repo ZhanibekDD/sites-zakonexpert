@@ -9,8 +9,12 @@
 require('dotenv').config();
 const axios   = require('axios');
 const cheerio = require('cheerio');
+const https   = require('https');
 const path    = require('path');
 const lawsDb  = require('../modules/laws-db');
+
+// adilet.zan.kz uses a cert that doesn't verify locally
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const LAWS = [
   {
@@ -53,7 +57,7 @@ const LAWS = [
     codeName:  'СК РК',
     shortName: 'sk-rk',
     fullName:  'Кодекс Республики Казахстан о браке (супружестве) и семье',
-    url:       'https://adilet.zan.kz/rus/docs/K110000518_',
+    url:       'https://adilet.zan.kz/rus/docs/K1100000518',
   },
   {
     code:      'tk',
@@ -74,52 +78,62 @@ const HEADERS = {
 };
 
 async function fetchText(url) {
-  const r = await axios.get(url, { headers: HEADERS, timeout: 60000, maxContentLength: 50 * 1024 * 1024 });
+  const r = await axios.get(url, { headers: HEADERS, timeout: 60000, maxContentLength: 50 * 1024 * 1024, httpsAgent });
   return r.data;
 }
 
 function parseArticles(html, law) {
   const $ = cheerio.load(html);
 
-  // Collect all text paragraphs in document order
-  const paras = [];
-  $('p, td, li').each((_, el) => {
-    const t = $(el).clone()
-      .find('script,style').remove().end()
-      .text().trim().replace(/\s+/g, ' ');
-    if (t.length > 2) paras.push(t);
-  });
+  // adilet.zan.kz: article headers are in <h3>, text in <p>
+  // Also seen in <b> and <span> for some codes
+  const ART_IN_H = /Статья\s+(\d+(?:[.\-]\d+)?)\.\s*(.*)/;
 
   const articles = [];
-  let cur = null;
+  let cur        = null;
+  let chapter    = '';
 
-  for (const para of paras) {
-    const m = para.match(ART_RE);
+  // Walk h3 + p + b in document order
+  $('h3, p, b, span').each((_, el) => {
+    const tag  = el.tagName.toLowerCase();
+    const raw  = $(el).text();
+    // Normalize: replace &nbsp; sequences and collapse whitespace
+    const text = raw.replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+
+    if (!text) return;
+
+    // Chapter / section heading (not an article)
+    if ((tag === 'h3' || tag === 'h2') && /^(ОБЩАЯ|ОСОБЕННАЯ|РАЗДЕЛ|ГЛАВА|Раздел|Глава)\b/.test(text)) {
+      chapter = text.slice(0, 120);
+      return;
+    }
+
+    // Article heading
+    const m = (tag === 'h3' || tag === 'b') ? text.match(ART_IN_H) : null;
     if (m) {
-      if (cur && cur.text.trim().length > 0) articles.push(cur);
+      if (cur && cur.text.trim()) articles.push(cur);
       cur = {
         code:      law.code,
         codeName:  law.codeName,
         shortName: law.shortName,
         fullName:  law.fullName,
+        chapter,
         num:       m[1],
         numInt:    parseInt(m[1]),
         title:     m[2].trim() || `Статья ${m[1]}`,
         text:      '',
         updatedAt: new Date(),
       };
-    } else if (cur) {
-      // Stop collecting if we hit another major heading (Глава, Раздел)
-      if (/^(Глава|Раздел|ГЛАВА|РАЗДЕЛ)\s+\d+/.test(para) && para.length < 200) {
-        // Keep chapter info but don't add to text
-        cur.chapter = para;
-      } else if (cur.text.length < 8000) {
-        cur.text += (cur.text ? '\n' : '') + para;
-      }
+      return;
     }
-  }
-  if (cur && cur.text.trim().length > 0) articles.push(cur);
 
+    // Article body paragraph
+    if (cur && tag === 'p' && cur.text.length < 10000) {
+      cur.text += (cur.text ? '\n' : '') + text;
+    }
+  });
+
+  if (cur && cur.text.trim()) articles.push(cur);
   return articles;
 }
 
