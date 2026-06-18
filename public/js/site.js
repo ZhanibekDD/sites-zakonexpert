@@ -36,11 +36,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     navLinks.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
+        // Don't close mobile menu when clicking the dropdown toggle
+        if (link.classList.contains('nav-dropdown-toggle')) return;
         navLinks.classList.remove('is-open');
         navToggle.setAttribute('aria-expanded', 'false');
       });
     });
   }
+
+  // Реестры dropdown — click-based on all screen sizes
+  (function() {
+    var toggle = document.querySelector('.nav-dropdown-toggle');
+    var li = toggle && toggle.closest('.nav-has-dropdown');
+    if (!toggle || !li) return;
+    toggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      li.classList.toggle('open');
+    });
+    document.addEventListener('click', function(e) {
+      if (!li.contains(e.target)) li.classList.remove('open');
+    });
+  })();
 
   document.querySelectorAll('.current-year').forEach(node => {
     node.textContent = String(new Date().getFullYear());
