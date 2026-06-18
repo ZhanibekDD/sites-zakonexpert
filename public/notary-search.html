@@ -51,50 +51,59 @@
       font-size: 1rem; font-weight: 700; color: #64748b;
       margin-bottom: 1.25rem;
     }
-    .notary-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.1rem; }
-
-    .notary-card {
+    .notary-list {
       background: #fff; border-radius: 14px;
       box-shadow: 0 2px 10px rgba(15,32,68,0.08);
-      padding: 1.35rem 1.5rem;
-      display: flex; flex-direction: column; gap: 0.65rem;
-      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
     }
-    .notary-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,32,68,0.13); }
-    .notary-card-name {
-      font-size: 1rem; font-weight: 800; color: #0f2044;
-      text-decoration: none;
+    .notary-item {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
     }
-    .notary-card-name:hover { color: #1a3560; text-decoration: underline; }
-    .notary-card-row {
-      display: flex; align-items: flex-start; gap: 0.55rem;
-      font-size: 0.88rem; color: #334155;
+    .notary-item:last-child { border-bottom: none; }
+    .notary-item:hover { background: #f8fafc; }
+    .notary-num {
+      min-width: 28px; height: 28px; border-radius: 50%;
+      background: #0f2044; color: #fff;
+      font-size: 0.75rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
     }
-    .notary-card-row i { color: #1a3560; font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
-    .notary-card-phone {
-      display: inline-flex; align-items: center; gap: 6px;
-      color: #1a3560; font-weight: 700; text-decoration: none; font-size: 0.88rem;
+    .notary-info { flex: 1; min-width: 0; }
+    .notary-name {
+      font-size: 0.95rem; font-weight: 800; color: #0f2044;
+      text-decoration: none; display: block; margin-bottom: 0.3rem;
     }
-    .notary-card-phone:hover { color: #d7a742; }
-    .notary-card-footer {
-      margin-top: 0.5rem; padding-top: 0.75rem;
-      border-top: 1px solid #f1f5f9;
-      display: flex; gap: 0.6rem; flex-wrap: wrap;
+    .notary-name:hover { color: #1a3560; text-decoration: underline; }
+    .notary-meta {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem;
+      font-size: 0.82rem; color: #64748b;
     }
+    .notary-meta span { display: flex; align-items: center; gap: 4px; }
+    .notary-meta i { color: #1a3560; font-size: 0.85rem; }
+    .notary-meta a { color: #1a3560; font-weight: 600; text-decoration: none; }
+    .notary-meta a:hover { color: #d7a742; }
+    .notary-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
     .notary-btn-wa {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 5px;
       background: #25d366; color: #fff; border-radius: 8px;
-      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 700;
-      text-decoration: none; transition: opacity 0.18s;
+      padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 700;
+      text-decoration: none; transition: opacity 0.18s; white-space: nowrap;
     }
     .notary-btn-wa:hover { opacity: 0.88; color: #fff; }
     .notary-btn-enis {
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 5px;
       background: #f0f5ff; color: #1a3560; border-radius: 8px;
-      padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 600;
-      text-decoration: none; transition: background 0.18s;
+      padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 600;
+      text-decoration: none; transition: background 0.18s; white-space: nowrap;
     }
     .notary-btn-enis:hover { background: #dbeafe; color: #0f2044; }
+    @media (max-width: 640px) {
+      .notary-item { flex-wrap: wrap; }
+      .notary-actions { width: 100%; margin-left: 40px; }
+    }
 
     /* CTA Advertising */
     .notary-cta-block {
@@ -334,25 +343,28 @@ async function searchNotary() {
       return;
     }
 
-    const cards = data.notaries.map(n => {
+    const items = data.notaries.map((n, i) => {
       const waText = encodeURIComponent(`Здравствуйте! Нашёл вас через ZakonExpert. Хочу узнать о ваших услугах.\nНотариус: ${n.name}`);
-      const phoneLink = n.phone ? `<a href="tel:${n.phone}" class="notary-card-phone"><i class="bi bi-telephone-fill"></i>${n.phone}</a>` : '';
-      const emailRow = n.email ? `<div class="notary-card-row"><i class="bi bi-envelope"></i><span>${n.email}</span></div>` : '';
-      const hoursRow = n.workHours ? `<div class="notary-card-row"><i class="bi bi-clock"></i><span>${n.workHours}</span></div>` : '';
-      const addrRow = n.address ? `<div class="notary-card-row"><i class="bi bi-geo-alt"></i><span>${n.address}</span></div>` : '';
+      const phonePart = n.phone ? `<span><i class="bi bi-telephone-fill"></i><a href="tel:${n.phone}">${n.phone}</a></span>` : '';
+      const hoursPart = n.workHours ? `<span><i class="bi bi-clock"></i>${n.workHours}</span>` : '';
+      const addrPart = n.address ? `<span><i class="bi bi-geo-alt"></i>${n.address}</span>` : '';
+      const emailPart = n.email ? `<span><i class="bi bi-envelope"></i>${n.email}</span>` : '';
       const enisBtn = n.url ? `<a href="${n.url}" target="_blank" rel="noopener" class="notary-btn-enis"><i class="bi bi-box-arrow-up-right"></i>ENIS.kz</a>` : '';
       const waBtn = n.phone ? `<a href="https://wa.me/${n.phone.replace(/\D/g,'')}?text=${waText}" target="_blank" rel="noopener" class="notary-btn-wa"><i class="bi bi-whatsapp"></i>WhatsApp</a>` : '';
       return `
-        <div class="notary-card">
-          <a href="${n.url || '#'}" target="_blank" rel="noopener" class="notary-card-name">${n.name}</a>
-          ${addrRow}${phoneLink ? `<div>${phoneLink}</div>` : ''}${hoursRow}${emailRow}
-          <div class="notary-card-footer">${waBtn}${enisBtn}</div>
+        <div class="notary-item">
+          <div class="notary-num">${i + 1}</div>
+          <div class="notary-info">
+            <a href="${n.url || '#'}" target="_blank" rel="noopener" class="notary-name">${n.name}</a>
+            <div class="notary-meta">${addrPart}${phonePart}${hoursPart}${emailPart}</div>
+          </div>
+          <div class="notary-actions">${waBtn}${enisBtn}</div>
         </div>`;
     }).join('');
 
     area.innerHTML = `
       <p class="notary-results-title">Найдено нотариусов: <strong>${data.total}</strong></p>
-      <div class="notary-cards">${cards}</div>`;
+      <div class="notary-list">${items}</div>`;
 
   } catch (e) {
     area.innerHTML = `<div class="notary-empty"><i class="bi bi-wifi-off" style="font-size:2rem;color:#f59e0b;"></i><p>Не удалось выполнить поиск. Попробуйте позже.</p></div>`;

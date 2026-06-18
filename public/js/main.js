@@ -396,40 +396,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 waAllText += '\n';
 
                 const card = document.createElement('div');
-                card.className = 'ip-card';
+                card.className = 'ip-list-item';
                 card.innerHTML = `
-                    <div class="ip-card-header">
-                        <div class="ip-card-id">
-                            <span class="ip-card-icon">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                            </span>
-                            <span class="ip-card-num">${debtorNum}</span>
+                    <div class="ip-list-num">${index + 1}</div>
+                    <div class="ip-list-body">
+                        <div class="ip-list-header">
+                            <span class="ip-list-docnum">№ ${debtorNum}</span>
+                            <span class="status ${statusCls}">${statusText}</span>
                         </div>
-                        <span class="status ${statusCls}">${statusText}</span>
-                    </div>
-                    <div class="ip-card-body">
-                        <div class="ip-field">
-                            <span class="ip-label">${T.labels.date}</span>
-                            <span class="ip-value">${debtorDate}</span>
-                        </div>
-                        <div class="ip-field">
-                            <span class="ip-label">${T.labels.amount}</span>
-                            <span class="ip-value ip-value--amount">${formatAmount(debtorAmount)}</span>
-                        </div>
-                        <div class="ip-field ip-field--full">
-                            <span class="ip-label">${T.labels.creditor}</span>
-                            <span class="ip-value">${creditor}</span>
-                        </div>
-                        <div class="ip-field">
-                            <span class="ip-label">${T.labels.organ}</span>
-                            <span class="ip-value">${authority}</span>
-                        </div>
-                        <div class="ip-field">
-                            <span class="ip-label">${T.labels.executor}</span>
-                            <span class="ip-value">${executor}</span>
+                        <div class="ip-list-meta">
+                            <span><b>${T.labels.creditor}:</b> ${creditor}</span>
+                            <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
+                            <span><b>${T.labels.date}:</b> ${debtorDate}</span>
+                            <span><b>${T.labels.organ}:</b> ${authority}</span>
+                            ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${executor}</span>` : ''}
                         </div>
                     </div>
-                    <div class="ip-card-footer">
+                    <div class="ip-list-action">
                         <button class="btn-details-card view-details-btn"
                             data-bs-toggle="modal"
                             data-bs-target="#debtorDetailsModal"
