@@ -7,7 +7,8 @@ const pageTitle = `ЧСИ ${nameTitle} — ${bailiff.region} | ZakonExpert`;
 const _addrSnippet = bailiff.address ? `Адрес: ${bailiff.address.slice(0,60)}. ` : '';
 const _phoneSnippet = bailiff.phones && bailiff.phones.length ? `Телефон: ${bailiff.phones[0]}. ` : '';
 const _licSnippet = bailiff.license ? `Лицензия №${bailiff.license}. ` : '';
-const pageDesc  = `Частный судебный исполнитель ${nameTitle} — ${bailiff.region}. ${_addrSnippet}${_phoneSnippet}${_licSnippet}ZakonExpert Казахстан.`;
+const _emailSnippet = bailiff.email ? `Email: ${bailiff.email}. ` : '';
+const pageDesc  = `Частный судебный исполнитель ${nameTitle} — ${bailiff.region}. ${_addrSnippet}${_phoneSnippet}${_emailSnippet}${_licSnippet}ZakonExpert Казахстан.`;
 const canonical = `https://zakonexpertt.kz/bailiff/${bailiff.slug}`;
 
 const schema = [
@@ -23,6 +24,7 @@ const schema = [
       addressCountry: 'KZ',
     },
     ...(bailiff.phones && bailiff.phones.length ? { telephone: bailiff.phones[0] } : {}),
+    ...(bailiff.email ? { email: bailiff.email } : {}),
     url: canonical,
   },
   {
@@ -97,6 +99,20 @@ const body = `
         <div class="npage-row-body">
           <span class="npage-row-label">Телефон</span>
           <span class="npage-row-val">${fmtPhones(bailiff.phones)}</span>
+        </div>
+      </div>` : ''}
+
+      ${bailiff.email ? `
+      <div class="npage-row">
+        <span class="npage-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+        </span>
+        <div class="npage-row-body">
+          <span class="npage-row-label">Email</span>
+          <span class="npage-row-val"><a href="mailto:${bailiff.email}" class="npage-phone-link">${bailiff.email}</a></span>
         </div>
       </div>` : ''}
 
