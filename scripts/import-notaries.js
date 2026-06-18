@@ -7,6 +7,7 @@ const slugify = require('slugify');
 
 const CSV_PATH = path.join(__dirname, '..', 'notaries_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
+const DB_VERSION = 2; // increment to force re-import on schema changes
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -95,8 +96,8 @@ async function importNotaries() {
   await db.ensureIndex({ fieldName: 'name'  }).catch(() => {});
   await db.ensureIndex({ fieldName: 'active' }).catch(() => {});
 
-  const existing = await db.findOne({}, { updatedAt: 1, csvMtime: 1 });
-  if (existing && existing.csvMtime >= csvMtime) {
+  const existing = await db.findOne({}, { updatedAt: 1, csvMtime: 1, dbVersion: 1 });
+  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
     const count = await db.count({});
     console.log(`[Notaries] DB is up to date (${count} records). Skipping import.`);
     return count;
@@ -158,6 +159,7 @@ async function importNotaries() {
       schedule,
       slug,
       csvMtime,
+      dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
   }

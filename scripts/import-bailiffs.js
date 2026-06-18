@@ -7,6 +7,7 @@ const slugify = require('slugify');
 
 const CSV_PATH = path.join(__dirname, '..', 'bailiffs_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'bailiffs.db');
+const DB_VERSION = 2;
 
 // Kazakh Cyrillic extras not covered by slugify 'ru' locale
 slugify.extend({
@@ -108,8 +109,8 @@ async function importBailiffs() {
   await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
 
   // Skip import if DB already reflects this CSV version
-  const existing = await db.findOne({}, { csvMtime: 1 });
-  if (existing && existing.csvMtime >= csvMtime) {
+  const existing = await db.findOne({}, { csvMtime: 1, dbVersion: 1 });
+  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
     const count = await db.count({});
     console.log(`[Bailiffs] DB is up to date (${count} records). Skipping import.`);
     return count;
@@ -158,6 +159,7 @@ async function importBailiffs() {
       phones,
       slug,
       csvMtime,
+      dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
   }

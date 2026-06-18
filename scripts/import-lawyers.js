@@ -7,6 +7,7 @@ const slugify = require('slugify');
 
 const CSV_PATH = path.join(__dirname, '..', 'lawyers_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'lawyers.db');
+const DB_VERSION = 2;
 
 slugify.extend({
   'ə': 'a', 'Ə': 'A',
@@ -98,8 +99,8 @@ async function importLawyers() {
   await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
   await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
 
-  const existing = await db.findOne({}, { csvMtime: 1 });
-  if (existing && existing.csvMtime >= csvMtime) {
+  const existing = await db.findOne({}, { csvMtime: 1, dbVersion: 1 });
+  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
     const count = await db.count({});
     console.log(`[Lawyers] DB up to date (${count} records). Skipping.`);
     return count;
@@ -155,6 +156,7 @@ async function importLawyers() {
       phones,
       slug,
       csvMtime,
+      dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
   }
