@@ -1457,7 +1457,7 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
 .mechanism-num {
   font-size: 2.5rem;
   font-weight: 900;
-  color: rgba(14, 42, 71, 0.06);
+  color: rgba(14, 42, 71, 0.18);
   line-height: 1;
   position: absolute;
   top: 16px;

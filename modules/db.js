@@ -43,13 +43,13 @@ module.exports = {
   },
 
   async getPublished(limit = 20, offset = 0) {
-    const docs = await news.find({ status: 'published' });
+    const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } });
     docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
     return docs.slice(offset, offset + limit);
   },
 
   async countPublished() {
-    return news.count({ status: 'published' });
+    return news.count({ status: 'published', category: { $ne: 'Адвокат' } });
   },
 
   async getBySlug(slug) {
@@ -74,7 +74,7 @@ module.exports = {
   },
 
   async getLatest(limit = 6) {
-    const docs = await news.find({ status: 'published' });
+    const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } });
     docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
     return docs.slice(0, limit).map(a => ({
       title:            a.title,

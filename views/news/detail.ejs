@@ -4,14 +4,28 @@ const pubDate   = article.published_at_site ? new Date(article.published_at_site
 const pubDateStr = pubDate.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
 const coverImg  = article.og_image || article.category_cover || '/img/news/news-cover-default.svg';
 const sourceLink = article.source_url || article.original_url || '#';
+const isAdvokat  = article.category === 'Адвокат';
 
-// Just the actual news text — first paragraph of event_summary (before our generated marketing line)
+// Render article body: if content has HTML tags, use directly; otherwise split by \n\n
 const rawContent = (article.event_summary || article.original_excerpt || '').trim();
-const paragraphs = rawContent.split(/\n\n+/).map(p => p.trim()).filter(p =>
-  p.length > 0 &&
-  !p.startsWith('Эта новость представляет') &&
-  !p.startsWith('Ниже — юридический')
-);
+const hasHtml = /<p\b|<br\b|<blockquote\b|<ul\b|<ol\b/i.test(rawContent);
+let renderedBody;
+if (hasHtml) {
+  renderedBody = rawContent;
+} else {
+  const paragraphs = rawContent.split(/\n\n+/).map(p => p.trim()).filter(p =>
+    p.length > 0 &&
+    !p.startsWith('Эта новость представляет') &&
+    !p.startsWith('Ниже — юридический')
+  );
+  renderedBody = paragraphs.length > 0
+    ? paragraphs.map(p => `<p>${p}</p>`).join('\n          ')
+    : `<p>${article.excerpt || ''}</p>`;
+}
+
+const waAdvText = encodeURIComponent('Здравствуйте, Маулен! Пишу с сайта ZakonExpert. Хочу получить консультацию адвоката.');
+const waMaulenUrl = `https://wa.me/77777457577?text=${waAdvText}`;
+const waZakonUrl  = `https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте. Нужна консультация. Пишу с сайта ZakonExpert.')}`;
 
 const body = `
 <!-- BREADCRUMB -->
@@ -19,7 +33,9 @@ const body = `
   <div class="landing-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
       <a href="/">Главная</a> /
-      <a href="/news">Новости</a> /
+      ${isAdvokat
+        ? `<a href="/advocate">Адвокат Маулен Ержанов</a>`
+        : `<a href="/news">Новости</a>`} /
       <span>${article.title.substring(0,55)}${article.title.length > 55 ? '…' : ''}</span>
     </nav>
   </div>
@@ -49,13 +65,33 @@ const body = `
         <!-- H1 -->
         <h1 itemprop="headline">${article.title}</h1>
 
-        <!-- CONTENT — actual parsed news text -->
+        <!-- CONTENT -->
         <div class="news-article-body" itemprop="articleBody">
-          ${paragraphs.length > 0
-            ? paragraphs.map(p => `<p>${p}</p>`).join('\n          ')
-            : `<p>${article.excerpt || ''}</p>`
-          }
+          ${renderedBody}
         </div>
+
+        ${isAdvokat ? `
+        <!-- ADVOAT CTA — только для статей категории Адвокат -->
+        <div style="margin:32px 0;padding:24px 28px;background:linear-gradient(135deg,#0d1f3c 0%,#1a3460 100%);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+          <div style="color:#fff;">
+            <p style="margin:0 0 4px;font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Нужна юридическая помощь?</p>
+            <strong style="font-size:20px;display:block;margin-bottom:4px;">Адвокат Маулен Ержанов</strong>
+            <span style="font-size:14px;color:#94a3b8;">Уголовные дела · Гражданские споры · Семейные дела</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:200px;">
+            <a href="${waMaulenUrl}" target="_blank" rel="noopener"
+               style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;font-weight:600;font-size:15px;padding:12px 20px;border-radius:10px;text-decoration:none;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952-.3-2.49.527-5.099 2.261-6.994C4.295 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
+              Написать в WhatsApp
+            </a>
+            <a href="tel:+77777457577"
+               style="display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:15px;padding:11px 20px;border-radius:10px;text-decoration:none;border:1px solid rgba(255,255,255,.2);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.87 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              +7 (777) 745-75-77
+            </a>
+          </div>
+        </div>
+        ` : ''}
 
         <!-- SHARE -->
         <div class="news-share">
@@ -75,11 +111,28 @@ const body = `
       <!-- SIDEBAR -->
       <aside class="news-sidebar">
 
+        ${isAdvokat ? `
+        <div class="news-sidebar-widget" style="background:#0d1f3c;border-radius:14px;padding:20px;">
+          <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Нужен адвокат?</p>
+          <h3 style="color:#fff;margin:0 0 4px;font-size:17px;">Маулен Ержанов</h3>
+          <p style="color:#94a3b8;font-size:13px;margin:0 0 14px;">г. Талдыкорган · ул. Конаева, 20</p>
+          <a href="${waMaulenUrl}" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;justify-content:center;gap:7px;background:#25d366;color:#fff;font-weight:600;font-size:14px;padding:11px 16px;border-radius:9px;text-decoration:none;margin-bottom:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952-.3-2.49.527-5.099 2.261-6.994C4.295 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
+            Написать в WhatsApp
+          </a>
+          <a href="tel:+77777457577"
+             style="display:flex;align-items:center;justify-content:center;gap:7px;background:rgba(255,255,255,.1);color:#e2e8f0;font-size:14px;padding:10px 16px;border-radius:9px;text-decoration:none;border:1px solid rgba(255,255,255,.15);">
+            +7 (777) 745-75-77
+          </a>
+        </div>
+        ` : `
         <div class="news-sidebar-widget">
           <h3>Проверить по ИИН</h3>
           <p>Узнайте об исполнительных производствах и ограничениях бесплатно.</p>
           <a href="/#checker-section" class="btn-legal-cta" style="width:100%;text-align:center;display:block;">Проверить сейчас</a>
         </div>
+        `}
 
         ${related && related.length > 0 ? `
         <div class="news-sidebar-widget">
@@ -91,21 +144,30 @@ const body = `
         </div>
         ` : ''}
 
+        ${isAdvokat ? `
         <div class="news-sidebar-widget">
-          <h3>${article.category === 'Адвокат' ? 'Связаться с адвокатом' : 'Связаться с нами'}</h3>
-          <a href="https://wa.me/${article.category === 'Адвокат' ? '77777457577' : '77000300024'}?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8F." target="_blank" rel="noopener" class="news-sidebar-wa">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M5.077 19.956c-2.434-1.279-4.177-3.463-4.777-5.952-.3-2.49.527-5.099 2.261-6.994C4.295 5.115 6.455 4.083 9.024 4.083c2.569 0 5.028 1.032 6.762 2.927 1.734 1.895 2.562 4.504 2.261 7.007-.301 2.503-1.734 4.828-3.826 6.277l.298 1.491-1.638-.428c-1.239.619-2.619.962-4.048.962-1.087 0-2.14-.2-3.131-.58l-2.025.527.527-2.025-.148.245z"/></svg>
-            Написать в WhatsApp
-          </a>
-          <a href="tel:+${article.category === 'Адвокат' ? '77777457577' : '77000300024'}" class="news-sidebar-phone">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.87 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            ${article.category === 'Адвокат' ? '+7 (777) 745-75-77' : '+7 (700) 030-00-24'}
-          </a>
+          <h3>Нормативная база</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
+            <span style="background:#f1f5f9;color:#0d1f3c;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;">УПК РК</span>
+            <span style="background:#f1f5f9;color:#0d1f3c;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;">ГПК РК</span>
+            <span style="background:#f1f5f9;color:#0d1f3c;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;">АППК РК</span>
+            <span style="background:#f1f5f9;color:#0d1f3c;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;">КоАП РК</span>
+          </div>
+          <p style="font-size:12px;color:#64748b;margin:0;">Адвокат ведёт дела по всем видам судопроизводства</p>
         </div>
+        ` : ''}
 
         <div class="news-sidebar-widget">
-          <h3>Темы</h3>
+          <h3>${isAdvokat ? 'Направления работы' : 'Темы'}</h3>
           <div class="news-sidebar-tags">
+            ${isAdvokat ? `
+            <a href="/advocate#adv-practice">Уголовные дела</a>
+            <a href="/advocate#adv-practice">Гражданские споры</a>
+            <a href="/advocate#adv-practice">Семейные дела</a>
+            <a href="/advocate#adv-practice">Алименты</a>
+            <a href="/advocate#adv-practice">Раздел имущества</a>
+            <a href="/advocate#adv-practice">Апелляция</a>
+            ` : `
             <a href="/news?cat=аресты">Аресты счетов</a>
             <a href="/news?cat=finance">Банки</a>
             <a href="/news?cat=chsi">ЧСИ</a>
@@ -113,6 +175,7 @@ const body = `
             <a href="/news?cat=alimenty">Алименты</a>
             <a href="/news?cat=shtrafy">Штрафы</a>
             <a href="/news?cat=avto">Авто</a>
+            `}
           </div>
         </div>
 

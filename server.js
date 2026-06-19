@@ -887,8 +887,9 @@ const NEWS_PER_PAGE = 20;
 // NEWS LIST
 app.get('/news', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
+  if (req.query.cat === 'Адвокат') return res.redirect(301, '/advocate');
   const page = Math.max(1, parseInt(req.query.page) || 1);
-  const category = req.query.cat || null;
+  const category = (req.query.cat && req.query.cat !== 'Адвокат') ? req.query.cat : null;
   const offset = (page - 1) * NEWS_PER_PAGE;
 
   const [articles, total] = await Promise.all([
@@ -1090,10 +1091,13 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   if (!article) return res.status(404).redirect('/news');
 
   const tagsArr = JSON.parse(article.tags || '[]');
+  const isAdvokat = article.category === 'Адвокат';
   const relatedRaw = tagsArr.length > 0
     ? await newsDb.getByTags(tagsArr[0])
     : await newsDb.getPublished(5, 0);
-  const related = relatedRaw.filter(r => r.slug !== article.slug).slice(0, 4);
+  const related = relatedRaw
+    .filter(r => r.slug !== article.slug && (isAdvokat ? r.category === 'Адвокат' : r.category !== 'Адвокат'))
+    .slice(0, 4);
 
   const pubDate = new Date(article.published_at_site || article.created_at);
   const schema = {
@@ -1316,6 +1320,34 @@ app.post('/api/application', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// ===== CLICK TRACKING =====
+let clicksDb = null;
+try { clicksDb = require('./modules/clicks-db'); } catch (e) { logger.warn('clicks-db not loaded: ' + e.message); }
+
+app.post('/api/track-click', asyncHandler(async (req, res) => {
+  const { type, target, page } = req.body || {};
+  if (!type || !target) return res.json({ ok: false });
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  if (clicksDb) clicksDb.recordClick({ type, target, page: page || '/', ip, ua }).catch(() => {});
+  telegram.notifyClick(type, target, page || '/', ip, ua);
+  res.json({ ok: true });
+}));
+
+// ===== LEAD FORM (chatbot / contact form) =====
+let leadsDb = null;
+try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
+
+app.post('/api/lead', asyncHandler(async (req, res) => {
+  const { name, phone, issue, question, page } = req.body || {};
+  if (!phone) return res.status(400).json({ error: 'Телефон обязателен' });
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  if (leadsDb) leadsDb.recordLead({ name, phone, issue, question, page, ip, ua }).catch(() => {});
+  telegram.notifyLead({ name, phone, issue, question, page }, ip, ua);
+  res.json({ ok: true });
+}));
+
 // ===== TELEGRAM SETUP: определить CHAT_ID =====
 app.get('/api/telegram/setup', asyncHandler(async (req, res) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -1370,4 +1402,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
     logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
     logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'задан ✓' : 'НЕ ЗАДАН — проверка ИИН не будет работать!'}`);
+    // Запускаем Telegram бот (принимает команды /stats, /leads, /help)
+    telegram.startPolling();
+    logger.info('Telegram bot polling started ✓');
 });
