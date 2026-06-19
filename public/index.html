@@ -122,6 +122,7 @@
     .wa-contact-btn{display:inline-flex;align-items:center;gap:9px;padding:13px 28px;background:#25d366;color:#fff;border-radius:12px;font-weight:700;font-size:0.97rem;text-decoration:none;transition:background .2s;}
     .wa-contact-btn:hover{background:#1db954;color:#fff;}
     .wa-contact-note{font-size:0.78rem;color:rgba(255,255,255,0.4);margin:0;}
+    @media(max-width:900px){.hero-team-sidebar{display:none!important;}}
   </style>
 </head>
 <body>
@@ -167,7 +168,36 @@
   <!-- SEARCH HERO — aisoip style, все ID сохранены -->
   <section id="checker-section" class="search-hero">
     <div class="landing-container">
-      <div class="search-hero-inner">
+      <div style="display:flex;gap:36px;align-items:flex-start;">
+
+        <!-- LEFT: Specialists sidebar -->
+        <div class="hero-team-sidebar" style="flex-shrink:0;width:200px;display:flex;flex-direction:column;gap:14px;padding-top:8px;">
+          <p style="font-size:.7rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#9ca3af;margin:0 0 4px;">Наша команда</p>
+
+          <a href="/advocate" style="text-decoration:none;display:block;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 24px rgba(0,0,0,.12)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,.06)'">
+            <div style="height:180px;overflow:hidden;">
+              <img src="/img/advocate-maulen.jpeg" alt="Адвокат Маулен Ержанов" style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;display:block;">
+            </div>
+            <div style="padding:12px 12px 10px;">
+              <div style="font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#dc2626;margin-bottom:4px;">Адвокат</div>
+              <div style="font-size:.82rem;font-weight:800;color:#0d1f3c;line-height:1.3;">Маулен Ержанов</div>
+              <div style="font-size:.74rem;color:#6b7280;margin-top:3px;">Уголовные, гражданские, семейные дела</div>
+            </div>
+          </a>
+
+          <a href="/mediator" style="text-decoration:none;display:block;background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);transition:box-shadow .2s;" onmouseover="this.style.boxShadow='0 6px 24px rgba(0,0,0,.12)'" onmouseout="this.style.boxShadow='0 2px 12px rgba(0,0,0,.06)'">
+            <div style="height:180px;overflow:hidden;">
+              <img src="/img/mediator-nurgisa.jpeg" alt="Юрист-медиатор Нұрғиса Нұрғазыұлы" style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;display:block;">
+            </div>
+            <div style="padding:12px 12px 10px;">
+              <div style="font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#2563eb;margin-bottom:4px;">Юрист · Медиатор</div>
+              <div style="font-size:.82rem;font-weight:800;color:#0d1f3c;line-height:1.3;">Нұрғиса Нұрғазыұлы</div>
+              <div style="font-size:.74rem;color:#6b7280;margin-top:3px;">Медиация, досудебное урегулирование</div>
+            </div>
+          </a>
+        </div>
+
+      <div class="search-hero-inner" style="flex:1;min-width:0;">
 
         <div class="search-hero-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -243,6 +273,9 @@
         </div>
 
       </div>
+
+      </div><!-- /search-hero-inner -->
+      </div><!-- /hero flex wrapper -->
     </div>
   </section>
   <!-- BANKRUPTCY CHECK -->
@@ -1099,7 +1132,7 @@
         <div class="col-md-4">
           <div style="background:#fff;border-radius:18px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.06);height:100%;display:flex;flex-direction:column;">
             <div style="height:260px;overflow:hidden;">
-              <img src="/img/advocate-maulen.jpeg" alt="Адвокат Маулен Ержанов" style="width:100%;height:100%;object-fit:cover;object-position:top;">
+              <img src="/img/advocate-maulen.jpeg" alt="Адвокат Маулен Ержанов" style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;">
             </div>
             <div style="padding:22px 22px 20px;flex:1;display:flex;flex-direction:column;">
               <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#dc2626;padding:3px 10px;margin-bottom:10px;width:fit-content;">
@@ -1118,7 +1151,7 @@
         <div class="col-md-4">
           <div style="background:#fff;border-radius:18px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.06);height:100%;display:flex;flex-direction:column;">
             <div style="height:260px;overflow:hidden;">
-              <img src="/img/mediator-nurgisa.jpeg" alt="Юрист-медиатор Нұрғиса Нұрғазыұлы" style="width:100%;height:100%;object-fit:cover;object-position:top;">
+              <img src="/img/mediator-nurgisa.jpeg" alt="Юрист-медиатор Нұрғиса Нұрғазыұлы" style="width:100%;height:100%;object-fit:cover;object-position:50% 8%;">
             </div>
             <div style="padding:22px 22px 20px;flex:1;display:flex;flex-direction:column;">
               <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#2563eb;padding:3px 10px;margin-bottom:10px;width:fit-content;">
