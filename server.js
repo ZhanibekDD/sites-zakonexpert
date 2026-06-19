@@ -861,6 +861,8 @@ const servicePages = {
   '/zapret-registracionnyh-deystviy':  'zapret-registracionnyh-deystviy.html',
   '/grafik-platezhey':                 'grafik-platezhey.html',
   '/chsi-refinansirovanie':            'chsi-refinansirovanie.html',
+  '/dokumenty':                        'dokumenty.html',
+  '/rezultaty':                        'rezultaty.html',
   '/privacy':                          'privacy.html',
   '/services':                         'services.html',
   '/contact':                          'contact.html',
@@ -1016,6 +1018,8 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/zapret-registracionnyh-deystviy', priority: '0.75', freq: 'monthly' },
     { url: '/grafik-platezhey', priority: '0.75', freq: 'monthly' },
     { url: '/chsi-refinansirovanie', priority: '0.8', freq: 'monthly' },
+    { url: '/dokumenty',             priority: '0.8', freq: 'monthly' },
+    { url: '/rezultaty',             priority: '0.7', freq: 'monthly' },
     { url: '/privacy', priority: '0.3', freq: 'yearly' },
     // Законы — разделы
     { url: '/statyi', priority: '0.85', freq: 'weekly' },

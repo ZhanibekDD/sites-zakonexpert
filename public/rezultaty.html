@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Результаты работы — отмена исполнительных надписей и графики погашения | ZakonExpert</title>
+  <meta name="description" content="Реальные результаты: постановления об отмене исполнительных надписей, согласованные графики погашения, прекращение исполнительных производств. Команда ZakonExpert Казахстан.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://zakonexpertt.kz/rezultaty">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://zakonexpertt.kz/rezultaty">
+  <meta property="og:title" content="Результаты работы ZakonExpert — реальные постановления об отмене ИН">
+  <meta property="og:description" content="Фото постановлений об отмене исполнительных надписей, графиков погашения и прекращения исполнительных производств. Команда юристов ZakonExpert.">
+  <meta property="og:image" content="https://zakonexpertt.kz/img/rezultaty/komanda-01.jpeg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/landing.css?v=20260619-2">
+  <link rel="stylesheet" href="css/style.css?v=20260619-2">
+  <style>
+    .rez-hero {
+      background: linear-gradient(135deg,#081830 0%,#0f2044 60%,#152d55 100%);
+      padding: 64px 0 48px; text-align: center;
+    }
+    .rez-hero h1 { font-size: clamp(1.7rem,4vw,2.5rem); font-weight: 900; color: #fff; margin-bottom: 14px; }
+    .rez-hero p  { font-size: 1.05rem; color: rgba(255,255,255,.72); max-width: 580px; margin: 0 auto; }
+    .rez-kicker  { display: inline-block; background: rgba(215,167,66,.15); border: 1px solid rgba(215,167,66,.4);
+                   border-radius: 999px; font-size: .78rem; font-weight: 700; letter-spacing: .08em;
+                   text-transform: uppercase; color: #f0c040; padding: 4px 14px; margin-bottom: 18px; }
+
+    /* Stats bar */
+    .rez-stats { background: #0d1f3c; border-bottom: 1px solid rgba(255,255,255,.07); padding: 28px 0; }
+    .rez-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .rez-stat { text-align: center; padding: 12px 16px; }
+    .rez-stat + .rez-stat { border-left: 1px solid rgba(255,255,255,.08); }
+    .rez-stat-num { font-size: 2rem; font-weight: 900; color: #f0c040; line-height: 1; }
+    .rez-stat-label { font-size: .78rem; color: rgba(255,255,255,.55); margin-top: 5px; }
+
+    /* Team section */
+    .rez-section { padding: 52px 0 32px; }
+    .rez-section-title {
+      font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 6px;
+    }
+    .rez-section-sub { font-size: .9rem; color: rgba(255,255,255,.5); margin-bottom: 28px; }
+
+    .rez-team-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 52px; }
+    .rez-team-img {
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .rez-team-img img { width: 100%; height: 320px; object-fit: cover; display: block; }
+    .rez-team-caption {
+      padding: 12px 16px; background: rgba(255,255,255,.04);
+      font-size: .82rem; color: rgba(255,255,255,.55); text-align: center;
+    }
+
+    /* Gallery */
+    .rez-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; margin-bottom: 52px; }
+    .rez-item { border-radius: 12px; overflow: hidden; background: #0d1f3c;
+                border: 1px solid rgba(255,255,255,.07); cursor: pointer;
+                transition: border-color .2s, box-shadow .2s; }
+    .rez-item:hover { border-color: rgba(240,192,64,.35); box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+    .rez-item img { width: 100%; height: 220px; object-fit: cover; display: block; }
+    .rez-item-label {
+      padding: 10px 14px; font-size: .78rem; font-weight: 600;
+      color: rgba(255,255,255,.6); display: flex; align-items: center; gap: 6px;
+    }
+    .rez-badge {
+      display: inline-block; font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; padding: 2px 8px; border-radius: 99px;
+    }
+    .badge-green  { background: rgba(37,211,102,.15); color: #25d366; }
+    .badge-gold   { background: rgba(240,192,64,.15);  color: #f0c040; }
+    .badge-blue   { background: rgba(59,130,246,.15);  color: #60a5fa; }
+
+    /* Lightbox */
+    .rez-lightbox {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.9); align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .rez-lightbox.open { display: flex; }
+    .rez-lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; object-fit: contain; }
+    .rez-lb-close {
+      position: absolute; top: 18px; right: 22px; font-size: 2rem;
+      color: #fff; cursor: pointer; background: none; border: none; line-height: 1;
+    }
+
+    /* CTA */
+    .rez-cta {
+      background: linear-gradient(135deg,#0a1f3a 0%,#112240 100%);
+      border: 1px solid rgba(240,192,64,.18);
+      border-radius: 20px; padding: 40px 36px; text-align: center; margin-bottom: 60px;
+    }
+    .rez-cta h2 { font-size: 1.45rem; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .rez-cta p  { color: rgba(255,255,255,.65); font-size: .95rem; margin-bottom: 22px; }
+    .btn-rez-wa {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #25d366; color: #fff; padding: 13px 28px;
+      border-radius: 50px; font-weight: 700; font-size: .95rem; text-decoration: none;
+      transition: background .15s;
+    }
+    .btn-rez-wa:hover { background: #1ebe5a; color: #fff; }
+    .btn-rez-check {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: #f0c040; padding: 12px 28px;
+      border-radius: 50px; font-weight: 700; font-size: .95rem; text-decoration: none;
+      border: 1.5px solid rgba(240,192,64,.45); margin-left: 12px;
+      transition: background .15s;
+    }
+    .btn-rez-check:hover { background: rgba(240,192,64,.08); color: #f0c040; }
+
+    @media (max-width: 640px) {
+      .rez-stats-grid { grid-template-columns: repeat(2,1fr); }
+      .rez-stat + .rez-stat { border-left: none; }
+      .rez-stat:nth-child(3), .rez-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,.08); }
+      .rez-team-grid { grid-template-columns: 1fr; }
+      .rez-gallery  { grid-template-columns: repeat(2,1fr); }
+      .rez-item img { height: 160px; }
+      .rez-cta { padding: 28px 20px; }
+      .btn-rez-check { margin-left: 0; margin-top: 10px; }
+    }
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <div class="landing-container nav-shell">
+    <a class="brand" href="index.html">
+      <img src="img/zakonexpert-logo-kazakhstan.png" alt="ZakonExpert" class="brand-full-logo">
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Меню" data-nav-toggle>
+      <i class="bi bi-list fs-4"></i>
+    </button>
+    <nav><ul class="nav-links" data-nav-links>
+      <li><a class="nav-link" href="index.html">Главная</a></li>
+      <li><a class="nav-link" href="services.html">Услуги</a></li>
+      <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/statyi" aria-haspopup="true">Законы <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/statyi?code=uk"><i class="bi bi-journal-text"></i> УК РК</a></li><li><a href="/statyi?code=upk"><i class="bi bi-journal-text"></i> УПК РК</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=koap"><i class="bi bi-journal-text"></i> КоАП РК</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=gk"><i class="bi bi-journal-text"></i> ГК РК</a></li><li><a href="/statyi?code=sk"><i class="bi bi-journal-text"></i> СК РК</a></li><li><a href="/statyi?code=tk"><i class="bi bi-journal-text"></i> ТК РК</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi"><i class="bi bi-search"></i> Поиск по всем</a></li></ul></li>
+      <li><a class="nav-link" href="/news">Новости</a></li>
+      <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/notaries" aria-haspopup="true">Реестры <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/notaries"><i class="bi bi-book"></i> Каталог нотариусов</a></li><li><a href="/notary-search"><i class="bi bi-search"></i> Поиск нотариуса</a></li><li class="nav-dropdown-divider"></li><li><a href="/bailiffs"><i class="bi bi-book"></i> Каталог ЧСИ</a></li><li><a href="/bailiff-search"><i class="bi bi-search"></i> Поиск ЧСИ</a></li><li class="nav-dropdown-divider"></li><li><a href="/lawyers"><i class="bi bi-book"></i> Каталог адвокатов</a></li><li><a href="/lawyer-search"><i class="bi bi-search"></i> Поиск адвоката</a></li></ul></li>
+      <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle active" href="/rezultaty" aria-haspopup="true">Клиентам <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/dokumenty"><i class="bi bi-file-earmark-text"></i> Образцы документов</a></li><li><a href="/rezultaty"><i class="bi bi-trophy"></i> Результаты работы</a></li></ul></li>
+      <li><a class="nav-link" href="/advocate">Адвокат</a></li>
+      <li><a class="nav-link" href="contact.html">Контакты</a></li>
+    </ul></nav>
+    <div class="header-side">
+      <div class="header-contacts">
+        <a href="tel:+77000300024"><i class="bi bi-telephone"></i> +7 (700) 030-00-24</a>
+        <a class="header-wa-btn" href="https://wa.me/77000300024" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- Hero -->
+<section class="rez-hero">
+  <div class="landing-container">
+    <span class="rez-kicker"><i class="bi bi-trophy"></i> Реальные дела</span>
+    <h1>Результаты нашей работы</h1>
+    <p>Постановления об отмене исполнительных надписей, согласованные графики погашения, прекращение исполнительных производств — всё это реальные документы наших клиентов.</p>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="rez-stats">
+  <div class="landing-container">
+    <div class="rez-stats-grid">
+      <div class="rez-stat">
+        <div class="rez-stat-num">630<span style="font-size:1.2rem">+</span></div>
+        <div class="rez-stat-label">ЧСИ в базе данных</div>
+      </div>
+      <div class="rez-stat">
+        <div class="rez-stat-num">6<span style="font-size:1.2rem">333</span></div>
+        <div class="rez-stat-label">нотариуса в каталоге</div>
+      </div>
+      <div class="rez-stat">
+        <div class="rez-stat-num">10<span style="font-size:1.2rem">+</span></div>
+        <div class="rez-stat-label">надписей отменено</div>
+      </div>
+      <div class="rez-stat">
+        <div class="rez-stat-num">0<span style="font-size:1rem"> тг</span></div>
+        <div class="rez-stat-label">проверка по ИИН</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="landing-container">
+
+  <!-- Team -->
+  <section class="rez-section">
+    <div class="rez-section-title">Наша команда</div>
+    <div class="rez-section-sub">Юристы ZakonExpert — работаем дистанционно по всему Казахстану</div>
+    <div class="rez-team-grid">
+      <div class="rez-team-img">
+        <img src="/img/rezultaty/komanda-01.jpeg" alt="Команда юристов ZakonExpert" loading="lazy">
+        <div class="rez-team-caption">Команда юристов ZakonExpert за работой</div>
+      </div>
+      <div class="rez-team-img">
+        <img src="/img/rezultaty/komanda-02.jpeg" alt="Юристы ZakonExpert Казахстан" loading="lazy">
+        <div class="rez-team-caption">Разбираем документы клиентов</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section>
+    <div class="rez-section-title">Результаты клиентов</div>
+    <div class="rez-section-sub">Нажмите на документ, чтобы увидеть его подробнее</div>
+    <div class="rez-gallery">
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-01.jpeg" alt="Постановление об отмене исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-02.jpeg" alt="Постановление об отмене исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-03.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-04.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-05.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-06.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-07.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/otmena-nadpisi-08.jpeg" alt="Отмена исполнительной надписи" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          Постановление нотариуса
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/prekrashchenie-01.jpeg" alt="Постановление о прекращении исполнительного производства" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-blue">Закрыто ИП</span>
+          Прекращение производства
+        </div>
+      </div>
+
+      <div class="rez-item" onclick="openLb(this)">
+        <img src="/img/rezultaty/grafik-soglashenie-01.jpeg" alt="Соглашение об урегулировании задолженности — график погашения" loading="lazy">
+        <div class="rez-item-label">
+          <span class="rez-badge badge-gold">График</span>
+          Соглашение с кредитором
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="rez-cta">
+    <h2>Хотите такой же результат?</h2>
+    <p>Разберём вашу ситуацию бесплатно. Проверьте ИИН — узнайте все производства, взыскателей и суммы за 30 секунд.</p>
+    <a class="btn-rez-wa" href="https://wa.me/77000300024?text=Здравствуйте.+Хочу+проверить+арест+и+узнать+что+можно+сделать." target="_blank" rel="noopener">
+      <i class="bi bi-whatsapp"></i> Разобрать мою ситуацию
+    </a>
+    <a class="btn-rez-check" href="index.html#checker-section">
+      <i class="bi bi-search"></i> Проверить ИИН
+    </a>
+  </div>
+</div>
+</main>
+
+<!-- Lightbox -->
+<div class="rez-lightbox" id="rez-lb" onclick="closeLb()">
+  <button class="rez-lb-close" onclick="closeLb()">×</button>
+  <img id="rez-lb-img" src="" alt="">
+</div>
+
+<footer class="site-footer-bottom" style="background:#060e1f;padding:28px 0;text-align:center;color:rgba(255,255,255,.35);font-size:.82rem;">
+  <div class="landing-container">
+    © 2024–2026 ZakonExpert · <a href="https://zakonexpertt.kz" style="color:rgba(255,255,255,.35)">zakonexpertt.kz</a>
+    · <a href="privacy.html" style="color:rgba(255,255,255,.35)">Политика конфиденциальности</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js?v=20260619-2"></script>
+<script>
+  function openLb(card) {
+    var src = card.querySelector('img').src;
+    var alt = card.querySelector('img').alt;
+    document.getElementById('rez-lb-img').src = src;
+    document.getElementById('rez-lb-img').alt = alt;
+    document.getElementById('rez-lb').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb() {
+    document.getElementById('rez-lb').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeLb(); });
+</script>
+</body>
+</html>
