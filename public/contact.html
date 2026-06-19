@@ -257,16 +257,22 @@
 
         </div>
 
-        <!-- 2GIS карта -->
-        <div style="flex:2;min-width:300px;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);min-height:420px;">
+        <!-- Карта OpenStreetMap -->
+        <div style="flex:2;min-width:300px;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.1);min-height:420px;position:relative;">
           <iframe
-            src="https://widgets.2gis.com/widget?type=firmsonmap&options=%7B%22pos%22%3A%7B%22lat%22%3A44.996636%2C%22lon%22%3A78.368746%2C%22zoom%22%3A17%7D%2C%22org%22%3A%5B%7B%22id%22%3A%2270000001111056987%22%7D%5D%7D"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=78.3587%2C44.9916%2C78.3787%2C45.0016&layer=mapnik&marker=44.996636%2C78.368746"
             width="100%" height="100%"
             style="border:none;display:block;min-height:420px;"
             allowfullscreen
             loading="lazy"
-            title="Офис ZakonExpert на карте — г. Талдыкорган, ул. Кунаева, 23/1">
+            title="Офис ZakonExpert — г. Талдыкорган, ул. Кунаева, 23/1">
           </iframe>
+          <!-- Кнопка открыть в 2GIS поверх карты -->
+          <a href="https://2gis.kz/taldykorgan/firm/70000001111056987" target="_blank" rel="noopener"
+            style="position:absolute;bottom:16px;right:16px;display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:.82rem;color:#0d1f3c;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.12);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a3560" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Открыть в 2ГИС
+          </a>
         </div>
 
       </div>
