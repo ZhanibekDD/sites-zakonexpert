@@ -3,13 +3,25 @@
   'use strict';
 
   // ── Click tracking ───────────────────────────────────────────────────────
+  // Только наши номера — нотариусы, ЧСИ и другие чужие номера не трекаем
+  var OWN_NUMBERS = {
+    '77000300024': 'main',
+    '77777457577': 'advocate',
+    '77479641306': 'mediator',
+  };
   document.addEventListener('click', function (e) {
     const link = e.target.closest('a[href^="tel:"], a[href*="wa.me"]');
     if (!link) return;
     const href = link.href || '';
-    let target = 'main';
-    if (href.includes('77777457577')) target = 'advocate';
-    else if (href.includes('77479641306')) target = 'mediator';
+    // Только цифры из ссылки — игнорируем +, -, пробелы
+    const digits = href.replace(/\D/g, '');
+    // Определяем target только по нашим номерам
+    let target = null;
+    for (var num in OWN_NUMBERS) {
+      if (digits.indexOf(num) !== -1) { target = OWN_NUMBERS[num]; break; }
+    }
+    // Чужой номер (нотариус, ЧСИ) — не трекаем
+    if (!target) return;
     const type = href.startsWith('tel:') ? 'phone' : 'whatsapp';
     const payload = JSON.stringify({ type, target, page: location.pathname });
     if (navigator.sendBeacon) {
