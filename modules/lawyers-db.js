@@ -21,10 +21,42 @@ module.exports = {
   count()           { return db.count({}); },
   getAllSlugs()      { return db.find({}, { slug: 1, name: 1, region: 1, updatedAt: 1, _id: 0 }); },
   getLastUpdated()  { return db.findOne({}, { updatedAt: 1, _id: 0 }).then(d => d ? d.updatedAt : null); },
-  search(query, limit = 30) {
-    if (!query || query.trim().length < 2) return Promise.resolve([]);
-    const safe = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return db.find({ name: new RegExp(safe, 'i') }, { name: 1, slug: 1, region: 1, address: 1, _id: 0 }).limit(limit);
+  async search(query, limit = 30) {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.trim().toUpperCase();
+    const words = q.split(/\s+/).filter(w => w.length >= 2);
+    const all = await db.find({}, { name: 1, slug: 1, region: 1, address: 1, _id: 0 });
+    return all.filter(d => {
+      const name = (d.name || '').toUpperCase();
+      return words.every(w => name.includes(w));
+    }).slice(0, limit);
+  },
+
+  async fuzzySearch(query, limit = 3) {
+    if (!query || query.trim().length < 2) return [];
+    const firstWord = query.trim().toUpperCase().split(/\s+/)[0];
+    if (firstWord.length < 3) return [];
+    const all = await db.find({}, { name: 1, slug: 1, region: 1, _id: 0 });
+    function lev(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, (_, i) => [i]);
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++)
+        for (let j = 1; j <= n; j++)
+          dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+      return dp[m][n];
+    }
+    return all
+      .map(d => {
+        const nameFirst = (d.name || '').toUpperCase().split(/\s+/)[0] || '';
+        const dist = lev(firstWord, nameFirst);
+        const sim = 1 - dist / Math.max(firstWord.length, nameFirst.length, 1);
+        return { doc: d, sim };
+      })
+      .filter(x => x.sim >= 0.68)
+      .sort((a, b) => b.sim - a.sim)
+      .slice(0, limit)
+      .map(x => x.doc);
   },
   async getRegions() {
     const all = await db.find({}, { region: 1, _id: 0 });

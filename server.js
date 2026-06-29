@@ -446,12 +446,16 @@ app.get('/api/notaries/import', asyncHandler(async (req, res) => {
 app.get('/bailiff-search', asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
   let results = null;
+  let suggestion = null;
   if (q.length >= 2 && bailiffsDb) {
     results = await bailiffsDb.search(q);
+    if (results.length === 0) {
+      suggestion = await bailiffsDb.fuzzySearch(q);
+    }
   } else if (q.length >= 2) {
     results = [];
   }
-  res.render('bailiff/search', { query: q, results });
+  res.render('bailiff/search', { query: q, results, suggestion });
 }));
 
 // ===== CATALOG PAGES =====
@@ -496,12 +500,16 @@ app.get('/lawyers', asyncHandler(async (req, res) => {
 app.get('/lawyer-search', asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
   let results = null;
+  let suggestion = null;
   if (q.length >= 2 && lawyersDb) {
     results = await lawyersDb.search(q);
+    if (results.length === 0) {
+      suggestion = await lawyersDb.fuzzySearch(q);
+    }
   } else if (q.length >= 2) {
     results = [];
   }
-  res.render('lawyer/search', { query: q, results });
+  res.render('lawyer/search', { query: q, results, suggestion });
 }));
 
 // ===== BAILIFF SEO PAGES =====

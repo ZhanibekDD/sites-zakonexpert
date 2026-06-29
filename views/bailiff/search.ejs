@@ -11,8 +11,17 @@ function titleCase(s) {
 let resultsHtml = '';
 if (results !== null) {
   if (results.length === 0) {
+    var suggestHtml = '';
+    if (suggestion && suggestion.length > 0) {
+      var sugLinks = suggestion.map(function(s) {
+        return '<a href="/bailiff-search?q=' + encodeURIComponent(s.name) + '" style="color:#1a56db;font-weight:600;text-decoration:underline;">' + titleCase(s.name) + '</a>';
+      }).join(', ');
+      suggestHtml = '<div style="margin-top:12px;padding:14px 18px;background:#fef9ec;border:1.5px solid #f0c040;border-radius:10px;font-size:.9rem;color:#374151;">'
+        + '💡 <strong>Возможно, вы имели в виду:</strong> ' + sugLinks + '</div>';
+    }
     resultsHtml = '<div class="registry-empty"><p>По запросу <strong>' + q + '</strong> ничего не найдено.</p>'
-      + '<p style="font-size:0.9rem;color:#64748b;">Попробуйте ввести только фамилию, например: <em>Иванов</em></p></div>';
+      + '<p style="font-size:0.9rem;color:#64748b;">Попробуйте ввести только фамилию, например: <em>Иванов</em></p>'
+      + suggestHtml + '</div>';
   } else {
     var countNote = results.length === 30 ? '+ (показаны первые 30)' : '';
     var items = '';
