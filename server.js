@@ -155,7 +155,7 @@ const TRACKED_PATHS = new Set([
   '/chsi-refinansirovanie',
   '/notaries', '/bailiffs', '/lawyers',
   '/notary-search', '/bailiff-search', '/lawyer-search',
-  '/banks', '/mfo', '/courts', '/chambers', '/companies',
+  '/banks', '/mfo', '/courts', '/chambers', '/companies', '/collectors', '/lombards',
   '/news', '/statyi',
 ]);
 app.use((req, res, next) => {
@@ -503,6 +503,109 @@ app.get('/mfo',       (req, res) => res.render('mfo/catalog'));
 app.get('/courts',    (req, res) => res.render('courts/catalog'));
 app.get('/chambers',  (req, res) => res.render('chambers/catalog'));
 app.get('/companies', (req, res) => res.render('companies/catalog'));
+
+// ===== CSV-BACKED CATALOGS: COLLECTORS / LOMBARDS =====
+function parseSemicolonCSV(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const lines = raw.split(/\r?\n/);
+    const headers = lines[0].split(';').map(h => h.replace(/^"|"$/g, '').trim());
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      // simple quoted-field parser for semicolon delimiter
+      const fields = [];
+      let cur = '', inQ = false;
+      for (let c = 0; c < line.length; c++) {
+        const ch = line[c];
+        if (ch === '"') {
+          if (inQ && line[c + 1] === '"') { cur += '"'; c++; }
+          else inQ = !inQ;
+        } else if (ch === ';' && !inQ) {
+          fields.push(cur.trim()); cur = '';
+        } else { cur += ch; }
+      }
+      fields.push(cur.trim());
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = (fields[idx] || '').replace(/^"+|"+$/g, '').trim(); });
+      rows.push(obj);
+    }
+    return rows;
+  } catch (e) { return []; }
+}
+
+function parseContacts(raw) {
+  const parts = raw.split(/[,;\s]+(?=[\w+])/);
+  const phones = [], emails = [], sites = [];
+  const rawTokens = raw.split(/,\s*|;\s*|\s{2,}/);
+  rawTokens.forEach(t => {
+    t = t.trim().replace(/^["]+|["]+$/g, '');
+    if (!t) return;
+    if (t.includes('@')) emails.push(t);
+    else if (/^https?:\/\//i.test(t) || /^www\./i.test(t)) sites.push(t.replace(/^https?:\/\//i,'').replace(/^www\./i,'').split('/')[0]);
+    else if (/[\d\-\(\)\+]/.test(t) && t.replace(/[^\d]/g,'').length >= 7) phones.push(t);
+  });
+  return { phones: [...new Set(phones)], emails: [...new Set(emails)], sites: [...new Set(sites)] };
+}
+
+let _collectorsCache = null;
+function getCollectors() {
+  if (!_collectorsCache) {
+    const rows = parseSemicolonCSV(path.join(__dirname, 'Коллекторские_агентства_Казахстана.csv'));
+    _collectorsCache = rows
+      .filter(r => (r['Статус'] || '').toLowerCase().includes('действу'))
+      .map(r => {
+        const contacts = parseContacts(r['Контакты (тел./email/сайт)'] || '');
+        return {
+          bin: r['БИН'] || '',
+          name: (r['Название'] || '').replace(/^ТОО\s+"*|"*$/g, '').replace(/ТОО\s+/g,'').replace(/^"|"$/g,'').trim(),
+          nameFull: r['Название'] || '',
+          regNum: r['Рег. номер (лицензия)'] || '',
+          leader: r['Руководитель (ФИО)'] || '',
+          address: r['Адрес'] || '',
+          phones: contacts.phones,
+          emails: contacts.emails,
+          sites: contacts.sites,
+          dateAdded: r['Дата включения в реестр'] || '',
+        };
+      });
+  }
+  return _collectorsCache;
+}
+
+let _mfoCache = null;
+function getMfoData() {
+  if (!_mfoCache) {
+    const rows = parseSemicolonCSV(path.join(__dirname, 'МФО_Ломбарды_КредТоварищества_Казахстана.csv'));
+    _mfoCache = { mfo: [], lombards: [], kredTov: [] };
+    rows.forEach(r => {
+      const cat = (r['Категория'] || '').trim();
+      const entry = {
+        name: (r['Название (реестр АРРФР)'] || '').replace(/^[«"ТОО\s«»]+|[«»"]+$/g,'').trim(),
+        nameFull: r['Полное название (гос. регистр)'] || '',
+        bin: r['БИН'] || '',
+        address: r['Юридический адрес'] || '',
+        leader: r['Руководитель'] || '',
+        note: r['Примечание'] || '',
+      };
+      if (cat === 'МФО') _mfoCache.mfo.push(entry);
+      else if (cat === 'Ломбард') _mfoCache.lombards.push(entry);
+      else if (cat === 'Кредитное товарищество') _mfoCache.kredTov.push(entry);
+    });
+  }
+  return _mfoCache;
+}
+
+app.get('/collectors', (req, res) => {
+  const items = getCollectors();
+  res.render('collectors/catalog', { items });
+});
+
+app.get('/lombards', (req, res) => {
+  const { lombards } = getMfoData();
+  res.render('lombards/catalog', { items: lombards });
+});
 
 // ===== LAWYER SEARCH =====
 app.get('/lawyer-search', asyncHandler(async (req, res) => {
