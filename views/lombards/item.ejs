@@ -7,6 +7,18 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function mapBlock(addr) {
+  if (!addr) return '';
+  var q = encodeURIComponent(addr + ', Казахстан');
+  var q2 = encodeURIComponent(addr);
+  return '<div style="margin-top:1.5rem;max-width:720px;">'
+    + '<iframe src="https://maps.google.com/maps?q=' + q + '&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>'
+    + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
+    + '<a href="https://2gis.kz/search/' + q2 + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>'
+    + '<a href="https://maps.google.com/?q=' + q + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>'
+    + '</div></div>';
+}
+
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
@@ -45,6 +57,7 @@ const body = CSS
   + '<div class="li-row"><span class="li-icon">🆔</span><span class="li-dim">БИН: ' + escHtml(item.bin) + '</span></div>'
   + '<div class="li-row"><span class="li-icon">📞</span><span class="li-dim">Контакты — уточните на сайте <a href="https://www.afsa.kz" target="_blank" rel="noopener" class="li-link">АРРФР (afsa.kz)</a></span></div>'
   + noteHtml
+  + mapBlock(item.address)
   + '<div class="li-warn">⚠️ <strong>Важно:</strong> Ломбард вправе реализовать залог только через суд или нотариальную надпись. Если ломбард угрожает арестом счёта или имущества — это незаконно. <a href="https://wa.me/77000300024" style="color:#1a56db;font-weight:600;">Обратитесь в ZakonExpert</a>.</div>'
   + '</div>'
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'

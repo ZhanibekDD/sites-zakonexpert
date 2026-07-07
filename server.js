@@ -156,6 +156,7 @@ const TRACKED_PATHS = new Set([
   '/notaries', '/bailiffs', '/lawyers',
   '/notary-search', '/bailiff-search', '/lawyer-search',
   '/banks', '/mfo', '/courts', '/chambers', '/companies', '/collectors', '/lombards',
+  '/gsi', '/insurance', '/credit-bureaus', '/regulators', '/emergency',
   '/news', '/statyi',
 ]);
 app.use((req, res, next) => {
@@ -646,35 +647,165 @@ function getCourtsData() {
 }
 
 // ===== CHAMBERS DATA =====
-const CHAMBERS_DATA = [
-  { slug:'astana', region:'г. Астана', notary_name:'Нотариальная палата г. Астана', notary_phone:'+7 (7172) 32-24-64', notary_phoneRaw:'+77172322464', notary_email:'notariat_astana@mail.ru', notary_web:'', chsi_name:'Палата ЧСИ г. Астана', chsi_phone:'+7 (7172) 55-47-00', chsi_phoneRaw:'+77172554700', chsi_email:'', chsi_web:'' },
-  { slug:'almaty', region:'г. Алматы', notary_name:'Нотариальная палата г. Алматы', notary_phone:'+7 (727) 291-01-65', notary_phoneRaw:'+77272910165', notary_email:'info@palata.kz', notary_web:'palata.kz', chsi_name:'Палата ЧСИ г. Алматы', chsi_phone:'+7 (727) 312-22-11', chsi_phoneRaw:'+77273122211', chsi_email:'', chsi_web:'' },
-  { slug:'shymkent', region:'г. Шымкент', notary_name:'Нотариальная палата г. Шымкент', notary_phone:'+7 (725) 254-00-11', notary_phoneRaw:'+77252540011', notary_email:'', notary_web:'', chsi_name:'Палата ЧСИ г. Шымкент', chsi_phone:'+7 (725) 255-12-00', chsi_phoneRaw:'+77252551200', chsi_email:'', chsi_web:'' },
-  { slug:'akmola', region:'Акмолинская область', notary_name:'Акмолинская нотариальная палата', notary_phone:'+7 (716) 225-43-00', notary_phoneRaw:'+77162254300', notary_email:'', notary_web:'', chsi_name:'Акмолинская палата ЧСИ', chsi_phone:'+7 (716) 222-50-00', chsi_phoneRaw:'+77162225000', chsi_email:'', chsi_web:'' },
-  { slug:'aktobe', region:'Актюбинская область', notary_name:'Актюбинская нотариальная палата', notary_phone:'+7 (713) 215-44-00', notary_phoneRaw:'+77132154400', notary_email:'', notary_web:'', chsi_name:'Актюбинская палата ЧСИ', chsi_phone:'+7 (713) 215-00-55', chsi_phoneRaw:'+77132150055', chsi_email:'', chsi_web:'' },
-  { slug:'almaty-obl', region:'Алматинская область', notary_name:'Алматинская областная нотариальная палата', notary_phone:'+7 (728) 225-35-00', notary_phoneRaw:'+77282253500', notary_email:'', notary_web:'', chsi_name:'Алматинская областная палата ЧСИ', chsi_phone:'+7 (728) 222-15-00', chsi_phoneRaw:'+77282221500', chsi_email:'', chsi_web:'' },
-  { slug:'atyrau', region:'Атырауская область', notary_name:'Атырауская нотариальная палата', notary_phone:'+7 (712) 222-10-00', notary_phoneRaw:'+77122221000', notary_email:'', notary_web:'', chsi_name:'Атырауская палата ЧСИ', chsi_phone:'+7 (712) 220-30-00', chsi_phoneRaw:'+77122203000', chsi_email:'', chsi_web:'' },
-  { slug:'vko', region:'Восточно-Казахстанская область', notary_name:'ВКО нотариальная палата', notary_phone:'+7 (723) 222-25-00', notary_phoneRaw:'+77232222500', notary_email:'', notary_web:'', chsi_name:'ВКО палата ЧСИ', chsi_phone:'+7 (723) 222-30-00', chsi_phoneRaw:'+77232223000', chsi_email:'', chsi_web:'' },
-  { slug:'zhambyl', region:'Жамбылская область', notary_name:'Жамбылская нотариальная палата', notary_phone:'+7 (726) 243-20-00', notary_phoneRaw:'+77262432000', notary_email:'', notary_web:'', chsi_name:'Жамбылская палата ЧСИ', chsi_phone:'+7 (726) 243-00-10', chsi_phoneRaw:'+77262430010', chsi_email:'', chsi_web:'' },
-  { slug:'zko', region:'Западно-Казахстанская область', notary_name:'ЗКО нотариальная палата', notary_phone:'+7 (711) 222-00-00', notary_phoneRaw:'+77112220000', notary_email:'', notary_web:'', chsi_name:'ЗКО палата ЧСИ', chsi_phone:'+7 (711) 222-01-00', chsi_phoneRaw:'+77112220100', chsi_email:'', chsi_web:'' },
-  { slug:'karaganda', region:'Карагандинская область', notary_name:'Карагандинская нотариальная палата', notary_phone:'+7 (721) 256-20-00', notary_phoneRaw:'+77212562000', notary_email:'', notary_web:'', chsi_name:'Карагандинская палата ЧСИ', chsi_phone:'+7 (721) 256-30-00', chsi_phoneRaw:'+77212563000', chsi_email:'', chsi_web:'' },
-  { slug:'kostanay', region:'Костанайская область', notary_name:'Костанайская нотариальная палата', notary_phone:'+7 (714) 254-20-00', notary_phoneRaw:'+77142542000', notary_email:'', notary_web:'', chsi_name:'Костанайская палата ЧСИ', chsi_phone:'+7 (714) 254-10-00', chsi_phoneRaw:'+77142541000', chsi_email:'', chsi_web:'' },
-  { slug:'kyzylorda', region:'Кызылординская область', notary_name:'Кызылординская нотариальная палата', notary_phone:'+7 (724) 226-30-00', notary_phoneRaw:'+77242263000', notary_email:'', notary_web:'', chsi_name:'Кызылординская палата ЧСИ', chsi_phone:'+7 (724) 226-10-00', chsi_phoneRaw:'+77242261000', chsi_email:'', chsi_web:'' },
-  { slug:'mangistau', region:'Мангистауская область', notary_name:'Мангистауская нотариальная палата', notary_phone:'+7 (729) 232-10-00', notary_phoneRaw:'+77292321000', notary_email:'', notary_web:'', chsi_name:'Мангистауская палата ЧСИ', chsi_phone:'+7 (729) 232-20-00', chsi_phoneRaw:'+77292322000', chsi_email:'', chsi_web:'' },
-  { slug:'pavlodar', region:'Павлодарская область', notary_name:'Павлодарская нотариальная палата', notary_phone:'+7 (718) 233-00-00', notary_phoneRaw:'+77182330000', notary_email:'', notary_web:'', chsi_name:'Павлодарская палата ЧСИ', chsi_phone:'+7 (718) 233-10-00', chsi_phoneRaw:'+77182331000', chsi_email:'', chsi_web:'' },
-  { slug:'sko', region:'СКО (Петропавловск)', notary_name:'СКО нотариальная палата', notary_phone:'+7 (715) 246-20-00', notary_phoneRaw:'+77152462000', notary_email:'', notary_web:'', chsi_name:'СКО палата ЧСИ', chsi_phone:'+7 (715) 246-30-00', chsi_phoneRaw:'+77152463000', chsi_email:'', chsi_web:'' },
-  { slug:'turkestan', region:'Туркестанская область', notary_name:'Туркестанская нотариальная палата', notary_phone:'+7 (725) 222-00-00', notary_phoneRaw:'+77252220000', notary_email:'', notary_web:'', chsi_name:'Туркестанская палата ЧСИ', chsi_phone:'+7 (725) 222-10-00', chsi_phoneRaw:'+77252221000', chsi_email:'', chsi_web:'' },
-  { slug:'abay', region:'Абайская область', notary_name:'Абайская нотариальная палата', notary_phone:'+7 (722) 255-00-00', notary_phoneRaw:'+77222550000', notary_email:'', notary_web:'', chsi_name:'Абайская палата ЧСИ', chsi_phone:'+7 (722) 255-10-00', chsi_phoneRaw:'+77222551000', chsi_email:'', chsi_web:'' },
-  { slug:'zhetisu', region:'Жетысуская область', notary_name:'Жетысуская нотариальная палата', notary_phone:'+7 (728) 225-00-00', notary_phoneRaw:'+77282250000', notary_email:'', notary_web:'', chsi_name:'Жетысуская палата ЧСИ', chsi_phone:'+7 (728) 225-20-00', chsi_phoneRaw:'+77282252000', chsi_email:'', chsi_web:'' },
-  { slug:'ulytau', region:'Улытауская область', notary_name:'Улытауская нотариальная палата', notary_phone:'+7 (710) 260-00-00', notary_phoneRaw:'+77102600000', notary_email:'', notary_web:'', chsi_name:'Улытауская палата ЧСИ', chsi_phone:'+7 (710) 260-10-00', chsi_phoneRaw:'+77102601000', chsi_email:'', chsi_web:'' },
-];
+let _chambersCache = null;
+function getChambersData() {
+  if (_chambersCache) return _chambersCache;
+
+  const REGION_SLUG = {
+    'Акмолинская область': 'akmola',
+    'Актюбинская область': 'aktobe',
+    'г. Алматы': 'almaty',
+    'Алматинская область': 'almaty-obl',
+    'г. Астана': 'astana',
+    'Атырауская область': 'atyrau',
+    'Область Абай': 'abay',
+    'Восточно-Казахстанская область': 'vko',
+    'Жамбылская область': 'zhambyl',
+    'Западно-Казахстанская область': 'zko',
+    'Карагандинская область': 'karaganda',
+    'Костанайская область': 'kostanay',
+    'Кызылординская область': 'kyzylorda',
+    'Мангистауская область': 'mangistau',
+    'Павлодарская область': 'pavlodar',
+    'Северо-Казахстанская область': 'sko',
+    'Туркестанская область': 'turkestan',
+    'Область Ұлытау': 'ulytau',
+    'г. Шымкент': 'shymkent',
+    'Область Жетісу': 'zhetisu',
+  };
+
+  function chFirstPhoneRaw(str) {
+    if (!str) return '';
+    const m = str.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
+    if (!m) return '';
+    const d = m[0].replace(/\D/g, '').slice(0, 11);
+    if (d.length === 11) return '+7' + d.slice(1);
+    if (d.length === 10) return '+7' + d;
+    return '';
+  }
+
+  function chFirstEmail(str) {
+    if (!str || str.includes('не найдено')) return '';
+    const m = str.match(/[\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,}/);
+    return m ? m[0] : '';
+  }
+
+  function chCleanLeader(str) {
+    return (str || '').replace(/\s*\([^)]*\)/g, '').trim();
+  }
+
+  const notaryRows = parseSemicolonCSV(path.join(__dirname, 'Нотариальные_палаты_Казахстана.csv'));
+  const chsiRows   = parseSemicolonCSV(path.join(__dirname, 'Палаты_ЧСИ_Казахстана.csv'));
+
+  const chsiByRegion = {};
+  chsiRows.forEach(r => {
+    const region = (r['Регион'] || '').trim();
+    if (region && !region.startsWith('Республиканская')) chsiByRegion[region] = r;
+  });
+
+  _chambersCache = notaryRows
+    .filter(r => {
+      const region = (r['Регион'] || '').trim();
+      return region && !region.startsWith('Республика');
+    })
+    .map(r => {
+      const region = r['Регион'].trim();
+      const slug   = REGION_SLUG[region] || slugify(region);
+      const chsi   = chsiByRegion[region] || {};
+      return {
+        slug, region,
+        notary_name:     (r['Название палаты'] || '').trim(),
+        notary_phone:    (r['Телефон'] || '').trim(),
+        notary_phoneRaw: chFirstPhoneRaw(r['Телефон'] || ''),
+        notary_email:    chFirstEmail(r['Email'] || ''),
+        notary_web:      '',
+        notary_address:  (r['Адрес'] || '').trim(),
+        notary_leader:   chCleanLeader(r['Руководитель'] || ''),
+        chsi_name:       (chsi['Название палаты'] || '').trim(),
+        chsi_phone:      (chsi['Телефон'] || '').trim(),
+        chsi_phoneRaw:   chFirstPhoneRaw(chsi['Телефон'] || ''),
+        chsi_email:      chFirstEmail(chsi['Email'] || ''),
+        chsi_web:        '',
+        chsi_address:    (chsi['Адрес'] || '').trim(),
+        chsi_leader:     chCleanLeader(chsi['Руководитель'] || ''),
+      };
+    });
+
+  return _chambersCache;
+}
+
+// ===== CSV-BACKED: GSI (Государственные судебные исполнители) =====
+let _gsiCache = null;
+function getGsiData() {
+  if (_gsiCache) return _gsiCache;
+  const rows = parseSemicolonCSV(path.join(__dirname, 'Государственные_судебные_исполнители_Департаменты_юстиции.csv'));
+  _gsiCache = rows.filter(r => (r['Регион'] || '').trim()).map(r => {
+    const phone = (r['Телефон'] || '').replace('не найдено', '').trim();
+    const m = phone.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
+    const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
+    return {
+      region:   r['Регион'].trim(),
+      name:     (r['Название департамента'] || '').trim(),
+      address:  (r['Адрес'] || '').trim(),
+      phone,
+      phoneRaw,
+      email:    (r['Email'] || '').replace('не найдено', '').trim(),
+      leader:   (r['Руководитель'] || '').replace('не найдено', '').trim(),
+      slug:     slugify(r['Регион'].trim()),
+    };
+  });
+  return _gsiCache;
+}
+
+// ===== CSV-BACKED: INSURANCE (Страховые компании) =====
+let _insuranceCache = null;
+function getInsuranceData() {
+  if (_insuranceCache) return _insuranceCache;
+  const rows = parseSemicolonCSV(path.join(__dirname, 'Страховые_компании_Казахстана.csv'));
+  _insuranceCache = rows.filter(r => (r['Компания'] || '').trim()).map(r => {
+    const phone = (r['Телефон'] || '').trim();
+    const m = phone.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
+    const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
+    const name = (r['Компания'] || '').trim();
+    const parenMatches = name.match(/\(([^)]+)\)/g) || [];
+    const shortName = parenMatches.length
+      ? parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim()
+      : name.replace(/^АО\s+"[^"]+"\s+/i, '').replace(/^«|»$/g, '').trim();
+    return {
+      name, shortName,
+      bin:     (r['БИН'] || '').trim(),
+      web:     (r['Сайт'] || '').trim(),
+      phone,   phoneRaw,
+      email:   (r['Email'] || '').trim(),
+      address: (r['Адрес'] || '').replace(/^\d+,\s*/, '').trim(),
+      leader:  (r['Председатель Правления'] || '').trim(),
+      slug:    slugify(shortName || name),
+    };
+  });
+  return _insuranceCache;
+}
 
 // ===== NEW CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
 app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData() }));
 app.get('/mfo',       (req, res) => res.render('mfo/catalog'));
 app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: getCourtsData() }));
-app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: CHAMBERS_DATA }));
-app.get('/companies', (req, res) => res.render('companies/catalog'));
+app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
+app.get('/companies',     (req, res) => res.render('companies/catalog'));
+app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
+app.get('/gsi/:slug',     (req, res) => {
+  const item = getGsiData().find(g => g.slug === req.params.slug);
+  if (!item) return res.status(404).redirect('/gsi');
+  res.render('gsi/item', { item });
+});
+app.get('/insurance',     (req, res) => res.render('insurance/catalog', { items: getInsuranceData() }));
+app.get('/insurance/:slug', (req, res) => {
+  const item = getInsuranceData().find(c => c.slug === req.params.slug);
+  if (!item) return res.status(404).redirect('/insurance');
+  res.render('insurance/item', { item });
+});
+app.get('/credit-bureaus',(req, res) => res.render('credit-bureaus/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Кредитные_бюро_Казахстана.csv')) }));
+app.get('/regulators',    (req, res) => res.render('regulators/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Финансовые_регуляторы_Казахстана.csv')) }));
+app.get('/emergency',     (req, res) => res.render('emergency/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Экстренные_и_справочные_номера_Казахстана.csv')) }));
 
 // ITEM PAGES: BANKS
 app.get('/banks/:slug', (req, res) => {
@@ -692,7 +823,7 @@ app.get('/courts/:slug', (req, res) => {
 
 // ITEM PAGES: CHAMBERS
 app.get('/chambers/:slug', (req, res) => {
-  const chamber = CHAMBERS_DATA.find(c => c.slug === req.params.slug);
+  const chamber = getChambersData().find(c => c.slug === req.params.slug);
   if (!chamber) return res.status(404).redirect('/chambers');
   res.render('chambers/item', { chamber });
 });

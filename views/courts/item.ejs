@@ -25,6 +25,18 @@ const schema = {
   ],
 };
 
+function mapBlock(addr) {
+  if (!addr) return '';
+  var q = encodeURIComponent(addr + ', Казахстан');
+  var q2 = encodeURIComponent(addr);
+  return '<div style="margin-top:1.5rem;max-width:720px;">'
+    + '<iframe src="https://maps.google.com/maps?q=' + q + '&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>'
+    + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
+    + '<a href="https://2gis.kz/search/' + q2 + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>'
+    + '<a href="https://maps.google.com/?q=' + q + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>'
+    + '</div></div>';
+}
+
 const levelColor = court.level === 'Верховный суд'
   ? 'background:#ede9fe;color:#7c3aed;border:1px solid #c4b5fd;'
   : 'background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;';
@@ -55,6 +67,7 @@ const body = CSS
   + (court.schedule ? '<div class="ci-row"><span class="ci-icon">🕐</span><span>' + court.schedule + '</span></div>' : '')
   + '<div class="ci-info">ℹ️ Для участников процесса: движение дел, графики заседаний и электронные обращения — через <a href="https://sud.gov.kz" target="_blank" rel="noopener" class="ci-link">sud.gov.kz</a> и <a href="https://www.egov.kz" target="_blank" rel="noopener" class="ci-link">eGov.kz</a>.</div>'
   + '</div>'
+  + mapBlock(court.address + (court.region ? ', ' + court.region : ''))
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">Нужна помощь в ' + court.name.replace('Суд','суде').replace('суд РК','суде РК') + '?</h2>'

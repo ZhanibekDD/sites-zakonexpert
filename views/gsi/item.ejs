@@ -1,0 +1,78 @@
+<%
+const pageTitle = item.name + ' — телефон, адрес, руководитель | ZakonExpert';
+const pageDesc  = item.name + ': ' + item.region + '. Адрес: ' + (item.address||'—') + '. Телефон: ' + (item.phone||'уточните на сайте')+'. Проблемы с ГСИ? ZakonExpert поможет оспорить действия судебного исполнителя.';
+const canonical = 'https://zakonexpertt.kz/gsi/' + item.slug;
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function mapBlock(addr) {
+  if (!addr) return '';
+  var q = encodeURIComponent(addr + ', Казахстан');
+  var q2 = encodeURIComponent(addr);
+  return '<div style="margin-top:1.5rem;max-width:720px;">'
+    + '<iframe src="https://maps.google.com/maps?q=' + q + '&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>'
+    + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
+    + '<a href="https://2gis.kz/search/' + q2 + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>'
+    + '<a href="https://maps.google.com/?q=' + q + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>'
+    + '</div></div>';
+}
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'ГСИ — Департаменты юстиции', item: 'https://zakonexpertt.kz/gsi' },
+        { '@type': 'ListItem', position: 3, name: item.region, item: canonical },
+      ],
+    },
+    {
+      '@type': 'GovernmentOffice',
+      name: item.name,
+      address: { '@type': 'PostalAddress', streetAddress: item.address, addressLocality: item.region, addressCountry: 'KZ' },
+      telephone: item.phoneRaw || item.phone,
+    },
+  ],
+};
+
+const CSS = '<style>'
+  + '.gi-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:28px 32px;max-width:680px;}'
+  + '.gi-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:.92rem;}'
+  + '.gi-row:last-child{border-bottom:none;}'
+  + '.gi-icon{flex-shrink:0;width:22px;text-align:center;font-size:1rem;line-height:1.5;}'
+  + '.gi-link{color:#1a56db;text-decoration:none;}'
+  + '.gi-link:hover{text-decoration:underline;}'
+  + '.gi-dim{color:#94a3b8;font-size:.82rem;}'
+  + '.gi-info{background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:14px 18px;font-size:.85rem;color:#1e40af;margin-top:1rem;line-height:1.6;}'
+  + '</style>';
+
+const body = CSS
+  + '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/gsi">ГСИ — Дептаменты юстиции</a><span class="npage-bc-sep">/</span><span>' + escHtml(item.region) + '</span></nav>'
+  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏛 Государственный орган</span></div>'
+  + '<h1 class="npage-h1">' + escHtml(item.name) + '</h1>'
+  + '<p style="color:#64748b;margin-top:6px;">' + escHtml(item.region) + '</p></div>'
+  + '<div class="gi-card" style="margin-top:1.5rem;">'
+  + (item.address ? '<div class="gi-row"><span class="gi-icon">📍</span><span>' + escHtml(item.address) + '</span></div>' : '')
+  + (item.phone ? '<div class="gi-row"><span class="gi-icon">📞</span><a href="tel:' + (item.phoneRaw||item.phone) + '" class="gi-link">' + escHtml(item.phone) + '</a></div>' : '<div class="gi-row"><span class="gi-icon">📞</span><span class="gi-dim">телефон не указан — уточните на сайте minjust.gov.kz</span></div>')
+  + (item.email ? '<div class="gi-row"><span class="gi-icon">✉️</span><a href="mailto:' + escHtml(item.email) + '" class="gi-link">' + escHtml(item.email) + '</a></div>' : '')
+  + (item.leader ? '<div class="gi-row"><span class="gi-icon">👤</span><span><strong>Руководитель:</strong> ' + escHtml(item.leader) + '</span></div>' : '')
+  + mapBlock(item.address)
+  + '<div class="gi-info">ℹ️ Государственные судебные исполнители (ГСИ) работают при Департаментах юстиции. Они исполняют судебные акты по делам с участием государственных органов. По частным долгам исполнение ведут <a href="/bailiffs" class="gi-link">частные судебные исполнители (ЧСИ)</a>.</div>'
+  + '</div>'
+  + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
+  + '<p class="npage-cta-label">Юридическая помощь</p>'
+  + '<h2 class="npage-cta-title">Проблемы с судебным исполнителем в ' + escHtml(item.region) + '?</h2>'
+  + '<p class="npage-cta-sub">Поможем оспорить действия ГСИ или ЧСИ, снять арест с имущества и добиться рассрочки долга. Работаем по всему Казахстану.</p>'
+  + '<div class="npage-cta-tags"><span>Оспаривание действий ГСИ</span><span>Снятие арестов</span><span>Рассрочка</span></div></div>'
+  + '<a href="https://wa.me/77000300024?text=Здравствуйте!+Проблема+с+судебным+исполнителем,+нужна+помощь." class="npage-wa-btn" target="_blank" rel="noopener">'
+  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
+  + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 700 030-00-24</span></span></a></div>'
+  + '<div style="margin-top:1.5rem;"><a href="/gsi" style="color:#1a56db;font-size:.9rem;text-decoration:none;">← Все Департаменты юстиции РК</a></div>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

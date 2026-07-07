@@ -65,17 +65,39 @@ def debug_page(region_id):
         print(body.prettify()[:3000])
 
 
+def extract_email(cell):
+    """Reconstruct obfuscated email from data-* attributes."""
+    link = cell.find("a", class_="cryptedmail")
+    if not link:
+        return ""
+    name   = link.get("data-name", "")
+    domain = link.get("data-domain", "")
+    tld    = link.get("data-tld", "")
+    if name and domain and tld:
+        return f"{name}@{domain}.{tld}"
+    return ""
+
+
+def extract_phone(cell):
+    """Get phone text from contacts cell (text before the email link)."""
+    # Clone cell, remove the email link, take remaining text
+    import copy
+    c = copy.copy(cell)
+    for a in c.find_all("a", class_="cryptedmail"):
+        a.decompose()
+    return c.get_text(separator=" ", strip=True).strip(", ")
+
+
 def parse_region(region_id, region_name):
     """Parse all notaries for a given region."""
     url = BASE_URL.format(region_id)
     try:
         r = requests.get(url, headers=HEADERS, timeout=30)
-        r.encoding = "utf-8"
     except requests.RequestException as e:
         print(f"  ERROR fetching {url}: {e}")
         return []
 
-    soup = BeautifulSoup(r.text, "html.parser")
+    soup = BeautifulSoup(r.content, "html.parser")
     notaries = []
 
     # Find the main notary table (class tbs0)
@@ -86,25 +108,41 @@ def parse_region(region_id, region_name):
         print(f"  WARNING: No table found for region {region_name}")
         return []
 
+    # Find header row index to skip nav/header rows
     rows = table.find_all("tr")
-    # Skip header row(s)
-    for row in rows[1:]:
-        cells = row.find_all(["td", "th"])
-        if len(cells) < 2:
+    data_start = 0
+    for i, row in enumerate(rows):
+        cells = row.find_all(["th", "td"])
+        texts = [c.get_text(strip=True) for c in cells]
+        if "ФИО" in texts and "Контакты" in texts:
+            data_start = i + 1
+            break
+
+    for row in rows[data_start:]:
+        cells = row.find_all("td")
+        if len(cells) < 6:
             continue
 
         texts = [c.get_text(separator=" ", strip=True) for c in cells]
 
-        # Typical columns: №, ФИО, Номер лицензии, Дата выдачи, Адрес, Контакты, Режим работы
+        # Skip nav/non-data rows
+        if not texts[0].isdigit():
+            continue
+
+        contact_cell = cells[5]
+        phone = extract_phone(contact_cell)
+        email = extract_email(contact_cell)
+
         entry = {
-            "Область": region_name,
-            "№": texts[0] if len(texts) > 0 else "",
-            "ФИО": texts[1] if len(texts) > 1 else "",
+            "Область":        region_name,
+            "№":              texts[0],
+            "ФИО":            texts[1] if len(texts) > 1 else "",
             "Номер лицензии": texts[2] if len(texts) > 2 else "",
-            "Дата выдачи": texts[3] if len(texts) > 3 else "",
-            "Адрес офиса": texts[4] if len(texts) > 4 else "",
-            "Контакты": texts[5] if len(texts) > 5 else "",
-            "Режим работы": texts[6] if len(texts) > 6 else "",
+            "Дата выдачи":    texts[3] if len(texts) > 3 else "",
+            "Адрес офиса":    texts[4] if len(texts) > 4 else "",
+            "Телефон":        phone,
+            "Email":          email,
+            "Режим работы":   texts[6] if len(texts) > 6 else "",
         }
         notaries.append(entry)
 
@@ -128,7 +166,7 @@ def main():
 
     # Save to CSV
     output_file = "notaries_all_regions.csv"
-    fieldnames = ["Область", "№", "ФИО", "Номер лицензии", "Дата выдачи", "Адрес офиса", "Контакты", "Режим работы"]
+    fieldnames = ["Область", "№", "ФИО", "Номер лицензии", "Дата выдачи", "Адрес офиса", "Телефон", "Email", "Режим работы"]
     with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()

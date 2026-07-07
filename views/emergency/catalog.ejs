@@ -1,0 +1,74 @@
+<%
+const pageTitle = 'Экстренные номера Казахстана — 101, 102, 103, 112 | ZakonExpert';
+const pageDesc  = 'Все экстренные и справочные телефоны Казахстана: пожарная (101), полиция (102), скорая (103), МЧС (112), eGov (1414). Бесплатные номера с любого телефона.';
+const canonical = 'https://zakonexpertt.kz/emergency';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+    { '@type': 'ListItem', position: 2, name: 'Экстренные номера', item: canonical },
+  ],
+};
+
+const EMOJIS = {
+  '101': '🔥', '102': '👮', '103': '🚑', '104': '⛽', '109': '🛡',
+  '110': '🔒', '111': '👶', '112': '🆘', '1414': '🖥', '1450': '🎓', '1484': '💰',
+};
+
+const CSS = '<style>'
+  + '.em-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:1.5rem;}'
+  + '.em-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;}'
+  + '.em-num{font-size:1.6rem;font-weight:900;color:#0d1f3c;line-height:1;flex-shrink:0;min-width:52px;}'
+  + '.em-emoji{font-size:1.3rem;flex-shrink:0;}'
+  + '.em-service{font-size:.88rem;font-weight:700;color:#1e293b;margin-bottom:3px;}'
+  + '.em-note{font-size:.78rem;color:#64748b;}'
+  + '.em-link{color:#0d1f3c;text-decoration:none;}'
+  + '.em-link:hover .em-num{color:#1a56db;}'
+  + '</style>';
+
+var cards = '';
+for (var i = 0; i < items.length; i++) {
+  var it = items[i];
+  var num = (it['Номер'] || '').trim();
+  var service = (it['Служба'] || '').trim();
+  var note = (it['Примечание'] || '').trim();
+  var emoji = EMOJIS[num] || '📞';
+
+  // Some rows have two values in Служба (like "1414;8 800 080 77 77")
+  var altNum = '';
+  if (service.startsWith('8 800')) {
+    altNum = service;
+    service = it['Примечание'] || '';
+    note = '';
+  }
+
+  cards += '<a href="tel:' + num + '" class="em-link">'
+    + '<div class="em-card">'
+    + '<div>'
+    + '<div class="em-num">' + num + '</div>'
+    + (altNum ? '<div style="font-size:.75rem;color:#64748b;margin-top:2px;">' + altNum + '</div>' : '')
+    + '</div>'
+    + '<div>'
+    + '<div class="em-service">' + emoji + ' ' + service + '</div>'
+    + (note ? '<div class="em-note">' + note + '</div>' : '')
+    + '</div>'
+    + '</div>'
+    + '</a>';
+}
+
+const body = CSS
+  + '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Экстренные номера</span></nav>'
+  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🆘 Экстренные службы</span></div>'
+  + '<h1 class="npage-h1">Экстренные номера Казахстана</h1>'
+  + '<p style="color:#475569;margin-top:.5rem;">Бесплатные номера экстренных и справочных служб — доступны с любого телефона в РК</p></div>'
+  + '<div class="em-grid">' + cards + '</div>'
+  + '<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:14px 18px;margin-top:1.5rem;font-size:.85rem;color:#166534;">'
+  + '✅ Все номера бесплатны при звонке с мобильных и стационарных телефонов на территории Казахстана.'
+  + '</div>'
+  + '<div style="margin-top:1.5rem;"><a href="/" style="color:#1a56db;font-size:.9rem;text-decoration:none;">← На главную</a></div>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

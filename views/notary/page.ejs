@@ -158,6 +158,14 @@ const body = `
       </div>` : ''}
     </div>
 
+    ${notary.address ? `<div style="margin-top:1.5rem;max-width:720px;">
+      <iframe src="https://maps.google.com/maps?q=${encodeURIComponent(notary.address + ', Казахстан')}&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="https://2gis.kz/search/${encodeURIComponent(notary.address)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>
+        <a href="https://maps.google.com/?q=${encodeURIComponent(notary.address + ', Казахстан')}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>
+      </div>
+    </div>` : ''}
+
     <!-- CTA advertising block -->
     <div class="npage-cta">
       <div class="npage-cta-left">
