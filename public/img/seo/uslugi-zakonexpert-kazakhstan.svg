@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#ffffff"/>
+  <rect width="8" height="500" fill="#1a56db"/>
+  <rect width="800" height="6" fill="#1a56db"/>
+
+  <!-- Header bar -->
+  <rect x="8" y="6" width="792" height="70" fill="#0d1f3c"/>
+  <text x="420" y="30" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.5)" letter-spacing="3">ЮРИДИЧЕСКИЕ УСЛУГИ · КАЗАХСТАН</text>
+  <text x="420" y="58" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#ffffff">НАШИ УСЛУГИ — ZakonExpert</text>
+
+  <!-- Two column list -->
+  <!-- Left -->
+  <text x="30" y="118" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#1a56db" letter-spacing="1">СНЯТИЕ АРЕСТОВ И ОГРАНИЧЕНИЙ</text>
+  <rect x="30" y="124" width="360" height="1.5" fill="#1a56db"/>
+
+  <text x="30" y="152" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие ареста со счёта (Kaspi, Halyk)</text>
+  <text x="30" y="176" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие запрета на авто / ТС</text>
+  <text x="30" y="200" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие запрета выезда за рубеж</text>
+  <text x="30" y="224" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие удержания зарплаты</text>
+  <text x="30" y="248" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие ограничений с имущества</text>
+
+  <text x="30" y="284" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#1a56db" letter-spacing="1">РАБОТА С ЧСИ И НОТАРИУСОМ</text>
+  <rect x="30" y="290" width="360" height="1.5" fill="#1a56db"/>
+
+  <text x="30" y="316" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Отмена исполнительной надписи</text>
+  <text x="30" y="340" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снижение % и расходов ЧСИ</text>
+  <text x="30" y="364" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  График платежей · Рассрочка</text>
+  <text x="30" y="388" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Оспаривание суммы долга</text>
+
+  <!-- Right column -->
+  <text x="420" y="118" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#1a56db" letter-spacing="1">МФО И БАНКИ</text>
+  <rect x="420" y="124" width="360" height="1.5" fill="#1a56db"/>
+
+  <text x="420" y="152" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Арест Kaspi · Freedom · Halyk</text>
+  <text x="420" y="176" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Снятие блокировки от МФО</text>
+  <text x="420" y="200" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Списание МФО · Банкротство</text>
+  <text x="420" y="224" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Реструктуризация кредита</text>
+  <text x="420" y="248" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Проверка коллекторов по БИН</text>
+
+  <text x="420" y="284" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#1a56db" letter-spacing="1">АДВОКАТ И МЕДИАТОР</text>
+  <rect x="420" y="290" width="360" height="1.5" fill="#1a56db"/>
+
+  <text x="420" y="316" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Уголовные · Семейные дела</text>
+  <text x="420" y="340" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Развод · Алименты · Имущество</text>
+  <text x="420" y="364" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Медиация · Мировое соглашение</text>
+  <text x="420" y="388" font-family="Arial,sans-serif" font-size="15" fill="#0d1f3c">▶  Административные дела</text>
+
+  <!-- Bottom CTA -->
+  <rect x="8" y="410" width="792" height="82" fill="#0d1f3c"/>
+  <text x="400" y="438" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.5)">Работаем по всему Казахстану · Без предоплаты · Быстрый результат</text>
+  <text x="400" y="474" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="28" font-weight="900" fill="#ffffff">+7 700 030-00-24  |  WhatsApp</text>
+</svg>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#0f0a1e"/>
+  <rect width="800" height="6" fill="#7c3aed"/>
+
+  <!-- Purple glow -->
+  <ellipse cx="400" cy="-20" rx="500" ry="160" fill="rgba(124,58,237,0.08)"/>
+
+  <!-- Badge -->
+  <rect x="200" y="22" width="400" height="36" rx="8" fill="rgba(124,58,237,0.2)" stroke="#7c3aed" stroke-width="1"/>
+  <text x="400" y="46" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#a78bfa" letter-spacing="2">ЧСИ НАЛОЖИЛ АРЕСТ НА СЧЁТ?</text>
+
+  <text x="400" y="120" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="64" font-weight="900" fill="#ffffff">ЧСИ АРЕСТЫ</text>
+  <text x="400" y="172" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="42" font-weight="900" fill="#7c3aed">— ПОМОЖЕМ!</text>
+  <text x="400" y="210" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="rgba(255,255,255,0.45)">Частный судебный исполнитель · Снятие ограничений</text>
+
+  <rect x="60" y="228" width="680" height="1" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- 3 blocks -->
+  <rect x="30" y="244" width="224" height="120" rx="10" fill="rgba(124,58,237,0.12)" stroke="rgba(124,58,237,0.3)" stroke-width="1"/>
+  <text x="142" y="280" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">СНЯТИЕ</text>
+  <text x="142" y="298" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">ОГРАНИЧЕНИЙ</text>
+  <text x="142" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">счета / карты / авто</text>
+  <text x="142" y="340" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">имущество / выезд</text>
+  <text x="142" y="358" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#22c55e">3–7 дней</text>
+
+  <rect x="288" y="244" width="224" height="120" rx="10" fill="rgba(124,58,237,0.12)" stroke="rgba(124,58,237,0.3)" stroke-width="1"/>
+  <text x="400" y="280" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">СНИЖЕНИЕ</text>
+  <text x="400" y="298" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">ДОЛГА</text>
+  <text x="400" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">убрать % и расходы</text>
+  <text x="400" y="340" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">оспорить пеню</text>
+  <text x="400" y="358" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#22c55e">экономия до 70%</text>
+
+  <rect x="546" y="244" width="224" height="120" rx="10" fill="rgba(124,58,237,0.12)" stroke="rgba(124,58,237,0.3)" stroke-width="1"/>
+  <text x="658" y="280" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">ГРАФИК</text>
+  <text x="658" y="298" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a78bfa">ПЛАТЕЖЕЙ</text>
+  <text x="658" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">рассрочка с ЧСИ</text>
+  <text x="658" y="340" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.6)">удобные суммы</text>
+  <text x="658" y="358" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#22c55e">официально</text>
+
+  <!-- CTA -->
+  <rect x="30" y="390" width="740" height="80" rx="12" fill="rgba(124,58,237,0.25)" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="400" y="420" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.6)">Бесплатная консультация — разберём вашу ситуацию</text>
+  <text x="400" y="453" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#ffffff">ZakonExpert · +7 700 030-00-24</text>
+</svg>

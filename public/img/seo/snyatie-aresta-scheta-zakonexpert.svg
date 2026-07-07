@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#061020"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg1)"/>
+  <rect width="6" height="500" fill="#1a56db"/>
+  <rect x="6" y="0" width="794" height="4" fill="#1a56db"/>
+
+  <!-- Badge -->
+  <rect x="30" y="24" width="220" height="30" rx="6" fill="rgba(26,86,219,0.2)" stroke="#1a56db" stroke-width="1"/>
+  <text x="140" y="44" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#6aaafb" letter-spacing="1">КАЗАХСТАН · ЮРИСТ</text>
+
+  <!-- Main heading -->
+  <text x="30" y="110" font-family="Arial Black,Arial,sans-serif" font-size="62" font-weight="900" fill="#ffffff" letter-spacing="-1">СНЯТИЕ АРЕСТА</text>
+  <text x="30" y="170" font-family="Arial Black,Arial,sans-serif" font-size="62" font-weight="900" fill="#1a56db" letter-spacing="-1">СО СЧЁТА</text>
+  <text x="30" y="205" font-family="Arial,sans-serif" font-size="20" fill="rgba(255,255,255,0.55)">Kaspi · Halyk · Freedom · Заработная плата</text>
+
+  <rect x="30" y="222" width="740" height="1" fill="rgba(255,255,255,0.08)"/>
+
+  <!-- Checklist -->
+  <rect x="30" y="238" width="24" height="24" rx="4" fill="#1a56db"/>
+  <text x="42" y="255" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
+  <text x="66" y="256" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">Снятие ареста с карты и счёта за 3–7 дней</text>
+
+  <rect x="30" y="274" width="24" height="24" rx="4" fill="#1a56db"/>
+  <text x="42" y="291" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
+  <text x="66" y="292" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">Отмена удержания заработной платы ЧСИ</text>
+
+  <rect x="30" y="310" width="24" height="24" rx="4" fill="#1a56db"/>
+  <text x="42" y="327" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
+  <text x="66" y="328" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">Отмена исполнительной надписи нотариуса</text>
+
+  <rect x="30" y="346" width="24" height="24" rx="4" fill="#1a56db"/>
+  <text x="42" y="363" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
+  <text x="66" y="364" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">График платежей · Снижение долга</text>
+
+  <rect x="30" y="382" width="24" height="24" rx="4" fill="#22c55e"/>
+  <text x="42" y="399" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
+  <text x="66" y="400" font-family="Arial,sans-serif" font-size="17" fill="#22c55e" font-weight="700">Работаем по всему Казахстану · Без предоплаты</text>
+
+  <!-- Phone CTA -->
+  <rect x="30" y="428" width="340" height="54" rx="10" fill="#1a56db"/>
+  <text x="200" y="450" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(255,255,255,0.7)">Позвоните прямо сейчас</text>
+  <text x="200" y="471" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="22" font-weight="900" fill="#ffffff">+7 700 030-00-24</text>
+
+  <!-- WhatsApp -->
+  <rect x="384" y="428" width="200" height="54" rx="10" fill="#25D366"/>
+  <text x="484" y="450" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(255,255,255,0.85)">Напишите в</text>
+  <text x="484" y="471" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="22" font-weight="900" fill="#ffffff">WhatsApp</text>
+
+  <!-- Brand -->
+  <text x="770" y="471" text-anchor="end" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="rgba(255,255,255,0.25)">ZakonExpert</text>
+</svg>
