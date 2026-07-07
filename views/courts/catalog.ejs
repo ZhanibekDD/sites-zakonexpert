@@ -150,8 +150,8 @@ const COURTS_STATIC = [
 ];
 const COURTS = (typeof courts !== 'undefined' && courts && courts.length) ? courts : COURTS_STATIC;
 
-const pageTitle = 'Суды Казахстана 2025 — адреса, телефоны, email по регионам | ZakonExpert';
-const pageDesc  = 'Адреса, телефоны и email судов Казахстана по всем регионам: Верховный суд, областные и городские суды. Нужна помощь в суде? ZakonExpert подготовит документы.';
+const pageTitle = 'Суды Казахстана — ' + COURTS.length + ' судов, адреса, телефоны, email | ZakonExpert';
+const pageDesc  = 'Полный реестр ' + COURTS.length + ' судов Казахстана по всем регионам: Верховный суд, областные, городские, районные. Адреса, телефоны, email, руководители. Нужна помощь в суде? ZakonExpert.';
 const canonical = 'https://zakonexpertt.kz/courts';
 
 const schema = {
@@ -164,37 +164,44 @@ const schema = {
 };
 
 function courtLevelStyle(level) {
-  if (level === 'Верховный суд') return { bg: '#ede9fe', color: '#7c3aed', border: '#c4b5fd' };
+  if (level === 'Верховный суд')  return { bg: '#ede9fe', color: '#7c3aed', border: '#c4b5fd' };
+  if (level === 'Областной суд')  return { bg: '#e0f2fe', color: '#0369a1', border: '' };
+  if (level === 'Городской суд')  return { bg: '#dcfce7', color: '#166534', border: '' };
+  if (level === 'Районный суд')   return { bg: '#f1f5f9', color: '#475569', border: '' };
   return { bg: '#e0f2fe', color: '#0369a1', border: '' };
 }
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 var cards = '';
 for (var i = 0; i < COURTS.length; i++) {
   var c = COURTS[i];
   var ls = courtLevelStyle(c.level);
-  var levelTag = '<span style="display:inline-block;font-size:.65rem;font-weight:700;border-radius:5px;padding:1px 7px;background:' + ls.bg + ';color:' + ls.color + ';">' + c.level + '</span>';
+  var levelTag = '<span style="display:inline-block;font-size:.65rem;font-weight:700;border-radius:5px;padding:1px 7px;background:' + ls.bg + ';color:' + ls.color + ';">' + escHtml(c.level) + '</span>';
 
   var phoneHtml = c.phone
-    ? '<div class="cb-row"><span class="cb-icon">📞</span><a href="tel:' + c.phoneRaw + '" class="cb-link">' + c.phone + '</a></div>'
+    ? '<div class="cb-row"><span class="cb-icon">📞</span><a href="tel:' + escHtml(c.phoneRaw||c.phone) + '" class="cb-link">' + escHtml(c.phone) + '</a></div>'
     : '';
 
   var emailHtml = c.email
-    ? '<div class="cb-row"><span class="cb-icon">✉️</span><a href="mailto:' + c.email + '" class="cb-link">' + c.email + '</a></div>'
+    ? '<div class="cb-row"><span class="cb-icon">✉️</span><a href="mailto:' + escHtml(c.email) + '" class="cb-link">' + escHtml(c.email) + '</a></div>'
     : '';
 
-  var webHtml = c.web
-    ? '<div class="cb-row"><span class="cb-icon">🌐</span><a href="https://' + c.web + '" target="_blank" rel="noopener noreferrer" class="cb-link">' + c.web + '</a></div>'
+  var chairHtml = c.chairman
+    ? '<div class="cb-row"><span class="cb-icon">👤</span><span class="cb-text cb-dim">' + escHtml(c.chairman) + '</span></div>'
     : '';
 
   var addrHtml = c.address
-    ? '<div class="cb-row"><span class="cb-icon">📍</span><span class="cb-text">' + c.region + ', ' + c.address + '</span></div>'
+    ? '<div class="cb-row"><span class="cb-icon">📍</span><span class="cb-text">' + escHtml(c.address) + '</span></div>'
     : '';
 
-  cards += '<div class="cb-card"' + (ls.border ? ' style="border-color:' + ls.border + ';"' : '') + '>'
-    + '<div class="cb-name"><span>' + c.name + '</span>' + levelTag + '</div>'
-    + '<div class="cb-fullname">' + c.region + '</div>'
+  var searchStr = escHtml((c.name + ' ' + c.region + ' ' + c.level + ' ' + c.address + ' ' + c.chairman).toLowerCase());
+
+  cards += '<div class="cb-card" data-search="' + searchStr + '"' + (ls.border ? ' style="border-color:' + ls.border + ';"' : '') + '>'
+    + '<div class="cb-name"><span>' + escHtml(c.name) + '</span>' + levelTag + '</div>'
+    + '<div class="cb-fullname">' + escHtml(c.region) + '</div>'
     + '<div class="cb-contacts">'
-    + addrHtml + phoneHtml + emailHtml + webHtml
+    + addrHtml + phoneHtml + emailHtml + chairHtml
     + '</div>'
     + (c.slug ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;"><a href="/courts/' + c.slug + '" style="font-size:.8rem;color:#1a56db;text-decoration:none;font-weight:600;">Подробная страница →</a></div>' : '')
     + '</div>';
@@ -223,29 +230,46 @@ const sourceHtml = '<div style="margin-top:2rem;padding:16px 20px;background:#f8
   + '</div></div>';
 
 const CSS = '<style>'
-  + '.cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:1.5rem;}'
-  + '.cb-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s,border-color .15s;}'
+  + '.cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:1rem;}'
+  + '.cb-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}'
   + '.cb-card:hover{box-shadow:0 4px 18px rgba(13,31,60,.1);border-color:#cbd5e1;}'
-  + '.cb-name{font-weight:700;font-size:.92rem;color:#0d1f3c;margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;line-height:1.3;}'
-  + '.cb-fullname{font-size:.77rem;color:#94a3b8;margin-bottom:8px;}'
-  + '.cb-contacts{display:flex;flex-direction:column;gap:5px;}'
-  + '.cb-row{display:flex;align-items:flex-start;gap:7px;font-size:.81rem;line-height:1.5;}'
-  + '.cb-icon{flex-shrink:0;font-size:.88rem;line-height:1.5;}'
+  + '.cb-card.hidden{display:none;}'
+  + '.cb-name{font-weight:700;font-size:.9rem;color:#0d1f3c;margin-bottom:2px;display:flex;align-items:flex-start;flex-wrap:wrap;gap:6px;line-height:1.3;}'
+  + '.cb-fullname{font-size:.77rem;color:#94a3b8;margin-bottom:6px;}'
+  + '.cb-contacts{display:flex;flex-direction:column;gap:4px;}'
+  + '.cb-row{display:flex;align-items:flex-start;gap:7px;font-size:.8rem;line-height:1.45;}'
+  + '.cb-icon{flex-shrink:0;font-size:.85rem;line-height:1.5;}'
   + '.cb-text{color:#374151;}'
+  + '.cb-dim{color:#94a3b8;font-size:.74rem;}'
   + '.cb-link{color:#1a56db;text-decoration:none;word-break:break-all;}'
   + '.cb-link:hover{text-decoration:underline;}'
+  + '#ct-search{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.95rem;outline:none;margin:1.2rem 0;box-sizing:border-box;}'
+  + '#ct-search:focus{border-color:#1a56db;}'
+  + '#ct-count{font-size:.82rem;color:#64748b;margin-bottom:.8rem;}'
   + '@media(max-width:600px){.cb-grid{grid-template-columns:1fr;}}'
   + '</style>';
+
+const JS = '<script>'
+  + 'var ctCards=document.querySelectorAll(".cb-card"),ctCnt=document.getElementById("ct-count"),ctTotal=ctCards.length;'
+  + 'document.getElementById("ct-search").addEventListener("input",function(){'
+  + '  var q=this.value.toLowerCase().trim(),vis=0;'
+  + '  ctCards.forEach(function(c){var m=!q||c.dataset.search.includes(q);c.classList.toggle("hidden",!m);if(m)vis++;});'
+  + '  ctCnt.textContent="Показано: "+vis+" из "+ctTotal;'
+  + '});'
+  + 'ctCnt.textContent="Всего в реестре: "+ctTotal+" судов";'
+  + '</script>';
 
 const body = CSS
   + '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Суды Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏛 Судебная система РК</span></div>'
   + '<h1 class="npage-h1">Суды Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Адреса, телефоны и email <strong>' + COURTS.length + ' судов</strong> по всем регионам Республики Казахстан</p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Полный реестр — <strong>' + COURTS.length + ' судов</strong> по всем регионам РК: адреса, телефоны, email, руководители</p></div>'
   + infoBox
+  + '<input id="ct-search" type="search" placeholder="🔍 Поиск по названию, региону, категории или председателю..." autocomplete="off">'
+  + '<div id="ct-count"></div>'
   + '<div class="cb-grid">' + cards + '</div>'
   + ctaHtml + sourceHtml
-  + '</div></div>';
+  + '</div></div>' + JS;
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

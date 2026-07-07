@@ -47,10 +47,12 @@ const body = CSS
   + '<h1 class="npage-h1">' + court.name + '</h1>'
   + '<p style="color:#64748b;margin-top:6px;"><span class="ci-badge">' + court.level + '</span> &nbsp; ' + court.region + '</p></div>'
   + '<div class="ci-card" style="margin-top:1.5rem;">'
-  + '<div class="ci-row"><span class="ci-icon">📍</span><span>' + court.region + ', ' + court.address + '</span></div>'
-  + (court.phone ? '<div class="ci-row"><span class="ci-icon">📞</span><a href="tel:' + court.phoneRaw + '" class="ci-link">' + court.phone + '</a></div>' : '')
+  + '<div class="ci-row"><span class="ci-icon">📍</span><span>' + court.address + '</span></div>'
+  + (court.phone ? '<div class="ci-row"><span class="ci-icon">📞</span><a href="tel:' + (court.phoneRaw||court.phone) + '" class="ci-link">' + court.phone + '</a></div>' : '')
   + (court.email ? '<div class="ci-row"><span class="ci-icon">✉️</span><a href="mailto:' + court.email + '" class="ci-link">' + court.email + '</a></div>' : '')
   + (court.web ? '<div class="ci-row"><span class="ci-icon">🌐</span><a href="https://' + court.web + '" target="_blank" rel="noopener" class="ci-link">' + court.web + '</a></div>' : '')
+  + (court.chairman ? '<div class="ci-row"><span class="ci-icon">👤</span><span><strong>Председатель:</strong> ' + court.chairman + '</span></div>' : '')
+  + (court.schedule ? '<div class="ci-row"><span class="ci-icon">🕐</span><span>' + court.schedule + '</span></div>' : '')
   + '<div class="ci-info">ℹ️ Для участников процесса: движение дел, графики заседаний и электронные обращения — через <a href="https://sud.gov.kz" target="_blank" rel="noopener" class="ci-link">sud.gov.kz</a> и <a href="https://www.egov.kz" target="_blank" rel="noopener" class="ci-link">eGov.kz</a>.</div>'
   + '</div>'
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'

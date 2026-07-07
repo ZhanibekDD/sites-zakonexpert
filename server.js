@@ -564,6 +564,87 @@ const COURTS_DATA = [
   { slug:'ulytau', region:'Улытауская область', level:'Апелляционный', name:'Улытауский областной суд', address:'г. Жезказган, ул. Жангельдина, 1', phone:'+7 (710) 260-20-00', phoneRaw:'+77102602000', email:'ulytau@sud.gov.kz', web:'sud.gov.kz' },
 ];
 
+// ===== CSV-BACKED: BANKS =====
+let _banksCache = null;
+function getBanksData() {
+  if (_banksCache) return _banksCache;
+  const staticByBin = {};
+  BANKS_DATA.forEach(b => { staticByBin[b.bin] = b; });
+  const rows = parseSemicolonCSV(path.join(__dirname, 'Банки_Казахстана.csv'));
+  _banksCache = rows.map(r => {
+    const fullName = r['Банк (официальное название)'] || '';
+    const bin = (r['БИН'] || '').trim();
+    if (!bin) return null;
+    const existing = staticByBin[bin] || {};
+    // Extract shortName from trailing parentheses
+    const parenM = fullName.match(/\(([^)]+)\)$/);
+    let shortName = parenM ? parenM[1].trim() : '';
+    if (/^бывш\.|^гос\.|^не бву/i.test(shortName)) shortName = '';
+    if (!shortName) {
+      const aoM = fullName.match(/(?:АО|ДБ АО|ДО АО|АО ДБ)\s+"([^"]+)"/);
+      shortName = aoM ? aoM[1].trim() : fullName.replace(/^АО\s+/, '').replace(/^"|"$/g,'').trim();
+    }
+    const name = fullName.replace(/^(?:АО|ДБ АО|ДО АО|АО ДБ)\s+"/, '').replace(/"[^"]*$/, '').replace(/\s*\([^)]*\)$/, '').replace(/^"|"$/g,'').trim() || existing.name;
+    const emailM = (r['Email'] || '').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+    const phone = (r['Телефон'] || '').trim();
+    const phoneRawM = phone.match(/\+7[\s\d\-\(\)]{8,}/);
+    let phoneRaw = '';
+    if (phoneRawM) {
+      const raw = '+7' + phoneRawM[0].slice(2).replace(/[^\d]/g, '');
+      if (raw.length === 12) phoneRaw = raw;
+    }
+    const address = (r['Адрес головного офиса'] || '').trim();
+    const ci = address.indexOf(',');
+    return {
+      slug: existing.slug || slugify(shortName || name) || 'bank-' + bin,
+      name, shortName: shortName || name,
+      tag: existing.tag || '',
+      city: ci > -1 ? address.substring(0, ci).trim() : address,
+      address: ci > -1 ? address.substring(ci + 1).trim() : address,
+      phone,
+      phoneRaw: phoneRaw || existing.phoneRaw || '',
+      email: emailM ? emailM[0] : '',
+      web: (r['Сайт'] || existing.web || '').trim(),
+      bin,
+      chairman: (r['Председатель Правления (ФИО)'] || existing.chairman || '').trim(),
+      note: (r['Примечание'] || existing.note || '').trim(),
+    };
+  }).filter(Boolean);
+  return _banksCache;
+}
+
+// ===== CSV-BACKED: COURTS =====
+let _courtsCache = null;
+function getCourtsData() {
+  if (_courtsCache) return _courtsCache;
+  const rows = parseSemicolonCSV(path.join(__dirname, 'Суды_Казахстана.csv'));
+  const seen = {};
+  _courtsCache = rows.map(r => {
+    const name = (r['Название суда'] || '').trim();
+    if (!name) return null;
+    let base = slugify(name) || 'court';
+    if (!seen[base]) { seen[base] = 1; } else { seen[base]++; base += '-' + seen[base]; }
+    const phoneStr = (r['Телефоны'] || '').split(/[,;]/)[0].trim();
+    const digits = phoneStr.replace(/[^\d]/g, '');
+    let phoneRaw = '';
+    if (digits.length === 11) phoneRaw = '+7' + digits.slice(1);
+    else if (digits.length === 10) phoneRaw = '+7' + digits;
+    return {
+      slug: base, name,
+      level: (r['Категория'] || '').trim(),
+      region: (r['Регион'] || '').trim(),
+      chairman: (r['Председатель/Руководитель'] || '').trim(),
+      address: (r['Адрес'] || '').trim(),
+      phone: phoneStr,
+      phoneRaw,
+      email: (r['E-mail'] || '').trim().replace(/,(?=[a-z])/, '.'),
+      schedule: (r['Режим работы'] || '').trim(),
+      web: 'sud.gov.kz',
+    };
+  }).filter(Boolean);
+  return _courtsCache;
+}
+
 // ===== CHAMBERS DATA =====
 const CHAMBERS_DATA = [
   { slug:'astana', region:'г. Астана', notary_name:'Нотариальная палата г. Астана', notary_phone:'+7 (7172) 32-24-64', notary_phoneRaw:'+77172322464', notary_email:'notariat_astana@mail.ru', notary_web:'', chsi_name:'Палата ЧСИ г. Астана', chsi_phone:'+7 (7172) 55-47-00', chsi_phoneRaw:'+77172554700', chsi_email:'', chsi_web:'' },
@@ -588,23 +669,23 @@ const CHAMBERS_DATA = [
   { slug:'ulytau', region:'Улытауская область', notary_name:'Улытауская нотариальная палата', notary_phone:'+7 (710) 260-00-00', notary_phoneRaw:'+77102600000', notary_email:'', notary_web:'', chsi_name:'Улытауская палата ЧСИ', chsi_phone:'+7 (710) 260-10-00', chsi_phoneRaw:'+77102601000', chsi_email:'', chsi_web:'' },
 ];
 
-// ===== NEW STATIC CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
-app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: BANKS_DATA }));
+// ===== NEW CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
+app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData() }));
 app.get('/mfo',       (req, res) => res.render('mfo/catalog'));
-app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: COURTS_DATA }));
+app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: getCourtsData() }));
 app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: CHAMBERS_DATA }));
 app.get('/companies', (req, res) => res.render('companies/catalog'));
 
 // ITEM PAGES: BANKS
 app.get('/banks/:slug', (req, res) => {
-  const bank = BANKS_DATA.find(b => b.slug === req.params.slug);
+  const bank = getBanksData().find(b => b.slug === req.params.slug);
   if (!bank) return res.status(404).redirect('/banks');
   res.render('banks/item', { bank });
 });
 
 // ITEM PAGES: COURTS
 app.get('/courts/:slug', (req, res) => {
-  const court = COURTS_DATA.find(c => c.slug === req.params.slug);
+  const court = getCourtsData().find(c => c.slug === req.params.slug);
   if (!court) return res.status(404).redirect('/courts');
   res.render('courts/item', { court });
 });
