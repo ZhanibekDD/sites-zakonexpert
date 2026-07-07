@@ -98,6 +98,7 @@ const PAGE_LABELS = {
   '/mfo':                                  '💳 МФО Казахстана',
   '/courts':                               '🏛 Суды Казахстана',
   '/chambers':                             '📋 Палаты нотариусов и ЧСИ',
+  '/companies':                            '🏢 Компании Казахстана',
   '/chsi-refinansirovanie':                '💼 ЧСИ Рефинансирование',
   '/dokumenty':                            '📁 Документы',
   '/rezultaty':                            '🏆 Результаты',
