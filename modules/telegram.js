@@ -6,6 +6,14 @@ const axios = require('axios');
 const visitCache = new Map();
 const VISIT_COOLDOWN = 30 * 60 * 1000; // 30 min
 
+// ── Bot detection ─────────────────────────────────────────────────────────────
+const BOT_UA_RE = /bot|crawl|spider|scraper|google-inspectiontool|google-structured-data|adsbot|mediapartners|yandex\.com\/bots|bingpreview|msnbot|slurp|duckduckbot|baiduspider|ia_archiver|archive\.org|facebookexternalhit|twitterbot|linkedinbot|slackbot|telegrambot|applebot|pinterestbot|semrushbot|ahrefsbot|majesticbot|mj12bot|dotbot|rogerbot|petalbot|dataforseo|seznambot|naver|sogou|uptimerobot|pingdom|newrelic|site24x7|statuscake|nagios|zabbix|datadog|curl\/|wget\/|python[-\/]|libwww-perl|okhttp\/|go-http-client\/|java\/[0-9]|nmap|masscan|zgrab|nuclei|nikto|sqlmap/i;
+
+function isBot(ua) {
+  if (!ua || ua.trim().length < 10) return true;
+  return BOT_UA_RE.test(ua);
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function esc(text) {
   return String(text || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -86,6 +94,10 @@ const PAGE_LABELS = {
   '/bailiff-search':                       '🔍 Поиск ЧСИ',
   '/lawyers':                              '📒 Каталог адвокатов',
   '/lawyer-search':                        '🔍 Поиск адвоката',
+  '/banks':                                '🏦 Банки Казахстана',
+  '/mfo':                                  '💳 МФО Казахстана',
+  '/courts':                               '🏛 Суды Казахстана',
+  '/chambers':                             '📋 Палаты нотариусов и ЧСИ',
   '/chsi-refinansirovanie':                '💼 ЧСИ Рефинансирование',
   '/dokumenty':                            '📁 Документы',
   '/rezultaty':                            '🏆 Результаты',
@@ -132,6 +144,8 @@ async function answerCallback(callbackQueryId, text) {
 
 // ── Visitor notification ──────────────────────────────────────────────────────
 function notifyVisit(page, ip, ua, referer) {
+  if (isBot(ua)) return; // фильтруем Google/Yandex/Bing и прочих ботов
+
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;

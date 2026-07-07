@@ -155,6 +155,7 @@ const TRACKED_PATHS = new Set([
   '/chsi-refinansirovanie',
   '/notaries', '/bailiffs', '/lawyers',
   '/notary-search', '/bailiff-search', '/lawyer-search',
+  '/banks', '/mfo', '/courts', '/chambers',
   '/news', '/statyi',
 ]);
 app.use((req, res, next) => {
@@ -495,6 +496,12 @@ app.get('/lawyers', asyncHandler(async (req, res) => {
   const allRegions = await lawyersDb.getRegions();
   res.render('lawyer/catalog', { selectedRegion: '', allRegions, regionItems: [] });
 }));
+
+// ===== NEW STATIC CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
+app.get('/banks',    (req, res) => res.render('banks/catalog'));
+app.get('/mfo',      (req, res) => res.render('mfo/catalog'));
+app.get('/courts',   (req, res) => res.render('courts/catalog'));
+app.get('/chambers', (req, res) => res.render('chambers/catalog'));
 
 // ===== LAWYER SEARCH =====
 app.get('/lawyer-search', asyncHandler(async (req, res) => {
