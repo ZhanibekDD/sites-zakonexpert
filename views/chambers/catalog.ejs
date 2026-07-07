@@ -1,5 +1,5 @@
 <%
-const CHAMBERS = [
+const CHAMBERS_STATIC = [
   {
     region: 'г. Астана',
     notary_name: 'Нотариальная палата г. Астана',
@@ -181,6 +181,7 @@ const CHAMBERS = [
     chsi_email: '', chsi_web: ''
   },
 ];
+const CHAMBERS = (typeof chambers !== 'undefined' && chambers && chambers.length) ? chambers : CHAMBERS_STATIC;
 
 const pageTitle = 'Нотариальные палаты и палаты ЧСИ Казахстана — телефоны, email | ZakonExpert';
 const pageDesc  = 'Контакты нотариальных палат и палат частных судебных исполнителей (ЧСИ) по всем регионам Казахстана: телефоны и адреса. Проблемы с нотариусом или ЧСИ? Поможем.';
@@ -214,7 +215,7 @@ for (var i = 0; i < CHAMBERS.length; i++) {
     : '';
 
   rows += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s;">'
-    + '<div style="font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px;">📍 ' + ch.region + '</div>'
+    + '<div style="font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px;display:flex;align-items:center;justify-content:space-between;">📍 ' + ch.region + (ch.slug ? '<a href="/chambers/' + ch.slug + '" style="font-size:.75rem;color:#1a56db;text-decoration:none;font-weight:600;">Подробнее →</a>' : '') + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
     + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;">'
     + '<div style="font-size:.72rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📜 Нотариальная палата</div>'

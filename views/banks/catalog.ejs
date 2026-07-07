@@ -1,5 +1,5 @@
 <%
-const BANKS = [
+const BANKS_STATIC = [
   {
     name: 'Народный Банк Казахстана', shortName: 'Halyk Bank',
     tag: 'Государственный',
@@ -221,6 +221,7 @@ const BANKS = [
     note: 'Международный банк Citigroup, корпоративное обслуживание'
   },
 ];
+const BANKS = (typeof banks !== 'undefined' && banks && banks.length) ? banks : BANKS_STATIC;
 
 const pageTitle = 'Банки Казахстана 2025 — адреса, телефоны, email, БИН | ZakonExpert';
 const pageDesc  = 'Полный список лицензированных банков Казахстана с адресами головных офисов, телефонами, email и БИН. Halyk, Kaspi, ForteBank, BCC, RBK, Bereke и другие. Арест счёта в банке — обращайтесь в ZakonExpert.';
@@ -283,6 +284,7 @@ for (var i = 0; i < BANKS.length; i++) {
     + '<div class="cb-contacts">'
     + addrHtml + phoneHtml + emailHtml + webHtml + chairHtml + binHtml
     + '</div>'
+    + (b.slug ? '<div style="margin-top:10px;padding-top:8px;border-top:1px solid #f1f5f9;"><a href="/banks/' + b.slug + '" style="font-size:.8rem;color:#1a56db;text-decoration:none;font-weight:600;">Подробная страница →</a></div>' : '')
     + '</div>';
 }
 

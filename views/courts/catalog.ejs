@@ -1,5 +1,5 @@
 <%
-const COURTS = [
+const COURTS_STATIC = [
   {
     region: 'г. Астана', level: 'Верховный суд',
     name: 'Верховный суд Республики Казахстан',
@@ -148,6 +148,7 @@ const COURTS = [
     email: 'ulytau@sud.gov.kz', web: 'sud.gov.kz'
   },
 ];
+const COURTS = (typeof courts !== 'undefined' && courts && courts.length) ? courts : COURTS_STATIC;
 
 const pageTitle = 'Суды Казахстана 2025 — адреса, телефоны, email по регионам | ZakonExpert';
 const pageDesc  = 'Адреса, телефоны и email судов Казахстана по всем регионам: Верховный суд, областные и городские суды. Нужна помощь в суде? ZakonExpert подготовит документы.';
@@ -195,6 +196,7 @@ for (var i = 0; i < COURTS.length; i++) {
     + '<div class="cb-contacts">'
     + addrHtml + phoneHtml + emailHtml + webHtml
     + '</div>'
+    + (c.slug ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;"><a href="/courts/' + c.slug + '" style="font-size:.8rem;color:#1a56db;text-decoration:none;font-weight:600;">Подробная страница →</a></div>' : '')
     + '</div>';
 }
 

@@ -31,7 +31,7 @@ for (var i = 0; i < items.length; i++) {
     : '';
 
   cards += '<div class="cc-card" data-search="' + escHtml((cleanName + ' ' + addr + ' ' + lb.leader).toLowerCase()) + '">'
-    + '<div class="cc-name">' + escHtml(cleanName) + '</div>'
+    + '<div class="cc-name">' + (lb.slug ? '<a href="/lombards/' + lb.slug + '" style="color:inherit;text-decoration:none;">' + escHtml(cleanName) + '</a>' : escHtml(cleanName)) + '</div>'
     + '<div class="cc-contacts">'
     + addrHtml + leadHtml + binHtml
     + '</div>'
