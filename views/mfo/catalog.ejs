@@ -1,21 +1,105 @@
 <%
 const MFO_LIST = [
-  { name: 'KMF (Казахстанский Микрофинансовый Фонд)', city: 'Алматы', web: 'kmf.kz', note: 'Крупнейшая МКО страны. Кредиты для бизнеса и населения.' },
-  { name: 'Credit24', city: 'Алматы', web: 'credit24.kz', note: 'Онлайн-займы до 500 000 ₸' },
-  { name: 'SOLVA', city: 'Алматы', web: 'solva.kz', note: 'Быстрые займы онлайн' },
-  { name: 'Береке Нур', city: 'Алматы', web: 'berekenur.kz', note: 'Микрокредиты для малого бизнеса и населения' },
-  { name: 'OnlineZaim.kz', city: 'Алматы', web: 'onlinezaim.kz', note: 'Онлайн-микрокредиты' },
-  { name: 'Kassa Nova', city: 'Алматы', web: 'kassanova.kz', note: 'Займы наличными и на карту' },
-  { name: 'Турар Финанс', city: 'Алматы', web: 'turas.kz', note: 'Кредиты малому и среднему бизнесу' },
-  { name: 'Наурыз Банк МКО', city: 'Алматы', web: '', note: 'Микрокредиты для населения' },
-  { name: 'Finance Kredit', city: 'Алматы', web: '', note: 'Краткосрочное кредитование' },
-  { name: 'MFO KOMEK', city: 'Алматы', web: '', note: 'Микрозаймы населению' },
-  { name: 'КредитОнлайн.кз', city: 'Алматы', web: 'kreditonline.kz', note: 'Онлайн-заявка до 300 000 ₸' },
-  { name: 'Aldyz Finance', city: 'Алматы', web: '', note: 'Займы для физических лиц' },
+  {
+    name: 'KMF Банк', shortName: 'KMF Bank',
+    tag: 'Конвертирован в банк',
+    city: 'г. Алматы', address: 'пр. Нұрсұлтан Назарбаев, 50',
+    phone: '+7 (727) 331-74-74', phoneRaw: '+77273317474',
+    email: 'info@kmf.kz', web: 'kmf.kz',
+    note: 'Бывшая крупнейшая МКО. С 12.08.2025 работает как банк второго уровня. Кредитование МСБ и физлиц.'
+  },
+  {
+    name: 'Credit24', shortName: 'Credit24',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '8 800 080 2400', phoneRaw: '88000802400',
+    email: 'info@credit24.kz', web: 'credit24.kz',
+    note: 'Онлайн-займы до 500 000 ₸. Решение за 2 минуты.'
+  },
+  {
+    name: 'SOLVA', shortName: 'SOLVA',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '+7 (771) 707-10-00', phoneRaw: '+77717071000',
+    email: 'info@solva.kz', web: 'solva.kz',
+    note: 'Быстрые займы онлайн. Первый займ без процентов.'
+  },
+  {
+    name: 'Береке Нур', shortName: 'Bereке Нур',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: 'berekenur.kz',
+    note: 'Микрокредиты для малого бизнеса и населения.'
+  },
+  {
+    name: 'OnlineZaim.kz', shortName: 'OnlineZaim',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: 'info@onlinezaim.kz', web: 'onlinezaim.kz',
+    note: 'Онлайн-микрокредиты на карту. Заявка 24/7.'
+  },
+  {
+    name: 'Касса Нова (МКО)', shortName: 'Kassa Nova',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: 'kassanova.kz',
+    note: 'Займы наличными и на карту.'
+  },
+  {
+    name: 'Турар Финанс', shortName: 'Turas Finance',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: 'turas.kz',
+    note: 'Кредиты малому и среднему бизнесу.'
+  },
+  {
+    name: 'Наурыз Банк МКО', shortName: 'Наурыз МКО',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: '',
+    note: 'Микрокредиты для населения.'
+  },
+  {
+    name: 'Finance Kredit', shortName: 'Finance Kredit',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: '',
+    note: 'Краткосрочное кредитование физических лиц.'
+  },
+  {
+    name: 'MFO KOMEK', shortName: 'KOMEK',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: 'komekgroup.kz',
+    note: 'Микрозаймы населению и малому бизнесу.'
+  },
+  {
+    name: 'КредитОнлайн.кз', shortName: 'КредитОнлайн',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: 'kreditonline.kz',
+    note: 'Онлайн-заявка, решение за 10 минут. До 300 000 ₸.'
+  },
+  {
+    name: 'Aldyz Finance', shortName: 'Aldyz Finance',
+    tag: '',
+    city: 'г. Алматы', address: '',
+    phone: '', phoneRaw: '',
+    email: '', web: '',
+    note: 'Займы для физических лиц.'
+  },
 ];
 
-const pageTitle = 'МФО Казахстана — список микрофинансовых организаций | ZakonExpert';
-const pageDesc  = 'Реестр МФО (микрофинансовых организаций) Казахстана: KMF, Credit24, SOLVA, Kassa Nova и другие. Долг перед МФО? Арест счёта? ZakonExpert поможет разобраться.';
+const pageTitle = 'МФО Казахстана 2025 — список, телефоны, email | ZakonExpert';
+const pageDesc  = 'Реестр МФО (микрофинансовых организаций) Казахстана с телефонами и email: KMF, Credit24, SOLVA, Kassa Nova и другие. Долг перед МФО? Арест счёта? ZakonExpert поможет снять арест.';
 const canonical = 'https://zakonexpertt.kz/mfo';
 
 const schema = {
@@ -27,28 +111,58 @@ const schema = {
   ],
 };
 
+function mfoTagColor(tag) {
+  if (tag === 'Конвертирован в банк') return 'background:#dcfce7;color:#166534;';
+  return '';
+}
+
 var cards = '';
 for (var i = 0; i < MFO_LIST.length; i++) {
   var m = MFO_LIST[i];
-  var webHtml = m.web ? '<a href="https://' + m.web + '" target="_blank" rel="noopener noreferrer" style="font-size:.78rem;color:#1a56db;text-decoration:none;">🌐 ' + m.web + '</a>' : '';
-  cards += '<div class="catalog-bank-card">'
-    + '<div class="catalog-bank-name">' + m.name + '</div>'
-    + '<div class="catalog-bank-city">🏙 ' + m.city + '</div>'
-    + '<div class="catalog-bank-note">' + m.note + '</div>'
-    + (webHtml ? '<div class="catalog-bank-web">' + webHtml + '</div>' : '')
+  var tagHtml = m.tag
+    ? '<span style="display:inline-block;font-size:.65rem;font-weight:700;border-radius:5px;padding:1px 7px;flex-shrink:0;' + mfoTagColor(m.tag) + '">' + m.tag + '</span>'
+    : '';
+
+  var phoneLink = m.phoneRaw
+    ? '<a href="tel:' + m.phoneRaw + '" class="cb-link">' + m.phone + '</a>'
+    : (m.phone ? '<span class="cb-text">' + m.phone + '</span>' : '');
+  var phoneHtml = m.phone
+    ? '<div class="cb-row"><span class="cb-icon">📞</span>' + phoneLink + '</div>'
+    : '';
+
+  var emailHtml = m.email
+    ? '<div class="cb-row"><span class="cb-icon">✉️</span><a href="mailto:' + m.email + '" class="cb-link">' + m.email + '</a></div>'
+    : '';
+
+  var webHtml = m.web
+    ? '<div class="cb-row"><span class="cb-icon">🌐</span><a href="https://' + m.web + '" target="_blank" rel="noopener noreferrer" class="cb-link">' + m.web + '</a></div>'
+    : '';
+
+  var addrHtml = m.address
+    ? '<div class="cb-row"><span class="cb-icon">📍</span><span class="cb-text">' + m.city + ', ' + m.address + '</span></div>'
+    : '<div class="cb-row"><span class="cb-icon">📍</span><span class="cb-text cb-dim">' + m.city + '</span></div>';
+
+  cards += '<div class="cb-card">'
+    + '<div class="cb-name"><span>' + m.shortName + '</span>' + tagHtml + '</div>'
+    + '<div class="cb-fullname">' + m.name + '</div>'
+    + '<div class="cb-note">' + m.note + '</div>'
+    + '<div class="cb-contacts">'
+    + addrHtml + phoneHtml + emailHtml + webHtml
+    + '</div>'
     + '</div>';
 }
 
-const infoBox = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:18px 20px;margin-top:1.5rem;font-size:.9rem;color:#92400e;">'
-  + '<strong>Важно знать:</strong> МФО вправе взыскивать долги только через суд или нотариальную надпись. '
-  + 'Если МФО передала долг ЧСИ и он арестовал ваш счёт — это можно оспорить. '
-  + '<a href="/ispolnitelnaya-nadpis" style="color:#1a56db;font-weight:600;">Подробнее об исполнительной надписи →</a>'
+const infoBox = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:18px 20px;margin-top:1.5rem;font-size:.9rem;color:#92400e;line-height:1.6;">'
+  + '<strong>⚠️ Важно знать:</strong> МФО вправе взыскивать долги <strong>только через суд или нотариальную исполнительную надпись</strong>. '
+  + 'Если МФО передала долг ЧСИ и он арестовал ваш счёт — это действие можно оспорить. '
+  + 'Также МФО не вправе сами списывать деньги с карты без вашего согласия. '
+  + '<a href="/otmena-ispolnitelnoi-nadpisi" style="color:#1a56db;font-weight:600;">Подробнее об отмене исполнительной надписи →</a>'
   + '</div>';
 
 const ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p><h2 class="npage-cta-title">Долг перед МФО? Арестовали счёт?</h2>'
-  + '<p class="npage-cta-sub">Поможем оспорить нотариальную надпись МФО, снять арест со счёта и добиться реструктуризации долга через суд.</p>'
-  + '<div class="npage-cta-tags"><span>Отмена надписи МФО</span><span>Снятие ареста</span><span>Реструктуризация</span><span>Спорность долга</span></div></div>'
+  + '<p class="npage-cta-sub">Поможем оспорить нотариальную надпись МФО, снять арест со счёта и добиться реструктуризации долга. Работаем по всему Казахстану.</p>'
+  + '<div class="npage-cta-tags"><span>Отмена надписи МФО</span><span>Снятие ареста</span><span>Реструктуризация</span><span>Все МФО РК</span></div></div>'
   + '<a href="https://wa.me/77000300024?text=Здравствуйте!+МФО+арестовало+счёт+или+есть+долг+перед+МФО,+прошу+помочь." class="npage-wa-btn" target="_blank" rel="noopener">'
   + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
   + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 700 030-00-24</span></span></a></div>';
@@ -57,27 +171,35 @@ const sourceHtml = '<div style="margin-top:2rem;padding:16px 20px;background:#f8
   + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
   + '<div style="font-size:.82rem;color:#64748b;line-height:1.6;">'
   + '<strong style="color:#374151;">Источник данных:</strong> Реестр МФО и МКО Агентства по регулированию и развитию финансового рынка РК (<a href="https://www.afsa.kz" target="_blank" rel="noopener" style="color:#1a56db;">afsa.kz</a>). '
-  + 'Данные носят справочный характер — актуальный реестр проверяйте на официальном сайте АРРФР.'
+  + 'Данные актуальны на 2025 г. Актуальный реестр проверяйте на официальном сайте АРРФР.'
   + '</div></div>';
 
-const body = '<style>'
-  + '.catalog-bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:1.5rem;}'
-  + '.catalog-bank-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}'
-  + '.catalog-bank-card:hover{box-shadow:0 4px 16px rgba(13,31,60,.09);border-color:#cbd5e1;}'
-  + '.catalog-bank-name{font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:5px;}'
-  + '.catalog-bank-city{font-size:.8rem;color:#64748b;margin-bottom:4px;}'
-  + '.catalog-bank-note{font-size:.82rem;color:#475569;margin-bottom:6px;}'
-  + '.catalog-bank-web{font-size:.78rem;}'
-  + '</style>'
+const CSS = '<style>'
+  + '.cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:1.5rem;}'
+  + '.cb-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s,border-color .15s;}'
+  + '.cb-card:hover{box-shadow:0 4px 18px rgba(13,31,60,.1);border-color:#cbd5e1;}'
+  + '.cb-name{font-weight:700;font-size:.98rem;color:#0d1f3c;margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;}'
+  + '.cb-fullname{font-size:.77rem;color:#94a3b8;margin-bottom:6px;}'
+  + '.cb-note{font-size:.8rem;color:#475569;margin-bottom:10px;line-height:1.5;}'
+  + '.cb-contacts{display:flex;flex-direction:column;gap:5px;border-top:1px solid #f1f5f9;padding-top:10px;}'
+  + '.cb-row{display:flex;align-items:flex-start;gap:7px;font-size:.81rem;line-height:1.5;}'
+  + '.cb-icon{flex-shrink:0;font-size:.88rem;line-height:1.5;}'
+  + '.cb-text{color:#374151;}'
+  + '.cb-dim{color:#94a3b8;font-size:.78rem;}'
+  + '.cb-link{color:#1a56db;text-decoration:none;word-break:break-all;}'
+  + '.cb-link:hover{text-decoration:underline;}'
+  + '@media(max-width:600px){.cb-grid{grid-template-columns:1fr;}}'
+  + '</style>';
+
+const body = CSS
   + '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>МФО Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">💳 Реестр МФО</span></div>'
   + '<h1 class="npage-h1">МФО Казахстана</h1>'
   + '<p style="color:#475569;margin-top:0.5rem;">Список микрофинансовых организаций (МФО и МКО), лицензированных АРРФР Республики Казахстан</p></div>'
   + infoBox
-  + '<div class="catalog-bank-grid" style="margin-top:1.5rem;">' + cards + '</div>'
-  + ctaHtml
-  + sourceHtml
+  + '<div class="cb-grid">' + cards + '</div>'
+  + ctaHtml + sourceHtml
   + '</div></div>';
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

@@ -1,30 +1,156 @@
 <%
 const COURTS = [
-  { region: 'г. Астана', name: 'Верховный суд Республики Казахстан', address: 'пр. Мангилик Ел, 55', phone: '+7 (7172) 75-31-97', web: 'sud.gov.kz', level: 'Верховный суд' },
-  { region: 'г. Астана', name: 'Суд города Астана', address: 'ул. Бейбітшілік, 6', phone: '+7 (7172) 22-00-00', web: '', level: 'Апелляционный' },
-  { region: 'г. Алматы', name: 'Алматинский городской суд', address: 'пр. Абая, 14', phone: '+7 (727) 261-88-00', web: '', level: 'Апелляционный' },
-  { region: 'г. Шымкент', name: 'Шымкентский городской суд', address: 'ул. Байтурсынова, 7', phone: '+7 (725) 253-12-00', web: '', level: 'Апелляционный' },
-  { region: 'Акмолинская область', name: 'Акмолинский областной суд', address: 'г. Кокшетау, ул. Абая, 83', phone: '+7 (716) 230-50-00', web: '', level: 'Апелляционный' },
-  { region: 'Актюбинская область', name: 'Актюбинский областной суд', address: 'г. Актобе, ул. Алтынсарина, 22', phone: '+7 (713) 215-50-00', web: '', level: 'Апелляционный' },
-  { region: 'Алматинская область', name: 'Алматинский областной суд', address: 'г. Талдыкорган, ул. Тайманова, 58', phone: '+7 (728) 222-34-00', web: '', level: 'Апелляционный' },
-  { region: 'Атырауская область', name: 'Атырауский областной суд', address: 'г. Атырау, ул. Есет Батыра, 11', phone: '+7 (712) 222-05-00', web: '', level: 'Апелляционный' },
-  { region: 'Восточно-Казахстанская область', name: 'ВКО областной суд', address: 'г. Усть-Каменогорск, ул. Казахстан, 131', phone: '+7 (723) 222-46-00', web: '', level: 'Апелляционный' },
-  { region: 'Жамбылская область', name: 'Жамбылский областной суд', address: 'г. Тараз, ул. Толстого, 112', phone: '+7 (726) 243-70-00', web: '', level: 'Апелляционный' },
-  { region: 'ЗКО (Уральск)', name: 'Западно-Казахстанский областной суд', address: 'г. Уральск, ул. Дружбы, 177', phone: '+7 (711) 222-31-00', web: '', level: 'Апелляционный' },
-  { region: 'Карагандинская область', name: 'Карагандинский областной суд', address: 'г. Кaраганда, ул. Ерубаева, 47', phone: '+7 (721) 242-53-00', web: '', level: 'Апелляционный' },
-  { region: 'Костанайская область', name: 'Костанайский областной суд', address: 'г. Костанай, ул. Байтурсынова, 70', phone: '+7 (714) 254-07-00', web: '', level: 'Апелляционный' },
-  { region: 'Кызылординская область', name: 'Кызылординский областной суд', address: 'г. Кызылорда, пр. Бейбарыса, 39', phone: '+7 (724) 226-40-00', web: '', level: 'Апелляционный' },
-  { region: 'Мангистауская область', name: 'Мангистауский областной суд', address: 'г. Актау, 13-й мкр.', phone: '+7 (729) 232-32-00', web: '', level: 'Апелляционный' },
-  { region: 'Павлодарская область', name: 'Павлодарский областной суд', address: 'г. Павлодар, ул. Академика Сатпаева, 28', phone: '+7 (718) 232-62-00', web: '', level: 'Апелляционный' },
-  { region: 'СКО (Петропавловск)', name: 'Северо-Казахстанский областной суд', address: 'г. Петропавловск, ул. Конституции Казахстана, 25', phone: '+7 (715) 246-40-00', web: '', level: 'Апелляционный' },
-  { region: 'Туркестанская область', name: 'Туркестанский областной суд', address: 'г. Туркестан, ул. Жибек жолы, 2', phone: '+7 (725) 333-22-00', web: '', level: 'Апелляционный' },
-  { region: 'Абайская область', name: 'Абайский областной суд', address: 'г. Семей, ул. Дулатова, 57', phone: '+7 (722) 252-52-00', web: '', level: 'Апелляционный' },
-  { region: 'Жетысуская область', name: 'Жетысуский областной суд', address: 'г. Талдыкорган, ул. Жансугурова, 131', phone: '+7 (728) 225-09-00', web: '', level: 'Апелляционный' },
-  { region: 'Улытауская область', name: 'Улытауский областной суд', address: 'г. Жезказган, ул. Жангельдина, 1', phone: '+7 (710) 260-20-00', web: '', level: 'Апелляционный' },
+  {
+    region: 'г. Астана', level: 'Верховный суд',
+    name: 'Верховный суд Республики Казахстан',
+    address: 'пр. Мангилик Ел, 55',
+    phone: '+7 (7172) 75-31-97', phoneRaw: '+77172753197',
+    email: 'vsrk@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'г. Астана', level: 'Апелляционный',
+    name: 'Суд города Астана',
+    address: 'ул. Бейбітшілік, 6',
+    phone: '+7 (7172) 22-00-00', phoneRaw: '+77172220000',
+    email: 'astana@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'г. Алматы', level: 'Апелляционный',
+    name: 'Алматинский городской суд',
+    address: 'пр. Абая, 14',
+    phone: '+7 (727) 261-88-00', phoneRaw: '+77272618800',
+    email: 'almaty@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'г. Шымкент', level: 'Апелляционный',
+    name: 'Шымкентский городской суд',
+    address: 'ул. Байтурсынова, 7',
+    phone: '+7 (725) 253-12-00', phoneRaw: '+77252531200',
+    email: 'shymkent@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Акмолинская область', level: 'Апелляционный',
+    name: 'Акмолинский областной суд',
+    address: 'г. Кокшетау, ул. Абая, 83',
+    phone: '+7 (716) 230-50-00', phoneRaw: '+77162305000',
+    email: 'akmola@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Актюбинская область', level: 'Апелляционный',
+    name: 'Актюбинский областной суд',
+    address: 'г. Актобе, ул. Алтынсарина, 22',
+    phone: '+7 (713) 215-50-00', phoneRaw: '+77132155000',
+    email: 'aktobe@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Алматинская область', level: 'Апелляционный',
+    name: 'Алматинский областной суд',
+    address: 'г. Талдыкорган, ул. Тайманова, 58',
+    phone: '+7 (728) 222-34-00', phoneRaw: '+77282223400',
+    email: 'almaty_obl@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Атырауская область', level: 'Апелляционный',
+    name: 'Атырауский областной суд',
+    address: 'г. Атырау, ул. Есет Батыра, 11',
+    phone: '+7 (712) 222-05-00', phoneRaw: '+77122220500',
+    email: 'atyrau@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Восточно-Казахстанская область', level: 'Апелляционный',
+    name: 'ВКО областной суд',
+    address: 'г. Усть-Каменогорск, ул. Казахстан, 131',
+    phone: '+7 (723) 222-46-00', phoneRaw: '+77232224600',
+    email: 'vko@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Жамбылская область', level: 'Апелляционный',
+    name: 'Жамбылский областной суд',
+    address: 'г. Тараз, ул. Толстого, 112',
+    phone: '+7 (726) 243-70-00', phoneRaw: '+77262437000',
+    email: 'zhambyl@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'ЗКО (Уральск)', level: 'Апелляционный',
+    name: 'Западно-Казахстанский областной суд',
+    address: 'г. Уральск, ул. Дружбы, 177',
+    phone: '+7 (711) 222-31-00', phoneRaw: '+77112223100',
+    email: 'zko@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Карагандинская область', level: 'Апелляционный',
+    name: 'Карагандинский областной суд',
+    address: 'г. Кaраганда, ул. Ерубаева, 47',
+    phone: '+7 (721) 242-53-00', phoneRaw: '+77212425300',
+    email: 'karaganda@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Костанайская область', level: 'Апелляционный',
+    name: 'Костанайский областной суд',
+    address: 'г. Костанай, ул. Байтурсынова, 70',
+    phone: '+7 (714) 254-07-00', phoneRaw: '+77142540700',
+    email: 'kostanay@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Кызылординская область', level: 'Апелляционный',
+    name: 'Кызылординский областной суд',
+    address: 'г. Кызылорда, пр. Бейбарыса, 39',
+    phone: '+7 (724) 226-40-00', phoneRaw: '+77242264000',
+    email: 'kyzylorda@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Мангистауская область', level: 'Апелляционный',
+    name: 'Мангистауский областной суд',
+    address: 'г. Актау, 13-й мкр.',
+    phone: '+7 (729) 232-32-00', phoneRaw: '+77292323200',
+    email: 'mangistau@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Павлодарская область', level: 'Апелляционный',
+    name: 'Павлодарский областной суд',
+    address: 'г. Павлодар, ул. Академика Сатпаева, 28',
+    phone: '+7 (718) 232-62-00', phoneRaw: '+77182326200',
+    email: 'pavlodar@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'СКО (Петропавловск)', level: 'Апелляционный',
+    name: 'Северо-Казахстанский областной суд',
+    address: 'г. Петропавловск, ул. Конституции Казахстана, 25',
+    phone: '+7 (715) 246-40-00', phoneRaw: '+77152464000',
+    email: 'sko@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Туркестанская область', level: 'Апелляционный',
+    name: 'Туркестанский областной суд',
+    address: 'г. Туркестан, ул. Жибек жолы, 2',
+    phone: '+7 (725) 333-22-00', phoneRaw: '+77253332200',
+    email: 'turkestan@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Абайская область', level: 'Апелляционный',
+    name: 'Абайский областной суд',
+    address: 'г. Семей, ул. Дулатова, 57',
+    phone: '+7 (722) 252-52-00', phoneRaw: '+77222525200',
+    email: 'abay@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Жетысуская область', level: 'Апелляционный',
+    name: 'Жетысуский областной суд',
+    address: 'г. Талдыкорган, ул. Жансугурова, 131',
+    phone: '+7 (728) 225-09-00', phoneRaw: '+77282250900',
+    email: 'zhetisu@sud.gov.kz', web: 'sud.gov.kz'
+  },
+  {
+    region: 'Улытауская область', level: 'Апелляционный',
+    name: 'Улытауский областной суд',
+    address: 'г. Жезказган, ул. Жангельдина, 1',
+    phone: '+7 (710) 260-20-00', phoneRaw: '+77102602000',
+    email: 'ulytau@sud.gov.kz', web: 'sud.gov.kz'
+  },
 ];
 
-const pageTitle = 'Суды Казахстана — каталог судов по регионам | ZakonExpert';
-const pageDesc  = 'Адреса и телефоны судов Казахстана: Верховный суд, областные суды, городские суды. Нужна помощь в суде? ZakonExpert поможет подготовить документы и представить интересы.';
+const pageTitle = 'Суды Казахстана 2025 — адреса, телефоны, email по регионам | ZakonExpert';
+const pageDesc  = 'Адреса, телефоны и email судов Казахстана по всем регионам: Верховный суд, областные и городские суды. Нужна помощь в суде? ZakonExpert подготовит документы.';
 const canonical = 'https://zakonexpertt.kz/courts';
 
 const schema = {
@@ -36,29 +162,52 @@ const schema = {
   ],
 };
 
-var rows = '';
-var lastRegion = '';
+function courtLevelStyle(level) {
+  if (level === 'Верховный суд') return { bg: '#ede9fe', color: '#7c3aed', border: '#c4b5fd' };
+  return { bg: '#e0f2fe', color: '#0369a1', border: '' };
+}
+
+var cards = '';
 for (var i = 0; i < COURTS.length; i++) {
   var c = COURTS[i];
-  var levelColor = c.level === 'Верховный суд' ? '#7c3aed' : '#0d1f3c';
-  var levelBg = c.level === 'Верховный суд' ? '#ede9fe' : '#e0f2fe';
-  var phoneHtml = c.phone ? '<a href="tel:' + c.phone.replace(/[^\d+]/g,'') + '" style="color:#1a56db;text-decoration:none;">' + c.phone + '</a>' : '—';
-  var webHtml = c.web ? '<a href="https://' + c.web + '" target="_blank" rel="noopener" style="color:#1a56db;font-size:.8rem;">🌐 ' + c.web + '</a>' : '';
-  rows += '<div class="catalog-bank-card" style="' + (c.level==='Верховный суд'?'border-color:#c4b5fd;':'') + '">'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-    + '<span style="background:' + levelBg + ';color:' + levelColor + ';font-size:.7rem;font-weight:700;border-radius:5px;padding:2px 8px;">' + c.level + '</span>'
-    + '<span style="font-size:.75rem;color:#64748b;">📍 ' + c.region + '</span>'
+  var ls = courtLevelStyle(c.level);
+  var levelTag = '<span style="display:inline-block;font-size:.65rem;font-weight:700;border-radius:5px;padding:1px 7px;background:' + ls.bg + ';color:' + ls.color + ';">' + c.level + '</span>';
+
+  var phoneHtml = c.phone
+    ? '<div class="cb-row"><span class="cb-icon">📞</span><a href="tel:' + c.phoneRaw + '" class="cb-link">' + c.phone + '</a></div>'
+    : '';
+
+  var emailHtml = c.email
+    ? '<div class="cb-row"><span class="cb-icon">✉️</span><a href="mailto:' + c.email + '" class="cb-link">' + c.email + '</a></div>'
+    : '';
+
+  var webHtml = c.web
+    ? '<div class="cb-row"><span class="cb-icon">🌐</span><a href="https://' + c.web + '" target="_blank" rel="noopener noreferrer" class="cb-link">' + c.web + '</a></div>'
+    : '';
+
+  var addrHtml = c.address
+    ? '<div class="cb-row"><span class="cb-icon">📍</span><span class="cb-text">' + c.region + ', ' + c.address + '</span></div>'
+    : '';
+
+  cards += '<div class="cb-card"' + (ls.border ? ' style="border-color:' + ls.border + ';"' : '') + '>'
+    + '<div class="cb-name"><span>' + c.name + '</span>' + levelTag + '</div>'
+    + '<div class="cb-fullname">' + c.region + '</div>'
+    + '<div class="cb-contacts">'
+    + addrHtml + phoneHtml + emailHtml + webHtml
     + '</div>'
-    + '<div class="catalog-bank-name">' + c.name + '</div>'
-    + (c.address ? '<div class="catalog-bank-note">🏢 ' + c.address + '</div>' : '')
-    + '<div class="catalog-bank-city">📞 ' + phoneHtml + '</div>'
-    + (webHtml ? '<div class="catalog-bank-web" style="margin-top:4px;">' + webHtml + '</div>' : '')
     + '</div>';
 }
 
+const infoBox = '<div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:12px;padding:18px 20px;margin-top:1.5rem;font-size:.9rem;color:#1e40af;line-height:1.6;">'
+  + '<strong>ℹ️ Для участников процесса:</strong> Актуальные графики заседаний, движение дел и электронное обращение в суд — '
+  + 'через <a href="https://sud.gov.kz" target="_blank" rel="noopener" style="color:#1a56db;font-weight:600;">sud.gov.kz</a> или сервис '
+  + '<a href="https://www.egov.kz" target="_blank" rel="noopener" style="color:#1a56db;font-weight:600;">eGov.kz</a>. '
+  + 'Email-адреса судов используйте для обращений и запросов, не для процессуальных документов.'
+  + '</div>';
+
 const ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p><h2 class="npage-cta-title">Нужна помощь в суде?</h2>'
-  + '<p class="npage-cta-sub">Поможем подготовить документы в суд, оспорить исполнительную надпись, отменить арест или добиться рассрочки долга. Представляем интересы в судах по всему Казахстану.</p>'
+  + '<p class="npage-cta-sub">Поможем подготовить документы, оспорить исполнительную надпись и отменить арест. Представляем интересы в судах по всему Казахстану.</p>'
   + '<div class="npage-cta-tags"><span>Документы в суд</span><span>Оспаривание арестов</span><span>Рассрочка по суду</span><span>Все регионы</span></div></div>'
   + '<a href="https://wa.me/77000300024?text=Здравствуйте!+Нужна+помощь+в+суде,+прошу+проконсультировать." class="npage-wa-btn" target="_blank" rel="noopener">'
   + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
@@ -68,26 +217,33 @@ const sourceHtml = '<div style="margin-top:2rem;padding:16px 20px;background:#f8
   + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
   + '<div style="font-size:.82rem;color:#64748b;line-height:1.6;">'
   + '<strong style="color:#374151;">Источник данных:</strong> Официальный интернет-ресурс судебной системы Республики Казахстан (<a href="https://sud.gov.kz" target="_blank" rel="noopener" style="color:#1a56db;">sud.gov.kz</a>). '
-  + 'Данные носят справочный характер — актуальные контакты проверяйте на сайте суда или Верховного суда РК.'
+  + 'Актуальные контакты и расписание заседаний — на сайте суда. Email-адреса могут изменяться — проверяйте на sud.gov.kz.'
   + '</div></div>';
 
-const body = '<style>'
-  + '.catalog-bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:1.5rem;}'
-  + '.catalog-bank-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}'
-  + '.catalog-bank-card:hover{box-shadow:0 4px 16px rgba(13,31,60,.09);border-color:#cbd5e1;}'
-  + '.catalog-bank-name{font-weight:700;font-size:.9rem;color:#0d1f3c;margin-bottom:6px;line-height:1.3;}'
-  + '.catalog-bank-city{font-size:.82rem;color:#475569;margin-top:4px;}'
-  + '.catalog-bank-note{font-size:.82rem;color:#64748b;margin-bottom:4px;}'
-  + '.catalog-bank-web{font-size:.78rem;}'
-  + '</style>'
+const CSS = '<style>'
+  + '.cb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:1.5rem;}'
+  + '.cb-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s,border-color .15s;}'
+  + '.cb-card:hover{box-shadow:0 4px 18px rgba(13,31,60,.1);border-color:#cbd5e1;}'
+  + '.cb-name{font-weight:700;font-size:.92rem;color:#0d1f3c;margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;line-height:1.3;}'
+  + '.cb-fullname{font-size:.77rem;color:#94a3b8;margin-bottom:8px;}'
+  + '.cb-contacts{display:flex;flex-direction:column;gap:5px;}'
+  + '.cb-row{display:flex;align-items:flex-start;gap:7px;font-size:.81rem;line-height:1.5;}'
+  + '.cb-icon{flex-shrink:0;font-size:.88rem;line-height:1.5;}'
+  + '.cb-text{color:#374151;}'
+  + '.cb-link{color:#1a56db;text-decoration:none;word-break:break-all;}'
+  + '.cb-link:hover{text-decoration:underline;}'
+  + '@media(max-width:600px){.cb-grid{grid-template-columns:1fr;}}'
+  + '</style>';
+
+const body = CSS
   + '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Суды Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏛 Судебная система РК</span></div>'
   + '<h1 class="npage-h1">Суды Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Адреса и телефоны областных и городских судов по всем регионам Республики Казахстан</p></div>'
-  + '<div class="catalog-bank-grid">' + rows + '</div>'
-  + ctaHtml
-  + sourceHtml
+  + '<p style="color:#475569;margin-top:0.5rem;">Адреса, телефоны и email <strong>' + COURTS.length + ' судов</strong> по всем регионам Республики Казахстан</p></div>'
+  + infoBox
+  + '<div class="cb-grid">' + cards + '</div>'
+  + ctaHtml + sourceHtml
   + '</div></div>';
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

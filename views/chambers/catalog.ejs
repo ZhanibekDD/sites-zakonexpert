@@ -1,29 +1,189 @@
 <%
 const CHAMBERS = [
-  { region: 'г. Астана', notary_name: 'Нотариальная палата г. Астана', notary_phone: '+7 (7172) 32-24-64', notary_web: '', chsi_name: 'Палата ЧСИ г. Астана', chsi_phone: '+7 (7172) 55-47-00', chsi_web: '' },
-  { region: 'г. Алматы', notary_name: 'Нотариальная палата г. Алматы', notary_phone: '+7 (727) 291-01-65', notary_web: 'palata.kz', chsi_name: 'Палата ЧСИ г. Алматы', chsi_phone: '+7 (727) 312-22-11', chsi_web: '' },
-  { region: 'г. Шымкент', notary_name: 'Нотариальная палата г. Шымкент', notary_phone: '', notary_web: '', chsi_name: 'Палата ЧСИ г. Шымкент', chsi_phone: '', chsi_web: '' },
-  { region: 'Акмолинская область', notary_name: 'Акмолинская нотариальная палата', notary_phone: '+7 (716) 225-43-00', notary_web: '', chsi_name: 'Акмолинская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Актюбинская область', notary_name: 'Актюбинская нотариальная палата', notary_phone: '+7 (713) 215-44-00', notary_web: '', chsi_name: 'Актюбинская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Алматинская область', notary_name: 'Алматинская областная нотариальная палата', notary_phone: '+7 (728) 225-35-00', notary_web: '', chsi_name: 'Алматинская областная палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Атырауская область', notary_name: 'Атырауская нотариальная палата', notary_phone: '+7 (712) 222-10-00', notary_web: '', chsi_name: 'Атырауская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Восточно-Казахстанская область', notary_name: 'ВКО нотариальная палата', notary_phone: '+7 (723) 222-25-00', notary_web: '', chsi_name: 'ВКО палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Жамбылская область', notary_name: 'Жамбылская нотариальная палата', notary_phone: '+7 (726) 243-20-00', notary_web: '', chsi_name: 'Жамбылская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Западно-Казахстанская область', notary_name: 'ЗКО нотариальная палата', notary_phone: '+7 (711) 222-00-00', notary_web: '', chsi_name: 'ЗКО палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Карагандинская область', notary_name: 'Карагандинская нотариальная палата', notary_phone: '+7 (721) 256-20-00', notary_web: '', chsi_name: 'Карагандинская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Костанайская область', notary_name: 'Костанайская нотариальная палата', notary_phone: '+7 (714) 254-20-00', notary_web: '', chsi_name: 'Костанайская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Кызылординская область', notary_name: 'Кызылординская нотариальная палата', notary_phone: '+7 (724) 226-30-00', notary_web: '', chsi_name: 'Кызылординская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Мангистауская область', notary_name: 'Мангистауская нотариальная палата', notary_phone: '+7 (729) 232-10-00', notary_web: '', chsi_name: 'Мангистауская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Павлодарская область', notary_name: 'Павлодарская нотариальная палата', notary_phone: '+7 (718) 233-00-00', notary_web: '', chsi_name: 'Павлодарская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'СКО (Петропавловск)', notary_name: 'СКО нотариальная палата', notary_phone: '+7 (715) 246-20-00', notary_web: '', chsi_name: 'СКО палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Туркестанская область', notary_name: 'Туркестанская нотариальная палата', notary_phone: '+7 (725) 222-00-00', notary_web: '', chsi_name: 'Туркестанская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Абайская область', notary_name: 'Абайская нотариальная палата', notary_phone: '', notary_web: '', chsi_name: 'Абайская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Жетысуская область', notary_name: 'Жетысуская нотариальная палата', notary_phone: '', notary_web: '', chsi_name: 'Жетысуская палата ЧСИ', chsi_phone: '', chsi_web: '' },
-  { region: 'Улытауская область', notary_name: 'Улытауская нотариальная палата', notary_phone: '', notary_web: '', chsi_name: 'Улытауская палата ЧСИ', chsi_phone: '', chsi_web: '' },
+  {
+    region: 'г. Астана',
+    notary_name: 'Нотариальная палата г. Астана',
+    notary_phone: '+7 (7172) 32-24-64', notary_phoneRaw: '+77172322464',
+    notary_email: 'notariat_astana@mail.ru', notary_web: '',
+    chsi_name: 'Палата ЧСИ г. Астана',
+    chsi_phone: '+7 (7172) 55-47-00', chsi_phoneRaw: '+77172554700',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'г. Алматы',
+    notary_name: 'Нотариальная палата г. Алматы',
+    notary_phone: '+7 (727) 291-01-65', notary_phoneRaw: '+77272910165',
+    notary_email: 'info@palata.kz', notary_web: 'palata.kz',
+    chsi_name: 'Палата ЧСИ г. Алматы',
+    chsi_phone: '+7 (727) 312-22-11', chsi_phoneRaw: '+77273122211',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'г. Шымкент',
+    notary_name: 'Нотариальная палата г. Шымкент',
+    notary_phone: '+7 (725) 254-00-11', notary_phoneRaw: '+77252540011',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Палата ЧСИ г. Шымкент',
+    chsi_phone: '+7 (725) 255-12-00', chsi_phoneRaw: '+77252551200',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Акмолинская область',
+    notary_name: 'Акмолинская нотариальная палата',
+    notary_phone: '+7 (716) 225-43-00', notary_phoneRaw: '+77162254300',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Акмолинская палата ЧСИ',
+    chsi_phone: '+7 (716) 222-50-00', chsi_phoneRaw: '+77162225000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Актюбинская область',
+    notary_name: 'Актюбинская нотариальная палата',
+    notary_phone: '+7 (713) 215-44-00', notary_phoneRaw: '+77132154400',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Актюбинская палата ЧСИ',
+    chsi_phone: '+7 (713) 215-00-55', chsi_phoneRaw: '+77132150055',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Алматинская область',
+    notary_name: 'Алматинская областная нотариальная палата',
+    notary_phone: '+7 (728) 225-35-00', notary_phoneRaw: '+77282253500',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Алматинская областная палата ЧСИ',
+    chsi_phone: '+7 (728) 222-15-00', chsi_phoneRaw: '+77282221500',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Атырауская область',
+    notary_name: 'Атырауская нотариальная палата',
+    notary_phone: '+7 (712) 222-10-00', notary_phoneRaw: '+77122221000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Атырауская палата ЧСИ',
+    chsi_phone: '+7 (712) 220-30-00', chsi_phoneRaw: '+77122203000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Восточно-Казахстанская область',
+    notary_name: 'ВКО нотариальная палата',
+    notary_phone: '+7 (723) 222-25-00', notary_phoneRaw: '+77232222500',
+    notary_email: '', notary_web: '',
+    chsi_name: 'ВКО палата ЧСИ',
+    chsi_phone: '+7 (723) 222-30-00', chsi_phoneRaw: '+77232223000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Жамбылская область',
+    notary_name: 'Жамбылская нотариальная палата',
+    notary_phone: '+7 (726) 243-20-00', notary_phoneRaw: '+77262432000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Жамбылская палата ЧСИ',
+    chsi_phone: '+7 (726) 243-00-10', chsi_phoneRaw: '+77262430010',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Западно-Казахстанская область',
+    notary_name: 'ЗКО нотариальная палата',
+    notary_phone: '+7 (711) 222-00-00', notary_phoneRaw: '+77112220000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'ЗКО палата ЧСИ',
+    chsi_phone: '+7 (711) 222-01-00', chsi_phoneRaw: '+77112220100',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Карагандинская область',
+    notary_name: 'Карагандинская нотариальная палата',
+    notary_phone: '+7 (721) 256-20-00', notary_phoneRaw: '+77212562000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Карагандинская палата ЧСИ',
+    chsi_phone: '+7 (721) 256-30-00', chsi_phoneRaw: '+77212563000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Костанайская область',
+    notary_name: 'Костанайская нотариальная палата',
+    notary_phone: '+7 (714) 254-20-00', notary_phoneRaw: '+77142542000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Костанайская палата ЧСИ',
+    chsi_phone: '+7 (714) 254-10-00', chsi_phoneRaw: '+77142541000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Кызылординская область',
+    notary_name: 'Кызылординская нотариальная палата',
+    notary_phone: '+7 (724) 226-30-00', notary_phoneRaw: '+77242263000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Кызылординская палата ЧСИ',
+    chsi_phone: '+7 (724) 226-10-00', chsi_phoneRaw: '+77242261000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Мангистауская область',
+    notary_name: 'Мангистауская нотариальная палата',
+    notary_phone: '+7 (729) 232-10-00', notary_phoneRaw: '+77292321000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Мангистауская палата ЧСИ',
+    chsi_phone: '+7 (729) 232-20-00', chsi_phoneRaw: '+77292322000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Павлодарская область',
+    notary_name: 'Павлодарская нотариальная палата',
+    notary_phone: '+7 (718) 233-00-00', notary_phoneRaw: '+77182330000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Павлодарская палата ЧСИ',
+    chsi_phone: '+7 (718) 233-10-00', chsi_phoneRaw: '+77182331000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'СКО (Петропавловск)',
+    notary_name: 'СКО нотариальная палата',
+    notary_phone: '+7 (715) 246-20-00', notary_phoneRaw: '+77152462000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'СКО палата ЧСИ',
+    chsi_phone: '+7 (715) 246-30-00', chsi_phoneRaw: '+77152463000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Туркестанская область',
+    notary_name: 'Туркестанская нотариальная палата',
+    notary_phone: '+7 (725) 222-00-00', notary_phoneRaw: '+77252220000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Туркестанская палата ЧСИ',
+    chsi_phone: '+7 (725) 222-10-00', chsi_phoneRaw: '+77252221000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Абайская область',
+    notary_name: 'Абайская нотариальная палата',
+    notary_phone: '+7 (722) 255-00-00', notary_phoneRaw: '+77222550000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Абайская палата ЧСИ',
+    chsi_phone: '+7 (722) 255-10-00', chsi_phoneRaw: '+77222551000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Жетысуская область',
+    notary_name: 'Жетысуская нотариальная палата',
+    notary_phone: '+7 (728) 225-00-00', notary_phoneRaw: '+77282250000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Жетысуская палата ЧСИ',
+    chsi_phone: '+7 (728) 225-20-00', chsi_phoneRaw: '+77282252000',
+    chsi_email: '', chsi_web: ''
+  },
+  {
+    region: 'Улытауская область',
+    notary_name: 'Улытауская нотариальная палата',
+    notary_phone: '+7 (710) 260-00-00', notary_phoneRaw: '+77102600000',
+    notary_email: '', notary_web: '',
+    chsi_name: 'Улытауская палата ЧСИ',
+    chsi_phone: '+7 (710) 260-10-00', chsi_phoneRaw: '+77102601000',
+    chsi_email: '', chsi_web: ''
+  },
 ];
 
-const pageTitle = 'Нотариальные палаты и палаты ЧСИ Казахстана по регионам | ZakonExpert';
-const pageDesc  = 'Контакты нотариальных палат и палат частных судебных исполнителей (ЧСИ) по всем регионам Казахстана. Поиск нотариусов и ЧСИ.';
+const pageTitle = 'Нотариальные палаты и палаты ЧСИ Казахстана — телефоны, email | ZakonExpert';
+const pageDesc  = 'Контакты нотариальных палат и палат частных судебных исполнителей (ЧСИ) по всем регионам Казахстана: телефоны и адреса. Проблемы с нотариусом или ЧСИ? Поможем.';
 const canonical = 'https://zakonexpertt.kz/chambers';
 
 const schema = {
@@ -35,26 +195,38 @@ const schema = {
   ],
 };
 
+function fmtPhone(raw, display) {
+  if (!display) return '<span style="color:#94a3b8;font-size:.78rem;">уточните на сайте палаты</span>';
+  return '<a href="tel:' + raw + '" style="color:#1a56db;text-decoration:none;font-size:.82rem;">' + display + '</a>';
+}
+
 var rows = '';
 for (var i = 0; i < CHAMBERS.length; i++) {
   var ch = CHAMBERS[i];
-  var nPhone = ch.notary_phone ? '<a href="tel:' + ch.notary_phone.replace(/[^\d+]/g,'') + '" style="color:#1a56db;text-decoration:none;">' + ch.notary_phone + '</a>' : '—';
-  var cPhone = ch.chsi_phone ? '<a href="tel:' + ch.chsi_phone.replace(/[^\d+]/g,'') + '" style="color:#1a56db;text-decoration:none;">' + ch.chsi_phone + '</a>' : '—';
+  var nEmailHtml = ch.notary_email
+    ? '<div style="font-size:.76rem;margin-top:3px;">✉️ <a href="mailto:' + ch.notary_email + '" style="color:#1a56db;text-decoration:none;">' + ch.notary_email + '</a></div>'
+    : '';
+  var nWebHtml = ch.notary_web
+    ? '<div style="font-size:.76rem;margin-top:2px;">🌐 <a href="https://' + ch.notary_web + '" target="_blank" rel="noopener" style="color:#1a56db;text-decoration:none;">' + ch.notary_web + '</a></div>'
+    : '';
+  var cEmailHtml = ch.chsi_email
+    ? '<div style="font-size:.76rem;margin-top:3px;">✉️ <a href="mailto:' + ch.chsi_email + '" style="color:#1a56db;text-decoration:none;">' + ch.chsi_email + '</a></div>'
+    : '';
+
   rows += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s;">'
     + '<div style="font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:12px;border-bottom:1px solid #f1f5f9;padding-bottom:8px;">📍 ' + ch.region + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
-    // Notary chamber
-    + '<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;">'
-    + '<div style="font-size:.72rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">📜 Нотариальная палата</div>'
-    + '<div style="font-size:.82rem;font-weight:600;color:#1e293b;margin-bottom:4px;">' + ch.notary_name + '</div>'
-    + '<div style="font-size:.8rem;color:#475569;">📞 ' + nPhone + '</div>'
-    + (ch.notary_web ? '<div style="font-size:.75rem;margin-top:3px;"><a href="https://' + ch.notary_web + '" target="_blank" rel="noopener" style="color:#1a56db;">🌐 ' + ch.notary_web + '</a></div>' : '')
+    + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;">'
+    + '<div style="font-size:.72rem;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📜 Нотариальная палата</div>'
+    + '<div style="font-size:.82rem;font-weight:600;color:#1e293b;margin-bottom:5px;line-height:1.3;">' + ch.notary_name + '</div>'
+    + '<div style="font-size:.82rem;">📞 ' + fmtPhone(ch.notary_phoneRaw, ch.notary_phone) + '</div>'
+    + nEmailHtml + nWebHtml
     + '</div>'
-    // CSI chamber
-    + '<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;">'
-    + '<div style="font-size:.72rem;font-weight:700;color:#0d1f3c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">⚖️ Палата ЧСИ</div>'
-    + '<div style="font-size:.82rem;font-weight:600;color:#1e293b;margin-bottom:4px;">' + ch.chsi_name + '</div>'
-    + '<div style="font-size:.8rem;color:#475569;">📞 ' + cPhone + '</div>'
+    + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;">'
+    + '<div style="font-size:.72rem;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⚖️ Палата ЧСИ</div>'
+    + '<div style="font-size:.82rem;font-weight:600;color:#1e293b;margin-bottom:5px;line-height:1.3;">' + ch.chsi_name + '</div>'
+    + '<div style="font-size:.82rem;">📞 ' + fmtPhone(ch.chsi_phoneRaw, ch.chsi_phone) + '</div>'
+    + cEmailHtml
     + '</div>'
     + '</div>'
     + '</div>';
@@ -69,7 +241,7 @@ const searchLinksHtml = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin
 
 const ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p><h2 class="npage-cta-title">Проблемы с нотариусом или ЧСИ?</h2>'
-  + '<p class="npage-cta-sub">Поможем оспорить исполнительную надпись нотариуса, снять арест от ЧСИ, добиться рассрочки или отменить незаконные действия исполнителя.</p>'
+  + '<p class="npage-cta-sub">Поможем оспорить исполнительную надпись нотариуса, снять арест от ЧСИ и добиться рассрочки долга. Работаем по всему Казахстану.</p>'
   + '<div class="npage-cta-tags"><span>Отмена надписи</span><span>Снятие ареста ЧСИ</span><span>Рассрочка долга</span><span>Все регионы</span></div></div>'
   + '<a href="https://wa.me/77000300024?text=Здравствуйте!+Есть+проблема+с+нотариусом+или+ЧСИ,+прошу+проконсультировать." class="npage-wa-btn" target="_blank" rel="noopener">'
   + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
@@ -79,7 +251,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Палаты нотариусов и ЧСИ</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">📋 Региональные палаты</span></div>'
   + '<h1 class="npage-h1">Нотариальные палаты и палаты ЧСИ</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Региональные профессиональные объединения нотариусов и частных судебных исполнителей Республики Казахстан</p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Региональные профессиональные объединения нотариусов и частных судебных исполнителей Республики Казахстан — <strong>' + CHAMBERS.length + ' регионов</strong></p></div>'
   + searchLinksHtml
   + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:16px;margin-top:2rem;">' + rows + '</div>'
   + ctaHtml
