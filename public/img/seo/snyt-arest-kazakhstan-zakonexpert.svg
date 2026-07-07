@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#0d1f3c"/>
+  <rect x="0" y="0" width="800" height="500" fill="none" stroke="#1a56db" stroke-width="6"/>
+  <text x="400" y="80" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#ffffff" letter-spacing="-2">СНЯТЬ</text>
+  <text x="400" y="150" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1a56db" letter-spacing="-2">АРЕСТ</text>
+  <text x="400" y="198" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" fill="rgba(255,255,255,0.45)" letter-spacing="4">КАЗАХСТАН</text>
+  <rect x="160" y="215" width="480" height="2" fill="rgba(26,86,219,0.4)"/>
+  <text x="400" y="256" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="rgba(255,255,255,0.75)">Kaspi · Halyk · Freedom · МФО · ЧСИ · Нотариус</text>
+  <text x="400" y="286" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="rgba(255,255,255,0.75)">Зарплата · Авто · Имущество · Выезд за рубеж</text>
+  <rect x="160" y="302" width="480" height="2" fill="rgba(26,86,219,0.4)"/>
+  <rect x="200" y="324" width="400" height="60" rx="12" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="400" y="348" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.55)">Результат гарантирован · Без предоплаты</text>
+  <text x="400" y="372" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="20" font-weight="900" fill="#22c55e">✓ Работаем по всему Казахстану</text>
+  <rect x="100" y="406" width="600" height="72" rx="12" fill="#1a56db"/>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.7)">ZakonExpert — юридическая помощь</text>
+  <text x="400" y="460" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="30" font-weight="900" fill="#ffffff">+7 700 030-00-24</text>
+</svg>

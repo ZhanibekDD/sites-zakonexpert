@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#0c1a0c"/>
+  <rect width="800" height="5" fill="#16a34a"/>
+  <text x="40" y="40" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="rgba(34,197,94,0.7)" letter-spacing="2">АРЕСТ ИМУЩЕСТВА · КАЗАХСТАН</text>
+  <text x="40" y="110" font-family="Arial Black,Arial,sans-serif" font-size="56" font-weight="900" fill="#ffffff">СНЯТИЕ АРЕСТА</text>
+  <text x="40" y="162" font-family="Arial Black,Arial,sans-serif" font-size="48" font-weight="900" fill="#22c55e">С ИМУЩЕСТВА</text>
+  <text x="40" y="196" font-family="Arial,sans-serif" font-size="17" fill="rgba(255,255,255,0.4)">Недвижимость · Авто · Счета · Бизнес</text>
+  <rect x="40" y="212" width="720" height="1" fill="rgba(255,255,255,0.07)"/>
+  <text x="60" y="248" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.85)">✅  Арест квартиры / дома — снятие через суд</text>
+  <text x="60" y="278" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.85)">✅  Арест автомобиля — снятие запрета на продажу</text>
+  <text x="60" y="308" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.85)">✅  Арест доли в ТОО / ИП — восстановление бизнеса</text>
+  <text x="60" y="338" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.85)">✅  Арест банковского счёта компании</text>
+  <text x="60" y="368" font-family="Arial,sans-serif" font-size="16" fill="#22c55e" font-weight="700">✅  Срочное снятие · Работаем по всему Казахстану</text>
+  <rect x="40" y="394" width="720" height="84" rx="12" fill="rgba(22,163,74,0.12)" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="400" y="422" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.5)">Бесплатная консультация — опишите ситуацию</text>
+  <text x="400" y="450" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#ffffff">+7 700 030-00-24</text>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(34,197,94,0.6)">ZakonExpert Казахстан</text>
+</svg>

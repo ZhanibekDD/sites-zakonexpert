@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#1a0a00"/>
+  <rect width="800" height="5" fill="#f97316"/>
+  <rect x="0" y="62" width="800" height="2" fill="rgba(249,115,22,0.2)"/>
+  <text x="400" y="44" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="20" font-weight="900" fill="#f97316" letter-spacing="2">МФО ЗАБЛОКИРОВАЛО СЧЁТ?</text>
+  <text x="400" y="130" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="60" font-weight="900" fill="#ffffff">ДОЛГ МФО</text>
+  <text x="400" y="185" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="42" font-weight="900" fill="#f97316">— РЕШИМ!</text>
+  <text x="400" y="220" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.45)">Микрофинансовые организации · Коллекторы · Казахстан</text>
+  <rect x="40" y="238" width="720" height="1" fill="rgba(249,115,22,0.2)"/>
+  <text x="100" y="272" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Снятие ареста по долгу МФО</text>
+  <text x="440" y="272" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Оспаривание процентов МФО</text>
+  <text x="100" y="304" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Остановить коллекторов законно</text>
+  <text x="440" y="304" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Списание долга / Банкротство</text>
+  <text x="100" y="336" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Истечение срока исковой давности</text>
+  <text x="440" y="336" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Реструктуризация · Рассрочка</text>
+  <text x="100" y="368" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.85)">✅  Проверить МФО по БИН (легальность)</text>
+  <text x="440" y="368" font-family="Arial,sans-serif" font-size="15" fill="#f97316" font-weight="700">✅  Без предоплаты · Гарантия</text>
+  <rect x="40" y="396" width="720" height="2" fill="rgba(249,115,22,0.2)"/>
+  <text x="400" y="430" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="28" font-weight="900" fill="#f97316">ZakonExpert</text>
+  <text x="400" y="466" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#ffffff">+7 700 030-00-24  ·  WhatsApp</text>
+</svg>

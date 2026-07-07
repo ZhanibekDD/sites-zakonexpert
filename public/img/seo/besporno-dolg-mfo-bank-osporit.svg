@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#fefce8"/>
+  <rect width="800" height="6" fill="#ca8a04"/>
+  <rect x="0" y="494" width="800" height="6" fill="#ca8a04"/>
+  <text x="400" y="48" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="22" font-weight="900" fill="#92400e">БЕССПОРНОСТЬ ДОЛГА — МФО / БАНК</text>
+  <text x="400" y="120" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="52" font-weight="900" fill="#0d1f3c">ОСПОРИТЬ ДОЛГ</text>
+  <text x="400" y="168" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="36" font-weight="900" fill="#ca8a04">ЗАКОННО!</text>
+  <text x="400" y="202" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" fill="#64748b">Не каждый долг подлежит взысканию через нотариуса</text>
+  <rect x="40" y="218" width="720" height="1.5" fill="#fde68a"/>
+  <text x="80" y="254" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1f3c">✔  Долг спорный — было навязано страхование / допуслуги</text>
+  <text x="80" y="282" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1f3c">✔  МФО не вправе взыскать через нотариуса (ИП/ТОО)</text>
+  <text x="80" y="310" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1f3c">✔  Истёк срок исковой давности (3 года)</text>
+  <text x="80" y="338" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#0d1f3c">✔  Нотариус допустил ошибки в надписи</text>
+  <text x="80" y="366" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#ca8a04">✔  Сумма завышена — проценты сверх ГЭСВ</text>
+  <rect x="40" y="390" width="720" height="84" rx="10" fill="#0d1f3c"/>
+  <text x="400" y="416" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.5)">Проверим основание долга бесплатно за 15 минут</text>
+  <text x="400" y="444" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#fbbf24">ZakonExpert · +7 700 030-00-24</text>
+  <text x="400" y="464" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(255,255,255,0.35)">zakonexpertt.kz</text>
+</svg>

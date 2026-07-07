@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#0d1f3c"/>
+  <rect width="800" height="5" fill="#22c55e"/>
+  <text x="400" y="55" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="rgba(34,197,94,0.8)" letter-spacing="3">УДЕРЖАНИЕ С ЗАРАБОТНОЙ ПЛАТЫ</text>
+  <text x="400" y="130" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="58" font-weight="900" fill="#ffffff">СНЯТИЕ АРЕСТА</text>
+  <text x="400" y="185" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="44" font-weight="900" fill="#22c55e">С ЗАРПЛАТЫ</text>
+  <text x="400" y="220" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.5)">Отмена удержания ЧСИ · Казахстан</text>
+  <rect x="60" y="238" width="680" height="1" fill="rgba(255,255,255,0.07)"/>
+  <text x="120" y="272" font-family="Arial,sans-serif" font-size="16" fill="#ffffff">✅  ЧСИ удерживает 50% зарплаты — поможем снизить</text>
+  <text x="120" y="302" font-family="Arial,sans-serif" font-size="16" fill="#ffffff">✅  Отмена удержания с пенсии и пособий</text>
+  <text x="120" y="332" font-family="Arial,sans-serif" font-size="16" fill="#ffffff">✅  График платежей — платите комфортную сумму</text>
+  <text x="120" y="362" font-family="Arial,sans-serif" font-size="16" fill="#ffffff">✅  Снижение суммы долга на 30–70%</text>
+  <text x="120" y="392" font-family="Arial,sans-serif" font-size="16" fill="#22c55e" font-weight="700">✅  Работаем по всему Казахстану · Без предоплаты</text>
+  <rect x="60" y="416" width="680" height="60" rx="10" fill="rgba(34,197,94,0.15)" stroke="#22c55e" stroke-width="1.5"/>
+  <text x="400" y="440" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(255,255,255,0.55)">Позвоните — получите консультацию бесплатно</text>
+  <text x="400" y="464" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">ZakonExpert · +7 700 030-00-24</text>
+</svg>

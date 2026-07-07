@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#ffffff"/>
+  <rect width="800" height="6" fill="#1a56db"/>
+  <rect x="0" y="494" width="800" height="6" fill="#1a56db"/>
+  <text x="400" y="52" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="32" font-weight="900" fill="#0d1f3c">КАК СНЯТЬ АРЕСТ СО СЧЁТА?</text>
+  <text x="400" y="76" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="#4a6080">Пошаговая инструкция · ZakonExpert Казахстан</text>
+  <rect x="40" y="92" width="720" height="1.5" fill="#e2e8f0"/>
+  <!-- Steps -->
+  <rect x="40" y="108" width="50" height="50" rx="10" fill="#1a56db"/>
+  <text x="65" y="140" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">1</text>
+  <text x="106" y="128" font-family="Arial Black,Arial,sans-serif" font-size="16" font-weight="900" fill="#0d1f3c">Проверить ИИН на портале e.gov.kz</text>
+  <text x="106" y="148" font-family="Arial,sans-serif" font-size="13" fill="#64748b">Узнать сумму долга, кто ЧСИ и основание ареста</text>
+
+  <rect x="40" y="172" width="50" height="50" rx="10" fill="#1a56db"/>
+  <text x="65" y="204" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">2</text>
+  <text x="106" y="192" font-family="Arial Black,Arial,sans-serif" font-size="16" font-weight="900" fill="#0d1f3c">Определить основание долга</text>
+  <text x="106" y="212" font-family="Arial,sans-serif" font-size="13" fill="#64748b">Надпись нотариуса · решение суда · МФО · штраф</text>
+
+  <rect x="40" y="236" width="50" height="50" rx="10" fill="#1a56db"/>
+  <text x="65" y="268" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">3</text>
+  <text x="106" y="256" font-family="Arial Black,Arial,sans-serif" font-size="16" font-weight="900" fill="#0d1f3c">Подать возражение или жалобу</text>
+  <text x="106" y="276" font-family="Arial,sans-serif" font-size="13" fill="#64748b">На ЧСИ, нотариуса или в суд — зависит от ситуации</text>
+
+  <rect x="40" y="300" width="50" height="50" rx="10" fill="#1a56db"/>
+  <text x="65" y="332" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">4</text>
+  <text x="106" y="320" font-family="Arial Black,Arial,sans-serif" font-size="16" font-weight="900" fill="#0d1f3c">Получить постановление о снятии</text>
+  <text x="106" y="340" font-family="Arial,sans-serif" font-size="13" fill="#64748b">ЧСИ обязан снять арест в течение 1 рабочего дня</text>
+
+  <rect x="40" y="364" width="50" height="50" rx="10" fill="#22c55e"/>
+  <text x="65" y="396" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">5</text>
+  <text x="106" y="384" font-family="Arial Black,Arial,sans-serif" font-size="16" font-weight="900" fill="#22c55e">Счёт разблокирован ✓</text>
+  <text x="106" y="404" font-family="Arial,sans-serif" font-size="13" fill="#64748b">Средства снова доступны · График платежей согласован</text>
+
+  <rect x="40" y="430" width="720" height="54" rx="10" fill="#0d1f3c"/>
+  <text x="400" y="452" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="rgba(255,255,255,0.55)">Не знаете с чего начать? Позвоните — разберём за 5 минут</text>
+  <text x="400" y="474" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">ZakonExpert · +7 700 030-00-24</text>
+</svg>

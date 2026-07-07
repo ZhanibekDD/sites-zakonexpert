@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <rect width="800" height="500" fill="#0f172a"/>
+  <rect width="800" height="5" fill="#6366f1"/>
+  <text x="400" y="48" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="38" font-weight="900" fill="#ffffff">ГРАФИК ПЛАТЕЖЕЙ</text>
+  <text x="400" y="90" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="30" font-weight="900" fill="#6366f1">С ЧСИ · МФО · БАНКОМ</text>
+  <text x="400" y="118" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" fill="rgba(255,255,255,0.4)">Официальная рассрочка · Казахстан</text>
+  <rect x="40" y="134" width="720" height="1" fill="rgba(255,255,255,0.06)"/>
+  <!-- Three columns -->
+  <rect x="40" y="150" width="218" height="220" rx="12" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+  <text x="149" y="190" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a5b4fc">ЧСИ</text>
+  <text x="149" y="218" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">Частный судебный</text>
+  <text x="149" y="236" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">исполнитель</text>
+  <text x="149" y="264" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Снижаем % и расходы</text>
+  <text x="149" y="282" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Удобный ежемес. платёж</text>
+  <text x="149" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Соглашение официально</text>
+  <text x="149" y="330" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="14" font-weight="900" fill="#22c55e">от 3 дней</text>
+  <text x="149" y="352" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.35)">до соглашения</text>
+
+  <rect x="291" y="150" width="218" height="220" rx="12" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+  <text x="400" y="190" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a5b4fc">МФО</text>
+  <text x="400" y="218" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">Микрофинансовые</text>
+  <text x="400" y="236" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">организации</text>
+  <text x="400" y="264" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Оспорить % и пеню</text>
+  <text x="400" y="282" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Срок исковой давности</text>
+  <text x="400" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Списание при банкротстве</text>
+  <text x="400" y="330" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="14" font-weight="900" fill="#22c55e">от 50% скидка</text>
+  <text x="400" y="352" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.35)">на сумму долга</text>
+
+  <rect x="542" y="150" width="218" height="220" rx="12" fill="rgba(99,102,241,0.1)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+  <text x="651" y="190" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="15" font-weight="900" fill="#a5b4fc">БАНК</text>
+  <text x="651" y="218" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">Kaspi · Halyk</text>
+  <text x="651" y="236" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(255,255,255,0.65)">Freedom · BCC</text>
+  <text x="651" y="264" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Реструктуризация</text>
+  <text x="651" y="282" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Снижение ставки</text>
+  <text x="651" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.5)">Кредитные каникулы</text>
+  <text x="651" y="330" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="14" font-weight="900" fill="#22c55e">7–30 дней</text>
+  <text x="651" y="352" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" fill="rgba(255,255,255,0.35)">до решения</text>
+
+  <rect x="40" y="390" width="720" height="86" rx="12" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.35)" stroke-width="1.5"/>
+  <text x="400" y="418" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" fill="rgba(255,255,255,0.55)">Составим удобный график — вы платите посильными суммами</text>
+  <text x="400" y="446" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">ZakonExpert · +7 700 030-00-24</text>
+  <text x="400" y="466" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="rgba(99,102,241,0.7)">zakonexpertt.kz</text>
+</svg>

@@ -1328,6 +1328,9 @@ app.post('/api/inscription-check', asyncHandler(async (req, res) => {
   }
 }));
 
+// Gallery page
+app.get('/gallery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gallery.html')));
+
 // ===== SERVICE PAGE CLEAN URLS =====
 const servicePages = {
   '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
@@ -1540,6 +1543,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     // Инструменты
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
+    { url: '/gallery',        priority: '0.85', freq: 'monthly' },
   ];
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
