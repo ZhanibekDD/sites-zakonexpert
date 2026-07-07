@@ -1525,6 +1525,21 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/statyi?code=tk', priority: '0.8', freq: 'monthly' },
     { url: '/statyi?code=sk', priority: '0.8', freq: 'monthly' },
     { url: '/statyi?code=upk', priority: '0.75', freq: 'monthly' },
+    // Каталоги финансовых организаций
+    { url: '/banks',          priority: '0.85', freq: 'weekly' },
+    { url: '/mfo',            priority: '0.85', freq: 'weekly' },
+    { url: '/lombards',       priority: '0.8',  freq: 'weekly' },
+    { url: '/courts',         priority: '0.8',  freq: 'weekly' },
+    { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
+    { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
+    { url: '/gsi',            priority: '0.8',  freq: 'weekly' },
+    { url: '/insurance',      priority: '0.75', freq: 'weekly' },
+    { url: '/credit-bureaus', priority: '0.7',  freq: 'monthly' },
+    { url: '/regulators',     priority: '0.65', freq: 'monthly' },
+    { url: '/emergency',      priority: '0.6',  freq: 'monthly' },
+    // Инструменты
+    { url: '/calculator',     priority: '0.85', freq: 'monthly' },
+    { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
   ];
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
@@ -1540,6 +1555,35 @@ app.get('/sitemap-pages.xml', (req, res) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
 </urlset>`);
+});
+
+// SITEMAPS: CSV-backed catalogs (banks, courts, mfo, lombards, gsi, insurance, collectors, chambers)
+function csvSitemap(res, items, prefix) {
+  const today = new Date().toISOString().substring(0, 10);
+  const urls = items.filter(i => i.slug).map(i => `
+  <url>
+    <loc>https://zakonexpertt.kz/${prefix}/${i.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`).join('');
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`);
+}
+
+app.get('/sitemap-banks.xml',      (req, res) => csvSitemap(res, getBanksData(),      'banks'));
+app.get('/sitemap-courts.xml',     (req, res) => csvSitemap(res, getCourtsData(),     'courts'));
+app.get('/sitemap-chambers.xml',   (req, res) => csvSitemap(res, getChambersData(),   'chambers'));
+app.get('/sitemap-collectors.xml', (req, res) => csvSitemap(res, getCollectors(),     'collectors'));
+app.get('/sitemap-gsi.xml',        (req, res) => csvSitemap(res, getGsiData(),        'gsi'));
+app.get('/sitemap-insurance.xml',  (req, res) => csvSitemap(res, getInsuranceData(),  'insurance'));
+app.get('/sitemap-mfo.xml', (req, res) => {
+  const { mfo } = getMfoData();
+  csvSitemap(res, mfo, 'mfo');
+});
+app.get('/sitemap-lombards.xml', (req, res) => {
+  const { lombards } = getMfoData();
+  csvSitemap(res, lombards, 'lombards');
 });
 
 // SITEMAP INDEX
@@ -1570,6 +1614,38 @@ app.get('/sitemap-index.xml', (req, res) => {
   </sitemap>
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-laws.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-banks.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-courts.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-chambers.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-collectors.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-gsi.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-insurance.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-mfo.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-lombards.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
 </sitemapindex>`);
