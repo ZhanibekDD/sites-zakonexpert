@@ -63,16 +63,54 @@ if (region) {
   if (bailiffs.length === 0) {
     contentHtml = '<div class="registry-empty"><p>Судебные исполнители в регионе <strong>' + region + '</strong> не найдены.</p></div>';
   } else {
+    var proCSS = '<style>'
+      + '.pro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:1rem;}'
+      + '.pro-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}'
+      + '.pro-card:hover{box-shadow:0 4px 18px rgba(13,31,60,.11);border-color:#94a3b8;}'
+      + '.pro-name{font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:2px;line-height:1.3;}'
+      + '.pro-name a{color:inherit;text-decoration:none;}'
+      + '.pro-name a:hover{color:#1a56db;}'
+      + '.pro-lic{font-size:.72rem;color:#94a3b8;margin-bottom:8px;}'
+      + '.pro-contacts{display:flex;flex-direction:column;gap:5px;border-top:1px solid #f1f5f9;padding-top:8px;margin-top:6px;}'
+      + '.pro-row{display:flex;align-items:flex-start;gap:7px;font-size:.8rem;line-height:1.4;}'
+      + '.pro-icon{flex-shrink:0;font-size:.82rem;line-height:1.5;}'
+      + '.pro-val{color:#374151;}'
+      + '.pro-link{color:#1a56db;text-decoration:none;}'
+      + '.pro-link:hover{text-decoration:underline;}'
+      + '.pro-dim{color:#94a3b8;font-size:.72rem;}'
+      + '.pro-nophone{font-size:.74rem;color:#dc2626;font-style:italic;}'
+      + '.pro-page-link{display:block;margin-top:9px;padding-top:9px;border-top:1px solid #f1f5f9;font-size:.78rem;color:#1a56db;text-decoration:none;font-weight:600;}'
+      + '.pro-page-link:hover{text-decoration:underline;}'
+      + '@media(max-width:600px){.pro-grid{grid-template-columns:1fr;}}'
+      + '</style>';
     var items = '';
     for (var i = 0; i < bailiffs.length; i++) {
       var b = bailiffs[i];
       var name = titleCase(b.name);
-      items += '<li class="registry-item"><a href="/bailiff/' + b.slug + '" class="registry-item-link">'
-        + '<span class="registry-item-name">' + name + '</span>'
-        + (b.phones && b.phones.length ? '<span class="registry-item-region">' + fmtPhone(b.phones[0]) + '</span>' : '')
-        + '</a></li>';
+      var phonesHtml = '';
+      if (b.phones && b.phones.length) {
+        var phoneLinks = b.phones.slice(0,2).map(function(p) {
+          var digits = p.replace(/[^\d+]/g, '');
+          return '<a href="tel:' + digits + '" class="pro-link">' + fmtPhone(p) + '</a>';
+        }).join(' &nbsp; ');
+        phonesHtml = '<div class="pro-row"><span class="pro-icon">📞</span><span>' + phoneLinks + '</span></div>';
+      } else {
+        phonesHtml = '<div class="pro-row"><span class="pro-icon">📞</span><span class="pro-nophone">Телефон не указан</span></div>';
+      }
+      var emailHtml = b.email
+        ? '<div class="pro-row"><span class="pro-icon">✉️</span><a href="mailto:' + b.email + '" class="pro-link">' + b.email + '</a></div>'
+        : '';
+      var addrHtml = b.address
+        ? '<div class="pro-row"><span class="pro-icon">📍</span><span class="pro-val">' + b.address + '</span></div>'
+        : '';
+      items += '<div class="pro-card">'
+        + '<div class="pro-name"><a href="/bailiff/' + b.slug + '">' + name + '</a></div>'
+        + '<div class="pro-lic">Лицензия № ' + (b.license || '—') + (b.licenseDate ? ' от ' + b.licenseDate : '') + '</div>'
+        + '<div class="pro-contacts">' + phonesHtml + emailHtml + addrHtml + '</div>'
+        + '<a href="/bailiff/' + b.slug + '" class="pro-page-link">Полная карточка ЧСИ →</a>'
+        + '</div>';
     }
-    contentHtml = '<ul class="registry-list">' + items + '</ul>';
+    contentHtml = proCSS + '<div class="pro-grid">' + items + '</div>';
   }
 } else {
   var regionCards = '';
