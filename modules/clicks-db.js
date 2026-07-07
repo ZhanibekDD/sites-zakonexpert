@@ -20,7 +20,8 @@ async function getStats(since) {
     wa_advocate: 0,    wa_mediator: 0,    wa_main: 0,
   };
   for (const c of clicks) {
-    const key = `${c.type}_${c.target}`;
+    const t = (c.type === 'whatsapp') ? 'wa' : c.type;
+    const key = `${t}_${c.target}`;
     if (key in r) r[key]++;
   }
   return r;
