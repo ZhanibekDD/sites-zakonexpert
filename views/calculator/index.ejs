@@ -1,0 +1,126 @@
+<%
+const pageTitle = 'Калькулятор долга и пени по займу | ZakonExpert';
+const pageDesc  = 'Рассчитайте сумму долга по МФО или банку: проценты, пеня, срок исковой давности. Бесплатный онлайн-калькулятор.';
+const canonical = 'https://zakonexpertt.kz/calculator';
+const schema = { '@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Главная',item:'https://zakonexpertt.kz/'},{'@type':'ListItem',position:2,name:'Калькулятор долга',item:canonical}]};
+
+const CSS = '<style>'
+  + '.calc-wrap{max-width:680px}'
+  + '.calc-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:28px 32px;margin-top:1.5rem}'
+  + '.calc-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}'
+  + '.calc-group{display:flex;flex-direction:column;gap:6px}'
+  + '.calc-label{font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em}'
+  + '.calc-input{padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.95rem;outline:none;width:100%;box-sizing:border-box}'
+  + '.calc-input:focus{border-color:#1a56db}'
+  + '.calc-btn{width:100%;background:#1a56db;color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px}'
+  + '.calc-btn:hover{background:#1e40af}'
+  + '.calc-result{background:#f0fdf4;border:2px solid #86efac;border-radius:14px;padding:20px 24px;margin-top:1.2rem;display:none}'
+  + '.calc-result.show{display:block}'
+  + '.cr-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #dcfce7;font-size:.9rem}'
+  + '.cr-row:last-child{border-bottom:none}'
+  + '.cr-label{color:#374151}'
+  + '.cr-val{font-weight:700;color:#0d1f3c}'
+  + '.cr-total{font-size:1.15rem;color:#16a34a}'
+  + '.cr-warn{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 16px;font-size:.83rem;color:#92400e;margin-top:12px;line-height:1.6}'
+  + '.calc-tabs{display:flex;gap:8px;margin-bottom:1.2rem;flex-wrap:wrap}'
+  + '.calc-tab{padding:8px 18px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.83rem;font-weight:600;cursor:pointer;background:#fff;color:#475569}'
+  + '.calc-tab.active{background:#1a56db;color:#fff;border-color:#1a56db}'
+  + '@media(max-width:520px){.calc-row{grid-template-columns:1fr}}'
+  + '</style>';
+
+const JS = `<script>
+function setTab(t) {
+  document.querySelectorAll('.calc-tab').forEach(function(el){ el.classList.toggle('active', el.dataset.tab === t); });
+  document.getElementById('field-rate').style.display = t === 'mfo' ? '' : 'none';
+  document.getElementById('field-rate-bank').style.display = t === 'bank' ? '' : 'none';
+  document.getElementById('field-penalty').parentElement.style.display = t === 'mfo' ? '' : 'none';
+  document.getElementById('result-box').classList.remove('show');
+}
+function fmt(n) { return Math.round(n).toLocaleString('ru-RU') + ' ₸'; }
+function calculate() {
+  var activeTab = document.querySelector('.calc-tab.active').dataset.tab;
+  var principal = parseFloat(document.getElementById('principal').value) || 0;
+  var dateFrom  = new Date(document.getElementById('date-from').value);
+  var dateTo    = new Date(document.getElementById('date-to').value);
+  if (!principal || isNaN(dateFrom) || isNaN(dateTo) || dateTo <= dateFrom) {
+    alert('Заполните все поля корректно'); return;
+  }
+  var days = Math.round((dateTo - dateFrom) / 86400000);
+  var interest = 0, penalty = 0, total = 0;
+
+  if (activeTab === 'mfo') {
+    var rateDay = parseFloat(document.getElementById('rate-mfo').value) || 1;
+    var penaltyRate = parseFloat(document.getElementById('penalty').value) || 0.5;
+    interest = principal * (rateDay / 100) * days;
+    penalty  = principal * (penaltyRate / 100) * days;
+    total = principal + interest + penalty;
+  } else {
+    var rateYear = parseFloat(document.getElementById('rate-bank').value) || 24;
+    interest = principal * (rateYear / 100) * (days / 365);
+    penalty  = 0;
+    total = principal + interest;
+  }
+
+  var limitDate = new Date(dateFrom); limitDate.setFullYear(limitDate.getFullYear() + 3);
+  var expired   = dateTo > limitDate;
+
+  document.getElementById('cr-days').textContent     = days + ' дней';
+  document.getElementById('cr-principal').textContent = fmt(principal);
+  document.getElementById('cr-interest').textContent  = fmt(interest);
+  document.getElementById('cr-penalty').parentElement.style.display = penalty > 0 ? '' : 'none';
+  document.getElementById('cr-penalty').textContent   = fmt(penalty);
+  document.getElementById('cr-total').textContent     = fmt(total);
+  document.getElementById('cr-limit').textContent     = limitDate.toLocaleDateString('ru-RU');
+  document.getElementById('cr-expired').style.display = expired ? '' : 'none';
+  document.getElementById('result-box').classList.add('show');
+}
+window.addEventListener('DOMContentLoaded', function() { setTab('mfo'); });
+</script>`;
+
+const body = CSS
+  + '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Калькулятор долга</span></nav>'
+  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🧮 Калькулятор</span></div>'
+  + '<h1 class="npage-h1">Калькулятор долга и пени</h1>'
+  + '<p style="color:#475569;margin-top:.5rem;">Рассчитайте проценты по МФО, банку и пеню за просрочку — бесплатно и быстро</p></div>'
+  + '<div class="calc-wrap">'
+  + '<div class="calc-tabs">'
+  + '<button class="calc-tab active" data-tab="mfo" onclick="setTab(\'mfo\')">💳 МФО / микрозайм</button>'
+  + '<button class="calc-tab" data-tab="bank" onclick="setTab(\'bank\')">🏦 Банковский кредит</button>'
+  + '</div>'
+  + '<div class="calc-card">'
+  + '<div class="calc-row">'
+  + '<div class="calc-group"><label class="calc-label">Сумма займа (₸)</label><input id="principal" class="calc-input" type="number" placeholder="100000" min="1000" step="1000"></div>'
+  + '<div class="calc-group"><label class="calc-label">Дата займа</label><input id="date-from" class="calc-input" type="date"></div>'
+  + '</div>'
+  + '<div class="calc-row">'
+  + '<div id="field-rate" class="calc-group"><label class="calc-label">Ставка (% в день)</label><input id="rate-mfo" class="calc-input" type="number" value="1" min="0.01" max="10" step="0.01"></div>'
+  + '<div id="field-rate-bank" class="calc-group" style="display:none"><label class="calc-label">Ставка (% годовых)</label><input id="rate-bank" class="calc-input" type="number" value="24" min="1" max="300" step="0.5"></div>'
+  + '<div class="calc-group"><label class="calc-label">Дата расчёта</label><input id="date-to" class="calc-input" type="date"></div>'
+  + '</div>'
+  + '<div class="calc-row">'
+  + '<div class="calc-group"><label class="calc-label">Пеня (% в день)</label><input id="penalty" class="calc-input" type="number" value="0.5" min="0" max="5" step="0.01"></div>'
+  + '<div class="calc-group" style="justify-content:flex-end;padding-top:24px"><button class="calc-btn" onclick="calculate()">Рассчитать</button></div>'
+  + '</div>'
+  + '<div id="result-box" class="calc-result">'
+  + '<div class="cr-row"><span class="cr-label">Срок просрочки</span><span class="cr-val" id="cr-days">—</span></div>'
+  + '<div class="cr-row"><span class="cr-label">Основной долг</span><span class="cr-val" id="cr-principal">—</span></div>'
+  + '<div class="cr-row"><span class="cr-label">Накопленные проценты</span><span class="cr-val" id="cr-interest">—</span></div>'
+  + '<div class="cr-row"><span class="cr-label">Пеня за просрочку</span><span class="cr-val cr-total" id="cr-penalty">—</span></div>'
+  + '<div class="cr-row" style="margin-top:8px"><span class="cr-label" style="font-weight:700">ИТОГО к оплате</span><span class="cr-val cr-total" id="cr-total">—</span></div>'
+  + '<div class="cr-row"><span class="cr-label">Срок исковой давности</span><span class="cr-val" id="cr-limit">—</span></div>'
+  + '<div id="cr-expired" class="cr-warn" style="display:none">⚠️ <strong>Срок исковой давности истёк!</strong> МФО или банк пропустили 3-летний срок и не могут взыскать долг через суд. Обратитесь к юристу — возможно, долг уже не подлежит взысканию.</div>'
+  + '</div>'
+  + '</div>'
+  + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
+  + '<p class="npage-cta-label">Нужна помощь с долгом?</p>'
+  + '<h2 class="npage-cta-title">Сумма слишком большая?</h2>'
+  + '<p class="npage-cta-sub">ZakonExpert поможет снизить долг, оспорить пеню и добиться реструктуризации. Работаем по всему Казахстану.</p>'
+  + '<div class="npage-cta-tags"><span>Снижение долга</span><span>Оспаривание пени</span><span>Рассрочка</span></div></div>'
+  + '<a href="https://wa.me/77000300024?text=Здравствуйте!+Хочу+узнать+как+снизить+долг+и+пеню." class="npage-wa-btn" target="_blank" rel="noopener">'
+  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
+  + '<span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 700 030-00-24</span></span></a></div>'
+  + '</div></div>'
+  + JS;
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

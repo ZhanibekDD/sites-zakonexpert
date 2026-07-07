@@ -1,0 +1,64 @@
+<%
+const pending  = comments.filter(c => !c.approved);
+const approved = comments.filter(c => c.approved);
+function star(n){ return '★'.repeat(n) + '☆'.repeat(5-n); }
+function dt(d){ return d ? new Date(d).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'; }
+function typeLabel(t){ return t==='bailiff'?'ЧСИ':'Нотариус'; }
+%><!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Модерация отзывов | ZakonExpert</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b;padding:2rem}
+h1{font-size:1.3rem;margin-bottom:1.5rem}h2{font-size:1rem;margin:1.5rem 0 .8rem;color:#475569}
+.card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:10px}
+.card.pending{border-color:#fbbf24;background:#fffbeb}
+.card.approved{border-color:#86efac}
+.meta{font-size:.75rem;color:#94a3b8;margin-bottom:6px}
+.stars{color:#f59e0b;font-size:1rem;margin-bottom:4px}
+.text{font-size:.88rem;line-height:1.6;color:#374151}
+.actions{margin-top:10px;display:flex;gap:8px}
+button{border:none;border-radius:8px;padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer}
+.btn-approve{background:#22c55e;color:#fff}
+.btn-delete{background:#ef4444;color:#fff}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;border-radius:5px;padding:1px 8px;margin-left:8px}
+.badge-pending{background:#fef3c7;color:#92400e}
+.badge-approved{background:#dcfce7;color:#166534}
+.empty{color:#94a3b8;font-size:.88rem;padding:20px 0}
+</style></head><body>
+<h1>Модерация отзывов — ZakonExpert</h1>
+<p style="font-size:.82rem;color:#64748b;margin-bottom:1rem">Всего: <strong><%= comments.length %></strong> · На проверке: <strong><%= pending.length %></strong> · Опубликовано: <strong><%= approved.length %></strong></p>
+
+<h2>⏳ Ожидают проверки (<%= pending.length %>)</h2>
+<% if (!pending.length) { %><p class="empty">Нет новых отзывов.</p><% } %>
+<% pending.forEach(function(c){ %>
+<div class="card pending">
+  <div class="meta"><%= typeLabel(c.type) %> / <code><%= c.slug %></code> &nbsp;·&nbsp; <%= dt(c.createdAt) %> &nbsp;·&nbsp; <strong><%= c.name %></strong></div>
+  <div class="stars"><%= star(c.rating||5) %> (<%= c.rating||5 %>/5)</div>
+  <div class="text"><%= c.text %></div>
+  <div class="actions">
+    <form method="POST" action="/admin/comments/<%= c._id %>/approve" style="margin:0">
+      <input type="hidden" name="pw" value="<%= pw %>">
+      <button class="btn-approve" type="submit">✓ Опубликовать</button>
+    </form>
+    <form method="POST" action="/admin/comments/<%= c._id %>/delete" style="margin:0">
+      <input type="hidden" name="pw" value="<%= pw %>">
+      <button class="btn-delete" type="submit">✗ Удалить</button>
+    </form>
+  </div>
+</div>
+<% }); %>
+
+<h2>✅ Опубликованные (<%= approved.length %>)</h2>
+<% if (!approved.length) { %><p class="empty">Нет опубликованных отзывов.</p><% } %>
+<% approved.forEach(function(c){ %>
+<div class="card approved">
+  <div class="meta"><%= typeLabel(c.type) %> / <code><%= c.slug %></code> &nbsp;·&nbsp; <%= dt(c.createdAt) %> &nbsp;·&nbsp; <strong><%= c.name %></strong> <span class="badge badge-approved">опубликован</span></div>
+  <div class="stars"><%= star(c.rating||5) %> (<%= c.rating||5 %>/5)</div>
+  <div class="text"><%= c.text %></div>
+  <div class="actions">
+    <form method="POST" action="/admin/comments/<%= c._id %>/delete" style="margin:0">
+      <input type="hidden" name="pw" value="<%= pw %>">
+      <button class="btn-delete" type="submit">✗ Удалить</button>
+    </form>
+  </div>
+</div>
+<% }); %>
+</body></html>

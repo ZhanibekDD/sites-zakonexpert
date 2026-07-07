@@ -84,6 +84,15 @@ try {
   logger.warn('Bailiffs module not loaded: ' + e.message);
 }
 
+// Initialize comments DB
+let commentsDb = null;
+try {
+  commentsDb = require('./modules/comments-db');
+  logger.info('Comments module loaded ✓');
+} catch (e) {
+  logger.warn('Comments module not loaded: ' + e.message);
+}
+
 // Initialize lawyers DB
 let lawyersDb = null;
 let importLawyers = null;
@@ -403,7 +412,10 @@ app.get('/notary/:slug', asyncHandler(async (req, res) => {
   if (!notariesDb) return res.status(503).send('Notary module not available');
   const notary = await notariesDb.findBySlug(req.params.slug);
   if (!notary) return res.status(404).redirect('/notary-search');
-  res.render('notary/page', { notary });
+  const [comments, commentStats] = commentsDb
+    ? await Promise.all([commentsDb.getApproved('notary', req.params.slug), commentsDb.stats('notary', req.params.slug)])
+    : [[], null];
+  res.render('notary/page', { notary, comments, commentStats, commentSent: req.query.comment === 'sent' });
 }));
 
 // Sitemap for notary pages
@@ -986,7 +998,10 @@ app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
   if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
   const bailiff = await bailiffsDb.findBySlug(req.params.slug);
   if (!bailiff) return res.status(404).redirect('/bailiff-search');
-  res.render('bailiff/page', { bailiff });
+  const [comments, commentStats] = commentsDb
+    ? await Promise.all([commentsDb.getApproved('bailiff', req.params.slug), commentsDb.stats('bailiff', req.params.slug)])
+    : [[], null];
+  res.render('bailiff/page', { bailiff, comments, commentStats, commentSent: req.query.comment === 'sent' });
 }));
 
 app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
@@ -1873,6 +1888,60 @@ app.use((err, req, res, next) => {
 });
 // --- КОНЕЦ обработчика ошибок ---
 
+// ===== КОММЕНТАРИИ =====
+app.post('/comments', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
+  if (!commentsDb) return res.redirect(req.headers.referer || '/');
+  const { type, slug, name, rating, text, backUrl } = req.body;
+  if (!type || !slug || !text || text.trim().length < 3) {
+    return res.redirect(backUrl || req.headers.referer || '/');
+  }
+  await commentsDb.add({
+    type:   type.slice(0, 20),
+    slug:   slug.slice(0, 120),
+    name:   ((name || '').trim() || 'Аноним').slice(0, 50),
+    rating: Math.min(5, Math.max(1, parseInt(rating) || 5)),
+    text:   text.trim().slice(0, 600),
+    ip:     req.ip,
+  });
+  res.redirect((backUrl || req.headers.referer || '/') + '?comment=sent');
+}));
+
+app.get('/admin/comments', asyncHandler(async (req, res) => {
+  const pw = req.query.pw || '';
+  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  const all = commentsDb ? await commentsDb.getAll() : [];
+  res.render('admin/comments', { comments: all, pw });
+}));
+
+app.post('/admin/comments/:id/approve', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
+  const pw = req.body.pw || req.query.pw || '';
+  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  if (commentsDb) await commentsDb.approve(req.params.id);
+  res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
+}));
+
+app.post('/admin/comments/:id/delete', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
+  const pw = req.body.pw || req.query.pw || '';
+  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  if (commentsDb) await commentsDb.remove(req.params.id);
+  res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
+}));
+
+// ===== BIN SEARCH =====
+app.get('/bin-search', (req, res) => {
+  const bin = (req.query.bin || '').replace(/\D/g, '').slice(0, 12);
+  if (bin.length < 9) return res.render('bin-search/index', { bin, results: [], searched: false });
+  const results = [];
+  try { getBanksData().filter(b => b.bin === bin).forEach(b => results.push({ type: 'Банк', name: b.shortName || b.name, url: '/banks/' + b.slug })); } catch(e){}
+  try { const { mfo, lombards } = getMfoData(); mfo.filter(m => m.bin === bin).forEach(m => results.push({ type: 'МФО', name: m.name, url: '/mfo/' + m.slug })); lombards.filter(m => m.bin === bin).forEach(m => results.push({ type: 'Ломбард', name: m.name, url: '/lombards/' + m.slug })); } catch(e){}
+  try { getCollectors().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Коллектор', name: c.name, url: '/collectors/' + c.slug })); } catch(e){}
+  try { getInsuranceData().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Страховая', name: c.shortName || c.name, url: '/insurance/' + c.slug })); } catch(e){}
+  try { getGsiData().filter(g => g.bin && g.bin === bin).forEach(g => results.push({ type: 'ГСИ', name: g.name, url: '/gsi/' + g.slug })); } catch(e){}
+  res.render('bin-search/index', { bin, results, searched: true });
+});
+
+// ===== КАЛЬКУЛЯТОР =====
+app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {

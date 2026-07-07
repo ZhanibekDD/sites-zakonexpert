@@ -176,6 +176,52 @@ const body = `
       Данные предоставлены <a href="https://findh.org" target="_blank" rel="noopener noreferrer">findh.org</a> — реестр частных судебных исполнителей Казахстана. Обновляются еженедельно.
     </p>
 
+    <!-- КОММЕНТАРИИ -->
+    <div style="margin-top:2.5rem;" id="reviews">
+      <h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin-bottom:1rem;">
+        Отзывы
+        ${commentStats ? `<span style="font-size:.85rem;font-weight:400;color:#64748b;margin-left:8px;">★ ${commentStats.avg} из 5 (${commentStats.count} отзывов)</span>` : ''}
+      </h2>
+
+      ${commentSent ? '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;font-size:.88rem;color:#166534;margin-bottom:1rem;">✓ Спасибо! Ваш отзыв отправлен на проверку.</div>' : ''}
+
+      ${(comments && comments.length) ? comments.map(function(c){
+        var stars = '★'.repeat(c.rating||5) + '☆'.repeat(5-(c.rating||5));
+        var dt = new Date(c.createdAt).toLocaleDateString('ru-RU',{day:'2-digit',month:'long',year:'numeric'});
+        return '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 20px;margin-bottom:10px;">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+          + '<span style="color:#f59e0b;font-size:1rem;">' + stars + '</span>'
+          + '<strong style="font-size:.88rem;color:#0d1f3c;">' + c.name + '</strong>'
+          + '<span style="font-size:.75rem;color:#94a3b8;margin-left:auto;">' + dt + '</span>'
+          + '</div>'
+          + '<p style="font-size:.88rem;color:#374151;line-height:1.6;margin:0;">' + c.text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>'
+          + '</div>';
+      }).join('') : '<p style="color:#94a3b8;font-size:.88rem;margin-bottom:1rem;">Отзывов пока нет. Будьте первым!</p>'}
+
+      <details style="margin-top:1rem;">
+        <summary style="cursor:pointer;font-size:.9rem;font-weight:600;color:#1a56db;list-style:none;padding:10px 0;">✏️ Оставить отзыв</summary>
+        <form method="POST" action="/comments" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:20px;margin-top:10px;">
+          <input type="hidden" name="type" value="bailiff">
+          <input type="hidden" name="slug" value="${bailiff.slug}">
+          <input type="hidden" name="backUrl" value="/bailiff/${bailiff.slug}#reviews">
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Ваше имя (необязательно)</label>
+            <input name="name" type="text" maxlength="50" placeholder="Аноним" style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.9rem;box-sizing:border-box;outline:none;">
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Оценка</label>
+            <div style="display:flex;gap:6px;">${[5,4,3,2,1].map(function(n){return '<label style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.75rem;color:#64748b;"><input type="radio" name="rating" value="'+n+'" '+(n===5?'checked':'')+' style="margin:0;"> '+'★'.repeat(n)+'</label>';}).join('')}</div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Комментарий</label>
+            <textarea name="text" required minlength="3" maxlength="600" rows="4" placeholder="Поделитесь опытом работы с этим ЧСИ..." style="width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.9rem;box-sizing:border-box;resize:vertical;outline:none;font-family:inherit;"></textarea>
+          </div>
+          <button type="submit" style="background:#1a56db;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:.9rem;font-weight:700;cursor:pointer;">Отправить отзыв</button>
+          <p style="font-size:.72rem;color:#94a3b8;margin-top:8px;">Отзыв проходит модерацию и появится после проверки.</p>
+        </form>
+      </details>
+    </div>
+
   </div>
 </div>
 `;
