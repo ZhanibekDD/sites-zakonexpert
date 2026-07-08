@@ -1368,6 +1368,7 @@ const servicePages = {
   '/chsi-ne-snimaet-arest-posle-oplaty': 'chsi-ne-snimaet-arest-posle-oplaty.html',
   '/arest-zarplatnoy-karty':           'arest-zarplatnoy-karty.html',
   '/snyat-arest-s-nedvizhimosti':      'snyat-arest-s-nedvizhimosti.html',
+  '/nadpis-ili-list':                  'nadpis-ili-list.html',
 };
 
 for (const [route, file] of Object.entries(servicePages)) {
@@ -1557,6 +1558,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/chsi-ne-snimaet-arest-posle-oplaty', priority: '0.85', freq: 'monthly' },
     { url: '/arest-zarplatnoy-karty',           priority: '0.85', freq: 'monthly' },
     { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
+    { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
   ];
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
