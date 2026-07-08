@@ -1362,6 +1362,7 @@ const servicePages = {
   '/privacy':                          'privacy.html',
   '/services':                         'services.html',
   '/contact':                          'contact.html',
+  '/sms-1414':                         'sms-1414.html',
   '/zapret-na-vyezd-iz-kazahstana':    'zapret-na-vyezd-iz-kazahstana.html',
   '/zhaloba-na-chsi':                  'zhaloba-na-chsi.html',
   '/chsi-ne-snimaet-arest-posle-oplaty': 'chsi-ne-snimaet-arest-posle-oplaty.html',
@@ -1549,6 +1550,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
     { url: '/gallery',        priority: '0.85', freq: 'monthly' },
+    { url: '/sms-1414',       priority: '0.9',  freq: 'monthly' },
     // Новые страницы из плана x1000
     { url: '/zapret-na-vyezd-iz-kazahstana',    priority: '0.85', freq: 'monthly' },
     { url: '/zhaloba-na-chsi',                  priority: '0.85', freq: 'monthly' },
