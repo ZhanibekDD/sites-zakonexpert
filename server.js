@@ -137,7 +137,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type'],
 }));
 app.use(express.json()); // заменяет bodyParser.json()
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ===== VISITOR TRACKING =====
 const TRACKED_PATHS = new Set([
