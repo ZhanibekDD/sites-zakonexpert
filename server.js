@@ -1362,6 +1362,11 @@ const servicePages = {
   '/privacy':                          'privacy.html',
   '/services':                         'services.html',
   '/contact':                          'contact.html',
+  '/zapret-na-vyezd-iz-kazahstana':    'zapret-na-vyezd-iz-kazahstana.html',
+  '/zhaloba-na-chsi':                  'zhaloba-na-chsi.html',
+  '/chsi-ne-snimaet-arest-posle-oplaty': 'chsi-ne-snimaet-arest-posle-oplaty.html',
+  '/arest-zarplatnoy-karty':           'arest-zarplatnoy-karty.html',
+  '/snyat-arest-s-nedvizhimosti':      'snyat-arest-s-nedvizhimosti.html',
 };
 
 for (const [route, file] of Object.entries(servicePages)) {
@@ -1544,6 +1549,12 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
     { url: '/gallery',        priority: '0.85', freq: 'monthly' },
+    // Новые страницы из плана x1000
+    { url: '/zapret-na-vyezd-iz-kazahstana',    priority: '0.85', freq: 'monthly' },
+    { url: '/zhaloba-na-chsi',                  priority: '0.85', freq: 'monthly' },
+    { url: '/chsi-ne-snimaet-arest-posle-oplaty', priority: '0.85', freq: 'monthly' },
+    { url: '/arest-zarplatnoy-karty',           priority: '0.85', freq: 'monthly' },
+    { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
   ];
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
