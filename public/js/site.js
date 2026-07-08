@@ -1,5 +1,27 @@
 document.documentElement.classList.add('js-enabled');
 
+// ── Announcement bar — "Сначала снимаем, потом оплата" ──
+(function() {
+  var bar = document.createElement('div');
+  bar.id = 'announce-bar';
+  bar.innerHTML = '<div class="announce-inner">'
+    + '<span class="announce-badge">✅ Гарантия</span>'
+    + '<span class="announce-text">Сначала снимаем аресты&nbsp;— потом оплата. Официальный договор.</span>'
+    + '<a href="https://wa.me/77000300024?text=%D0%A1%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D0%B0+%D1%81%D0%BD%D0%B8%D0%BC%D0%B8%D1%82%D0%B5+%D0%B0%D1%80%D0%B5%D1%81%D1%82%2C+%D0%BF%D0%BE%D1%82%D0%BE%D0%BC+%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B0.+%D0%A5%D0%BE%D1%87%D1%83+%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C+%D0%BF%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5." class="announce-cta" target="_blank" rel="noopener">Узнать условия →</a>'
+    + '</div>';
+  var style = document.createElement('style');
+  style.textContent = '#announce-bar{background:linear-gradient(90deg,#052e16,#065f46,#052e16);color:#fff;padding:8px 0;text-align:center;font-size:0.82rem;line-height:1.4;}'
+    + '.announce-inner{max-width:1100px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 16px;}'
+    + '.announce-badge{background:#4ade80;color:#052e16;font-weight:800;font-size:0.75rem;padding:2px 10px;border-radius:100px;white-space:nowrap;}'
+    + '.announce-text{color:rgba(255,255,255,0.92);}'
+    + '.announce-cta{color:#4ade80;font-weight:700;text-decoration:none;white-space:nowrap;border-bottom:1px solid rgba(74,222,128,0.4);}'
+    + '.announce-cta:hover{color:#86efac;}';
+  document.head.appendChild(style);
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.insertBefore(bar, document.body.firstChild);
+  });
+})();
+
 // Анимация fade-in при скролле — работает на всех страницах
 (function() {
   if (!('IntersectionObserver' in window)) {
