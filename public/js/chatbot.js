@@ -1,11 +1,11 @@
-/* ZakonExpert Chat Widget — click tracking + lead collection */
+﻿/* ZakonExpert Chat Widget — click tracking + lead collection */
 (function () {
   'use strict';
 
   // ── Click tracking ───────────────────────────────────────────────────────
   // Только наши номера — нотариусы, ЧСИ и другие чужие номера не трекаем
   var OWN_NUMBERS = {
-    '77000300024': 'main',
+    '77752998738': 'main',
     '77777457577': 'advocate',
     '77479641306': 'mediator',
   };

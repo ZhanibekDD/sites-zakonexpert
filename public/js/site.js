@@ -1,4 +1,4 @@
-document.documentElement.classList.add('js-enabled');
+﻿document.documentElement.classList.add('js-enabled');
 
 // ── Announcement bar — "Сначала снимаем, потом оплата" ──
 (function() {
@@ -7,7 +7,7 @@ document.documentElement.classList.add('js-enabled');
   bar.innerHTML = '<div class="announce-inner">'
     + '<span class="announce-badge">✅ Гарантия</span>'
     + '<span class="announce-text">Сначала снимаем аресты&nbsp;— потом оплата. Официальный договор.</span>'
-    + '<a href="https://wa.me/77000300024?text=%D0%A1%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D0%B0+%D1%81%D0%BD%D0%B8%D0%BC%D0%B8%D1%82%D0%B5+%D0%B0%D1%80%D0%B5%D1%81%D1%82%2C+%D0%BF%D0%BE%D1%82%D0%BE%D0%BC+%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B0.+%D0%A5%D0%BE%D1%87%D1%83+%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C+%D0%BF%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5." class="announce-cta" target="_blank" rel="noopener">Узнать условия →</a>'
+    + '<a href="https://wa.me/77752998738?text=%D0%A1%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D0%B0+%D1%81%D0%BD%D0%B8%D0%BC%D0%B8%D1%82%D0%B5+%D0%B0%D1%80%D0%B5%D1%81%D1%82%2C+%D0%BF%D0%BE%D1%82%D0%BE%D0%BC+%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B0.+%D0%A5%D0%BE%D1%87%D1%83+%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C+%D0%BF%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5." class="announce-cta" target="_blank" rel="noopener">Узнать условия →</a>'
     + '</div>';
   var style = document.createElement('style');
   style.textContent = '#announce-bar{background:linear-gradient(90deg,#052e16,#065f46,#052e16);color:#fff;padding:8px 0;text-align:center;font-size:0.82rem;line-height:1.4;}'
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (contactForm) {
     const lang = document.documentElement.lang && document.documentElement.lang.startsWith('kk') ? 'kk' : 'ru';
     const resultNote = contactForm.querySelector('.contact-result-note');
-    const whatsappNumber = '77000300024';
+    const whatsappNumber = '77752998738';
 
     contactForm.addEventListener('submit', (event) => {
       event.preventDefault();
