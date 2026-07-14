@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = item.name + ' — ломбард Казахстан, адрес, БИН | ZakonExpert';
-const pageDesc  = item.name + ': лицензированный ломбард Казахстана. БИН ' + item.bin + '. Адрес: ' + (item.address||'—') + '. Проблемы с ломбардом? ZakonExpert защитит ваши права.';
+const pageTitle = item.name + ' — ломбард, контакты | ZakonExpert';
+const pageDesc  = item.name + ': БИН ' + item.bin + '. Ломбард требует долг или взыскивает через суд? Проверим основание и поможем бесплатно.';
 const canonical = 'https://zakonexpertt.kz/lombards/' + item.slug;
 
 function escHtml(s) {
@@ -60,6 +60,7 @@ const body = CSS
   + mapBlock(item.address)
   + '<div class="li-warn">⚠️ <strong>Важно:</strong> Ломбард вправе реализовать залог только через суд или нотариальную надпись. Если ломбард угрожает арестом счёта или имущества — это незаконно. <a href="https://wa.me/77752998738" style="color:#1a56db;font-weight:600;">Обратитесь в ZakonExpert</a>.</div>'
   + '</div>'
+  + lowContentBoost({ entityLabel: 'этот ломбард' })
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">Проблема с ломбардом?</h2>'

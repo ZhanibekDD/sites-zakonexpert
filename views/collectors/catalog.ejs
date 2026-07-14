@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = 'Коллекторские агентства Казахстана 2025 — реестр, телефоны, email | ZakonExpert';
-const pageDesc  = 'Полный реестр лицензированных коллекторских агентств Казахстана: ' + items.length + ' организаций. Адреса, телефоны, email, БИН. Коллектор требует деньги? Узнайте, легальна ли компания. ZakonExpert поможет.';
+const pageTitle = 'Коллекторы Казахстана — реестр ' + items.length + ' агентств | ZakonExpert';
+const pageDesc  = 'Коллектор звонит и требует долг? Проверим, легальна ли компания, и законность требований бесплатно. Реестр ' + items.length + ' коллекторских агентств РК.';
 const canonical = 'https://zakonexpertt.kz/collectors';
 
 const schema = {
@@ -125,12 +125,15 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Коллекторы</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">📋 Реестр АРРФР</span></div>'
   + '<h1 class="npage-h1">Коллекторские агентства Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Государственный реестр лицензированных коллекторов РК — <strong>' + items.length + ' агентств</strong></p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Государственный реестр лицензированных коллекторов РК — <strong>' + items.length + ' агентств</strong></p>'
+  + '<p style="color:#475569;font-size:.92rem;margin-top:.6rem;max-width:720px;">Коллектор вправе только связываться с должником — арестовать счета или имущество может исключительно суд или ЧСИ. Если поступают угрозы или счёт уже арестован — ZakonExpert разберёт ситуацию бесплатно.</p></div>'
   + infoBox
   + '<input id="cc-search" type="search" placeholder="🔍 Поиск по названию, городу или руководителю..." autocomplete="off">'
   + '<div id="cc-count" style="font-size:.82rem;color:#64748b;margin-bottom:.8rem;"></div>'
   + '<div class="cc-grid">' + cards + '</div>'
-  + ctaHtml + sourceHtml
+  + ctaHtml
+  + lowContentBoost({ entityLabel: 'коллектор' })
+  + sourceHtml
   + '</div></div>' + JS;
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

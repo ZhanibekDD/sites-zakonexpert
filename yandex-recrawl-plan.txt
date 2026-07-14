@@ -1,0 +1,92 @@
+ZAKONEXPERT.KZ — ПЛАН ПЕРЕОБХОДА В ЯНДЕКС.ВЕБМАСТЕР
+Подготовлено: ветка seo-fix-screamingfrog-conversion
+================================================================
+
+1. КАКИЕ SITEMAP ОТПРАВИТЬ
+-----------------------------
+Яндекс.Вебмастер → Индексирование → Файлы Sitemap → добавить:
+
+  https://zakonexpertt.kz/sitemap-index.xml
+
+Он уже включает sitemap-image.xml (новый — картинки инфографики) и обновлённый
+sitemap-pages.xml (5 новых страниц городов). Отдельно отправлять остальные sitemap-*.xml
+не требуется — они подключены через индекс.
+
+Если sitemap-index.xml уже был отправлен ранее — в интерфейсе Вебмастера нажать
+"Обновить" / повторно указать URL, чтобы Яндекс подхватил новые записи.
+
+2. КАКИЕ URL ЗАПРОСИТЬ НА ПЕРЕОБХОД ЧЕРЕЗ "ПЕРЕОБХОД СТРАНИЦ"
+-------------------------------------------------------------------
+Яндекс.Вебмастер даёт ограниченную квоту запросов в сутки — распределяем по дням.
+
+Приоритет 1 (критичные фиксы, день 1):
+  https://zakonexpertt.kz/index_kz
+  https://zakonexpertt.kz/contact_kz
+  https://zakonexpertt.kz/services_kz
+  https://zakonexpertt.kz/mfo
+  https://zakonexpertt.kz/
+
+Приоритет 2 (новые страницы городов — актуально для Яндекса, у него сильный вес
+региональной релевантности для kz-доменов):
+  https://zakonexpertt.kz/snyatie-aresta-almaty
+  https://zakonexpertt.kz/snyatie-aresta-astana
+  https://zakonexpertt.kz/snyatie-aresta-shymkent
+  https://zakonexpertt.kz/snyatie-aresta-taldykorgan
+  https://zakonexpertt.kz/snyatie-aresta-karaganda
+
+Приоритет 3 (денежные страницы):
+  https://zakonexpertt.kz/arest-kaspi
+  https://zakonexpertt.kz/arest-halyk-bank
+  https://zakonexpertt.kz/arest-freedom-bank
+  https://zakonexpertt.kz/snyatie-aresta-so-scheta
+  https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
+
+3. ПЛАН НА 10 ДНЕЙ ПО 10 URL В ДЕНЬ
+---------------------------------------
+День 1  — /index_kz, /contact_kz, /services_kz, /mfo, /, /arest-kaspi, /arest-halyk-bank,
+          /arest-freedom-bank, /snyatie-aresta-so-scheta, /gallery
+
+День 2  — 5 страниц городов (см. Приоритет 2 выше) + /snyatie-zapreta-na-avto,
+          /snyatie-ogranichenii-chsi, /otmena-ispolnitelnoi-nadpisi,
+          /vozrazhenie-na-ispolnitelnuyu-nadpis, /grafik-oplaty-zadolzhennosti
+
+День 3  — каталоги: /bailiffs, /notaries, /banks, /mfo, /lombards, /collectors,
+          /insurance, /gsi, /bin-search, /calculator
+
+День 4  — по 2 карточки из каждого типа реестра (ЧСИ, нотариус, банк, МФО, ломбард,
+          коллектор, страховая, ГСИ)
+
+День 5  — /zakony, /besspornost-dolga, /alimenty-i-aresty, /shtrafy-i-aresty,
+          /otmena-resheniya-suda, /ispolnitelnaya-nadpis, /spornost-dolga,
+          /zapret-na-vyezd-iz-kazahstana, /zapret-registracionnyh-deystviy,
+          /snyatie-ogranicheniya-na-imushchestvo
+
+День 6-10 — карточки ЧСИ и нотариусов из регионов с наибольшим трафиком по данным
+          Вебмастер → Поисковые запросы, плюс /snyat-arest-s-nedvizhimosti,
+          /arest-zarplatnoy-karty, /chsi-ne-snimaet-arest-posle-oplaty,
+          /chsi-refinansirovanie, /zhaloba-na-chsi, /ubrat-procenty-i-rashody-chsi,
+          /nadpis-ili-list, /sms-1414
+
+4. КАКИЕ ОШИБКИ СМОТРЕТЬ ПОСЛЕ ПЕРЕОБХОДА
+--------------------------------------------
+- Индексирование → Страницы в поиске → "Исключённые страницы" — проверить, что
+  /index_kz, /contact_kz, /services_kz больше не попадают туда по причине "Дубль"
+  или "Некорректная страница" (были возможны из-за битого HTML/кодировки).
+  Проверка → Диагностика → «Директивы разметки на странице» специально для
+  /index_kz — раньше меты были технически вне <head>.
+- Проверить отчёт «Товары и цены» / «Микроразметка» — что новые FAQ/BreadcrumbList
+  на страницах ЧСИ, нотариусов, каталогов и городов распознаются без ошибок валидатором
+  https://webmaster.yandex.ru/tools/microtest/
+- Проверить, что /mfo/<slug> карточки начали попадать в индекс — раньше каталог
+  /mfo был фактически пустым (баг двойной регистрации маршрута в server.js), Яндекс
+  мог не находить внутренние ссылки на карточки МФО вообще.
+- Через 2-3 недели — сверить количество проиндексированных страниц в разделе
+  «Индексирование → Страницы в поиске» с общим числом URL в sitemap-index.xml.
+
+5. ЧТО ПРОВЕРИТЬ ПЕРВЫМ ДЕЛОМ ПОСЛЕ ДЕПЛОЯ
+-----------------------------------------------
+  curl -I https://zakonexpertt.kz/index_kz     → 200, без редиректов
+  https://webmaster.yandex.ru/tools/microtest/?url=https://zakonexpertt.kz/bailiffs
+      → проверить FAQ-разметку каталога ЧСИ
+  Проверить robots.txt (https://zakonexpertt.kz/robots.txt) — Яндекс уважает
+  директиву Sitemap: в robots.txt, она уже указывает на sitemap-index.xml.

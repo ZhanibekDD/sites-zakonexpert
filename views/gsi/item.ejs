@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = item.name + ' — телефон, адрес, руководитель | ZakonExpert';
-const pageDesc  = item.name + ': ' + item.region + '. Адрес: ' + (item.address||'—') + '. Телефон: ' + (item.phone||'уточните на сайте')+'. Проблемы с ГСИ? ZakonExpert поможет оспорить действия судебного исполнителя.';
+const pageTitle = item.name + ' — ГСИ, контакты | ZakonExpert';
+const pageDesc  = item.name + ' (' + item.region + '): адрес, телефон. Госсудисполнитель наложил арест? Проверим основание и поможем оспорить бесплатно.';
 const canonical = 'https://zakonexpertt.kz/gsi/' + item.slug;
 
 function escHtml(s) {
@@ -64,6 +64,7 @@ const body = CSS
   + mapBlock(item.address)
   + '<div class="gi-info">ℹ️ Государственные судебные исполнители (ГСИ) работают при Департаментах юстиции. Они исполняют судебные акты по делам с участием государственных органов. По частным долгам исполнение ведут <a href="/bailiffs" class="gi-link">частные судебные исполнители (ЧСИ)</a>.</div>'
   + '</div>'
+  + lowContentBoost({ entityLabel: 'этот ГСИ' })
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">Проблемы с судебным исполнителем в ' + escHtml(item.region) + '?</h2>'

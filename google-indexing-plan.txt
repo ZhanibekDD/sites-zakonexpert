@@ -1,0 +1,98 @@
+ZAKONEXPERT.KZ — ПЛАН ПЕРЕИНДЕКСАЦИИ В GOOGLE SEARCH CONSOLE
+Подготовлено: ветка seo-fix-screamingfrog-conversion
+================================================================
+
+1. ЧТО ОТПРАВИТЬ В GOOGLE SEARCH CONSOLE (Sitemaps)
+----------------------------------------------------
+Search Console → Индексирование → Файлы Sitemap → добавить (если ещё не добавлены):
+
+  https://zakonexpertt.kz/sitemap-index.xml   (главный индекс — достаточно отправить только его)
+
+Он ссылается на все остальные:
+  sitemap-pages.xml       — статические страницы + новые страницы городов
+  sitemap-news.xml        — новости
+  sitemap-notaries.xml    — нотариусы (реестр + карточки)
+  sitemap-bailiffs.xml    — ЧСИ (реестр + карточки)
+  sitemap-lawyers.xml     — адвокаты
+  sitemap-laws.xml        — статьи законов
+  sitemap-banks.xml       — банки
+  sitemap-courts.xml      — суды
+  sitemap-chambers.xml    — палаты нотариусов и ЧСИ
+  sitemap-collectors.xml  — коллекторы
+  sitemap-gsi.xml         — ГСИ
+  sitemap-insurance.xml   — страховые
+  sitemap-mfo.xml         — МФО (теперь отдаёт реальный список — раньше каталог был пустым из-за
+                             задвоенного маршрута /mfo в server.js, это исправлено в этой ветке)
+  sitemap-lombards.xml    — ломбарды
+  sitemap-image.xml       — НОВЫЙ. Картинки инфографики (галерея + герой-картинки денежных страниц)
+
+Если sitemap-index.xml уже был добавлен ранее — просто нажмите "Повторно отправить"
+после деплоя, чтобы Google увидел новые URL (5 страниц городов + sitemap-image.xml).
+
+2. КАКИЕ URL ЗАПРОСИТЬ НА РУЧНУЮ ИНДЕКСАЦИЮ (Инструмент проверки URL)
+----------------------------------------------------------------------
+Приоритет 1 — исправленные критичные баги (проверить, что Google видит новую версию):
+  https://zakonexpertt.kz/index_kz                (был сломан DOCTYPE — все директивы читались вне <head>)
+  https://zakonexpertt.kz/contact_kz              (был битый казахский текст — title/description)
+  https://zakonexpertt.kz/services_kz             (был битый казахский текст — title/description)
+  https://zakonexpertt.kz/mfo                     (каталог был пустой из-за бага в роутинге)
+
+Приоритет 2 — новые страницы городов:
+  https://zakonexpertt.kz/snyatie-aresta-almaty
+  https://zakonexpertt.kz/snyatie-aresta-astana
+  https://zakonexpertt.kz/snyatie-aresta-shymkent
+  https://zakonexpertt.kz/snyatie-aresta-taldykorgan
+  https://zakonexpertt.kz/snyatie-aresta-karaganda
+
+Приоритет 3 — усиленные денежные страницы:
+  https://zakonexpertt.kz/arest-kaspi
+  https://zakonexpertt.kz/arest-halyk-bank
+  https://zakonexpertt.kz/arest-freedom-bank
+  https://zakonexpertt.kz/snyatie-aresta-so-scheta
+  https://zakonexpertt.kz/snyatie-zapreta-na-avto
+  https://zakonexpertt.kz/snyatie-ogranichenii-chsi
+  https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
+  https://zakonexpertt.kz/vozrazhenie-na-ispolnitelnuyu-nadpis
+
+3. ПЛАН ПЕРЕОБХОДА: 10 ДНЕЙ ПО 10 URL/ДЕНЬ (через "Проверка URL" → "Запросить индексирование")
+--------------------------------------------------------------------------------------------------
+Google ограничивает количество ручных запросов в день — не отправляйте больше 10-12 за раз.
+
+День 1  — критичные фиксы: /index_kz, /contact_kz, /services_kz, /mfo, / (главная),
+          /arest-kaspi, /arest-halyk-bank, /arest-freedom-bank, /snyatie-aresta-so-scheta, /gallery
+
+День 2  — 5 страниц городов: /snyatie-aresta-almaty, /snyatie-aresta-astana,
+          /snyatie-aresta-shymkent, /snyatie-aresta-taldykorgan, /snyatie-aresta-karaganda,
+          /snyatie-zapreta-na-avto, /snyatie-ogranichenii-chsi, /otmena-ispolnitelnoi-nadpisi,
+          /vozrazhenie-na-ispolnitelnuyu-nadpis, /grafik-oplaty-zadolzhennosti
+
+День 3  — каталоги: /bailiffs, /notaries, /banks, /mfo, /lombards, /collectors, /insurance, /gsi,
+          /bin-search, /calculator
+
+День 4  — по 2 карточки-примера из каждого нового блока (ЧСИ, нотариус, банк, МФО, ломбард,
+          коллектор, страховая, ГСИ) — выберите популярные/недавно изменённые записи
+
+День 5-10 — оставшиеся денежные страницы, законы (/zakony, /besspornost-dolga,
+          /alimenty-i-aresty, /shtrafy-i-aresty, /otmena-resheniya-suda), затем произвольная
+          выборка карточек ЧСИ/нотариусов из регионов с наибольшим трафиком (по данным
+          Search Console → Эффективность → Страницы)
+
+4. КАКИЕ ОШИБКИ СМОТРЕТЬ ПОСЛЕ ПЕРЕОБХОДА
+--------------------------------------------
+- Индексирование → Страницы → "Страница является copy без указания канонической" —
+  ожидаемо для страниц вида /chsi-arest-schetov (алиас), они правильно указывают canonical
+  на /snyatie-ogranichenii-chsi — если таких неожиданно много новых, разобраться.
+- Индексирование → Страницы → "Обнаружено, в данный момент не проиндексировано" —
+  для новых страниц городов это нормально первые 1-2 недели, ждать переобхода.
+- Мобильное удобство / Основные интернет-показатели — после добавления width/height на
+  картинки CLS должен улучшиться, проверить через 2-3 недели после переобхода.
+- Проверить в отчёте "Улучшения" → "Товары" / "FAQ" / "Хлебные крошки" — что новые
+  FAQPage и BreadcrumbList на страницах ЧСИ/нотариусов/каталогов и городов распознаются
+  без ошибок.
+
+5. ЧТО ПРОВЕРИТЬ ПЕРВЫМ ДЕЛОМ ПОСЛЕ ДЕПЛОЯ (вручную, до отправки в GSC)
+--------------------------------------------------------------------------
+  curl -I https://zakonexpertt.kz/index_kz          → должен быть 200, не редирект
+  curl -s https://zakonexpertt.kz/mfo | grep -c 'mfo/'   → должно быть много ссылок на карточки
+  https://search.google.com/test/rich-results?url=https://zakonexpertt.kz/gallery
+      → проверить, что ImageGallery распознаётся без ошибок
