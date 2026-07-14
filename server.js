@@ -854,9 +854,16 @@ function getInsuranceData() {
     const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
     const name = (r['Компания'] || '').trim();
     const parenMatches = name.match(/\(([^)]+)\)/g) || [];
-    const shortName = parenMatches.length
-      ? parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim()
-      : name.replace(/^АО\s+"[^"]+"\s+/i, '').replace(/^«|»$/g, '').trim();
+    let shortName;
+    if (parenMatches.length) {
+      shortName = parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim();
+    } else {
+      // Many names use an unbalanced-quote convention, e.g. АО "Страховая компания "Amanat
+      // — the real brand name is whatever follows the LAST quote character.
+      const lastQuoteIdx = name.lastIndexOf('"');
+      const afterQuote = lastQuoteIdx >= 0 ? name.slice(lastQuoteIdx + 1).trim() : '';
+      shortName = afterQuote || name.replace(/^АО\s+"[^"]+"\s+/i, '').replace(/^«|»$/g, '').trim();
+    }
     return {
       name, shortName,
       bin:     (r['БИН'] || '').trim(),
@@ -923,17 +930,28 @@ function parseSemicolonCSV(filePath) {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      // simple quoted-field parser for semicolon delimiter
+      // Quoted-field parser for semicolon delimiter. A field only enters
+      // "quoted mode" if it STARTS with a quote (right after a delimiter or
+      // at line start) — quotes appearing mid-field (e.g. Компания "Name")
+      // are treated as literal characters, not togglers. This matches how
+      // real-world exports (Excel/Sheets) actually escape fields, where
+      // company names often contain unescaped inner quotes.
       const fields = [];
-      let cur = '', inQ = false;
+      let cur = '', inQ = false, fieldStart = true;
       for (let c = 0; c < line.length; c++) {
         const ch = line[c];
-        if (ch === '"') {
-          if (inQ && line[c + 1] === '"') { cur += '"'; c++; }
-          else inQ = !inQ;
-        } else if (ch === ';' && !inQ) {
-          fields.push(cur.trim()); cur = '';
-        } else { cur += ch; }
+        if (ch === '"' && fieldStart && cur === '') {
+          inQ = true; fieldStart = false; continue;
+        }
+        if (ch === '"' && inQ) {
+          if (line[c + 1] === '"') { cur += '"'; c++; continue; }
+          if (line[c + 1] === ';' || c === line.length - 1) { inQ = false; continue; }
+          cur += ch; continue;
+        }
+        if (ch === ';' && !inQ) {
+          fields.push(cur.trim()); cur = ''; fieldStart = true; continue;
+        }
+        cur += ch; fieldStart = false;
       }
       fields.push(cur.trim());
       const obj = {};
