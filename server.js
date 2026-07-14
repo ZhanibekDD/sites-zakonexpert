@@ -694,7 +694,7 @@ function getBanksData() {
       web: (r['Сайт'] || existing.web || '').trim(),
       bin,
       chairman: (r['Председатель Правления (ФИО)'] || existing.chairman || '').trim(),
-      note: (r['Примечание'] || existing.note || '').trim(),
+      note: cleanScrapedNote(r['Примечание']) || existing.note || '',
     };
   }).filter(Boolean);
   return _banksCache;
@@ -921,6 +921,17 @@ app.get('/chambers/:slug', (req, res) => {
 });
 
 // ===== CSV-BACKED CATALOGS: COLLECTORS / LOMBARDS =====
+// Some source CSVs were built by scrapers that, on failure, wrote the raw
+// error message into a data column (e.g. "ошибка при сборе: HTTP Error 404:
+// Not Found") instead of leaving it blank. Strip those out so visitors never
+// see internal scraper errors, and so pages don't accidentally read as a
+// soft-404 to crawlers.
+function cleanScrapedNote(note) {
+  const s = (note || '').trim();
+  if (/ошибка при сборе|HTTP Error|Not Found|404/i.test(s)) return '';
+  return s;
+}
+
 function parseSemicolonCSV(filePath) {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
@@ -1022,7 +1033,7 @@ function getMfoData() {
         bin: r['БИН'] || '',
         address: r['Юридический адрес'] || '',
         leader: r['Руководитель'] || '',
-        note: r['Примечание'] || '',
+        note: cleanScrapedNote(r['Примечание']),
       };
       if (cat === 'МФО') _mfoCache.mfo.push(entry);
       else if (cat === 'Ломбард') _mfoCache.lombards.push(entry);
