@@ -439,7 +439,26 @@
 .npage-cta-title { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 800; color: #fff; margin: 0 0 0.5rem; line-height: 1.3; }
 .npage-cta-sub   { font-size: 0.9rem; color: rgba(255,255,255,0.75); margin: 0 0 1rem; }
 .npage-cta-tags  { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.npage-cta-tags span { font-size: 0.75rem; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 0.25rem 0.6rem; border-radius: 999px; }
+.npage-cta-tags span, .npage-cta-tags a { font-size: 0.75rem; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); padding: 0.25rem 0.6rem; border-radius: 999px; text-decoration: none; }
+.npage-cta-tags a:hover { background: rgba(255,255,255,0.22); color: #fff; }
+
+/* Quick top-of-page CTA (right after ФИО) */
+.npage-quick-cta {
+  background: linear-gradient(120deg, #0f2044 0%, #1b4272 100%);
+  border-radius: 14px; padding: 1.25rem 1.5rem;
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.npage-quick-cta p { margin: 0; flex: 1; min-width: 220px; font-size: 0.88rem; line-height: 1.55; color: rgba(255,255,255,0.9); }
+
+/* Light-background link chips (service cross-links on white page areas) */
+.npage-links-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.npage-links-row a {
+  font-size: 0.8rem; font-weight: 600; color: #1a3560;
+  background: #eff6ff; border: 1px solid #bfdbfe;
+  padding: 0.4rem 0.8rem; border-radius: 999px; text-decoration: none;
+}
+.npage-links-row a:hover { background: #dbeafe; border-color: #1a3560; }
 
 .npage-wa-btn {
   display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;

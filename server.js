@@ -50,6 +50,7 @@ const logger = winston.createLogger({
 
 // Telegram notifications
 const telegram = require('./modules/telegram');
+const { lowContentBoost } = require('./modules/seo-blocks');
 
 // Initialize DB and news importer
 let newsDb = null;
@@ -486,6 +487,79 @@ app.get('/notaries', asyncHandler(async (req, res) => {
   res.render('notary/catalog', { selectedRegion: '', allRegions, regionItems: [] });
 }));
 
+// ===== REGIONAL LANDING PAGES =====
+const REGIONAL_CITIES = {
+  'almaty': {
+    slug: 'almaty', name: 'Алматы', prepIn: 'Алматы', caseIn: 'Алматы', caseByCity: 'Алматы',
+    bailiffRegion: 'город Алматы', notaryRegion: 'город Алматы',
+    intro: 'Алматы — крупнейший город Казахстана и лидер по количеству исполнительных производств. Здесь работает больше всего ЧСИ и нотариусов в стране, поэтому и арестов счетов Kaspi, Halyk и Freedom Bank больше, чем в любом другом регионе.',
+    faq: [
+      { q: 'Нужно ли приезжать в офис в Алматы?', a: 'Нет. Мы работаем дистанционно по всему Казахстану, включая Алматы — документы передаются через WhatsApp, личный визит не обязателен.' },
+      { q: 'Почему в Алматы так много ЧСИ?', a: 'Алматы — самый населённый город страны с наибольшим числом исполнительных производств, поэтому здесь работает больше частных судебных исполнителей, чем в других регионах.' },
+      { q: 'Как узнать, какой ЧСИ в Алматы ведёт моё производство?', a: 'Проверьте по ИИН на нашем сайте — покажем все открытые производства и исполнителя, который их ведёт.' },
+    ],
+  },
+  'astana': {
+    slug: 'astana', name: 'Астана', prepIn: 'Астане', caseIn: 'Астане', caseByCity: 'Астане',
+    bailiffRegion: 'город Астана', notaryRegion: 'город Астана',
+    intro: 'Астана — столица Казахстана с активно растущим количеством исполнительных производств. Клиенты Kaspi, Halyk и Freedom Bank в Астане часто сталкиваются с арестом счёта из-за исполнительной надписи нотариуса или постановления ЧСИ.',
+    faq: [
+      { q: 'Работаете ли вы с клиентами в Астане дистанционно?', a: 'Да, мы ведём дела по всей Астане удалённо — присылаете документы в WhatsApp, мы готовим и подаём всё сами.' },
+      { q: 'Какой банк чаще арестовывает счета в Астане?', a: 'Чаще всего к нам обращаются клиенты Kaspi и Halyk Bank — банк лишь исполняет постановление, а не принимает решение об аресте самостоятельно.' },
+      { q: 'Сколько времени занимает снятие ареста в Астане?', a: 'Зависит от основания: при исполнительной надписи — от нескольких дней до 2–3 недель после подачи возражения. Точный срок скажем после анализа документов.' },
+    ],
+  },
+  'shymkent': {
+    slug: 'shymkent', name: 'Шымкент', prepIn: 'Шымкенте', caseIn: 'Шымкенте', caseByCity: 'Шымкенту',
+    bailiffRegion: 'город Шымкент', notaryRegion: 'город Шымкент',
+    intro: 'Шымкент — третий по величине город Казахстана со своим отдельным реестром ЧСИ и нотариусов. Арест счёта в Шымкенте чаще всего связан с исполнительной надписью нотариуса по кредиту или МФО.',
+    faq: [
+      { q: 'Есть ли у ZakonExpert офис в Шымкенте?', a: 'Мы работаем по Шымкенту дистанционно — весь процесс, от разбора документов до подачи возражения, ведётся удалённо через WhatsApp.' },
+      { q: 'ЧСИ в Шымкенте наложил арест — что делать?', a: 'Проверьте по ИИН, какое производство открыто и на каком основании. Затем можно подготовить возражение или жалобу в зависимости от ситуации.' },
+      { q: 'Можно ли оспорить исполнительную надпись нотариуса в Шымкенте?', a: 'Да, если долг спорный или нарушена процедура уведомления — на возражение есть 10 рабочих дней с момента, когда вы узнали о надписи.' },
+    ],
+  },
+  'taldykorgan': {
+    slug: 'taldykorgan', name: 'Талдыкорган', prepIn: 'Талдыкоргане', caseIn: 'Талдыкоргане', caseByCity: 'Талдыкоргану',
+    bailiffRegion: 'область Жетысу', notaryRegion: 'область Жетысу',
+    intro: 'Талдыкорган — административный центр области Жетысу. Исполнительные производства и исполнительные надписи по клиентам региона ведутся ЧСИ и нотариусами, зарегистрированными в области Жетысу.',
+    faq: [
+      { q: 'Талдыкорган относится к какой области по реестру ЧСИ?', a: 'К области Жетысу — административным центром которой является Талдыкорган. Все ЧСИ и нотариусы региона зарегистрированы именно там.' },
+      { q: 'Можно ли решить вопрос без визита в Талдыкорган?', a: 'Да, мы работаем дистанционно — документы принимаем через WhatsApp, ехать в Талдыкорган не нужно.' },
+      { q: 'Что делать, если арестовали зарплатную карту в Талдыкоргане?', a: 'Проверьте по ИИН основание ареста. Если удержания превышают установленный законом лимит — это повод для жалобы на ЧСИ.' },
+    ],
+  },
+  'karaganda': {
+    slug: 'karaganda', name: 'Караганда', prepIn: 'Караганде', caseIn: 'Караганде', caseByCity: 'Караганде',
+    bailiffRegion: 'Карагандинская область', notaryRegion: 'Карагандинская область',
+    intro: 'Караганда — крупный промышленный центр и административный центр Карагандинской области. Исполнительные производства должников региона ведут ЧСИ, зарегистрированные в Карагандинской области.',
+    faq: [
+      { q: 'Работает ли ZakonExpert с должниками в Караганде?', a: 'Да, мы ведём дела по всей Карагандинской области дистанционно — от первичной проверки по ИИН до подачи документов.' },
+      { q: 'Как узнать сумму долга и взыскателя в Караганде?', a: 'Проверьте по ИИН на нашем сайте — покажем все открытые исполнительные производства, взыскателя и сумму задолженности.' },
+      { q: 'Можно ли договориться о рассрочке в Караганде?', a: 'Да, при определённых условиях можно оформить график платежей или отсрочку исполнения — разберём вашу ситуацию бесплатно.' },
+    ],
+  },
+};
+const REGIONAL_CITY_LIST = Object.values(REGIONAL_CITIES).map(c => ({ slug: c.slug, name: c.name }));
+
+app.get('/snyatie-aresta-:city', asyncHandler(async (req, res, next) => {
+  const city = REGIONAL_CITIES[req.params.city];
+  if (!city) return next();
+  let bailiffCount = 0, notaryCount = 0;
+  if (bailiffsDb) {
+    const regions = await bailiffsDb.getRegions();
+    const found = regions.find(r => r.region === city.bailiffRegion);
+    bailiffCount = found ? found.count : 0;
+  }
+  if (notariesDb) {
+    const regions = await notariesDb.getRegions();
+    const found = regions.find(r => r.region === city.notaryRegion);
+    notaryCount = found ? found.count : 0;
+  }
+  const otherCities = REGIONAL_CITY_LIST.filter(c => c.slug !== city.slug);
+  res.render('regional/page', { city, bailiffCount, notaryCount, otherCities });
+}));
+
 app.get('/bailiffs', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
@@ -780,9 +854,16 @@ function getInsuranceData() {
     const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
     const name = (r['Компания'] || '').trim();
     const parenMatches = name.match(/\(([^)]+)\)/g) || [];
-    const shortName = parenMatches.length
-      ? parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim()
-      : name.replace(/^АО\s+"[^"]+"\s+/i, '').replace(/^«|»$/g, '').trim();
+    let shortName;
+    if (parenMatches.length) {
+      shortName = parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim();
+    } else {
+      // Many names use an unbalanced-quote convention, e.g. АО "Страховая компания "Amanat
+      // — the real brand name is whatever follows the LAST quote character.
+      const lastQuoteIdx = name.lastIndexOf('"');
+      const afterQuote = lastQuoteIdx >= 0 ? name.slice(lastQuoteIdx + 1).trim() : '';
+      shortName = afterQuote || name.replace(/^АО\s+"[^"]+"\s+/i, '').replace(/^«|»$/g, '').trim();
+    }
     return {
       name, shortName,
       bin:     (r['БИН'] || '').trim(),
@@ -798,8 +879,7 @@ function getInsuranceData() {
 }
 
 // ===== NEW CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
-app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData() }));
-app.get('/mfo',       (req, res) => res.render('mfo/catalog'));
+app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData(), lowContentBoost }));
 app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: getCourtsData() }));
 app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
 app.get('/companies',     (req, res) => res.render('companies/catalog'));
@@ -807,13 +887,13 @@ app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGs
 app.get('/gsi/:slug',     (req, res) => {
   const item = getGsiData().find(g => g.slug === req.params.slug);
   if (!item) return res.status(404).redirect('/gsi');
-  res.render('gsi/item', { item });
+  res.render('gsi/item', { item, lowContentBoost });
 });
 app.get('/insurance',     (req, res) => res.render('insurance/catalog', { items: getInsuranceData() }));
 app.get('/insurance/:slug', (req, res) => {
   const item = getInsuranceData().find(c => c.slug === req.params.slug);
   if (!item) return res.status(404).redirect('/insurance');
-  res.render('insurance/item', { item });
+  res.render('insurance/item', { item, lowContentBoost });
 });
 app.get('/credit-bureaus',(req, res) => res.render('credit-bureaus/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Кредитные_бюро_Казахстана.csv')) }));
 app.get('/regulators',    (req, res) => res.render('regulators/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Финансовые_регуляторы_Казахстана.csv')) }));
@@ -823,7 +903,7 @@ app.get('/emergency',     (req, res) => res.render('emergency/catalog', { items:
 app.get('/banks/:slug', (req, res) => {
   const bank = getBanksData().find(b => b.slug === req.params.slug);
   if (!bank) return res.status(404).redirect('/banks');
-  res.render('banks/item', { bank });
+  res.render('banks/item', { bank, lowContentBoost });
 });
 
 // ITEM PAGES: COURTS
@@ -850,17 +930,28 @@ function parseSemicolonCSV(filePath) {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      // simple quoted-field parser for semicolon delimiter
+      // Quoted-field parser for semicolon delimiter. A field only enters
+      // "quoted mode" if it STARTS with a quote (right after a delimiter or
+      // at line start) — quotes appearing mid-field (e.g. Компания "Name")
+      // are treated as literal characters, not togglers. This matches how
+      // real-world exports (Excel/Sheets) actually escape fields, where
+      // company names often contain unescaped inner quotes.
       const fields = [];
-      let cur = '', inQ = false;
+      let cur = '', inQ = false, fieldStart = true;
       for (let c = 0; c < line.length; c++) {
         const ch = line[c];
-        if (ch === '"') {
-          if (inQ && line[c + 1] === '"') { cur += '"'; c++; }
-          else inQ = !inQ;
-        } else if (ch === ';' && !inQ) {
-          fields.push(cur.trim()); cur = '';
-        } else { cur += ch; }
+        if (ch === '"' && fieldStart && cur === '') {
+          inQ = true; fieldStart = false; continue;
+        }
+        if (ch === '"' && inQ) {
+          if (line[c + 1] === '"') { cur += '"'; c++; continue; }
+          if (line[c + 1] === ';' || c === line.length - 1) { inQ = false; continue; }
+          cur += ch; continue;
+        }
+        if (ch === ';' && !inQ) {
+          fields.push(cur.trim()); cur = ''; fieldStart = true; continue;
+        }
+        cur += ch; fieldStart = false;
       }
       fields.push(cur.trim());
       const obj = {};
@@ -943,37 +1034,37 @@ function getMfoData() {
 
 app.get('/collectors', (req, res) => {
   const items = getCollectors();
-  res.render('collectors/catalog', { items });
+  res.render('collectors/catalog', { items, lowContentBoost });
 });
 
 app.get('/collectors/:slug', (req, res) => {
   const item = getCollectors().find(c => c.slug === req.params.slug);
   if (!item) return res.status(404).redirect('/collectors');
-  res.render('collectors/item', { item });
+  res.render('collectors/item', { item, lowContentBoost });
 });
 
 app.get('/mfo', (req, res) => {
   const { mfo } = getMfoData();
-  res.render('mfo/catalog', { mfo });
+  res.render('mfo/catalog', { mfo, lowContentBoost });
 });
 
 app.get('/mfo/:slug', (req, res) => {
   const { mfo } = getMfoData();
   const item = mfo.find(m => m.slug === req.params.slug);
   if (!item) return res.status(404).redirect('/mfo');
-  res.render('mfo/item', { item });
+  res.render('mfo/item', { item, lowContentBoost });
 });
 
 app.get('/lombards', (req, res) => {
   const { lombards } = getMfoData();
-  res.render('lombards/catalog', { items: lombards });
+  res.render('lombards/catalog', { items: lombards, lowContentBoost });
 });
 
 app.get('/lombards/:slug', (req, res) => {
   const { lombards } = getMfoData();
   const item = lombards.find(l => l.slug === req.params.slug);
   if (!item) return res.status(404).redirect('/lombards');
-  res.render('lombards/item', { item });
+  res.render('lombards/item', { item, lowContentBoost });
 });
 
 // ===== LAWYER SEARCH =====
@@ -1511,6 +1602,12 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/arest-kaspi', priority: '0.85', freq: 'monthly' },
     { url: '/arest-halyk-bank', priority: '0.85', freq: 'monthly' },
     { url: '/arest-freedom-bank', priority: '0.85', freq: 'monthly' },
+    // Региональные страницы
+    { url: '/snyatie-aresta-almaty', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-aresta-astana', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-aresta-shymkent', priority: '0.8', freq: 'monthly' },
+    { url: '/snyatie-aresta-taldykorgan', priority: '0.75', freq: 'monthly' },
+    { url: '/snyatie-aresta-karaganda', priority: '0.75', freq: 'monthly' },
     // Дополнительные сервисные страницы
     { url: '/besspornost-dolga', priority: '0.8', freq: 'monthly' },
     { url: '/alimenty-i-aresty', priority: '0.8', freq: 'monthly' },
@@ -1605,6 +1702,62 @@ app.get('/sitemap-lombards.xml', (req, res) => {
   csvSitemap(res, lombards, 'lombards');
 });
 
+// IMAGE SITEMAP — key SEO images (gallery + hero images on money pages)
+app.get('/sitemap-image.xml', (req, res) => {
+  const galleryImages = [
+    ['snyatie-aresta-scheta-zakonexpert.svg', 'Снятие ареста со счёта Казахстан — ZakonExpert юридическая помощь'],
+    ['kak-snyat-arest-scheta-kazakhstan.svg', 'Как снять арест со счёта в Казахстане — пошаговая инструкция ZakonExpert'],
+    ['snyt-arest-kazakhstan-zakonexpert.svg', 'Снять арест Казахстан — Kaspi Halyk МФО ЧСИ ZakonExpert'],
+    ['arest-kaspi-halyk-bank-kazakhstan.svg', 'Арест Kaspi и Halyk Bank Казахстан — снятие ареста ZakonExpert'],
+    ['snyatie-aresta-zarplaty-chsi.svg', 'Снятие ареста с зарплаты ЧСИ Казахстан — ZakonExpert'],
+    ['mfo-arest-scheta-dolg-kazakhstan.svg', 'МФО арест счёта за долг Казахстан — ZakonExpert'],
+    ['otmena-ispolnitelnoy-nadpisi-notariusa.svg', 'Отмена исполнительной надписи нотариуса — ZakonExpert'],
+    ['besporno-dolg-mfo-bank-osporit.svg', 'Спорность долга МФО и банка — как оспорить — ZakonExpert'],
+    ['snyatie-zapreta-na-avto-kazakhstan.svg', 'Снятие запрета на авто Казахстан — ZakonExpert'],
+    ['snyatie-zapreta-vyezd-rubezh-kazakhstan.svg', 'Снятие запрета на выезд за рубеж Казахстан — ZakonExpert'],
+    ['snyatie-aresta-imushchestvo-kazakhstan.svg', 'Снятие ареста с имущества Казахстан — ZakonExpert'],
+    ['pomosh-chsi-aresty-schetov-kazakhstan.svg', 'Помощь при аресте счетов ЧСИ Казахстан — ZakonExpert'],
+    ['grafik-platezhey-chsi-mfo-bank.svg', 'График платежей ЧСИ, МФО, банк — ZakonExpert'],
+    ['snyatie-ogranicheniy-chsi-notarius.svg', 'Снятие ограничений ЧСИ и нотариуса — ZakonExpert'],
+    ['yurist-snyatie-arestov-almaty-kazakhstan.svg', 'Юрист по снятию арестов в Алматы — ZakonExpert'],
+    ['uslugi-zakonexpert-kazakhstan.svg', 'Услуги ZakonExpert Казахстан — снятие арестов, ЧСИ, МФО, адвокат'],
+  ];
+  const heroImages = [
+    ['/arest-kaspi', 'arest-kaspi-halyk-bank-kazakhstan.svg', 'Арест карты Kaspi Bank Казахстан — снятие ареста ZakonExpert'],
+    ['/arest-halyk-bank', 'arest-kaspi-halyk-bank-kazakhstan.svg', 'Арест счёта Halyk Bank Казахстан — снятие ареста ZakonExpert'],
+    ['/snyatie-aresta-so-scheta', 'snyatie-aresta-scheta-zakonexpert.svg', 'Снятие ареста со счёта Казахстан — помощь юриста ZakonExpert'],
+    ['/snyatie-zapreta-na-avto', 'snyatie-zapreta-na-avto-kazakhstan.svg', 'Снятие запрета на автомобиль Казахстан — юридическая помощь ZakonExpert'],
+    ['/snyatie-ogranichenii-chsi', 'pomosh-chsi-aresty-schetov-kazakhstan.svg', 'ЧСИ наложил арест на счёт — снятие ограничений ZakonExpert Казахстан'],
+    ['/otmena-ispolnitelnoi-nadpisi', 'otmena-ispolnitelnoy-nadpisi-notariusa.svg', 'Отмена исполнительной надписи нотариуса о взыскании задолженности — ZakonExpert'],
+    ['/vozrazhenie-na-ispolnitelnuyu-nadpis', 'infographic-spornost-dolga.svg', 'Спорность долга и отмена исполнительной надписи'],
+    ['/zakony', 'infographic-osnovanie-aresta.svg', 'Основание ареста счёта через исполнительное производство'],
+    ['/services', 'uslugi-zakonexpert-kazakhstan.svg', 'Услуги ZakonExpert Казахстан — снятие арестов, отмена надписи, ЧСИ, МФО, адвокат'],
+  ];
+
+  let urls = `  <url>
+    <loc>https://zakonexpertt.kz/gallery</loc>
+${galleryImages.map(([file, caption]) => `    <image:image>
+      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
+    </image:image>`).join('\n')}
+  </url>`;
+
+  urls += heroImages.map(([page, file, caption]) => `
+  <url>
+    <loc>https://zakonexpertt.kz${page}</loc>
+    <image:image>
+      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
+    </image:image>
+  </url>`).join('');
+
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+${urls}
+</urlset>`);
+});
+
 // SITEMAP INDEX
 app.get('/sitemap-index.xml', (req, res) => {
   const today = new Date().toISOString().substring(0, 10);
@@ -1661,6 +1814,10 @@ app.get('/sitemap-index.xml', (req, res) => {
   </sitemap>
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-mfo.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-image.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
   <sitemap>

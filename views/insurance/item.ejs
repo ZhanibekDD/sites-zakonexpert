@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = item.shortName + ' — страховая компания Казахстана, телефон, email, адрес | ZakonExpert';
-const pageDesc  = item.name + ': страховая организация Казахстана. БИН ' + item.bin + '. ' + (item.address ? 'Адрес: ' + item.address + '. ' : '') + (item.phone ? 'Телефон: ' + item.phone + '. ' : '') + 'Спор со страховой? ZakonExpert поможет.';
+const pageTitle = item.shortName + ' — страховая, контакты | ZakonExpert';
+const pageDesc  = item.name + ': БИН ' + item.bin + '. Спор со страховой или взыскание по ней? Проверим ситуацию и основание требования бесплатно.';
 const canonical = 'https://zakonexpertt.kz/insurance/' + item.slug;
 
 function escHtml(s) {
@@ -73,6 +73,7 @@ const body = CSS
   + mapBlock(item.address)
   + '<div class="ii-info">ℹ️ Жалобы на страховые компании принимает <strong>АРРФР</strong> — Агентство по регулированию и развитию финансового рынка РК. Обращайтесь на <a href="https://www.afsa.kz" target="_blank" rel="noopener" class="ii-link">afsa.kz</a> или по тел. +7 727 237-10-00.</div>'
   + '</div>'
+  + lowContentBoost({ entityLabel: 'эта страховая' })
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">' + escHtml(item.shortName) + ' отказала в выплате?</h2>'

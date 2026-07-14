@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = 'Ломбарды Казахстана 2025 — реестр, адреса, БИН | ZakonExpert';
-const pageDesc  = 'Полный реестр лицензированных ломбардов Казахстана (' + items.length + ' организаций). Адреса, руководители, БИН. Проблемы с ломбардом? ZakonExpert поможет.';
+const pageTitle = 'Ломбарды Казахстана — реестр ' + items.length + ' организаций | ZakonExpert';
+const pageDesc  = 'Ломбард требует долг или грозит арестом? Проверим законность требований бесплатно. Реестр ' + items.length + ' лицензированных ломбардов РК.';
 const canonical = 'https://zakonexpertt.kz/lombards';
 
 const schema = {
@@ -93,12 +93,15 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Ломбарды</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">💎 Реестр АРРФР</span></div>'
   + '<h1 class="npage-h1">Ломбарды Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Государственный реестр лицензированных ломбардов РК — <strong>' + items.length + ' организаций</strong></p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Государственный реестр лицензированных ломбардов РК — <strong>' + items.length + ' организаций</strong></p>'
+  + '<p style="color:#475569;font-size:.92rem;margin-top:.6rem;max-width:720px;">Ломбард вправе реализовать залог только через нотариуса или суд — самостоятельно арестовать счёт или имущество он не может. Если это происходит или сумма долга кажется завышенной — ZakonExpert бесплатно разберёт ситуацию.</p></div>'
   + infoBox
   + '<input id="cc-search" type="search" placeholder="🔍 Поиск по названию или городу..." autocomplete="off">'
   + '<div id="cc-count"></div>'
   + '<div class="cc-grid">' + cards + '</div>'
-  + ctaHtml + sourceHtml
+  + ctaHtml
+  + lowContentBoost({ entityLabel: 'ломбард' })
+  + sourceHtml
   + '</div></div>' + JS;
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

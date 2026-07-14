@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = item.name + ' — МФО Казахстан, адрес, БИН, реквизиты | ZakonExpert';
-const pageDesc  = item.name + ': микрофинансовая организация Казахстана. БИН ' + item.bin + '. Адрес: ' + (item.address||'—') + '. МФО арестовала счёт? ZakonExpert поможет.';
+const pageTitle = item.name + ' — МФО, контакты и БИН | ZakonExpert';
+const pageDesc  = item.name + ': БИН ' + item.bin + ', адрес ' + (item.address||'—') + '. Требуют долг или арестовали счёт? Проверим ЧСИ и основание бесплатно.';
 const canonical = 'https://zakonexpertt.kz/mfo/' + item.slug;
 
 function escHtml(s) {
@@ -60,6 +60,7 @@ const body = CSS
   + mapBlock(item.address)
   + '<div class="mi-warn">⚠️ <strong>Важно:</strong> МФО вправе только <strong>связываться с должником</strong> и обращаться в суд. Арестовывать счета и карты могут только суд и ЧСИ. Если счёт арестован — <a href="https://wa.me/77752998738" style="color:#1a56db;font-weight:600;">обратитесь в ZakonExpert</a>.</div>'
   + '</div>'
+  + lowContentBoost({ entityLabel: 'эта МФО' })
   + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
   + '<p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">' + escHtml(item.name) + ' требует долг?</h2>'

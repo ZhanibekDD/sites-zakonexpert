@@ -223,8 +223,8 @@ const BANKS_STATIC = [
 ];
 const BANKS = (typeof banks !== 'undefined' && banks && banks.length) ? banks : BANKS_STATIC;
 
-const pageTitle = 'Банки Казахстана 2025 — адреса, телефоны, email, БИН | ZakonExpert';
-const pageDesc  = 'Полный список лицензированных банков Казахстана с адресами головных офисов, телефонами, email и БИН. Halyk, Kaspi, ForteBank, BCC, RBK, Bereke и другие. Арест счёта в банке — обращайтесь в ZakonExpert.';
+const pageTitle = 'Банки Казахстана — адреса, телефоны, БИН | ZakonExpert';
+const pageDesc  = 'Арестовали счёт в Kaspi, Halyk, ForteBank или другом банке? Проверим ЧСИ и основание ареста бесплатно. Реестр банков РК с адресами и телефонами.';
 const canonical = 'https://zakonexpertt.kz/banks';
 
 const schema = {
@@ -325,9 +325,12 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Банки Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏦 Реестр банков</span></div>'
   + '<h1 class="npage-h1">Банки Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Полный список лицензированных банков РК — <strong>' + BANKS.length + ' банков</strong> — с адресами головных офисов, телефонами, email и БИН</p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Полный список лицензированных банков РК — <strong>' + BANKS.length + ' банков</strong> — с адресами головных офисов, телефонами, email и БИН</p>'
+  + '<p style="color:#475569;font-size:.92rem;margin-top:.6rem;max-width:720px;">Арест счёта или карты — не решение банка, а исполнение постановления ЧСИ, судебного решения или исполнительной надписи нотариуса. Проверим основание бесплатно и подскажем, как снять ограничение.</p></div>'
   + '<div class="cb-grid">' + cards + '</div>'
-  + ctaHtml + sourceHtml
+  + ctaHtml
+  + lowContentBoost({ entityLabel: 'банк' })
+  + sourceHtml
   + '</div></div>';
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

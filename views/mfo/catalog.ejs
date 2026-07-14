@@ -16,8 +16,8 @@ const POPULAR = [
   { name:'Aldyz Finance', shortName:'Aldyz Finance', tag:'', phone:'', phoneRaw:'', email:'', web:'', note:'Займы для физических лиц.' },
 ];
 
-const pageTitle = 'МФО Казахстана ' + REGISTRY.length + ' организаций — реестр АРРФР, телефоны, адреса | ZakonExpert';
-const pageDesc  = 'Полный реестр МФО и МКО Казахстана: ' + REGISTRY.length + ' организаций из реестра АРРФР. Credit24, SOLVA, KMF и другие. Долг перед МФО? ZakonExpert поможет снять арест.';
+const pageTitle = 'МФО Казахстана — реестр ' + REGISTRY.length + ' организаций | ZakonExpert';
+const pageDesc  = 'Долг перед МФО арестовали счёт? Проверим ЧСИ, сумму и основание ареста бесплатно. Реестр ' + REGISTRY.length + ' МФО из АРРФР. Помощь по всей РК.';
 const canonical = 'https://zakonexpertt.kz/mfo';
 
 const schema = {
@@ -127,7 +127,8 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>МФО Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">💳 Реестр АРРФР</span></div>'
   + '<h1 class="npage-h1">МФО Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:.5rem;">Микрофинансовые организации Казахстана — телефоны, сайты и полный реестр АРРФР</p></div>'
+  + '<p style="color:#475569;margin-top:.5rem;">Микрофинансовые организации Казахстана — телефоны, сайты и полный реестр АРРФР</p>'
+  + '<p style="color:#475569;font-size:.92rem;margin-top:.6rem;max-width:720px;">МФО вправе только требовать возврат долга и обращаться в суд — арестовать счёт может лишь ЧСИ на основании исполнительного документа. Если счёт уже арестован — проверим основание бесплатно.</p></div>'
   + infoBox
   + '<h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin:1.5rem 0 .75rem;">Популярные МФО</h2>'
   + '<div class="cb-grid">' + popCards + '</div>'
@@ -136,6 +137,7 @@ const body = CSS
   + searchHtml
   + '<div class="cc-grid">' + regCards + '</div>'
   + ctaHtml
+  + lowContentBoost({ entityLabel: 'МФО' })
   + '<div style="margin-top:1.5rem;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:.78rem;color:#64748b;">'
   + '📋 <strong style="color:#374151;">Источник:</strong> Реестр МФО АРРФР РК (<a href="https://www.afsa.kz" target="_blank" rel="noopener" style="color:#1a56db;">afsa.kz</a>)'
   + '</div>'

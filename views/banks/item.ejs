@@ -1,6 +1,6 @@
 ﻿<%
-const pageTitle = bank.shortName + ' — БИН ' + bank.bin + ', телефон, адрес, email | ZakonExpert';
-const pageDesc  = bank.shortName + ': БИН ' + bank.bin + ', адрес головного офиса ' + bank.city + ', телефон и email. Арестовали счёт в ' + bank.shortName + '? ZakonExpert поможет снять арест.';
+const pageTitle = bank.shortName + ' — контакты, адрес, БИН | ZakonExpert';
+const pageDesc  = bank.shortName + ': БИН ' + bank.bin + ', адрес ' + bank.city + '. Арестовали счёт или карту? Проверим ЧСИ и основание ареста бесплатно.';
 const canonical = 'https://zakonexpertt.kz/banks/' + bank.slug;
 
 const schema = {
@@ -96,6 +96,7 @@ const body = CSS
   + noteHtml
   + '</div>'
   + mapBlock((bank.city ? bank.city + ', ' : '') + (bank.address || ''))
+  + lowContentBoost({ entityLabel: bank.shortName })
   + ctaHtml
   + '<div style="margin-top:1.5rem;"><a href="/banks" style="color:#1a56db;font-size:.9rem;text-decoration:none;">← Все банки Казахстана</a></div>'
   + '</div></div>';
