@@ -203,6 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 iinValidation.style.display = 'none';
             }
         }
+
+        if (window.ZE_trackEvent) window.ZE_trackEvent('submit_iin', 'checker');
         
         await checkDebtor(iin);
     });

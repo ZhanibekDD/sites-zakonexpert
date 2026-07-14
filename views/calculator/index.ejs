@@ -73,6 +73,7 @@ function calculate() {
   document.getElementById('cr-limit').textContent     = limitDate.toLocaleDateString('ru-RU');
   document.getElementById('cr-expired').style.display = expired ? '' : 'none';
   document.getElementById('result-box').classList.add('show');
+  if (window.ZE_trackEvent) window.ZE_trackEvent('calculator_completed', 'calculator');
 }
 window.addEventListener('DOMContentLoaded', function() { setTab('mfo'); });
 </script>`;
@@ -82,7 +83,9 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Калькулятор долга</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🧮 Калькулятор</span></div>'
   + '<h1 class="npage-h1">Калькулятор долга и пени</h1>'
-  + '<p style="color:#475569;margin-top:.5rem;">Рассчитайте проценты по МФО, банку и пеню за просрочку — бесплатно и быстро</p></div>'
+  + '<p style="color:#475569;margin-top:.5rem;">Рассчитайте проценты по МФО, банку и пеню за просрочку — бесплатно и быстро</p>'
+  + '<button class="copy-link-btn" type="button" data-copy-link="https://zakonexpertt.kz/calculator" data-track-page="/calculator"><i class="bi bi-link-45deg"></i> Скопировать ссылку на калькулятор</button>'
+  + '</div>'
   + '<div class="calc-wrap">'
   + '<div class="calc-tabs">'
   + '<button class="calc-tab active" data-tab="mfo" onclick="setTab(\'mfo\')">💳 МФО / микрозайм</button>'

@@ -451,6 +451,10 @@
 }
 .npage-quick-cta p { margin: 0; flex: 1; min-width: 220px; font-size: 0.88rem; line-height: 1.55; color: rgba(255,255,255,0.9); }
 
+/* Copy-link button (Stage 3 — link-worthy assets) */
+.copy-link-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #f1f5f9; color: #0d1f3c; border: 1.5px solid #e2e8f0; border-radius: 10px; font-weight: 600; font-size: .85rem; cursor: pointer; margin-top: .75rem; }
+.copy-link-btn:hover { background: #e2e8f0; }
+
 /* Light-background link chips (service cross-links on white page areas) */
 .npage-links-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .npage-links-row a {

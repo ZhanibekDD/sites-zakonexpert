@@ -1659,6 +1659,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
     { url: '/gallery',        priority: '0.85', freq: 'monthly' },
+    { url: '/press',          priority: '0.7',  freq: 'monthly' },
     { url: '/sms-1414',       priority: '0.9',  freq: 'monthly' },
     // Новые страницы из плана x1000
     { url: '/zapret-na-vyezd-iz-kazahstana',    priority: '0.85', freq: 'monthly' },
@@ -2088,6 +2089,25 @@ app.post('/api/track-click', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Lightweight product-analytics events (calculator_completed, copy_link, etc.) —
+// logged for later reporting, deliberately does NOT ping Telegram like
+// /api/track-click does, so it can be wired into high-frequency UI actions
+// without spamming the lead-notification channel.
+const ANALYTICS_EVENT_TYPES = new Set([
+  'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
+  'download_document', 'copy_link', 'external_campaign_visit',
+]);
+app.post('/api/track-event', asyncHandler(async (req, res) => {
+  const { type, target, page, utm } = req.body || {};
+  if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  if (clicksDb) {
+    clicksDb.recordClick({ type, target: target || utm || '-', page: page || '/', ip, ua }).catch(() => {});
+  }
+  res.json({ ok: true });
+}));
+
 // ===== LEAD FORM (chatbot / contact form) =====
 let leadsDb = null;
 try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
@@ -2200,6 +2220,7 @@ app.get('/bin-search', (req, res) => {
   try { getCollectors().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Коллектор', name: c.name, url: '/collectors/' + c.slug })); } catch(e){}
   try { getInsuranceData().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Страховая', name: c.shortName || c.name, url: '/insurance/' + c.slug })); } catch(e){}
   try { getGsiData().filter(g => g.bin && g.bin === bin).forEach(g => results.push({ type: 'ГСИ', name: g.name, url: '/gsi/' + g.slug })); } catch(e){}
+  if (clicksDb) clicksDb.recordClick({ type: 'bin_search_completed', target: bin, page: '/bin-search', ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown', ua: req.headers['user-agent'] || '' }).catch(() => {});
   res.render('bin-search/index', { bin, results, searched: true });
 });
 
