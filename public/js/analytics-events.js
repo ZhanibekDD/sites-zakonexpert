@@ -49,6 +49,16 @@
     var link = e.target.closest('a[download], a[href*="/downloads/"]');
     if (!link) return;
     send('download_document', link.getAttribute('href') || link.href);
+    try { sessionStorage.setItem('ze_downloaded_doc', location.pathname); } catch (err) { /* noop */ }
+  });
+
+  // ── click_whatsapp_after_download: any wa.me click once a document was downloaded this session ──
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href*="wa.me"]');
+    if (!link) return;
+    var downloadedOn = null;
+    try { downloadedOn = sessionStorage.getItem('ze_downloaded_doc'); } catch (err) { /* noop */ }
+    if (downloadedOn) send('click_whatsapp_after_download', link.getAttribute('href') || link.href, { source_page: downloadedOn });
   });
 
   // ── external_campaign_visit: utm_source present on page load ─────────────

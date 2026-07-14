@@ -7,8 +7,8 @@ const db = Datastore.create({
   autoload: true,
 });
 
-async function recordClick({ type, target, page, ip, ua }) {
-  return db.insert({ type, target, page, ip, ua, ts: Date.now() });
+async function recordClick({ type, target, page, ip, ua, ...extra }) {
+  return db.insert({ type, target, page, ip, ua, ts: Date.now(), ...extra });
 }
 
 async function getStats(since) {

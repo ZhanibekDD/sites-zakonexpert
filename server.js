@@ -2096,14 +2096,33 @@ app.post('/api/track-click', asyncHandler(async (req, res) => {
 const ANALYTICS_EVENT_TYPES = new Set([
   'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
   'download_document', 'copy_link', 'external_campaign_visit',
+  'click_cta_bailiff', 'click_cta_notary', 'send_document',
+  'click_document_review', 'click_whatsapp_after_download',
 ]);
+// Best-effort page_type classifier so LEAD-TRACKING-PLAN reports can group
+// events without re-deriving it from the raw path every time.
+function classifyPageType(page) {
+  if (!page) return 'other';
+  if (page === '/' ) return 'home';
+  if (/^\/bailiff\//.test(page)) return 'bailiff_card';
+  if (/^\/notary\//.test(page)) return 'notary_card';
+  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi)$/.test(page)) return 'catalog';
+  if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
+  if (page === '/dokumenty') return 'documents';
+  if (page === '/calculator') return 'calculator';
+  if (page === '/bin-search') return 'bin_search';
+  return 'other';
+}
 app.post('/api/track-event', asyncHandler(async (req, res) => {
-  const { type, target, page, utm } = req.body || {};
+  const { type, target, page, utm, cta } = req.body || {};
   if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
   if (clicksDb) {
-    clicksDb.recordClick({ type, target: target || utm || '-', page: page || '/', ip, ua }).catch(() => {});
+    clicksDb.recordClick({
+      type, target: target || utm || '-', page: page || '/', ip, ua,
+      page_type: classifyPageType(page), cta_position: cta || '', utm: utm || '',
+    }).catch(() => {});
   }
   res.json({ ok: true });
 }));

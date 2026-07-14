@@ -248,9 +248,9 @@
           <h4 style="font-size:0.95rem;font-weight:700;margin:0 0 10px;color:var(--legal-dark)">Связанные темы</h4>
           <div style="display:flex;flex-direction:column;gap:8px">
             <a href="/besspornost-dolga" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ Бесспорность долга</a>
-            <a href="/spornost-dolga" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ Спорность долга</a>
+            <a href="/vozrazhenie-na-ispolnitelnuyu-nadpis" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ Спорность долга</a>
             <a href="/snyatie-aresta-so-scheta" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ Снятие ареста со счёта</a>
-            <a href="/chsi-arest-schetov" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ ЧСИ наложил арест</a>
+            <a href="/snyatie-ogranichenii-chsi" style="font-size:0.88rem;color:var(--legal-blue);text-decoration:none;font-weight:600">→ ЧСИ наложил арест</a>
           </div>
         </div>
       </div>
@@ -336,10 +336,10 @@
       <div class="col-md-4">
         <h3 class="h5 mb-3">Законы</h3>
         <div class="footer-links">
-          <a href="/ispolnitelnaya-nadpis">Исполнительная надпись</a>
+          <a href="/otmena-ispolnitelnoi-nadpisi">Исполнительная надпись</a>
           <a href="/snyatie-aresta-so-scheta">Снятие ареста со счёта</a>
           <a href="/otmena-resheniya-suda">Решение суда</a>
-          <a href="/chsi-arest-schetov">ЧСИ и аресты</a>
+          <a href="/snyatie-ogranichenii-chsi">ЧСИ и аресты</a>
         </div>
       </div>
       <div class="col-md-4">
@@ -359,12 +359,13 @@
 </footer>
 
 <!-- Sticky WhatsApp -->
-<a href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.+%D0%A5%D0%BE%D1%87%D1%83+%D1%80%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%D1%81%D1%8F+%D1%81+%D0%B0%D1%80%D0%B5%D1%81%D1%82%D0%BE%D0%BC+%D1%81%D1%87%D1%91%D1%82%D0%BE%D0%B2." class="sticky-wa" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
+<a href="https://wa.me/77752998738?text=Здравствуйте.+Нотариус+сделал+исполнительную+надпись%2C+нужна+помощь." class="sticky-wa" target="_blank" rel="noopener" aria-label="Написать в WhatsApp">
   <i class="bi bi-whatsapp"></i>
 </a>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/site.js?v=20260619-1"></script>
 <script>document.querySelectorAll('.law-faq-question').forEach(btn=>{btn.addEventListener('click',()=>{const item=btn.closest('.law-faq-item');const isOpen=item.classList.contains('open');document.querySelectorAll('.law-faq-item.open').forEach(i=>i.classList.remove('open'));if(!isOpen)item.classList.add('open');btn.setAttribute('aria-expanded',!isOpen);});});</script>
+<script src="/js/analytics-events.js"></script>
 <script src="/js/chatbot.js" defer></script>
 </body>
 </html>
