@@ -36,11 +36,11 @@
 
   // ── Chatbot widget ────────────────────────────────────────────────────────
   const CSS = `
-  #zke-chat-btn{position:fixed;bottom:90px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(13,31,60,.35);z-index:9998;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:22px;}
+  #zke-chat-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(13,31,60,.35);z-index:9998;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:22px;}
   #zke-chat-btn:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(13,31,60,.45);}
   #zke-chat-btn .zke-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:#ef4444;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;animation:zke-pulse 2s infinite;}
   @keyframes zke-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-  #zke-chat-box{position:fixed;bottom:160px;right:20px;width:330px;max-width:calc(100vw - 40px);background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9999;overflow:hidden;display:none;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  #zke-chat-box{position:fixed;bottom:88px;right:20px;width:330px;max-width:calc(100vw - 40px);background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9999;overflow:hidden;display:none;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
   #zke-chat-box.open{display:flex;}
   .zke-header{background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;}
   .zke-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
@@ -63,6 +63,7 @@
   .zke-send{background:#0d1f3c;color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;}
   .zke-send:hover{background:#1a3460;}
   .zke-success{padding:18px 16px;text-align:center;color:#0d1f3c;}
+  @media(max-width:600px){#zke-chat-btn{right:12px;bottom:14px;width:48px;height:48px}#zke-chat-box{right:10px;bottom:72px;max-width:calc(100vw - 20px)}}
   .zke-success strong{display:block;font-size:16px;margin-bottom:6px;}
   .zke-success span{font-size:13px;color:#64748b;}
   .zke-typing{display:flex;gap:4px;padding:10px 13px;background:#f1f5f9;border-radius:14px;align-self:flex-start;width:48px;}
