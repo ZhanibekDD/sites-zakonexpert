@@ -112,7 +112,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260715-1">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260716-2">
   <style>
     /* ── Trust row under IIN form ── */
     .search-trust-row{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;}
@@ -192,7 +192,7 @@
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/">
-      <img src="/img/brand/zakonexpert-logo-hd.png" width="2048" height="671"
+      <img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793"
            alt="ZakonExpert (Закон Эксперт) — снятие ареста со счетов в Казахстане"
            class="brand-full-logo">
     </a>
@@ -237,60 +237,55 @@
 </header>
 
 <main>
-  <!-- HOME HERO V2 — IDs for the existing IIN checker are intentionally preserved. -->
+  <!-- HOME HERO V3 — premium layout; existing IIN checker IDs are intentionally preserved. -->
   <section id="checker-section" class="search-hero ze-home-hero">
+    <div class="ze-home-hero__backdrop" aria-hidden="true"></div>
     <div class="landing-container">
       <div class="ze-home-hero__grid">
         <div class="ze-home-hero__content">
           <div class="search-hero-badge">
-            <img class="ze-icon-img ze-icon-img--badge" src="/img/icons/01-location-gold.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async">
-            Снятие арестов по всему Казахстану
+            <span aria-hidden="true">✓</span>
+            Сначала снимаем арест — потом вы платите
           </div>
 
-          <h1 class="search-hero-title">Снимем арест со счёта — <span>оплата только после результата</span></h1>
-          <p class="search-hero-subtitle">Проверим ограничения по ИИН, объясним причину и начнём работу сегодня. Официальный договор. Без предоплаты.</p>
-
-          <div class="ze-home-trust-chips" aria-label="Преимущества">
-            <span class="ze-home-trust-chip"><img class="ze-icon-img ze-icon-img--chip" src="/img/icons/02-shield-check.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"> Оплата после снятия</span>
-            <span class="ze-home-trust-chip"><img class="ze-icon-img ze-icon-img--chip" src="/img/icons/03-document-outline.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"> Официальный договор</span>
-            <span class="ze-home-trust-chip"><img class="ze-icon-img ze-icon-img--chip" src="/img/icons/04-fast-reply-chat.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"> Ответ за 10–15 минут</span>
-          </div>
+          <h1 class="search-hero-title">Арестовали <span>Kaspi, Halyk</span><br>или счёт у ЧСИ?</h1>
+          <p class="search-hero-subtitle">Снимаем аресты и ограничения по счетам, авто, недвижимости и выезду за границу по договору. Работаем по всему Казахстану.</p>
 
           <form id="search-form" novalidate class="search-main-form ze-home-checker">
-            <label for="iin" class="ze-home-checker__label"><img class="ze-icon-img ze-icon-img--checker" src="/img/icons/05-search-check.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"> Бесплатно проверим ограничения</label>
+            <label for="iin" class="ze-home-checker__label">Проверьте свои ограничения бесплатно</label>
             <div class="search-row">
               <input class="search-main-input" type="text" id="iin" name="iin"
                      inputmode="numeric" autocomplete="off" maxlength="12"
                      aria-describedby="iin-privacy-note iin-validation"
-                     placeholder="Введите ИИН — 12 цифр">
+                     placeholder="ИИН — 12 цифр">
               <button id="search-button" type="submit" class="search-main-btn">
-                <img class="ze-icon-img ze-icon-img--button" src="/img/icons/05-search-check.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async">
-                Проверить ИИН
+                Проверить бесплатно
               </button>
             </div>
             <div id="iin-validation" class="invalid-feedback" style="display:none; text-align:left; margin-top:8px;"></div>
-            <p class="search-note-text" id="iin-privacy-note"><svg class="ze-ui-icon ze-ui-icon--small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Данные не сохраняются и используются только для проверки. <a href="/privacy">Политика конфиденциальности</a></p>
+            <p class="search-note-text" id="iin-privacy-note">
+              <svg class="ze-ui-icon ze-ui-icon--small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              Данные используются только для проверки. <a href="/privacy">Конфиденциальность</a>
+            </p>
           </form>
 
           <div class="ze-home-hero__actions">
             <a class="ze-home-consult-btn" href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%BF%D1%80%D0%B8%D1%87%D0%B8%D0%BD%D1%83%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D0%B0%20%D0%B8%20%D1%83%D1%81%D0%BB%D0%BE%D0%B2%D0%B8%D1%8F%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B." target="_blank" rel="noopener">
-              <svg class="ze-ui-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.07c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35ZM12.05 21.79a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.89-9.88 2.64 0 5.12 1.03 6.99 2.9a9.83 9.83 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88Z"/></svg> Получить консультацию
+              <img src="/img/icons/home/01-whatsapp.png" width="1024" height="1024" alt="" aria-hidden="true"> Написать в WhatsApp
             </a>
-            <span class="ze-home-hero__response">Работаем ежедневно, 09:00–21:00</span>
+            <span class="ze-home-hero__response"><strong>Ответ специалиста</strong> в течение 10 минут</span>
           </div>
         </div>
 
-        <div class="ze-home-hero__visual" aria-label="Образ специалиста ZakonExpert">
-          <div class="ze-home-hero__reference" aria-hidden="true">
-            <img src="/img/hero-reference-man.webp" width="1672" height="941" alt="" fetchpriority="high" decoding="async">
-          </div>
-          <div class="ze-home-result-card">
-            <span class="ze-home-result-card__icon"><img class="ze-icon-img ze-icon-img--status" src="/img/icons/06-status-check-circle.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"></span>
+        <div class="ze-home-hero__visual">
+          <img class="ze-home-hero__portrait" src="/img/hero/zhanibek-transparent.webp" width="1043" height="1508"
+               alt="Жанибек Даулетович — специалист ZakonExpert" fetchpriority="high" decoding="async">
+          <div class="ze-home-specialist-card">
             <div>
-              <strong>Работаем по договору</strong>
-              <span>Оплата после результата</span>
-              <small>Дистанционно по всему Казахстану</small>
+              <strong>Жанибек Даулетович</strong>
+              <span>Специалист по снятию арестов</span>
             </div>
+            <img src="/img/icons/home/06-proverennyi-specialist.png" width="1024" height="1024" alt="" aria-hidden="true">
           </div>
         </div>
       </div>
@@ -314,118 +309,115 @@
       <div id="results" class="search-results-area">
         <section id="debtors-section" style="display:none;">
           <h3 class="results-title">Найденные исполнительные производства</h3>
-          <p class="results-section-lead">Найденные производства. Нажмите «Подробнее» для деталей или используйте кнопку WhatsApp ниже — отправим все производства сразу.</p>
+          <p class="results-section-lead">Нажмите «Подробнее» для деталей или отправьте результаты специалисту в WhatsApp.</p>
           <div id="debtors-table" class="ip-list"></div>
         </section>
-
         <section id="restrictions-section" class="mt-4" style="display:none;">
           <h3>Дополнительные ограничения</h3>
-          <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям — требуют отдельного правового анализа.</p>
+          <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям требуют отдельного правового анализа.</p>
           <div class="table-responsive">
             <table id="restrictions-table" class="table">
-              <thead>
-                <tr><th>Тип ограничения</th><th>Статус</th><th>Орган</th><th>Дата</th></tr>
-              </thead>
+              <thead><tr><th scope="col">Тип ограничения</th><th scope="col">Статус</th><th scope="col">Орган</th><th scope="col">Дата</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </section>
       </div>
 
-      <div class="ze-home-proof" aria-label="Условия и формат работы">
-        <div class="ze-home-proof__item">
-          <span class="ze-home-proof__icon"><img class="ze-icon-img ze-icon-img--proof" src="/img/icons/07-clients-badge.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"></span>
-          <div><strong>1 200+ обращений</strong><span>Клиентов по всему Казахстану</span></div>
+      <div class="ze-home-proof" role="list" aria-label="Условия и формат работы">
+        <div class="ze-home-proof__item" role="listitem">
+          <span class="ze-home-proof__icon"><img src="/img/icons/home/02-bez-predoplaty.png" width="1024" height="1024" alt="" aria-hidden="true"></span>
+          <div><strong>Без предоплаты</strong><span>Оплата только за результат</span></div>
         </div>
-        <div class="ze-home-proof__item">
-          <span class="ze-home-proof__icon"><img class="ze-icon-img ze-icon-img--proof" src="/img/icons/08-regions-badge.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"></span>
+        <div class="ze-home-proof__item" role="listitem">
+          <span class="ze-home-proof__icon"><img src="/img/icons/home/03-oficialnyi-dogovor.png" width="1024" height="1024" alt="" aria-hidden="true"></span>
+          <div><strong>Официальный договор</strong><span>Прозрачные условия работы</span></div>
+        </div>
+        <div class="ze-home-proof__item" role="listitem">
+          <span class="ze-home-proof__icon"><img src="/img/icons/home/04-ves-kazahstan.png" width="1024" height="1024" alt="" aria-hidden="true"></span>
           <div><strong>Весь Казахстан</strong><span>Работаем дистанционно</span></div>
         </div>
-        <div class="ze-home-proof__item">
-          <span class="ze-home-proof__icon"><img class="ze-icon-img ze-icon-img--proof" src="/img/icons/09-contract-badge.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"></span>
-          <div><strong>Договор и чек</strong><span>Официальное оформление</span></div>
-        </div>
-        <div class="ze-home-proof__item">
-          <span class="ze-home-proof__icon"><img class="ze-icon-img ze-icon-img--proof" src="/img/icons/10-calendar-badge.png" width="1254" height="1254" alt="" aria-hidden="true" decoding="async"></span>
-          <div><strong>Работаем ежедневно</strong><span>С 09:00 до 21:00</span></div>
+        <div class="ze-home-proof__item" role="listitem">
+          <span class="ze-home-proof__icon"><img src="/img/icons/home/05-konfidencialnost.png" width="1024" height="1024" alt="" aria-hidden="true"></span>
+          <div><strong>Конфиденциально</strong><span>Данные под надёжной защитой</span></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- WHAT WE REMOVE + WHAT TO SEND -->
-  <section class="section" style="padding-top:44px;padding-bottom:44px;">
+  <!-- SERVICES — dedicated icon set, no inline emoji or duplicated sprites. -->
+  <section class="ze-home-services" aria-labelledby="home-services-title">
     <div class="landing-container">
-      <div class="row g-5">
-        <div class="col-lg-6">
-          <span class="section-kicker">Что мы снимаем</span>
-          <h2 class="section-title" style="font-size:clamp(1.3rem,2.6vw,1.7rem);">Любой арест или ограничение</h2>
-          <ul style="list-style:none;padding:0;margin:16px 0 0;display:grid;gap:10px;">
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">💳</span> Счета и карты — Kaspi, Halyk, Freedom и другие банки</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">💼</span> Зарплата — если удерживают больше положенного</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👵</span> Пенсия и пособия — сверх прожиточного минимума</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🚗</span> Авто — запрет регистрационных действий</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏠</span> Недвижимость — арест квартиры, дома, участка</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✈️</span> Запрет на выезд из Казахстана</li>
-          </ul>
-        </div>
-        <div class="col-lg-6">
-          <span class="section-kicker">Как быстрее начать</span>
-          <h2 class="section-title" style="font-size:clamp(1.3rem,2.6vw,1.7rem);">Что отправить в WhatsApp</h2>
-          <p class="section-lead" style="margin-bottom:14px;">Пришлите эти 5 пунктов — и мы сразу начнём разбор, без лишних вопросов.</p>
-          <ol style="list-style:none;padding:0;margin:0;display:grid;gap:10px;counter-reset:wa-steps;">
-            <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.92rem;color:#1e293b;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;"><span style="width:26px;height:26px;border-radius:50%;background:#0f2044;color:#f0c040;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span> Ваш ИИН</li>
-            <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.92rem;color:#1e293b;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;"><span style="width:26px;height:26px;border-radius:50%;background:#0f2044;color:#f0c040;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span> Скриншот ареста или уведомления в приложении банка</li>
-            <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.92rem;color:#1e293b;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;"><span style="width:26px;height:26px;border-radius:50%;background:#0f2044;color:#f0c040;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span> Постановление ЧСИ, если оно у вас есть</li>
-            <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.92rem;color:#1e293b;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;"><span style="width:26px;height:26px;border-radius:50%;background:#0f2044;color:#f0c040;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</span> Название банка или организации</li>
-            <li style="display:flex;align-items:flex-start;gap:12px;font-size:0.92rem;color:#1e293b;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:12px 16px;"><span style="width:26px;height:26px;border-radius:50%;background:#0f2044;color:#f0c040;font-weight:800;font-size:0.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</span> Номер телефона для связи</li>
-          </ol>
-          <a href="https://wa.me/77752998738?text=Здравствуйте!+Отправляю+данные+по+своей+ситуации." target="_blank" rel="noopener"
-             style="display:inline-flex;align-items:center;gap:9px;margin-top:16px;padding:13px 26px;background:#25d366;color:#fff;border-radius:12px;font-weight:700;font-size:0.95rem;text-decoration:none;">
-            <i class="bi bi-whatsapp"></i> Отправить в WhatsApp
-          </a>
-        </div>
+      <div class="ze-section-heading">
+        <span>Основные услуги</span>
+        <h2 id="home-services-title">Решаем проблемы с арестами и ограничениями</h2>
+        <p>Определяем основание, готовим документы и сопровождаем до результата.</p>
       </div>
-    </div>
-  </section>
 
-  <!-- HOW WE WORK — guarantee steps -->
-  <section class="section" id="how-we-work" style="padding-top:48px;padding-bottom:48px;">
-    <div class="landing-container">
-      <div class="text-center mb-4">
-        <span class="section-kicker">Порядок работы</span>
-        <h2 class="section-title">Как мы работаем</h2>
-        <p class="section-lead" style="max-width:560px;margin:0 auto;">Вы не рискуете деньгами. Мы берёмся за дело — и только после снятия ареста подписываем акт и выставляем счёт.</p>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;position:relative;">
-        <div style="position:relative;padding:28px 24px;text-align:center;">
-          <div style="width:56px;height:56px;background:#0f2044;color:#d7a742;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;margin:0 auto 16px;">1</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Вы пишете нам</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.6;margin:0;">Описываете ситуацию в WhatsApp. Мы смотрим производство по ИИН — бесплатно.</p>
-        </div>
-        <div style="padding:28px 24px;text-align:center;">
-          <div style="width:56px;height:56px;background:#0f2044;color:#d7a742;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;margin:0 auto 16px;">2</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Подписываем договор</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.6;margin:0;">Официальный договор с фиксированной ценой. Никакой предоплаты — только документ с нашими обязательствами.</p>
-        </div>
-        <div style="padding:28px 24px;text-align:center;">
-          <div style="width:56px;height:56px;background:#0f2044;color:#d7a742;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:900;margin:0 auto 16px;">3</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Мы снимаем арест</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.6;margin:0;">Готовим документы, взаимодействуем с ЧСИ, нотариусом или судом. Вам не нужно никуда идти.</p>
-        </div>
-        <div style="padding:28px 24px;text-align:center;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:16px;border:2px solid #4ade80;">
-          <div style="width:56px;height:56px;background:#15803d;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;margin:0 auto 16px;">✓</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#15803d;margin-bottom:8px;">Арест снят — вы платите</h3>
-          <p style="font-size:0.85rem;color:#166534;line-height:1.6;margin:0;">Только после фактического снятия ограничений вы оплачиваете наш гонорар по договору.</p>
-        </div>
-      </div>
-      <div class="text-center mt-4">
-        <a href="https://wa.me/77752998738?text=%D0%A1%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D0%B0+%D1%81%D0%BD%D0%B8%D0%BC%D0%B8%D1%82%D0%B5+%D0%B0%D1%80%D0%B5%D1%81%D1%82%2C+%D0%BF%D0%BE%D1%82%D0%BE%D0%BC+%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B0.+%D0%A5%D0%BE%D1%87%D1%83+%D0%BD%D0%B0%D1%87%D0%B0%D1%82%D1%8C." target="_blank" rel="noopener"
-           style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:#25d366;color:#fff;border-radius:14px;font-weight:800;font-size:1rem;text-decoration:none;">
-          <i class="bi bi-whatsapp fs-5"></i> Начать — это бесплатно
+      <div class="ze-home-services__grid">
+        <a class="ze-service-card" href="/snyatie-aresta-so-scheta">
+          <img src="/img/icons/home/07-arest-schetov.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Аресты счетов и карт</h3>
+          <p>Снимаем арест с Kaspi, Halyk и других банковских счетов в рамках закона.</p>
+          <span>Подробнее <b aria-hidden="true">→</b></span>
         </a>
-        <p style="margin-top:10px;font-size:0.8rem;color:#94a3b8;">Первичный разбор ситуации — бесплатно и без обязательств</p>
+        <a class="ze-service-card" href="/snyatie-zapreta-na-avto">
+          <img src="/img/icons/home/08-zapret-na-avto.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Запрет на авто</h3>
+          <p>Снимаем запрет на регистрацию и ограничение на пользование автомобилем.</p>
+          <span>Подробнее <b aria-hidden="true">→</b></span>
+        </a>
+        <a class="ze-service-card" href="/snyatie-ogranicheniya-na-imushchestvo">
+          <img src="/img/icons/home/09-arest-nedvizhimosti.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Арест недвижимости</h3>
+          <p>Снимаем арест и запрет на регистрационные действия с недвижимостью.</p>
+          <span>Подробнее <b aria-hidden="true">→</b></span>
+        </a>
+        <a class="ze-service-card" href="/snyatie-ogranichenii-chsi">
+          <img src="/img/icons/home/10-zapret-na-vyezd.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Запрет на выезд</h3>
+          <p>Проверяем основание и сопровождаем снятие ограничения на выезд за границу.</p>
+          <span>Подробнее <b aria-hidden="true">→</b></span>
+        </a>
       </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="ze-home-process" id="how-we-work" aria-labelledby="home-process-title">
+    <div class="landing-container">
+      <div class="ze-section-heading ze-section-heading--dark">
+        <span>Порядок работы</span>
+        <h2 id="home-process-title">Как мы работаем</h2>
+        <p>Понятный процесс без лишних поездок и скрытых этапов.</p>
+      </div>
+
+      <ol class="ze-home-process__grid">
+        <li class="ze-process-step">
+          <span class="ze-process-step__number">1</span>
+          <img src="/img/icons/home/11-proverka.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Проверяем ограничения</h3>
+          <p>Проверяем данные и определяем все производства и ограничения.</p>
+        </li>
+        <li class="ze-process-step">
+          <span class="ze-process-step__number">2</span>
+          <img src="/img/icons/home/12-analiz-dokumentov.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Готовим план</h3>
+          <p>Анализируем основания и выбираем правовой способ снятия ареста.</p>
+        </li>
+        <li class="ze-process-step">
+          <span class="ze-process-step__number">3</span>
+          <img src="/img/icons/home/13-snyatie-aresta.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Снимаем арест</h3>
+          <p>Работаем с ЧСИ, банками и государственными органами до результата.</p>
+        </li>
+        <li class="ze-process-step">
+          <span class="ze-process-step__number">4</span>
+          <img src="/img/icons/home/14-dostup-vosstanovlen.png" width="1024" height="1024" alt="" aria-hidden="true" loading="lazy">
+          <h3>Вы получаете доступ</h3>
+          <p>После снятия ограничений снова пользуетесь счетами и имуществом.</p>
+        </li>
+      </ol>
     </div>
   </section>
 
@@ -1541,7 +1533,7 @@
   <div class="landing-container footer-shell">
     <div class="footer-brand">
       <div class="brand">
-        <img src="img/zakonexpert-logo-kazakhstan.png" width="1672" height="941"
+        <img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793"
              alt="Закон Эксперт (ZakonExpert) — логотип"
              class="brand-full-logo brand-full-logo--footer" loading="lazy">
       </div>
