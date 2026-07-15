@@ -1,33 +1,32 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
-  <rect width="800" height="500" fill="#0f0f0f"/>
-  <rect width="800" height="5" fill="#e63946"/>
+  <rect width="800" height="500" fill="#12355B"/>
+  <rect width="800" height="5" fill="#C58B2A"/>
 
-  <!-- Alert strip -->
-  <rect x="0" y="5" width="800" height="60" fill="#1a0a0a"/>
-  <text x="400" y="44" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="22" font-weight="900" fill="#e63946" letter-spacing="3">⚠ АРЕСТОВАЛИ СЧЁТ ИЛИ КАРТУ?</text>
+  <!-- Kicker -->
+  <text x="400" y="52" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#C58B2A">АРЕСТОВАЛИ СЧЁТ ИЛИ КАРТУ?</text>
 
   <!-- Main heading -->
-  <text x="400" y="140" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="56" font-weight="900" fill="#ffffff">KASPI · HALYK</text>
-  <text x="400" y="198" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="56" font-weight="900" fill="#e63946">FREEDOM BANK</text>
-  <text x="400" y="238" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" fill="rgba(255,255,255,0.5)">Снятие ареста за 3–7 дней · Казахстан</text>
+  <text x="400" y="132" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="52" font-weight="900" fill="#ffffff">KASPI · HALYK</text>
+  <text x="400" y="190" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="52" font-weight="900" fill="#C58B2A">FREEDOM BANK</text>
+  <text x="400" y="228" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" fill="rgba(255,255,255,0.65)">Проверка основания и снятие ареста · Казахстан</text>
 
-  <rect x="80" y="255" width="640" height="1" fill="rgba(255,255,255,0.07)"/>
+  <rect x="80" y="252" width="640" height="1" fill="rgba(255,255,255,0.15)"/>
 
   <!-- Services two columns -->
-  <text x="100" y="288" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Снятие ареста со счёта</text>
-  <text x="430" y="288" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Открытие выезда за рубеж</text>
-  <text x="100" y="318" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Отмена удержания с зарплаты</text>
-  <text x="430" y="318" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Снятие запрета на авто</text>
-  <text x="100" y="348" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Отмена надписи нотариуса</text>
-  <text x="430" y="348" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Уменьшение суммы долга</text>
-  <text x="100" y="378" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ График платежей с ЧСИ</text>
-  <text x="430" y="378" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.9)">✅ Списание МФО / Банкротство</text>
+  <text x="100" y="288" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Снятие ареста со счёта</text>
+  <text x="430" y="288" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Помощь с запретом на выезд</text>
+  <text x="100" y="318" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Отмена удержания с зарплаты</text>
+  <text x="430" y="318" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Снятие запрета на авто</text>
+  <text x="100" y="348" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Отмена надписи нотариуса</text>
+  <text x="430" y="348" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Проверка суммы долга</text>
+  <text x="100" y="378" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ График платежей с ЧСИ</text>
+  <text x="430" y="378" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.92)">✓ Разбор дел МФО / банкротства</text>
 
-  <!-- Result banner -->
-  <rect x="80" y="400" width="640" height="44" rx="8" fill="rgba(230,57,70,0.15)" stroke="#e63946" stroke-width="1"/>
-  <text x="400" y="427" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="18" font-weight="900" fill="#e63946">РЕЗУЛЬТАТ ГАРАНТИРОВАН — РАБОТАЕМ ПО ВСЕМУ КАЗАХСТАНУ</text>
+  <!-- Coverage banner -->
+  <rect x="80" y="400" width="640" height="44" rx="8" fill="rgba(197,139,42,0.15)" stroke="#C58B2A" stroke-width="1"/>
+  <text x="400" y="427" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#C58B2A">РАБОТАЕМ ДИСТАНЦИОННО ПО ВСЕМУ КАЗАХСТАНУ</text>
 
   <!-- Phone -->
-  <text x="400" y="468" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="26" font-weight="900" fill="#ffffff">ZakonExpert · +7 775 299-87-38</text>
+  <text x="400" y="468" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="24" font-weight="900" fill="#ffffff">ZakonExpert · +7 775 299-87-38</text>
 </svg>
