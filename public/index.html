@@ -112,6 +112,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260715-1">
   <style>
     /* ── Trust row under IIN form ── */
     .search-trust-row{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;}
@@ -191,7 +192,7 @@
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/">
-      <img src="img/zakonexpert-logo-kazakhstan.png" width="1672" height="941"
+      <img src="img/zakonexpert-logo-kazakhstan.png" width="391" height="220"
            alt="ZakonExpert (Закон Эксперт) — снятие ареста со счетов в Казахстане"
            class="brand-full-logo">
     </a>
@@ -202,13 +203,22 @@
 
     <nav>
       <ul class="nav-links" data-nav-links>
-        <li><a class="nav-link active" href="/">Главная</a></li>
         <li><a class="nav-link" href="/services">Услуги</a></li>
-        <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/statyi" aria-haspopup="true">Законы <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/statyi?code=uk"><i class="bi bi-journal-text"></i> УК РК — Уголовный</a></li><li><a href="/statyi?code=upk"><i class="bi bi-journal-text"></i> УПК РК — Процессуальный</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=koap"><i class="bi bi-journal-text"></i> КоАП РК — Административные</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=gk"><i class="bi bi-journal-text"></i> ГК РК — Гражданский</a></li><li><a href="/statyi?code=sk"><i class="bi bi-journal-text"></i> СК РК — Семейный</a></li><li><a href="/statyi?code=tk"><i class="bi bi-journal-text"></i> ТК РК — Трудовой</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi"><i class="bi bi-search"></i> Поиск по всем</a></li></ul></li>
-        <li><a class="nav-link" href="/news">Новости</a></li>
-        <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/notaries" aria-haspopup="true">Реестры <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/notaries"><i class="bi bi-book"></i> Каталог нотариусов</a></li><li><a href="/notary-search"><i class="bi bi-search"></i> Поиск нотариуса</a></li><li class="nav-dropdown-divider"></li><li><a href="/bailiffs"><i class="bi bi-book"></i> Каталог ЧСИ</a></li><li><a href="/bailiff-search"><i class="bi bi-search"></i> Поиск ЧСИ</a></li><li class="nav-dropdown-divider"></li><li><a href="/lawyers"><i class="bi bi-book"></i> Каталог адвокатов</a></li><li><a href="/lawyer-search"><i class="bi bi-search"></i> Поиск адвоката</a></li><li class="nav-dropdown-divider"></li><li><a href="/banks"><i class="bi bi-bank"></i> Банки Казахстана</a></li><li><a href="/mfo"><i class="bi bi-credit-card"></i> МФО Казахстана</a></li><li><a href="/courts"><i class="bi bi-building-fill-check"></i> Суды Казахстана</a></li><li><a href="/chambers"><i class="bi bi-briefcase"></i> Палаты нот. и ЧСИ</a></li><li><a href="/companies"><i class="bi bi-building"></i> Компании РК</a></li><li class="nav-dropdown-divider"></li><li><a href="/collectors"><i class="bi bi-person-x"></i> Коллекторы РК</a></li><li><a href="/lombards"><i class="bi bi-gem"></i> Ломбарды РК</a></li></ul></li>
-        <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/dokumenty" aria-haspopup="true">Клиентам <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/dokumenty"><i class="bi bi-file-earmark-text"></i> Образцы документов</a></li><li><a href="/rezultaty"><i class="bi bi-trophy"></i> Результаты работы</a></li><li><a href="/gallery"><i class="bi bi-images"></i> Инфографика</a></li><li class="nav-dropdown-divider"></li><li><a href="/press"><i class="bi bi-newspaper"></i> СМИ и партнёрам</a></li></ul></li>
-      <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/advocate" aria-haspopup="true">Адвокат <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/advocate#adv-bio"><i class="bi bi-person-badge"></i> Об адвокате</a></li><li><a href="/advocate#adv-news"><i class="bi bi-newspaper"></i> Новости и дела</a></li><li><a href="/advocate#adv-practice"><i class="bi bi-briefcase"></i> Направления работы</a></li><li class="nav-dropdown-divider"></li><li><a href="https://wa.me/77777457577?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8F+%D0%B0%D0%B4%D0%B2%D0%BE%D0%BA%D0%B0%D1%82%D0%B0." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Записаться</a></li></ul></li><li><a class="nav-link" href="/mediator">Медиатор</a></li>
+        <li><a class="nav-link" href="#how-we-work">Как мы работаем</a></li>
+        <li><a class="nav-link" href="/rezultaty">Результаты</a></li>
+        <li class="nav-has-dropdown">
+          <a class="nav-link nav-dropdown-toggle" href="/dokumenty" aria-haspopup="true">Полезное <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a>
+          <ul class="nav-dropdown-menu">
+            <li><a href="/dokumenty"><i class="bi bi-file-earmark-text"></i> Образцы документов</a></li>
+            <li><a href="/news"><i class="bi bi-newspaper"></i> Новости</a></li>
+            <li><a href="/statyi"><i class="bi bi-journal-text"></i> Законы РК</a></li>
+            <li class="nav-dropdown-divider"></li>
+            <li><a href="/notaries"><i class="bi bi-book"></i> Реестр нотариусов</a></li>
+            <li><a href="/bailiffs"><i class="bi bi-briefcase"></i> Реестр ЧСИ</a></li>
+            <li><a href="/advocate"><i class="bi bi-person-badge"></i> Адвокат</a></li>
+            <li><a href="/mediator"><i class="bi bi-people"></i> Медиатор</a></li>
+          </ul>
+        </li>
         <li><a class="nav-link" href="/contact">Контакты</a></li>
       </ul>
     </nav>
@@ -227,119 +237,122 @@
 </header>
 
 <main>
-  <!-- SEARCH HERO — aisoip style, все ID сохранены -->
-  <section id="checker-section" class="search-hero">
+  <!-- HOME HERO V2 — IDs for the existing IIN checker are intentionally preserved. -->
+  <section id="checker-section" class="search-hero ze-home-hero">
     <div class="landing-container">
-      <div class="search-hero-inner">
+      <div class="ze-home-hero__grid">
+        <div class="ze-home-hero__content">
+          <div class="search-hero-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            Снятие арестов по всему Казахстану
+          </div>
 
-        <div class="search-hero-badge">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Онлайн-проверка
+          <h1 class="search-hero-title">Снимем арест со счёта — <span>оплата только после результата</span></h1>
+          <p class="search-hero-subtitle">Проверим ограничения по ИИН, объясним причину и начнём работу сегодня. Официальный договор. Без предоплаты.</p>
+
+          <div class="ze-home-trust-chips" aria-label="Преимущества">
+            <span class="ze-home-trust-chip"><i class="bi bi-shield-check" aria-hidden="true"></i> Оплата после снятия</span>
+            <span class="ze-home-trust-chip"><i class="bi bi-file-earmark-check" aria-hidden="true"></i> Официальный договор</span>
+            <span class="ze-home-trust-chip"><i class="bi bi-chat-dots" aria-hidden="true"></i> Ответ за 10–15 минут</span>
+          </div>
+
+          <form id="search-form" novalidate class="search-main-form ze-home-checker">
+            <label for="iin" class="ze-home-checker__label"><i class="bi bi-search" aria-hidden="true"></i> Бесплатно проверим ограничения</label>
+            <div class="search-row">
+              <input class="search-main-input" type="text" id="iin" name="iin"
+                     inputmode="numeric" autocomplete="off" maxlength="12"
+                     aria-describedby="iin-privacy-note iin-validation"
+                     placeholder="Введите ИИН — 12 цифр">
+              <button id="search-button" type="submit" class="search-main-btn">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                Проверить ИИН
+              </button>
+            </div>
+            <div id="iin-validation" class="invalid-feedback" style="display:none; text-align:left; margin-top:8px;"></div>
+            <p class="search-note-text" id="iin-privacy-note"><i class="bi bi-lock" aria-hidden="true"></i> Данные не сохраняются и используются только для проверки. <a href="/privacy">Политика конфиденциальности</a></p>
+          </form>
+
+          <div class="ze-home-hero__actions">
+            <a class="ze-home-consult-btn" href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%BF%D1%80%D0%B8%D1%87%D0%B8%D0%BD%D1%83%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D0%B0%20%D0%B8%20%D1%83%D1%81%D0%BB%D0%BE%D0%B2%D0%B8%D1%8F%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B." target="_blank" rel="noopener">
+              <i class="bi bi-whatsapp" aria-hidden="true"></i> Получить консультацию
+            </a>
+            <span class="ze-home-hero__response">Работаем ежедневно, 09:00–21:00</span>
+          </div>
         </div>
 
-        <h1 class="search-hero-title">Арестовали Kaspi, Halyk<br>или счёт у ЧСИ?</h1>
-        <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(74,222,128,0.12);border:1.5px solid rgba(74,222,128,0.35);border-radius:12px;padding:10px 20px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;">
-          <span style="font-size:1.15rem;">✅</span>
-          <span style="color:#4ade80;font-weight:800;font-size:1rem;">Сначала снимаем арест — потом вы платите.</span>
-          <span style="color:rgba(255,255,255,0.75);font-size:0.88rem;">Официальный договор. Без предоплаты.</span>
-        </div>
-        <p class="search-hero-subtitle">Проверьте ИИН за 30 секунд — узнайте все исполнительные производства, кто взыскатель и какая сумма. Разберём ситуацию бесплатно.</p>
-
-        <form id="search-form" novalidate class="search-main-form">
-          <div class="search-row">
-            <label for="iin" class="visually-hidden">ИИН — 12 цифр</label>
-            <input class="search-main-input" type="text" id="iin" name="iin"
-                   inputmode="numeric" maxlength="12"
-                   placeholder="ИИН — 12 цифр">
-            <button id="search-button" type="submit" class="search-main-btn">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Проверить
-            </button>
-          </div>
-          <div id="iin-validation" class="invalid-feedback" style="display:none; text-align:center; margin-top:8px;"></div>
-          <p class="search-note-text">🔒 ИИН используется только для запроса к реестрам РК и нигде не сохраняется. <a href="/privacy" style="color:var(--sky-700)">Политика конфиденциальности</a></p>
-          <div class="search-trust-row">
-            <span style="color:#4ade80;font-weight:700;font-size:0.82rem;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Сначала снимаем — потом оплата</span>
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Адвокат РК №24018569</span>
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Ответим за 15 минут</span>
-            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Весь Казахстан</span>
-          </div>
-        </form>
-
-        <div class="search-loading" id="loading-container" style="display:none;">
-          <div class="d-flex align-items-center gap-3">
-            <div class="spinner-border" role="status" aria-hidden="true"></div>
-            <div class="w-100">
-              <p class="loading-message"><span>Загрузка данных...</span></p>
-              <div class="progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-                <div class="progress-bar" style="width:0%"></div>
-              </div>
+        <div class="ze-home-hero__visual" aria-label="Специалист ZakonExpert">
+          <div class="ze-home-hero__portrait-halo" aria-hidden="true"></div>
+          <img class="ze-home-hero__portrait" src="/img/zhanibek-dauletovich.jpeg" width="960" height="1280"
+               alt="Жанибек Даулетович — специалист ZakonExpert по арестам и исполнительным производствам"
+               fetchpriority="high" decoding="async">
+          <div class="ze-home-result-card">
+            <span class="ze-home-result-card__icon"><i class="bi bi-check-lg" aria-hidden="true"></i></span>
+            <div>
+              <strong>Работаем по договору</strong>
+              <span>Оплата после результата</span>
+              <small>Дистанционно по всему Казахстану</small>
             </div>
           </div>
+          <div class="ze-home-person-label">
+            <strong>Жанибек Даулетович</strong>
+            <span>Аресты, ЧСИ и исполнительные надписи</span>
+          </div>
         </div>
-
-        <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
-          <i class="bi bi-exclamation-triangle me-2"></i><strong>Ошибка:</strong> <span id="error-text"></span>
-        </div>
-
-        <div id="results" class="search-results-area">
-          <section id="debtors-section" style="display:none;">
-            <h3 class="results-title">Найденные исполнительные производства</h3>
-            <p class="results-section-lead">Найденные производства. Нажмите «Подробнее» для деталей или используйте кнопку WhatsApp ниже — отправим все производства сразу.</p>
-            <div id="debtors-table" class="ip-list"></div>
-          </section>
-
-          <section id="restrictions-section" class="mt-4" style="display:none;">
-            <h3>Дополнительные ограничения</h3>
-            <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям — требуют отдельного правового анализа.</p>
-            <div class="table-responsive">
-              <table id="restrictions-table" class="table">
-                <thead>
-                  <tr><th>Тип ограничения</th><th>Статус</th><th>Орган</th><th>Дата</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </section>
-        </div>
-
-        <div class="search-cta-bar">
-          <p>Арестовали Kaspi, Halyk, ЧСИ открыл производство или нотариус сделал надпись? Разберём бесплатно — 10–15 минут в WhatsApp</p>
-          <a href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%B1%D0%B5%D1%81%D0%BF%D0%BB%D0%B0%D1%82%D0%BD%D0%B0%D1%8F+%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8F+%D0%BF%D0%BE+%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%83." class="btn-wa" target="_blank" rel="noopener">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Написать в WhatsApp
-          </a>
-        </div>
-
       </div>
 
-      </div><!-- /search-hero-inner -->
-    </div>
-  </section>
-  <!-- GUARANTEE STRIP -->
-  <section style="background:linear-gradient(135deg,#052e16,#064e3b);padding:32px 0;">
-    <div class="landing-container">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;align-items:center;">
-        <div style="text-align:center;color:#fff;">
-          <div style="font-size:2rem;margin-bottom:8px;">✅</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#4ade80;margin-bottom:4px;">Сначала снимаем</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.7);">Арест снят — только потом оплата</div>
+      <div class="search-loading" id="loading-container" style="display:none;">
+        <div class="d-flex align-items-center gap-3">
+          <div class="spinner-border" role="status" aria-hidden="true"></div>
+          <div class="w-100">
+            <p class="loading-message"><span>Загрузка данных...</span></p>
+            <div class="progress mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-bar" style="width:0%"></div>
+            </div>
+          </div>
         </div>
-        <div style="text-align:center;color:#fff;">
-          <div style="font-size:2rem;margin-bottom:8px;">📄</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#4ade80;margin-bottom:4px;">Всё по договору</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.7);">Официальный договор — никакой налички</div>
+      </div>
+
+      <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i><strong>Ошибка:</strong> <span id="error-text"></span>
+      </div>
+
+      <div id="results" class="search-results-area">
+        <section id="debtors-section" style="display:none;">
+          <h3 class="results-title">Найденные исполнительные производства</h3>
+          <p class="results-section-lead">Найденные производства. Нажмите «Подробнее» для деталей или используйте кнопку WhatsApp ниже — отправим все производства сразу.</p>
+          <div id="debtors-table" class="ip-list"></div>
+        </section>
+
+        <section id="restrictions-section" class="mt-4" style="display:none;">
+          <h3>Дополнительные ограничения</h3>
+          <p class="results-section-lead">Ограничения по авто, имуществу и регистрационным действиям — требуют отдельного правового анализа.</p>
+          <div class="table-responsive">
+            <table id="restrictions-table" class="table">
+              <thead>
+                <tr><th>Тип ограничения</th><th>Статус</th><th>Орган</th><th>Дата</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="ze-home-proof" aria-label="Условия и формат работы">
+        <div class="ze-home-proof__item">
+          <span class="ze-home-proof__icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+          <div><strong>Бесплатная проверка</strong><span>По ИИН за 30 секунд</span></div>
         </div>
-        <div style="text-align:center;color:#fff;">
-          <div style="font-size:2rem;margin-bottom:8px;">🛡️</div>
-          <div style="font-size:1.1rem;font-weight:800;color:#4ade80;margin-bottom:4px;">Без предоплаты</div>
-          <div style="font-size:0.85rem;color:rgba(255,255,255,0.7);">Риск на нас — вы платите за результат</div>
+        <div class="ze-home-proof__item">
+          <span class="ze-home-proof__icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+          <div><strong>Весь Казахстан</strong><span>Работаем дистанционно</span></div>
         </div>
-        <div style="text-align:center;">
-          <a href="https://wa.me/77752998738?text=Здравствуйте.+Хочу+узнать+подробнее+об+условиях+работы." target="_blank" rel="noopener"
-             style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#25d366;color:#fff;border-radius:12px;font-weight:700;font-size:0.95rem;text-decoration:none;">
-            <i class="bi bi-whatsapp"></i> Узнать подробнее
-          </a>
+        <div class="ze-home-proof__item">
+          <span class="ze-home-proof__icon"><i class="bi bi-file-earmark-text" aria-hidden="true"></i></span>
+          <div><strong>Договор и чек</strong><span>Официальное оформление</span></div>
+        </div>
+        <div class="ze-home-proof__item">
+          <span class="ze-home-proof__icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span>
+          <div><strong>Работаем ежедневно</strong><span>С 09:00 до 21:00</span></div>
         </div>
       </div>
     </div>
@@ -382,10 +395,10 @@
   </section>
 
   <!-- HOW WE WORK — guarantee steps -->
-  <section class="section" style="padding-top:48px;padding-bottom:48px;">
+  <section class="section" id="how-we-work" style="padding-top:48px;padding-bottom:48px;">
     <div class="landing-container">
       <div class="text-center mb-4">
-        <span class="section-kicker">Наша гарантия</span>
+        <span class="section-kicker">Порядок работы</span>
         <h2 class="section-title">Как мы работаем</h2>
         <p class="section-lead" style="max-width:560px;margin:0 auto;">Вы не рискуете деньгами. Мы берёмся за дело — и только после снятия ареста подписываем акт и выставляем счёт.</p>
       </div>
@@ -1693,6 +1706,3 @@ if (appForm) {
 <script src="/js/chatbot.js" defer></script>
 </body>
 </html>
-
-
-
