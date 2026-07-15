@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-label="!?>@=>ABL 4>;30 8 >B<5=0 8A?>;=8B5;L=>9 =04?8A8">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-label="Спорность долга и отмена исполнительной надписи">
   <defs>
     <marker id="arr3" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#d4a83a"/>
@@ -10,30 +11,30 @@
   <rect width="800" height="200" rx="16" fill="#f8fafb" stroke="#e2e8f0"/>
   <!-- Step 1 -->
   <rect x="20" y="60" width="140" height="80" rx="12" fill="url(#g3)"/>
-  <text x="90" y="95" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif"> </text>
-  <text x="90" y="111" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">4>;6=8:0</text>
-  <text x="90" y="126" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">=>B0@8CAC</text>
+  <text x="90" y="95" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif">ВОЗРАЖЕНИЕ</text>
+  <text x="90" y="111" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">должника</text>
+  <text x="90" y="126" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">нотариусу</text>
   <!-- Arrow -->
   <line x1="163" y1="100" x2="198" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr3)"/>
   <!-- Step 2 -->
   <rect x="202" y="60" width="140" height="80" rx="12" fill="url(#g3)"/>
-  <text x="272" y="95" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif">! !",</text>
-  <text x="272" y="111" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">?@87=0=0</text>
-  <text x="272" y="126" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">=>B0@8CA><</text>
+  <text x="272" y="95" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif">СПОРНОСТЬ</text>
+  <text x="272" y="111" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">признана</text>
+  <text x="272" y="126" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">нотариусом</text>
   <!-- Arrow -->
   <line x1="345" y1="100" x2="380" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr3)"/>
   <!-- Step 3 -->
   <rect x="384" y="60" width="140" height="80" rx="12" fill="rgba(34,197,94,0.1)" stroke="#22c55e" stroke-width="1.5"/>
-  <text x="454" y="92" text-anchor="middle" fill="#15803d" font-size="10" font-weight="800" font-family="Arial,sans-serif">"</text>
-  <text x="454" y="108" text-anchor="middle" fill="#15803d" font-size="9" font-family="Arial,sans-serif">8A?>;=8B5;L=>9</text>
-  <text x="454" y="123" text-anchor="middle" fill="#15803d" font-size="9" font-family="Arial,sans-serif">=04?8A8</text>
+  <text x="454" y="92" text-anchor="middle" fill="#15803d" font-size="10" font-weight="800" font-family="Arial,sans-serif">ОТМЕНА</text>
+  <text x="454" y="108" text-anchor="middle" fill="#15803d" font-size="9" font-family="Arial,sans-serif">исполнительной</text>
+  <text x="454" y="123" text-anchor="middle" fill="#15803d" font-size="9" font-family="Arial,sans-serif">надписи</text>
   <!-- Arrow -->
   <line x1="527" y1="100" x2="562" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr3)"/>
   <!-- Step 4 -->
   <rect x="566" y="60" width="140" height="80" rx="12" fill="url(#g3)"/>
-  <text x="636" y="92" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif">!#+</text>
-  <text x="636" y="108" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">?>@O4>: 4;O</text>
-  <text x="636" y="123" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">27KA:0B5;O</text>
+  <text x="636" y="92" text-anchor="middle" fill="#efc96f" font-size="10" font-weight="800" font-family="Arial,sans-serif">СУДЕБНЫЙ</text>
+  <text x="636" y="108" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">порядок для</text>
+  <text x="636" y="123" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="9" font-family="Arial,sans-serif">взыскателя</text>
   <!-- Bottom note -->
-  <text x="400" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="Arial,sans-serif">* @8 =0;8G88 >A=>20=89  ?>A;5 ?@02>2>3> 0=0;870</text>
+  <text x="400" y="170" text-anchor="middle" fill="#64748b" font-size="10" font-family="Arial,sans-serif">* При наличии оснований — после правового анализа</text>
 </svg>

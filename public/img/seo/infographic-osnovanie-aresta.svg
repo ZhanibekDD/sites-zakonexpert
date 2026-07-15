@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-label="A=>20=85 0@5AB0 AGQB0 G5@57 8A?>;=8B5;L=>5 ?@>872>4AB2>">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-label="Основание ареста счёта через исполнительное производство">
   <defs>
     <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#1a4a7a"/><stop offset="100%" stop-color="#0b1f35"/>
@@ -11,29 +12,29 @@
   <rect width="800" height="200" rx="16" fill="#f8fafb" stroke="#e2e8f0"/>
   <!-- Node 1 -->
   <rect x="20" y="50" width="150" height="100" rx="14" fill="url(#g1)"/>
-  <text x="95" y="95" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">!",+</text>
-  <text x="95" y="112" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">#"</text>
-  <text x="95" y="132" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" font-family="Arial,sans-serif">=04?8AL / AC4 / HB@0D</text>
+  <text x="95" y="95" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">ИСПОЛНИТЕЛЬНЫЙ</text>
+  <text x="95" y="112" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">ДОКУМЕНТ</text>
+  <text x="95" y="132" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" font-family="Arial,sans-serif">надпись / суд / штраф</text>
   <!-- Arrow 1 -->
   <line x1="175" y1="100" x2="225" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr)"/>
   <!-- Node 2 -->
   <rect x="230" y="50" width="150" height="100" rx="14" fill="url(#g1)"/>
-  <text x="305" y="95" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">'!</text>
-  <text x="305" y="112" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">2>71C6405B</text>
-  <text x="305" y="128" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">?@>872>4AB2></text>
+  <text x="305" y="95" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">ЧСИ</text>
+  <text x="305" y="112" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">возбуждает</text>
+  <text x="305" y="128" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">производство</text>
   <!-- Arrow 2 -->
   <line x1="385" y1="100" x2="435" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr)"/>
   <!-- Node 3 -->
   <rect x="440" y="50" width="150" height="100" rx="14" fill="url(#g1)"/>
-  <text x="515" y="88" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif"> !"</text>
-  <text x="515" y="105" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">AG5B>2 / :0@B</text>
-  <text x="515" y="121" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">02B> / 8<CI5AB2></text>
+  <text x="515" y="88" text-anchor="middle" fill="#efc96f" font-size="11" font-weight="700" font-family="Arial,sans-serif">АРЕСТ</text>
+  <text x="515" y="105" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">счетов / карт</text>
+  <text x="515" y="121" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="10" font-family="Arial,sans-serif">авто / имущество</text>
   <!-- Arrow 3 -->
   <line x1="595" y1="100" x2="645" y2="100" stroke="#d4a83a" stroke-width="2" marker-end="url(#arr)"/>
   <!-- Node 4 -->
   <rect x="650" y="50" width="130" height="100" rx="14" fill="#22c55e" fill-opacity="0.12" stroke="#22c55e" stroke-width="1.5"/>
-  <text x="715" y="88" text-anchor="middle" fill="#15803d" font-size="11" font-weight="700" font-family="Arial,sans-serif"></text>
-  <text x="715" y="106" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">+ ?@02>20O</text>
-  <text x="715" y="121" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">?>78F8O</text>
-  <text x="715" y="138" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">� A=OB85 0@5AB0</text>
+  <text x="715" y="88" text-anchor="middle" fill="#15803d" font-size="11" font-weight="700" font-family="Arial,sans-serif">АНАЛИЗ</text>
+  <text x="715" y="106" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">+ правовая</text>
+  <text x="715" y="121" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">позиция</text>
+  <text x="715" y="138" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">✓ снятие ареста</text>
 </svg>

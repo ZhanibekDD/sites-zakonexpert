@@ -18,7 +18,7 @@
   <!-- Main heading -->
   <text x="30" y="120" font-family="Arial Black,Arial,sans-serif" font-size="54" font-weight="900" fill="#ffffff">СНИМУ АРЕСТЫ</text>
   <text x="30" y="174" font-family="Arial Black,Arial,sans-serif" font-size="36" font-weight="900" fill="#22c55e">В ТЕЧЕНИЕ 3–7 ДНЕЙ</text>
-  <text x="30" y="214" font-family="Arial,sans-serif" font-size="18" fill="rgba(255,255,255,0.5)">С гарантией результата · Опыт 10+ лет</text>
+  <text x="30" y="214" font-family="Arial,sans-serif" font-size="18" fill="rgba(255,255,255,0.5)">Оплата после результата · Официальный договор</text>
 
   <rect x="30" y="230" width="500" height="1" fill="rgba(255,255,255,0.1)"/>
 

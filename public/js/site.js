@@ -13,7 +13,8 @@
   style.textContent = '#announce-bar{background:linear-gradient(90deg,#052e16,#065f46,#052e16);color:#fff;padding:8px 0;text-align:center;font-size:0.82rem;line-height:1.4;}'
     + '.announce-inner{max-width:1100px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 16px;}'
     + '.announce-badge{background:#4ade80;color:#052e16;font-weight:800;font-size:0.75rem;padding:2px 10px;border-radius:100px;white-space:nowrap;}'
-    + '.announce-text{color:rgba(255,255,255,0.92);}'
+    + '.announce-text{color:rgba(255,255,255,0.92);min-width:0;}'
+    + '@media (max-width:480px){.announce-inner{flex-direction:column;flex-wrap:nowrap;}.announce-text{white-space:normal;width:100%;text-align:center;}}'
     + '.announce-cta{color:#4ade80;font-weight:700;text-decoration:none;white-space:nowrap;border-bottom:1px solid rgba(74,222,128,0.4);}'
     + '.announce-cta:hover{color:#86efac;}';
   document.head.appendChild(style);
