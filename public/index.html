@@ -114,6 +114,8 @@
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
   <link rel="stylesheet" href="css/home-hero-v2.css?v=20260715-1">
   <style>
+    .problem-icon-card{transition:border-color .15s, box-shadow .15s;}
+    .problem-icon-card:hover{border-color:#d7a742 !important;box-shadow:0 6px 20px rgba(15,42,78,0.08);}
     /* ── Trust row under IIN form ── */
     .search-trust-row{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;}
     .search-trust-row span{display:flex;align-items:center;gap:5px;font-size:0.78rem;color:rgba(255,255,255,0.55);}
@@ -360,14 +362,28 @@
         <div class="col-lg-6">
           <span class="section-kicker">Что мы снимаем</span>
           <h2 class="section-title" style="font-size:clamp(1.3rem,2.6vw,1.7rem);">Любой арест или ограничение</h2>
-          <ul style="list-style:none;padding:0;margin:16px 0 0;display:grid;gap:10px;">
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">💳</span> Счета и карты — Kaspi, Halyk, Freedom и другие банки</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">💼</span> Зарплата — если удерживают больше положенного</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👵</span> Пенсия и пособия — сверх прожиточного минимума</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🚗</span> Авто — запрет регистрационных действий</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">🏠</span> Недвижимость — арест квартиры, дома, участка</li>
-            <li style="display:flex;align-items:center;gap:10px;font-size:0.92rem;color:#1e293b;"><span style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✈️</span> Запрет на выезд из Казахстана</li>
-          </ul>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
+            <a href="/snyatie-aresta-so-scheta" class="problem-icon-card" style="display:block;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;text-decoration:none;">
+              <img src="/img/icons/07-arest-schetov.png" width="36" height="36" alt="" loading="lazy" style="margin-bottom:8px;">
+              <div style="font-size:0.88rem;font-weight:800;color:#0d1f3c;margin-bottom:4px;">Счета и карты</div>
+              <div style="font-size:0.78rem;color:#64748b;line-height:1.5;">Kaspi, Halyk, Freedom, зарплатные и пенсионные счета</div>
+            </a>
+            <a href="/snyatie-zapreta-na-avto" class="problem-icon-card" style="display:block;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;text-decoration:none;">
+              <img src="/img/icons/08-zapret-na-avto.png" width="36" height="36" alt="" loading="lazy" style="margin-bottom:8px;">
+              <div style="font-size:0.88rem;font-weight:800;color:#0d1f3c;margin-bottom:4px;">Запрет на авто</div>
+              <div style="font-size:0.78rem;color:#64748b;line-height:1.5;">Запрет регистрационных действий</div>
+            </a>
+            <a href="/snyatie-ogranicheniya-na-imushchestvo" class="problem-icon-card" style="display:block;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;text-decoration:none;">
+              <img src="/img/icons/09-arest-nedvizhimosti.png" width="36" height="36" alt="" loading="lazy" style="margin-bottom:8px;">
+              <div style="font-size:0.88rem;font-weight:800;color:#0d1f3c;margin-bottom:4px;">Недвижимость</div>
+              <div style="font-size:0.78rem;color:#64748b;line-height:1.5;">Арест квартиры, дома, земельного участка</div>
+            </a>
+            <a href="/zapret-na-vyezd-iz-kazahstana" class="problem-icon-card" style="display:block;background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;text-decoration:none;">
+              <img src="/img/icons/10-zapret-na-vyezd.png" width="36" height="36" alt="" loading="lazy" style="margin-bottom:8px;">
+              <div style="font-size:0.88rem;font-weight:800;color:#0d1f3c;margin-bottom:4px;">Запрет на выезд</div>
+              <div style="font-size:0.78rem;color:#64748b;line-height:1.5;">Ограничение выезда из Казахстана</div>
+            </a>
+          </div>
         </div>
         <div class="col-lg-6">
           <span class="section-kicker">Как быстрее начать</span>
@@ -425,6 +441,40 @@
           <i class="bi bi-whatsapp fs-5"></i> Начать — это бесплатно
         </a>
         <p style="margin-top:10px;font-size:0.8rem;color:#94a3b8;">Первичный разбор ситуации — бесплатно и без обязательств</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHO WORKS ON YOUR CASE -->
+  <section class="section" style="padding-top:48px;padding-bottom:48px;">
+    <div class="landing-container">
+      <div class="text-center mb-4">
+        <span class="section-kicker">Команда</span>
+        <h2 class="section-title">Кто работает по вашему делу</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;">
+        <div style="display:flex;gap:18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:#0f2044;color:#d7a742;font-weight:800;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">ЖД</div>
+          <div>
+            <div style="font-size:0.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;">Специалист по снятию арестов</div>
+            <h3 style="font-size:1.02rem;font-weight:800;color:#0d1f3c;margin-bottom:10px;">Жанибек Даулетович</h3>
+            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:6px;font-size:0.85rem;color:#475569;">
+              <li style="display:flex;align-items:flex-start;gap:8px;"><i class="bi bi-check-circle-fill" style="color:#16a34a;margin-top:3px;flex-shrink:0;"></i> Работа с ЧСИ и банками по снятию ограничений</li>
+              <li style="display:flex;align-items:flex-start;gap:8px;"><i class="bi bi-check-circle-fill" style="color:#16a34a;margin-top:3px;flex-shrink:0;"></i> Ведёт дело от проверки по ИИН до результата</li>
+            </ul>
+          </div>
+        </div>
+        <div style="display:flex;gap:18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:24px;">
+          <div style="width:64px;height:64px;border-radius:50%;background:#0f2044;color:#d7a742;font-weight:800;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">МЕ</div>
+          <div>
+            <div style="font-size:0.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;">Адвокат</div>
+            <h3 style="font-size:1.02rem;font-weight:800;color:#0d1f3c;margin-bottom:10px;">Маулен Ержанов</h3>
+            <ul style="list-style:none;padding:0;margin:0;display:grid;gap:6px;font-size:0.85rem;color:#475569;">
+              <li style="display:flex;align-items:flex-start;gap:8px;"><i class="bi bi-check-circle-fill" style="color:#16a34a;margin-top:3px;flex-shrink:0;"></i> Адвокат, реестровый №24018569</li>
+              <li style="display:flex;align-items:flex-start;gap:8px;"><i class="bi bi-check-circle-fill" style="color:#16a34a;margin-top:3px;flex-shrink:0;"></i> Правовая позиция и представительство в сложных случаях</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </section>
