@@ -1,34 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" role="img" aria-label="0: >160;C5BAO 8 8A?>;=O5BAO @5H5=85 AC40 2 070EAB0=5">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" role="img" aria-label="Как обжалуется и исполняется решение суда в Казахстане">
   <defs>
     <linearGradient id="gs" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#1a4a7a"/><stop offset="100%" stop-color="#0b1f35"/>
     </linearGradient>
   </defs>
   <rect width="800" height="220" rx="16" fill="#f8fafb" stroke="#e2e8f0"/>
-  <!-- Center: @5H5=85 AC40 -->
+  <!-- Center: решение суда -->
   <rect x="300" y="75" width="200" height="70" rx="12" fill="url(#gs)"/>
-  <text x="400" y="107" text-anchor="middle" fill="#efc96f" font-size="13" font-weight="800" font-family="Arial,sans-serif"> ( !#</text>
-  <text x="400" y="124" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="10" font-family="Arial,sans-serif">2ABC?8;> 2 A8;C</text>
+  <text x="400" y="107" text-anchor="middle" fill="#efc96f" font-size="13" font-weight="800" font-family="Arial,sans-serif">РЕШЕНИЕ СУДА</text>
+  <text x="400" y="124" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="10" font-family="Arial,sans-serif">вступило в силу</text>
   <!-- Option 1 -->
   <rect x="20" y="30" width="160" height="60" rx="10" fill="rgba(36,112,180,0.1)" stroke="#2470b4" stroke-width="1.5"/>
-  <text x="100" y="56" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif">?5;;OF8O /</text>
-  <text x="100" y="72" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">2>AAB0=>2;5=85 A@>:0</text>
+  <text x="100" y="56" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif">Апелляция /</text>
+  <text x="100" y="72" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">восстановление срока</text>
   <line x1="183" y1="60" x2="297" y2="100" stroke="#2470b4" stroke-width="1.5" stroke-dasharray="5,3"/>
   <!-- Option 2 -->
   <rect x="20" y="120" width="160" height="60" rx="10" fill="rgba(36,112,180,0.1)" stroke="#2470b4" stroke-width="1.5"/>
-  <text x="100" y="144" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif"> 0AA@>G:0 /</text>
-  <text x="100" y="160" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">>BA@>G:0 8A?>;=5=8O</text>
+  <text x="100" y="144" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif">Рассрочка /</text>
+  <text x="100" y="160" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">отсрочка исполнения</text>
   <line x1="183" y1="150" x2="297" y2="120" stroke="#2470b4" stroke-width="1.5" stroke-dasharray="5,3"/>
   <!-- Option 3 -->
   <rect x="620" y="30" width="160" height="60" rx="10" fill="rgba(34,197,94,0.08)" stroke="#22c55e" stroke-width="1.5"/>
-  <text x="700" y="56" text-anchor="middle" fill="#15803d" font-size="10" font-weight="700" font-family="Arial,sans-serif">>2>@>B 8A?>;=5=8O</text>
-  <text x="700" y="72" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">(?@8 >B<5=5 @5H5=8O)</text>
+  <text x="700" y="56" text-anchor="middle" fill="#15803d" font-size="10" font-weight="700" font-family="Arial,sans-serif">Поворот исполнения</text>
+  <text x="700" y="72" text-anchor="middle" fill="#15803d" font-size="10" font-family="Arial,sans-serif">(при отмене решения)</text>
   <line x1="617" y1="60" x2="503" y2="100" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5,3"/>
   <!-- Option 4 -->
   <rect x="620" y="120" width="160" height="60" rx="10" fill="rgba(36,112,180,0.1)" stroke="#2470b4" stroke-width="1.5"/>
-  <text x="700" y="144" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif">0;>10 =0 '!</text>
-  <text x="700" y="160" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">5A;8 ?@>1;5<0 2 8A?>;=.</text>
+  <text x="700" y="144" text-anchor="middle" fill="#1a4a7a" font-size="10" font-weight="700" font-family="Arial,sans-serif">Жалоба на ЧСИ</text>
+  <text x="700" y="160" text-anchor="middle" fill="#1a4a7a" font-size="10" font-family="Arial,sans-serif">если проблема в исполнении</text>
   <line x1="617" y1="150" x2="503" y2="120" stroke="#2470b4" stroke-width="1.5" stroke-dasharray="5,3"/>
   <!-- Note -->
-  <text x="400" y="205" text-anchor="middle" fill="#64748b" font-size="10" font-family="Arial,sans-serif">* K1>@ <5E0=87<0 7028A8B >B A@>:>2, C254><;5=89 8 >A=>20=89</text>
+  <text x="400" y="205" text-anchor="middle" fill="#64748b" font-size="10" font-family="Arial,sans-serif">* Выбор механизма зависит от сроков, уведомлений и оснований</text>
 </svg>
