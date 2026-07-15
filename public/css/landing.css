@@ -265,7 +265,7 @@ a.brand:has(.brand-full-logo),
     .nav-link { padding: 0 10px; font-size: 0.88rem; }
 }
 .header-wa-btn {
-    min-height: 40px; padding: 0 16px; border-radius: 999px;
+    min-height: 44px; padding: 0 16px; border-radius: 999px;
     background: linear-gradient(135deg, #166534, #14532D);
     color: #fff !important; font-weight: 800; font-size: 0.88rem;
     box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28);
