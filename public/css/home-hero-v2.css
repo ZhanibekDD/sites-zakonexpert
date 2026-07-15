@@ -117,8 +117,8 @@
   position: relative;
   overflow: hidden;
   padding: 54px 0 34px;
-  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
-  border-bottom: 1px solid #e6ebf1;
+  background: linear-gradient(115deg, #0b2748 0%, #0f2a4e 45%, #0b1f3a 100%);
+  border-bottom: 1px solid rgba(215, 167, 66, 0.18);
 }
 
 .ze-home-hero::before {
@@ -149,10 +149,10 @@
 .ze-home-hero .search-hero-badge {
   margin: 0 0 24px;
   padding: 8px 14px;
-  color: #0b2748;
-  background: #fff;
-  border: 1px solid #e1e7ee;
-  box-shadow: 0 7px 20px rgba(11, 39, 72, .08);
+  color: #f3d98a;
+  background: rgba(215, 167, 66, 0.14);
+  border: 1px solid rgba(215, 167, 66, 0.4);
+  box-shadow: none;
   letter-spacing: .055em;
 }
 
@@ -163,7 +163,7 @@
 .ze-home-hero .search-hero-title {
   max-width: 780px;
   margin: 0 0 20px;
-  color: #0b2748;
+  color: #fff;
   font-size: clamp(2.7rem, 2.8vw, 3.1rem);
   font-weight: 850;
   letter-spacing: -.052em;
@@ -174,13 +174,13 @@
 .ze-home-hero .search-hero-title span {
   display: block;
   margin-top: 8px;
-  color: #13a961;
+  color: #4ade80;
 }
 
 .ze-home-hero .search-hero-subtitle {
   max-width: 670px;
   margin: 0 0 20px;
-  color: #4c6177;
+  color: rgba(255, 255, 255, .68);
   font-size: 1.08rem;
   line-height: 1.68;
   text-align: left;
@@ -199,17 +199,17 @@
   gap: 8px;
   min-height: 42px;
   padding: 0 13px;
-  border: 1px solid #e0e7ee;
+  border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 12px;
-  color: #173652;
-  background: rgba(255, 255, 255, .9);
-  box-shadow: 0 5px 16px rgba(11, 39, 72, .055);
+  color: rgba(255, 255, 255, .88);
+  background: rgba(255, 255, 255, .06);
+  box-shadow: none;
   font-size: .84rem;
   font-weight: 750;
 }
 
 .ze-home-trust-chip .ze-ui-icon {
-  color: #12aa61;
+  color: #4ade80;
 }
 
 .ze-home-checker {
@@ -323,7 +323,7 @@
 }
 
 .ze-home-hero__response {
-  color: #617488;
+  color: rgba(255, 255, 255, .6);
   font-size: .78rem;
   font-weight: 650;
 }
@@ -336,6 +336,9 @@
   min-height: 560px;
   margin-left: -180px;
   overflow: hidden;
+  background-image: url(/img/brand/hero-bg.jpg);
+  background-size: cover;
+  background-position: center;
 }
 
 .ze-home-hero__reference {
@@ -352,8 +355,8 @@
   z-index: 2;
   inset: 0;
   background:
-    linear-gradient(#fff, #fff) 0 0 / 155px 285px no-repeat,
-    linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, .7) 45%, transparent 100%) 0 0 / 82px 100% no-repeat;
+    linear-gradient(#0b2748, #0b2748) 0 0 / 155px 285px no-repeat,
+    linear-gradient(90deg, #0b2748 0%, rgba(11, 39, 72, .7) 45%, transparent 100%) 0 0 / 82px 100% no-repeat;
   pointer-events: none;
 }
 
