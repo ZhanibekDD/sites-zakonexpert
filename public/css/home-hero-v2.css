@@ -33,6 +33,19 @@
   flex-basis: 22px;
 }
 
+.ze-icon-img {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.ze-icon-img--badge { width: 19px; height: 19px; }
+.ze-icon-img--chip { width: 25px; height: 25px; }
+.ze-icon-img--checker { width: 29px; height: 29px; }
+.ze-icon-img--button { width: 23px; height: 23px; }
+.ze-icon-img--status { width: 100%; height: 100%; }
+.ze-icon-img--proof { width: 100%; height: 100%; }
+
 .site-header {
   background: #071f3d;
 }
@@ -43,9 +56,9 @@
 }
 
 .site-header .brand-full-logo {
-  width: 212px;
-  height: 64px;
-  object-fit: cover;
+  width: 280px;
+  height: 76px;
+  object-fit: contain;
   object-position: center;
 }
 
@@ -156,10 +169,6 @@
   letter-spacing: .055em;
 }
 
-.ze-home-hero .search-hero-badge svg {
-  color: #e3ad2e;
-}
-
 .ze-home-hero .search-hero-title {
   max-width: 780px;
   margin: 0 0 20px;
@@ -208,10 +217,6 @@
   font-weight: 750;
 }
 
-.ze-home-trust-chip .ze-ui-icon {
-  color: #12aa61;
-}
-
 .ze-home-checker {
   width: min(100%, 760px);
   padding: 18px;
@@ -229,10 +234,6 @@
   color: #102d4d;
   font-size: .98rem;
   font-weight: 800;
-}
-
-.ze-home-checker__label .ze-ui-icon {
-  color: #13a961;
 }
 
 .ze-home-checker .search-row {
@@ -393,10 +394,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #fff;
-  background: #12ad62;
-  box-shadow: 0 10px 22px rgba(18, 173, 98, .25);
-  font-size: 1.55rem;
+  background: transparent;
 }
 
 .ze-home-result-card strong,
@@ -461,15 +459,13 @@
 }
 
 .ze-home-proof__icon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #12a75f;
-  background: #e9f8f0;
-  font-size: 1.15rem;
+  background: transparent;
 }
 
 .ze-home-proof__item strong,
@@ -492,7 +488,7 @@
 
 @media (max-width: 1280px) {
   .site-header .nav-shell { gap: 14px; }
-  .site-header .brand-full-logo { width: 184px; height: 56px; }
+  .site-header .brand-full-logo { width: 230px; height: 66px; }
   .site-header .nav-link { padding-inline: 9px; font-size: .82rem; }
   .site-header .header-contacts { gap: 10px; }
   .site-header .header-contacts > a:first-child { font-size: .82rem; }
@@ -535,7 +531,7 @@
 
 @media (max-width: 980px) {
   .site-header .nav-shell { min-height: 74px; }
-  .site-header .brand-full-logo { width: 178px; height: 54px; }
+  .site-header .brand-full-logo { width: 200px; height: 62px; }
   .site-header nav { margin-left: 0; }
   .site-header .header-contacts { display: flex; }
   .site-header .header-wa-btn { min-width: 46px; padding: 0 13px; font-size: 0; }
@@ -580,7 +576,7 @@
 }
 
 @media (max-width: 600px) {
-  .site-header .brand-full-logo { width: 150px; height: 46px; }
+  .site-header .brand-full-logo { width: 154px; height: 50px; }
   .site-header .lang-switcher { display: none; }
   .ze-home-hero .search-hero-badge {
     font-size: .68rem;
@@ -621,7 +617,7 @@
     gap: 8px;
     padding: 14px;
   }
-  .ze-home-proof__icon { width: 38px; height: 38px; flex-basis: 38px; }
+  .ze-home-proof__icon { width: 44px; height: 44px; flex-basis: 44px; }
   .ze-home-proof__item strong { font-size: .8rem; }
   .ze-home-proof__item span { font-size: .69rem; }
 }
