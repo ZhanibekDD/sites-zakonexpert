@@ -29,6 +29,9 @@
     } else {
       fetch('/api/track-click', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
     }
+    if (window.ZE_sendYandexGoal) {
+      window.ZE_sendYandexGoal('click_' + type, { page_path: location.pathname, source_entity_type: target });
+    }
   }, true);
 
   // ── Chatbot widget ────────────────────────────────────────────────────────

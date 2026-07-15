@@ -4,6 +4,38 @@
 (function () {
   'use strict';
 
+  // ── Yandex.Metrika goal bridge ─────────────────────────────────────────
+  // Only non-personal params are ever allowed here — no ИИН, ФИО, phone,
+  // email, message text or document contents. Never throws, never blocks
+  // navigation (tel:/wa.me links must always work even if ym() fails).
+  var YM_COUNTER_ID = 110748931;
+  var YM_ALLOWED_PARAMS = [
+    'page_path', 'page_type', 'cta_position', 'source_entity_type',
+    'source_page', 'service_type', 'document_type',
+    'utm_source', 'utm_medium', 'utm_campaign',
+  ];
+  function sendYandexGoal(goalName, params) {
+    try {
+      if (typeof window.ym !== 'function') return;
+      var safeParams = {};
+      if (params) {
+        for (var i = 0; i < YM_ALLOWED_PARAMS.length; i++) {
+          var key = YM_ALLOWED_PARAMS[i];
+          if (params[key] != null) safeParams[key] = String(params[key]);
+        }
+      }
+      window.ym(YM_COUNTER_ID, 'reachGoal', goalName, safeParams);
+    } catch (err) { /* noop — never block the click that triggered this */ }
+  }
+  window.ZE_sendYandexGoal = sendYandexGoal;
+
+  // Track-event types that also count as Metrika conversion goals — 1:1 by name.
+  var YM_GOAL_EVENT_TYPES = new Set([
+    'submit_iin', 'calculator_completed', 'bin_search_completed',
+    'download_document', 'send_document', 'click_cta_bailiff',
+    'click_cta_notary', 'click_document_review', 'click_whatsapp_after_download',
+  ]);
+
   function send(type, target, extra) {
     var payload = JSON.stringify(Object.assign({
       type: type,
@@ -14,6 +46,11 @@
       navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
     } else {
       fetch('/api/track-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function () {});
+    }
+    if (YM_GOAL_EVENT_TYPES.has(type)) {
+      var goalParams = Object.assign({ page_path: location.pathname }, extra || {});
+      if (extra && extra.cta) goalParams.cta_position = extra.cta;
+      sendYandexGoal(type, goalParams);
     }
   }
 
