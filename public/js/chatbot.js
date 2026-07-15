@@ -29,6 +29,9 @@
     } else {
       fetch('/api/track-click', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
     }
+    if (window.ZE_sendYandexGoal) {
+      window.ZE_sendYandexGoal('click_' + type, { page_path: location.pathname, source_entity_type: target });
+    }
   }, true);
 
   // ── Chatbot widget ────────────────────────────────────────────────────────
@@ -162,8 +165,8 @@
     const btns = document.getElementById('zke-btns');
     btns.innerHTML = `
       <div class="zke-input-row" style="width:100%;padding:0;">
-        <input class="zke-input" id="zke-phone" type="tel" placeholder="+7 (___) ___-__-__" maxlength="18">
-        <button class="zke-send" id="zke-send-btn">→</button>
+        <input class="zke-input" id="zke-phone" type="tel" placeholder="+7 (___) ___-__-__" maxlength="18" aria-label="Номер телефона">
+        <button class="zke-send" id="zke-send-btn" aria-label="Отправить номер телефона">→</button>
       </div>`;
     const inp = document.getElementById('zke-phone');
     inp.focus();

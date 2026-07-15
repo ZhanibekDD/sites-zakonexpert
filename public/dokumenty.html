@@ -28,6 +28,7 @@
   </script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
   <link rel="stylesheet" href="css/landing.css?v=20260619-3">
   <link rel="stylesheet" href="css/style.css?v=20260619-3">
   <style>
@@ -130,6 +131,41 @@
   </style>
 </head>
 <body>
+<!-- Yandex.Metrika counter (110748931) -->
+<script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {
+            if (document.scripts[j].src === r) { return; }
+        }
+        k=e.createElement(t),
+        a=e.getElementsByTagName(t)[0],
+        k.async=1,
+        k.src=r,
+        a.parentNode.insertBefore(k,a)
+    })(window, document, 'script',
+       'https://mc.yandex.ru/metrika/tag.js?id=110748931', 'ym');
+
+    ym(110748931, 'init', {
+        ssr:true,
+        webvisor:true,
+        clickmap:true,
+        ecommerce:"dataLayer",
+        referrer:document.referrer,
+        url:location.href,
+        accurateTrackBounce:true,
+        trackLinks:true
+    });
+</script>
+<noscript>
+    <div>
+        <img src="https://mc.yandex.ru/watch/110748931"
+             style="position:absolute; left:-9999px;"
+             alt="">
+    </div>
+</noscript>
+<!-- /Yandex.Metrika counter -->
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/"><img src="img/zakonexpert-logo-kazakhstan.png" width="1672" height="941" alt="ZakonExpert" class="brand-full-logo"></a>
@@ -347,10 +383,10 @@
 
   <!-- CTA -->
   <div class="dok-cta">
-    <h2>Нужен документ под вашу конкретную ситуацию?</h2>
-    <p>Шаблон — это основа. Мы подготовим документ с правильными основаниями, ссылками на статьи закона и формулировками именно под ваш случай. Работаем дистанционно по всему Казахстану.</p>
-    <a class="btn-dok-wa" href="https://wa.me/77752998738?text=Здравствуйте.+Нужна+помощь+с+составлением+документа." target="_blank" rel="noopener">
-      <i class="bi bi-whatsapp"></i> Написать в WhatsApp
+    <h2>Скачали образец? Проверим перед подачей — бесплатно</h2>
+    <p>Шаблон — это основа. Если хотите проверить срок, основание или правильность заполнения — отправьте документ (или его фото/скан) в WhatsApp, посмотрим бесплатно. Работаем дистанционно по всему Казахстану.</p>
+    <a class="btn-dok-wa" href="https://wa.me/77752998738?text=Здравствуйте.+Скачал(а)+образец+документа%2C+хочу+проверить+перед+подачей." target="_blank" rel="noopener" onclick="window.ZE_trackEvent&&window.ZE_trackEvent('click_document_review','dokumenty-cta')">
+      <i class="bi bi-whatsapp"></i> Проверить документ в WhatsApp
     </a>
   </div>
 

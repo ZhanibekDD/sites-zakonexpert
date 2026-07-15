@@ -138,6 +138,42 @@ app.use(cors({
     allowedHeaders: ['Content-Type'],
 }));
 app.use(express.json()); // заменяет bodyParser.json()
+
+// ===== LEGACY ALIAS URL → CANONICAL URL 301 REDIRECTS =====
+// These filenames still exist as physical files (serving the canonical route
+// via servicePages below), but the old URL itself must not stay live as a
+// second indexable duplicate of the canonical page. Must be registered
+// before express.static, which would otherwise serve the file directly.
+const LEGACY_ALIAS_REDIRECTS = {
+  '/ispolnitelnaya-nadpis':           '/otmena-ispolnitelnoi-nadpisi',
+  '/spornost-dolga':                  '/vozrazhenie-na-ispolnitelnuyu-nadpis',
+  '/chsi-arest-schetov':              '/snyatie-ogranichenii-chsi',
+  '/zapret-registracionnyh-deystviy': '/snyatie-zapreta-registracionnyh-deistvii',
+  '/grafik-platezhey':                '/grafik-oplaty-zadolzhennosti',
+};
+for (const [oldPath, newPath] of Object.entries(LEGACY_ALIAS_REDIRECTS)) {
+  app.get([oldPath, oldPath + '.html'], (req, res) => res.redirect(301, newPath));
+}
+
+// ===== GENERIC .html SUFFIX → EXTENSIONLESS CANONICAL 301 REDIRECT =====
+// Real Yandex Webmaster data (2026-07-15 export) showed Yandex independently
+// indexing the .html-suffixed URL for several pages (e.g. /snyatie-aresta-so-scheta.html
+// at position 16, split away from its self-referencing canonical) — confirms
+// this is not a theoretical duplicate-content risk. Search-console verification
+// stub files must keep their literal .html URL and are excluded.
+const HTML_SUFFIX_REDIRECT_EXCLUDE = new Set([
+  '/googlerGbK9GM3kA42xzTzGMQs4VZju46dDdZjQdmOigQjnKY.html',
+  '/yandex_decc99fa3bf371ce.html',
+]);
+app.get(/^\/.+\.html$/, (req, res, next) => {
+  if (HTML_SUFFIX_REDIRECT_EXCLUDE.has(req.path)) return next();
+  const cleanPath = req.path === '/index.html' ? '/' : req.path.slice(0, -'.html'.length);
+  const filePath = path.join(__dirname, 'public', req.path);
+  if (!fs.existsSync(filePath)) return next();
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(301, cleanPath + qs);
+});
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ===== VISITOR TRACKING =====
@@ -1449,13 +1485,9 @@ const servicePages = {
   '/arest-halyk-bank':                 'arest-halyk-bank.html',
   '/arest-freedom-bank':               'arest-freedom-bank.html',
   '/zakony':                           'zakony.html',
-  '/ispolnitelnaya-nadpis':            'ispolnitelnaya-nadpis.html',
   '/besspornost-dolga':                'besspornost-dolga.html',
-  '/spornost-dolga':                   'spornost-dolga.html',
   '/alimenty-i-aresty':                'alimenty-i-aresty.html',
   '/shtrafy-i-aresty':                 'shtrafy-i-aresty.html',
-  '/zapret-registracionnyh-deystviy':  'zapret-registracionnyh-deystviy.html',
-  '/grafik-platezhey':                 'grafik-platezhey.html',
   '/chsi-refinansirovanie':            'chsi-refinansirovanie.html',
   '/otmena-resheniya-suda':            'otmena-resheniya-suda.html',
   '/dokumenty':                        'dokumenty.html',
@@ -1626,10 +1658,6 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/zakony', priority: '0.85', freq: 'weekly' },
     { url: '/advocate', priority: '0.85', freq: 'monthly' },
     { url: '/mediator', priority: '0.8', freq: 'monthly' },
-    { url: '/ispolnitelnaya-nadpis', priority: '0.85', freq: 'monthly' },
-    { url: '/spornost-dolga', priority: '0.75', freq: 'monthly' },
-    { url: '/zapret-registracionnyh-deystviy', priority: '0.75', freq: 'monthly' },
-    { url: '/grafik-platezhey', priority: '0.75', freq: 'monthly' },
     { url: '/chsi-refinansirovanie',   priority: '0.8', freq: 'monthly' },
     { url: '/otmena-resheniya-suda',   priority: '0.8', freq: 'monthly' },
     { url: '/dokumenty',               priority: '0.8', freq: 'monthly' },
@@ -2079,9 +2107,11 @@ app.post('/api/application', asyncHandler(async (req, res) => {
 let clicksDb = null;
 try { clicksDb = require('./modules/clicks-db'); } catch (e) { logger.warn('clicks-db not loaded: ' + e.message); }
 
+const TRACK_CLICK_TYPES = new Set(['phone', 'whatsapp']);
+const TRACK_CLICK_TARGETS = new Set(['main', 'advocate', 'mediator']);
 app.post('/api/track-click', asyncHandler(async (req, res) => {
   const { type, target, page } = req.body || {};
-  if (!type || !target) return res.json({ ok: false });
+  if (!TRACK_CLICK_TYPES.has(type) || !TRACK_CLICK_TARGETS.has(target)) return res.json({ ok: false });
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
   if (clicksDb) clicksDb.recordClick({ type, target, page: page || '/', ip, ua }).catch(() => {});
@@ -2096,14 +2126,33 @@ app.post('/api/track-click', asyncHandler(async (req, res) => {
 const ANALYTICS_EVENT_TYPES = new Set([
   'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
   'download_document', 'copy_link', 'external_campaign_visit',
+  'click_cta_bailiff', 'click_cta_notary', 'send_document',
+  'click_document_review', 'click_whatsapp_after_download',
 ]);
+// Best-effort page_type classifier so LEAD-TRACKING-PLAN reports can group
+// events without re-deriving it from the raw path every time.
+function classifyPageType(page) {
+  if (!page) return 'other';
+  if (page === '/' ) return 'home';
+  if (/^\/bailiff\//.test(page)) return 'bailiff_card';
+  if (/^\/notary\//.test(page)) return 'notary_card';
+  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi)$/.test(page)) return 'catalog';
+  if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
+  if (page === '/dokumenty') return 'documents';
+  if (page === '/calculator') return 'calculator';
+  if (page === '/bin-search') return 'bin_search';
+  return 'other';
+}
 app.post('/api/track-event', asyncHandler(async (req, res) => {
-  const { type, target, page, utm } = req.body || {};
+  const { type, target, page, utm, cta } = req.body || {};
   if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
   if (clicksDb) {
-    clicksDb.recordClick({ type, target: target || utm || '-', page: page || '/', ip, ua }).catch(() => {});
+    clicksDb.recordClick({
+      type, target: target || utm || '-', page: page || '/', ip, ua,
+      page_type: classifyPageType(page), cta_position: cta || '', utm: utm || '',
+    }).catch(() => {});
   }
   res.json({ ok: true });
 }));
@@ -2191,21 +2240,21 @@ app.post('/comments', express.urlencoded({ extended: true }), asyncHandler(async
 
 app.get('/admin/comments', asyncHandler(async (req, res) => {
   const pw = req.query.pw || '';
-  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
   const all = commentsDb ? await commentsDb.getAll() : [];
   res.render('admin/comments', { comments: all, pw });
 }));
 
 app.post('/admin/comments/:id/approve', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   const pw = req.body.pw || req.query.pw || '';
-  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
   if (commentsDb) await commentsDb.approve(req.params.id);
   res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
 }));
 
 app.post('/admin/comments/:id/delete', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   const pw = req.body.pw || req.query.pw || '';
-  if (pw !== (process.env.ADMIN_PW || 'zakon2024admin')) return res.status(403).send('403 Forbidden');
+  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
   if (commentsDb) await commentsDb.remove(req.params.id);
   res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
 }));

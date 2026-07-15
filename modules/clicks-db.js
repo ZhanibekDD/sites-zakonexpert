@@ -1,14 +1,29 @@
 'use strict';
 const Datastore = require('nedb-promises');
+const fs = require('fs');
 const path = require('path');
 
+const DATA_DIR = path.join(__dirname, '..', 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
 const db = Datastore.create({
-  filename: path.join(__dirname, '..', 'data', 'clicks.db'),
+  filename: path.join(DATA_DIR, 'clicks.db'),
   autoload: true,
 });
 
-async function recordClick({ type, target, page, ip, ua }) {
-  return db.insert({ type, target, page, ip, ua, ts: Date.now() });
+const MAX_FIELD_LEN = 300;
+function clip(v) {
+  if (typeof v !== 'string') return v;
+  return v.length > MAX_FIELD_LEN ? v.slice(0, MAX_FIELD_LEN) : v;
+}
+
+async function recordClick({ type, target, page, ip, ua, ...extra }) {
+  const safeExtra = {};
+  for (const [k, v] of Object.entries(extra)) safeExtra[k] = clip(v);
+  return db.insert({
+    type: clip(type), target: clip(target), page: clip(page),
+    ip: clip(ip), ua: clip(ua), ts: Date.now(), ...safeExtra,
+  });
 }
 
 async function getStats(since) {

@@ -164,7 +164,7 @@
 .btn-resolve {
     display: inline-flex; align-items: center; justify-content: center; min-height: 38px;
     padding: 0 14px; border-radius: 999px; font-weight: 800; font-size: 0.84rem;
-    background: linear-gradient(135deg, #25D366, #1da851); color: #fff;
+    background: linear-gradient(135deg, #166534, #14532D); color: #fff;
     box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     white-space: nowrap;
@@ -175,7 +175,7 @@
 .btn-wa-error {
     display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 18px;
     border-radius: 999px; font-weight: 800; font-size: 0.92rem;
-    background: linear-gradient(135deg, #25D366, #1da851); color: #fff;
+    background: linear-gradient(135deg, #166534, #14532D); color: #fff;
     box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28); text-decoration: none;
 }
 .btn-wa-error:hover { color: #fff; transform: translateY(-1px); }
@@ -356,7 +356,7 @@
 .wa-all-text p { color: rgba(255,255,255,0.75); font-size: 0.85rem; margin: 0; }
 .wa-btn-single {
     display: inline-flex; align-items: center; gap: 8px;
-    background: #25d366; color: #fff;
+    background: #166534; color: #fff;
     padding: 0.7rem 1.4rem; border-radius: 999px;
     font-weight: 700; font-size: 0.9rem;
     text-decoration: none; white-space: nowrap;
@@ -365,7 +365,7 @@
 }
 .wa-btn-single:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
 .no-arrests-block .wa-btn-single {
-    background: #25d366; margin-top: 1rem;
+    background: #166534; margin-top: 1rem;
 }
 @media (max-width: 640px) {
     .wa-all-inner { flex-direction: column; gap: 1rem; }
@@ -466,7 +466,7 @@
 
 .npage-wa-btn {
   display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;
-  background: #25d366; color: #fff;
+  background: #166534; color: #fff;
   padding: 0.85rem 1.6rem; border-radius: 999px;
   font-weight: 700; font-size: 0.95rem; text-decoration: none;
   transition: opacity 0.2s, transform 0.15s; white-space: nowrap;

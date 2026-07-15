@@ -1,25 +1,11 @@
-keyword,intent,region,service,estimated_demand,current_page,recommended_page,current_position,priority,source,verified_at,notes
-арест kaspi,горячий,Казахстан,снятие ареста со счёта,,,/arest-kaspi,,high,site-structure-mapping,,"Демонстрационная строка — реальный спрос не подтверждён (нет доступа к Wordstat/GSC). Заполнить estimated_demand и current_position вручную."
-снять арест каспи,горячий,Казахстан,снятие ареста со счёта,,,/arest-kaspi,,high,site-structure-mapping,,
-арест halyk bank,горячий,Казахстан,снятие ареста со счёта,,,/arest-halyk-bank,,high,site-structure-mapping,,
-арест freedom bank,горячий,Казахстан,снятие ареста со счёта,,,/arest-freedom-bank,,medium,site-structure-mapping,,
-снятие ареста со счета,горячий,Казахстан,снятие ареста со счёта,,,/snyatie-aresta-so-scheta,,high,site-structure-mapping,,
-чси наложил арест,горячий,Казахстан,действия ЧСИ,,,/chsi-arest-schetov,,high,site-structure-mapping,,
-как проверить чси по фио,информационный,Казахстан,реестр ЧСИ,,,/bailiffs,,medium,site-structure-mapping,,
-реестр частных судебных исполнителей,информационный,Казахстан,реестр ЧСИ,,,/bailiffs,,medium,site-structure-mapping,,
-исполнительная надпись нотариуса,информационный,Казахстан,отмена исполнительной надписи,,,/ispolnitelnaya-nadpis,,high,site-structure-mapping,,
-отменить исполнительную надпись,горячий,Казахстан,отмена исполнительной надписи,,,/otmena-ispolnitelnoi-nadpisi,,high,site-structure-mapping,,
-возражение на исполнительную надпись образец,информационный,Казахстан,отмена исполнительной надписи,,,/dokumenty,,medium,site-structure-mapping,,"Совпадает с бесплатным шаблоном на /dokumenty — сильная посадочная."
-удержание с зарплаты чси,информационный,Казахстан,удержание зарплаты,,,/arest-zarplatnoy-karty,,medium,site-structure-mapping,,
-запрет на выезд из казахстана долг,горячий,Казахстан,запрет на выезд,,,/zapret-na-vyezd-iz-kazahstana,,medium,site-structure-mapping,,
-снять запрет на авто,горячий,Казахстан,запрет на авто,,,/snyatie-zapreta-na-avto,,medium,site-structure-mapping,,
-мфо арестовали счет,горячий,Казахстан,долги перед МФО,,,/mfo,,medium,site-structure-mapping,,
-проверить организацию по бин,информационный,Казахстан,инструмент,,,/bin-search,,medium,site-structure-mapping,,
-калькулятор долга и пени,информационный,Казахстан,инструмент,,,/calculator,,medium,site-structure-mapping,,
-sms 1414 что делать,информационный,Казахстан,исполнительное производство,,,/sms-1414,,medium,site-structure-mapping,,
-график погашения задолженности,информационный,Казахстан,рассрочка,,,/grafik-oplaty-zadolzhennosti,,low,site-structure-mapping,,
-снятие ареста со счета алматы,региональный,Алматы,снятие ареста со счёта,,,/snyatie-aresta-almaty,,medium,site-structure-mapping,,
-снятие ареста со счета астана,региональный,Астана,снятие ареста со счёта,,,/snyatie-aresta-astana,,medium,site-structure-mapping,,
-снятие ареста со счета шымкент,региональный,Шымкент,снятие ареста со счёта,,,/snyatie-aresta-shymkent,,low,site-structure-mapping,,
-юрист по арестам казахстан,брендовый/коммерческий,Казахстан,общая услуга,,,/,,high,site-structure-mapping,,
-zakonexpert,брендовый,Казахстан,бренд,,,/,,high,site-structure-mapping,,
+keyword,clicks,impressions,ctr,average_position,intent,entity_type,current_page,recommended_page,priority,source,verified_at,estimated_demand,notes
+чси реестр,0,82,0.00%,9.5,navigational,ЧСИ,,/bailiffs,high,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"82 показа и 0 кликов на позиции чуть за топ-10 — классическая возможность: улучшить title/description каталога /bailiffs под этот запрос."
+поиск нотариуса,1,37,2.70%,9.3,navigational,нотариус,,/notary-search,high,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Позиция 9.3 — на грани топ-10, есть шанс попасть в топ-10 с точечной оптимизацией /notary-search."
+арест имущества упк,2,29,6.90%,11.5,informational,снятие ареста,,,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"УПК — уголовно-процессуальный кодекс (арест имущества в уголовном деле), это другая правовая область, отличная от гражданского исполнительного производства ЧСИ, которым занимается сайт. Низкая релевантность текущим услугам — не создавать страницу под этот запрос без уточнения намерения пользователей."
+pos credit мфо,1,26,3.85%,7.8,navigational,МФО,,/mfo,medium,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Поиск конкретной МФО (POS Kredit) в каталоге — проверить, что карточка компании есть и полная в /mfo."
+водителям на автомате отменят ограничение,2,22,9.09%,8.8,informational,неопределено,,,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Неоднозначная формулировка — неясно, о запрете на выезд/авто или о другом виде ограничения (например ПДД). Не размечать целевую страницу без ручной проверки выдачи по этому запросу."
+статья 590 часть 5 рк штраф,1,7,14.29%,10.7,legal_article,КоАП,/statya/koap-rk-590,/statya/koap-rk-590,medium,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Страница статьи уже существует и получает много общего трафика (1276 показов за тот же период, см. GSC-OPPORTUNITIES-SUMMARY.md) — конкретно эта формулировка (часть 5) слабо ранжируется, стоит проверить наличие текста именно про часть 5 в теле статьи."
+база чси казахстан,1,7,14.29%,8.9,navigational,ЧСИ,,/bailiffs,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Небольшой объём, но чистое совпадение с назначением каталога /bailiffs."
+мфо бихайв финанс,1,5,20.00%,7.2,navigational,МФО,,/mfo,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Поиск конкретной МФО (Beehive Finance) — проверить карточку в каталоге."
+кто может отменить решение суда,1,2,50.00%,6.5,informational,отмена решения суда,,/otmena-resheniya-suda,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Очень маленький объём в этом окне данных, но точное совпадение темы страницы."
+мфо капитал,1,2,50.00%,12.0,navigational,МФО,,/mfo,low,Яндекс.Вебмастер — Performance-on-Search-2026-07-15.xlsx,2026-07-15,,"Поиск конкретной МФО (Капитал) — проверить карточку в каталоге."

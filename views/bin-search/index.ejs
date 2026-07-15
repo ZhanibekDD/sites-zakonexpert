@@ -55,7 +55,8 @@ const body = CSS
   + infoBox
   + '<div class="bs-wrap">'
   + '<form class="bs-form" action="/bin-search" method="GET">'
-  + '<input class="bs-input" type="text" name="bin" value="' + bin + '" placeholder="Введите БИН (12 цифр)..." maxlength="12" pattern="[0-9]{9,12}" autocomplete="off">'
+  + '<label for="bs-bin-input" class="visually-hidden">БИН организации</label>'
+  + '<input class="bs-input" id="bs-bin-input" type="text" name="bin" value="' + bin + '" placeholder="Введите БИН (12 цифр)..." maxlength="12" pattern="[0-9]{9,12}" autocomplete="off">'
   + '<button class="bs-btn" type="submit">Найти</button>'
   + '</form>'
   + resultsHtml
