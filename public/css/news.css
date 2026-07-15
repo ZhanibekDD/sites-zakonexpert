@@ -457,7 +457,7 @@
   font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: opacity 0.2s;
 }
 .news-share-btn:hover { opacity: 0.85; }
-.news-share-wa { background: #25d366; color: #fff; }
+.news-share-wa { background: #166534; color: #fff; }
 .news-share-tg { background: #2ca5e0; color: #fff; }
 .news-share-copy { background: #f1f5f9; color: #1a3560; }
 .news-detail-sidebar { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 1.25rem; }
@@ -543,7 +543,7 @@
 .news-sidebar-widget p { font-size: 0.86rem; color: #64748b; margin: 0 0 0.9rem; line-height: 1.5; }
 .news-sidebar-wa {
   display: flex; align-items: center; gap: 0.5rem;
-  background: #25d366; color: #fff; border-radius: 10px;
+  background: #166534; color: #fff; border-radius: 10px;
   padding: 0.65rem 1rem; text-decoration: none; font-weight: 700; font-size: 0.88rem;
   margin-bottom: 0.55rem; transition: opacity 0.2s;
 }

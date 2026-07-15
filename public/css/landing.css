@@ -266,7 +266,7 @@ a.brand:has(.brand-full-logo),
 }
 .header-wa-btn {
     min-height: 40px; padding: 0 16px; border-radius: 999px;
-    background: linear-gradient(135deg, #25D366, #1ab854);
+    background: linear-gradient(135deg, #166534, #14532D);
     color: #fff !important; font-weight: 800; font-size: 0.88rem;
     box-shadow: 0 6px 18px rgba(37, 211, 102, 0.28);
     transition: transform 0.22s ease, box-shadow 0.22s ease;
@@ -349,7 +349,7 @@ a.brand:has(.brand-full-logo),
     min-height: 54px; padding: 0 24px; border-radius: 999px;
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     font-weight: 800; font-size: 1rem;
-    background: linear-gradient(135deg, #25D366, #1ab854);
+    background: linear-gradient(135deg, #166534, #14532D);
     color: #fff; text-decoration: none;
     box-shadow: 0 14px 32px rgba(37, 211, 102, 0.3);
     transition: transform var(--transition), box-shadow var(--transition);
@@ -953,7 +953,7 @@ textarea.field-control, .contact-form-wrap textarea.form-control { min-height: 1
   z-index: 9999;
   width: 58px;
   height: 58px;
-  background: #25d366;
+  background: #166534;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1426,7 +1426,7 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
   font-size: 0.8rem;
   font-weight: 700;
   color: #fff;
-  background: #25d366;
+  background: #166534;
   border-radius: 8px;
   padding: 5px 12px;
   text-decoration: none;
@@ -1590,7 +1590,7 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #25d366;
+  background: #166534;
   color: #fff !important;
   font-size: 0.9rem;
   font-weight: 700;
