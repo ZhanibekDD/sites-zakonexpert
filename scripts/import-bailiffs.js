@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Datastore = require('nedb-promises');
 const slugify = require('slugify');
+const { compactDatastore } = require('../modules/db-maintenance');
 
 const CSV_PATH = path.join(__dirname, '..', 'bailiffs_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'bailiffs.db');
@@ -170,6 +171,7 @@ async function importBailiffs() {
   }
 
   await db.insert(bailiffs);
+  await compactDatastore(db);
   console.log(`[Bailiffs] Imported ${bailiffs.length} bailiffs (${skipped} skipped)`);
   return bailiffs.length;
 }

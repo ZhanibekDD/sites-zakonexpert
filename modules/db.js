@@ -6,6 +6,7 @@
 const Datastore = require('nedb-promises');
 const path      = require('path');
 const fs        = require('fs');
+const { compactDatastore, enableAutocompaction } = require('./db-maintenance');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -14,6 +15,7 @@ const news = Datastore.create({
   filename: path.join(DATA_DIR, 'news.db'),
   autoload: true,
 });
+enableAutocompaction(news);
 
 // Indexes
 news.ensureIndex({ fieldName: 'original_url', unique: true, sparse: true }).catch(() => {});
@@ -121,11 +123,11 @@ module.exports = {
   /** Delete ALL news articles (full reset) */
   async clearAll() {
     await news.remove({}, { multi: true });
-    // Compact file to free space
-    return new Promise((resolve) => {
-      news.persistence.compactDatafile();
-      setTimeout(resolve, 500);
-    });
+    await compactDatastore(news);
+  },
+
+  compact() {
+    return compactDatastore(news);
   },
 
   /** Remove draft/rejected articles and those with obviously irrelevant titles */

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const Datastore = require('nedb-promises');
 const slugify = require('slugify');
+const { compactDatastore } = require('../modules/db-maintenance');
 
 const CSV_PATH = path.join(__dirname, '..', 'notaries_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
@@ -179,6 +180,7 @@ async function importNotaries() {
   // no longer wipe the live database.
   await db.remove({}, { multi: true });
   await db.insert(notaries);
+  await compactDatastore(db);
   console.log(`[Notaries] Imported ${notaries.length} notaries (${skipped} rows skipped, phones=${phoneCount}, emails=${emailCount})`);
   return notaries.length;
 }

@@ -633,6 +633,8 @@ async function importAll() {
   lastImportTime  = new Date().toISOString();
   lastImportStats = totals;
 
+  await db.compact();
+
   return totals.imported;
 }
 

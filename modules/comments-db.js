@@ -3,6 +3,7 @@
 const Datastore = require('nedb-promises');
 const path = require('path');
 const fs = require('fs');
+const { enableAutocompaction } = require('./db-maintenance');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -11,6 +12,7 @@ const db = Datastore.create({
   filename: path.join(DATA_DIR, 'comments.db'),
   autoload: true,
 });
+enableAutocompaction(db);
 
 db.ensureIndex({ fieldName: 'slug'     }).catch(() => {});
 db.ensureIndex({ fieldName: 'type'     }).catch(() => {});
