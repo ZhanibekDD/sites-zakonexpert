@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "check:js": "node --check server.js && node --check public/js/main.js && node --check public/js/site.js && node --check scripts/import-notaries.js && node --check scripts/refresh-notaries-csv.js && node --check scripts/import-bailiffs.js && node --check scripts/test-bailiffs.js",
+    "check:js": "node --check server.js && node --check public/js/main.js && node --check public/js/site.js && node --check scripts/import-notaries.js && node --check scripts/refresh-notaries-csv.js && node --check scripts/import-bailiffs.js && node --check scripts/test-bailiffs.js && node --check scripts/storage-audit.js",
     "check:html": "html-validate public/*.html",
     "check:css": "stylelint \"public/css/**/*.css\"",
     "test:smoke": "node scripts/smoke-test.js",
@@ -27,7 +27,8 @@
     "scrape-govkz-chsi": "node scripts/scrape-govkz-chsi.js",
     "seed-advocate": "node scripts/seed_advocate_news.js",
     "update-bailiff-zaripov": "node scripts/update_bailiff_zaripov.js",
-    "remove-bailiff-zaripov": "node scripts/remove_bailiff_zaripov.js"
+    "remove-bailiff-zaripov": "node scripts/remove_bailiff_zaripov.js",
+    "storage:audit": "node scripts/storage-audit.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
