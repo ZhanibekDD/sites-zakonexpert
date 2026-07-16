@@ -5,6 +5,7 @@
 function lowContentBoost(opts) {
   opts = opts || {};
   var entityLabel = opts.entityLabel || 'эта организация';
+  var entityLabelGenitive = opts.entityLabelGenitive || entityLabel;
   return ''
     + '<div class="law-faq mt-4" style="max-width:720px;">'
     + '<h2 style="font-size:1.05rem;font-weight:800;margin-bottom:14px;color:#0f2044;">Что делать, если по вам есть взыскание</h2>'
@@ -12,7 +13,7 @@ function lowContentBoost(opts) {
     + '<div><strong style="font-size:.9rem;color:#0d1f3c;">Что делать, если наложен арест</strong>'
     + '<p style="font-size:.87rem;color:#475569;line-height:1.6;margin:4px 0 0;">Не платите сразу всю сумму. Сначала проверьте по ИИН, кто именно наложил арест — ЧСИ, суд или нотариус — и на каком основании. Это определяет дальнейшие шаги.</p></div>'
     + '<div><strong style="font-size:.9rem;color:#0d1f3c;">Как проверить основание взыскания</strong>'
-    + '<p style="font-size:.87rem;color:#475569;line-height:1.6;margin:4px 0 0;">Запросите у ' + entityLabel + ' или у ЧСИ копию исполнительного документа: решение суда, исполнительную надпись нотариуса или постановление. Без этого документа сложно оценить законность требования.</p></div>'
+    + '<p style="font-size:.87rem;color:#475569;line-height:1.6;margin:4px 0 0;">Запросите у ' + entityLabelGenitive + ' или у ЧСИ копию исполнительного документа: решение суда, исполнительную надпись нотариуса или постановление. Без этого документа сложно оценить законность требования.</p></div>'
     + '<div><strong style="font-size:.9rem;color:#0d1f3c;">Когда можно обжаловать</strong>'
     + '<p style="font-size:.87rem;color:#475569;line-height:1.6;margin:4px 0 0;">Постановление ЧСИ можно обжаловать в течение 10 рабочих дней. Исполнительную надпись нотариуса — возражением в те же сроки с момента, когда вы узнали о ней. После истечения срока обжаловать сложнее.</p></div>'
     + '<div><strong style="font-size:.9rem;color:#0d1f3c;">Что отправить юристу</strong>'
