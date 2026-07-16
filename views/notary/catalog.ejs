@@ -106,7 +106,7 @@ if (region) {
       }
       var emailHtml = n.email
         ? '<div class="pro-row"><span class="pro-icon">✉️</span><a href="mailto:' + n.email + '" class="pro-link">' + n.email + '</a></div>'
-        : '';
+        : '<div class="pro-row"><span class="pro-icon">✉️</span><span class="pro-dim">Email не опубликован в ЕНИС</span></div>';
       var addrHtml = n.address
         ? '<div class="pro-row"><span class="pro-icon">📍</span><span class="pro-val">' + n.address + '</span></div>'
         : '';

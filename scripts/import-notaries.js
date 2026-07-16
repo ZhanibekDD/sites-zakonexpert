@@ -7,7 +7,7 @@ const slugify = require('slugify');
 
 const CSV_PATH = path.join(__dirname, '..', 'notaries_all_regions.csv');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 2; // increment to force re-import on schema changes
+const DB_VERSION = 3; // increment to force re-import on schema changes
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -81,6 +81,64 @@ function parseCSV(content) {
   return rows;
 }
 
+function validEmail(value) {
+  const email = String(value || '').trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+function buildNotaries(rows, csvMtime) {
+  const notaries = [];
+  const slugUsed = {};
+  let skipped = 0;
+
+  for (const row of rows) {
+    // Columns: Область(0), №(1), ФИО(2), Лицензия(3), Дата(4), Адрес(5), Телефон(6), Email(7), Режим(8)
+    const region   = (row[0] || '').trim();
+    const num      = (row[1] || '').trim();
+    const name     = (row[2] || '').trim();
+    const license  = (row[3] || '').trim();
+    const licDate  = (row[4] || '').trim();
+    const address  = (row[5] || '').trim();
+    const phone    = (row[6] || '').replace(/[,;\s]+$/, '').trim();
+    const email    = validEmail(row[7]);
+    const schedule = (row[8] || '').trim().replace(/\s+/g, ' ');
+
+    if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
+    const cleanName = name.toUpperCase().replace(/\s+/g, ' ');
+    if (cleanName.length < 3 || !region) { skipped++; continue; }
+
+    const isActive = !license.toLowerCase().includes('прекращена');
+    let baseSlug = makeSlug(cleanName) || ('notary-' + num);
+    let slug = baseSlug;
+    if (slugUsed[slug]) {
+      const regionWord = makeSlug((region || '').split(/[\s,]+/).slice(-1)[0] || region);
+      slug = baseSlug + (regionWord ? '-' + regionWord : '');
+      if (slugUsed[slug]) slug = slug + '-' + (slugUsed[baseSlug] + 1);
+    }
+    slugUsed[baseSlug] = (slugUsed[baseSlug] || 0) + 1;
+    slugUsed[slug] = (slugUsed[slug] || 0) + 1;
+
+    notaries.push({
+      name: cleanName,
+      region,
+      license: isActive ? license : null,
+      licenseDate: licDate,
+      active: isActive,
+      address,
+      phone,
+      email,
+      schedule,
+      slug,
+      csvMtime,
+      dbVersion: DB_VERSION,
+      source: 'ЕНІС',
+      sourceUrl: 'https://enis.kz/NotarySearch',
+      updatedAt: new Date(),
+    });
+  }
+  return { notaries, skipped };
+}
+
 async function importNotaries() {
   if (!fs.existsSync(CSV_PATH)) {
     console.error('[Notaries] CSV not found:', CSV_PATH);
@@ -108,69 +166,20 @@ async function importNotaries() {
   const rows = parseCSV(content);
   console.log(`[Notaries] Parsed ${rows.length} rows`);
 
-  // Clear existing
+  const { notaries, skipped } = buildNotaries(rows, csvMtime);
+
+  const regionCount = new Set(notaries.map(notary => notary.region)).size;
+  const phoneCount = notaries.filter(notary => notary.phone).length;
+  const emailCount = notaries.filter(notary => notary.email).length;
+  if (notaries.length < 5000 || regionCount !== 20 || phoneCount < 4500 || emailCount < 4500) {
+    throw new Error(`[Notaries] Completeness check failed: total=${notaries.length}, regions=${regionCount}, phones=${phoneCount}, emails=${emailCount}`);
+  }
+
+  // Replace only after parsing and completeness checks pass. A broken source can
+  // no longer wipe the live database.
   await db.remove({}, { multi: true });
-
-  const notaries = [];
-  const slugUsed = {};
-  let skipped = 0;
-
-  for (const row of rows) {
-    // Columns: Область(0), №(1), ФИО(2), Лицензия(3), Дата(4), Адрес(5), Телефон(6), Email(7), Режим(8)
-    const region   = (row[0] || '').trim();
-    const num      = (row[1] || '').trim();
-    const name     = (row[2] || '').trim();
-    const license  = (row[3] || '').trim();
-    const licDate  = (row[4] || '').trim();
-    const address  = (row[5] || '').trim();
-    const phone    = (row[6] || '').replace(/,\s*$/, '').trim();
-    const email    = (row[7] || '').trim().toLowerCase();
-    const schedule = (row[8] || '').trim().replace(/\s+/g, ' ');
-
-    // Skip header and junk rows — valid data rows have a numeric № column
-    if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
-
-    const cleanName = name.toUpperCase().replace(/\s+/g, ' ');
-    if (cleanName.length < 3) { skipped++; continue; }
-
-    const isActive = !license.toLowerCase().includes('прекращена');
-
-    // Build slug from name; resolve collisions by appending region word
-    let baseSlug = makeSlug(cleanName) || ('notary-' + num);
-    let slug = baseSlug;
-
-    if (slugUsed[slug]) {
-      const regionWord = makeSlug((region || '').split(/[\s,]+/).slice(-1)[0] || region);
-      slug = baseSlug + (regionWord ? '-' + regionWord : '');
-      if (slugUsed[slug]) slug = slug + '-' + (slugUsed[baseSlug] + 1);
-    }
-    slugUsed[baseSlug] = (slugUsed[baseSlug] || 0) + 1;
-    slugUsed[slug]     = (slugUsed[slug]     || 0) + 1;
-
-    notaries.push({
-      name: cleanName,
-      region,
-      license: isActive ? license : null,
-      licenseDate: licDate,
-      active: isActive,
-      address,
-      phone,
-      email: email || null,
-      schedule,
-      slug,
-      csvMtime,
-      dbVersion: DB_VERSION,
-      updatedAt: new Date(),
-    });
-  }
-
-  if (notaries.length === 0) {
-    console.error('[Notaries] No valid rows found! Check CSV format.');
-    return 0;
-  }
-
   await db.insert(notaries);
-  console.log(`[Notaries] Imported ${notaries.length} notaries (${skipped} rows skipped)`);
+  console.log(`[Notaries] Imported ${notaries.length} notaries (${skipped} rows skipped, phones=${phoneCount}, emails=${emailCount})`);
   return notaries.length;
 }
 
@@ -180,4 +189,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { importNotaries };
+module.exports = { DB_VERSION, parseCSV, validEmail, buildNotaries, importNotaries };

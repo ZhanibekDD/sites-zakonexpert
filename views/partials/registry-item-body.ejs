@@ -1,0 +1,90 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function rowHtml(row) {
+  if (!row || !row.value) return '';
+  var value = esc(row.value);
+  if (row.href) {
+    value = '<a class="collector-link" href="' + esc(row.href) + '"'
+      + (row.external ? ' target="_blank" rel="noopener"' : '') + '>' + value + '</a>';
+  }
+  return '<div class="collector-data-row">'
+    + '<span class="collector-data-row__icon" aria-hidden="true"><i class="bi ' + esc(row.icon || 'bi-info-circle') + '"></i></span>'
+    + '<span class="collector-data-row__label">' + esc(row.label) + '</span>'
+    + '<span class="collector-data-row__value">' + value + '</span>'
+    + '</div>';
+}
+
+var mapQuery = encodeURIComponent((detail.address || '') + ', Казахстан');
+var mapSearch = encodeURIComponent(detail.address || '');
+var whatsAppText = encodeURIComponent(detail.help.whatsappText || detail.help.title || 'Нужна консультация');
+%>
+<div class="collector-detail-page">
+  <section class="collector-hero">
+    <div class="collector-container">
+      <nav class="collector-breadcrumbs" aria-label="breadcrumb">
+        <a href="/">Главная</a>
+        <% (detail.breadcrumbs || []).forEach(function(crumb) { %>
+          <span>/</span>
+          <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><span><%= crumb.label %></span><% } %>
+        <% }); %>
+      </nav>
+      <div class="collector-hero__badges">
+        <% (detail.badges || []).forEach(function(badge) { %>
+          <span class="collector-badge<%= badge.active ? ' collector-badge--active' : '' %>"><i class="bi <%= badge.icon %>"></i> <%= badge.label %></span>
+        <% }); %>
+      </div>
+      <h1><%= detail.name %></h1>
+      <% if (detail.subtitle) { %><p class="registry-hero-subtitle"><%= detail.subtitle %></p><% } %>
+    </div>
+  </section>
+  <div class="collector-main">
+    <div class="collector-container">
+      <div class="collector-layout">
+        <section class="collector-card" aria-label="Сведения об организации">
+          <% (detail.rows || []).forEach(function(row) { %><%- rowHtml(row) %><% }); %>
+          <% if (detail.address) { %>
+            <div class="collector-map">
+              <iframe src="https://maps.google.com/maps?q=<%= mapQuery %>&output=embed&hl=ru&z=15" loading="lazy" title="Карта расположения <%= detail.name %>" allowfullscreen></iframe>
+            </div>
+            <div class="collector-map-actions">
+              <a class="collector-map-button" href="https://2gis.kz/search/<%= mapSearch %>" target="_blank" rel="noopener"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>
+              <a class="collector-map-button" href="https://maps.google.com/?q=<%= mapQuery %>" target="_blank" rel="noopener"><i class="bi bi-geo-alt"></i> Google Maps</a>
+            </div>
+          <% } %>
+        </section>
+        <aside class="collector-sidebar">
+          <section class="collector-help" aria-labelledby="registry-help-title">
+            <div class="collector-help__title"><span class="collector-help__emblem"><i class="bi <%= detail.help.icon || 'bi-shield-check' %>"></i></span><h2 id="registry-help-title"><%= detail.help.title %></h2></div>
+            <p><%= detail.help.text %></p>
+            <ul class="collector-help__list">
+              <% detail.help.items.forEach(function(item) { %><li><i class="bi bi-check-lg"></i><span><%= item %></span></li><% }); %>
+            </ul>
+            <a class="collector-help__cta" href="https://wa.me/77752998738?text=<%= whatsAppText %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Получить бесплатную консультацию</a>
+            <p class="collector-help__response"><i class="bi bi-clock"></i> Ответ специалиста в течение 10 минут</p>
+          </section>
+          <section class="collector-warning" aria-labelledby="registry-warning-title">
+            <div class="collector-warning__title" id="registry-warning-title"><i class="bi bi-exclamation-triangle"></i> <%= detail.warning.title %></div>
+            <p><%= detail.warning.text %></p>
+          </section>
+        </aside>
+      </div>
+      <section class="collector-steps" aria-labelledby="registry-steps-title">
+        <h2 id="registry-steps-title"><%= detail.stepsTitle || 'Что делать дальше' %></h2>
+        <div class="collector-steps__grid">
+          <% detail.steps.forEach(function(step, index) { %>
+            <article class="collector-step"><span class="collector-step__number"><%= index + 1 %></span><i class="bi <%= step.icon %>"></i><div><strong><%= step.title %></strong><small><%= step.text %></small></div></article>
+          <% }); %>
+        </div>
+      </section>
+      <% if (detail.moreHtml) { %><div class="collector-more"><%- detail.moreHtml %></div><% } %>
+      <a class="collector-back" href="<%= detail.backUrl %>"><i class="bi bi-arrow-left"></i> <%= detail.backLabel %></a>
+    </div>
+  </div>
+</div>

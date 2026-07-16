@@ -24,6 +24,7 @@ const schema = [
       addressCountry: 'KZ',
     },
     ...(notary.phone ? { telephone: notary.phone.split(/[;,]/)[0].trim() } : {}),
+    ...(notary.email ? { email: notary.email } : {}),
     url: canonical,
   },
   {
@@ -54,6 +55,9 @@ function fmtPhones(raw) {
       return `<a href="tel:${digits}" class="npage-phone-link">${fmtPhone(p)}</a>`;
     }).join(', ');
 }
+const verifiedDate = notary.updatedAt
+  ? new Date(notary.updatedAt).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
+  : '';
 
 const body = `
 <div class="npage-wrap">
@@ -129,7 +133,11 @@ const body = `
             </a>` : ''}
           </div>
         </div>
-      </div>` : ''}
+      </div>` : `
+      <div class="npage-row">
+        <span class="npage-row-icon"><i class="bi bi-telephone"></i></span>
+        <div class="npage-row-body"><span class="npage-row-label">Телефон нотариуса</span><span class="npage-row-val" style="color:#64748b;">Не опубликован в реестре ЕНИС</span></div>
+      </div>`}
 
       ${notary.email ? `
       <div class="npage-row">
@@ -145,7 +153,11 @@ const body = `
             <a href="mailto:${notary.email}" class="npage-phone-link" title="Нажмите чтобы скопировать">${notary.email}</a>
           </span>
         </div>
-      </div>` : ''}
+      </div>` : `
+      <div class="npage-row">
+        <span class="npage-row-icon"><i class="bi bi-envelope"></i></span>
+        <div class="npage-row-body"><span class="npage-row-label">Email</span><span class="npage-row-val" style="color:#64748b;">Не опубликован в реестре ЕНИС</span></div>
+      </div>`}
 
       ${notary.schedule ? `
       <div class="npage-row">
@@ -174,6 +186,10 @@ const body = `
           <span class="npage-row-val">№ ${notary.license}${notary.licenseDate ? ' от ' + notary.licenseDate : ''}</span>
         </div>
       </div>` : ''}
+      <div class="npage-row">
+        <span class="npage-row-icon"><i class="bi bi-database-check"></i></span>
+        <div class="npage-row-body"><span class="npage-row-label">Источник данных</span><span class="npage-row-val"><a class="npage-phone-link" href="https://enis.kz/NotarySearch" target="_blank" rel="noopener">Официальный реестр ЕНИС</a>${verifiedDate ? ' · проверено ' + verifiedDate : ''}</span></div>
+      </div>
     </div>
 
     ${notary.address ? `<div style="margin-top:1.5rem;max-width:720px;">

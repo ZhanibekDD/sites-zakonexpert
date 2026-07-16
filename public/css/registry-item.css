@@ -1,0 +1,11 @@
+@import url("/css/collector-item.css?v=20260716-1");
+
+.registry-hero-subtitle {
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, .7);
+  font-size: .88rem;
+  line-height: 1.45;
+}
