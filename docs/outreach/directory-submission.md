@@ -13,7 +13,7 @@
 Название: ZakonExpert
 Сайт: https://zakonexpertt.kz
 Телефон: +7 775 299-87-38
-Email: info@zakonexpertt.kz
+Email: zakonexpert.kz@mail.ru
 Категория: юридические услуги / взыскание задолженности
 Краткое описание: [вставить описание на 250 символов из docs/ZAKONEXPERT-NAP.md]
 
