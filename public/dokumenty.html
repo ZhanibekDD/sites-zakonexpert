@@ -31,104 +31,7 @@
   <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
   <link rel="stylesheet" href="css/landing.css?v=20260619-3">
   <link rel="stylesheet" href="css/style.css?v=20260619-3">
-  <style>
-    /* ── Hero ── */
-    .dok-hero {
-      background: linear-gradient(135deg,#081830 0%,#0f2044 60%,#152d55 100%);
-      padding: 60px 0 44px; text-align: center;
-    }
-    .dok-hero h1 { font-size: clamp(1.6rem,3.8vw,2.4rem); font-weight: 900; color: #fff; margin-bottom: 12px; }
-    .dok-hero p  { font-size: 1rem; color: rgba(255,255,255,.68); max-width: 600px; margin: 0 auto 0; }
-    .dok-kicker  { display: inline-block; background: rgba(215,167,66,.15); border: 1px solid rgba(215,167,66,.4);
-                   border-radius: 999px; font-size: .75rem; font-weight: 700; letter-spacing: .08em;
-                   text-transform: uppercase; color: #f0c040; padding: 4px 14px; margin-bottom: 16px; }
-
-    /* ── Category nav tabs ── */
-    .dok-tabs { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
-                padding: 20px 0 0; border-bottom: 1px solid rgba(255,255,255,.08); }
-    .dok-tab  { padding: 8px 18px; border-radius: 8px 8px 0 0; font-size: .85rem; font-weight: 700;
-                color: rgba(255,255,255,.5); cursor: pointer; border: none; background: none;
-                border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
-    .dok-tab:hover  { color: rgba(255,255,255,.85); }
-    .dok-tab.active { color: #f0c040; border-bottom-color: #f0c040; }
-
-    /* ── Sections ── */
-    .dok-section { padding: 48px 0 8px; }
-    .dok-section-head {
-      display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
-    }
-    .dok-section-icon {
-      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem;
-    }
-    .icon-red    { background: rgba(239,68,68,.12);  color: #f87171; }
-    .icon-blue   { background: rgba(59,130,246,.12); color: #60a5fa; }
-    .icon-gold   { background: rgba(240,192,64,.12); color: #f0c040; }
-
-    .dok-section-title { font-size: 1.2rem; font-weight: 800; color: #0d1f3c; margin: 0; }
-    .dok-section-sub   { font-size: .82rem; color: #6b7280; margin: 2px 0 0; }
-    .dok-section-divider { border: none; border-top: 1px solid #e2e8f0; margin: 0 0 28px; }
-
-    /* ── Cards grid ── */
-    .dok-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 18px;
-                margin-bottom: 40px; }
-
-    .dok-card {
-      background: #0d1f3c; border: 1px solid rgba(255,255,255,.08); border-radius: 14px;
-      padding: 24px 24px 20px; display: flex; flex-direction: column; gap: 12px;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    .dok-card:hover { border-color: rgba(240,192,64,.3); box-shadow: 0 4px 24px rgba(0,0,0,.3); }
-
-    .dok-card-header { display: flex; align-items: flex-start; gap: 12px; }
-    .dok-card-icon   {
-      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-    }
-    .dok-card-type  { font-size: .68rem; font-weight: 700; letter-spacing: .09em;
-                      text-transform: uppercase; color: rgba(255,255,255,.4); margin-bottom: 2px; }
-    .dok-card h3    { font-size: .97rem; font-weight: 800; color: #fff; margin: 0; line-height: 1.35; }
-    .dok-card p     { font-size: .84rem; color: rgba(255,255,255,.58); line-height: 1.6; margin: 0; flex: 1; }
-
-    .dok-btns { display: flex; gap: 7px; flex-wrap: wrap; }
-    .btn-dok-docx {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 7px 14px; border-radius: 7px; font-size: .8rem; font-weight: 700; text-decoration: none;
-      background: #f0c040; color: #0a1628; transition: background .15s;
-    }
-    .btn-dok-docx:hover { background: #ffd55a; color: #0a1628; }
-    .btn-dok-pdf {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 7px 14px; border-radius: 7px; font-size: .8rem; font-weight: 700; text-decoration: none;
-      background: transparent; color: rgba(255,255,255,.65);
-      border: 1px solid rgba(255,255,255,.18); transition: all .15s;
-    }
-    .btn-dok-pdf:hover { border-color: rgba(255,255,255,.4); color: #fff; }
-    .dok-hint { font-size: .74rem; color: rgba(255,255,255,.32); border-top: 1px solid rgba(255,255,255,.06);
-                padding-top: 10px; }
-
-    /* ── CTA ── */
-    .dok-cta {
-      background: linear-gradient(135deg,#0a1f3a 0%,#112240 100%);
-      border: 1px solid rgba(240,192,64,.18); border-radius: 18px;
-      padding: 36px 32px; text-align: center; margin: 16px 0 60px;
-    }
-    .dok-cta h2 { font-size: 1.35rem; font-weight: 800; color: #fff; margin-bottom: 8px; }
-    .dok-cta p  { color: rgba(255,255,255,.6); font-size: .92rem; margin-bottom: 20px; }
-    .btn-dok-wa {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: #25d366; color: #fff; padding: 12px 26px;
-      border-radius: 50px; font-weight: 700; font-size: .92rem; text-decoration: none;
-      transition: background .15s;
-    }
-    .btn-dok-wa:hover { background: #1ebe5a; color: #fff; }
-
-    @media (max-width: 600px) {
-      .dok-grid { grid-template-columns: 1fr; }
-      .dok-cta  { padding: 24px 16px; }
-    }
-  </style>
+  <link rel="stylesheet" href="css/documents-page.css?v=20260716-1">
 </head>
 <body>
 <!-- Yandex.Metrika counter (110748931) -->
@@ -194,23 +97,89 @@
 <main>
 <!-- Hero -->
 <section class="dok-hero">
-  <div class="landing-container">
-    <span class="dok-kicker"><i class="bi bi-file-earmark-text"></i> 6 шаблонов · Бесплатно</span>
-    <h1>Образцы юридических документов</h1>
-    <p>Реальные шаблоны из закрытых дел — по трём направлениям: исполнительная надпись, ЧСИ и реструктуризация. Заполните данные своей ситуации или обратитесь к нам.</p>
-    <button class="copy-link-btn" type="button" data-copy-link="https://zakonexpertt.kz/dokumenty" data-track-page="/dokumenty"><i class="bi bi-link-45deg"></i> Скопировать ссылку на эту страницу</button>
+  <div class="dok-hero__backdrop" aria-hidden="true"></div>
+  <div class="landing-container dok-hero__grid">
+    <div class="dok-hero__content">
+      <span class="dok-kicker"><i class="bi bi-file-earmark-check"></i> 6 проверенных шаблонов · Бесплатно</span>
+      <h1>Юридические документы, <span>готовые к заполнению</span></h1>
+      <p>Скачайте шаблон в DOCX или PDF, заполните данные своей ситуации и подайте адресату. Если сомневаетесь — бесплатно проверим документ перед отправкой.</p>
+      <div class="dok-hero__actions">
+        <a class="dok-hero__primary" href="#document-categories"><i class="bi bi-grid-3x3-gap-fill"></i> Выбрать документ</a>
+        <button class="copy-link-btn" type="button" data-copy-link="https://zakonexpertt.kz/dokumenty" data-track-page="/dokumenty"><i class="bi bi-link-45deg"></i> Скопировать ссылку</button>
+      </div>
+      <div class="dok-hero__trust" role="list" aria-label="Преимущества шаблонов">
+        <span role="listitem"><i class="bi bi-check-circle-fill"></i> Форматы DOCX и PDF</span>
+        <span role="listitem"><i class="bi bi-shield-check"></i> Для законодательства РК</span>
+        <span role="listitem"><i class="bi bi-whatsapp"></i> Бесплатная проверка</span>
+      </div>
+    </div>
+
+    <div class="dok-hero__visual" aria-hidden="true">
+      <div class="dok-paper-stack">
+        <div class="dok-paper dok-paper--back"></div>
+        <div class="dok-paper dok-paper--front">
+          <div class="dok-paper__top">
+            <span class="dok-paper__brand">ZAKONEXPERT</span>
+            <span class="dok-paper__status"><i class="bi bi-check2"></i> ГОТОВО</span>
+          </div>
+          <div class="dok-paper__recipient">Адресату ____________________</div>
+          <strong>ЗАЯВЛЕНИЕ</strong>
+          <span class="dok-paper__subtitle">по юридическому вопросу</span>
+          <div class="dok-paper__lines"><i></i><i></i><i></i><i></i><i></i></div>
+          <div class="dok-paper__footer">
+            <span>Подпись __________</span>
+            <span>Дата __________</span>
+          </div>
+          <div class="dok-paper__seal"><i class="bi bi-shield-check"></i></div>
+        </div>
+        <span class="dok-format dok-format--docx"><i class="bi bi-file-earmark-word"></i> DOCX</span>
+        <span class="dok-format dok-format--pdf"><i class="bi bi-file-earmark-pdf"></i> PDF</span>
+      </div>
+    </div>
   </div>
 </section>
 
-<div class="landing-container">
+<nav class="dok-category-nav landing-container" id="document-categories" aria-label="Категории документов">
+  <a href="#sec-nadpis">
+    <span class="dok-category-nav__icon dok-category-nav__icon--red"><i class="bi bi-pen"></i></span>
+    <span><strong>Исполнительная надпись</strong><small>Возражение и жалоба в суд</small></span>
+    <i class="bi bi-arrow-down-short"></i>
+  </a>
+  <a href="#sec-chsi">
+    <span class="dok-category-nav__icon dok-category-nav__icon--blue"><i class="bi bi-shield-exclamation"></i></span>
+    <span><strong>Действия ЧСИ</strong><small>Запрос материалов и жалоба</small></span>
+    <i class="bi bi-arrow-down-short"></i>
+  </a>
+  <a href="#sec-grafik">
+    <span class="dok-category-nav__icon dok-category-nav__icon--gold"><i class="bi bi-calendar2-check"></i></span>
+    <span><strong>График погашения</strong><small>Заявления в банк и МФО</small></span>
+    <i class="bi bi-arrow-down-short"></i>
+  </a>
+</nav>
+
+<div class="landing-container dok-content">
+
+  <section class="dok-guide" aria-labelledby="dok-guide-title">
+    <div class="dok-guide__heading">
+      <span>Три простых шага</span>
+      <h2 id="dok-guide-title">Как воспользоваться шаблоном</h2>
+      <p>Не нужно разбираться в сложной структуре заявления — основа уже подготовлена.</p>
+    </div>
+    <ol class="dok-guide__steps">
+      <li><span>01</span><i class="bi bi-file-earmark-arrow-down"></i><div><strong>Скачайте</strong><small>Выберите удобный формат: DOCX для редактирования или PDF для просмотра.</small></div></li>
+      <li><span>02</span><i class="bi bi-pencil-square"></i><div><strong>Заполните данные</strong><small>Подсказка в каждой карточке показывает, какие сведения необходимо указать.</small></div></li>
+      <li><span>03</span><i class="bi bi-send-check"></i><div><strong>Проверьте и подайте</strong><small>Перед подачей отправьте документ нам — первичная проверка бесплатна.</small></div></li>
+    </ol>
+  </section>
 
   <!-- ═══════════════════════════════════════════════
        БЛОК 1 — ИСПОЛНИТЕЛЬНАЯ НАДПИСЬ
        ═══════════════════════════════════════════════ -->
-  <section class="dok-section" id="sec-nadpis">
+  <section class="dok-section dok-section--red" id="sec-nadpis">
     <div class="dok-section-head">
       <div class="dok-section-icon icon-red"><i class="bi bi-pen-fill"></i></div>
-      <div>
+      <div class="dok-section-head__copy">
+        <span class="dok-section-index">Категория 01</span>
         <div class="dok-section-title">Исполнительная надпись нотариуса</div>
         <div class="dok-section-sub">Оспаривание, возражение, отмена через нотариуса или суд</div>
       </div>
@@ -219,7 +188,7 @@
     <div class="dok-grid">
 
       <!-- Возражение нотариусу -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="01">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-red"><i class="bi bi-pen"></i></div>
           <div>
@@ -237,10 +206,10 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: ФИО нотариуса, номер и дата надписи, взыскатель, сумма, ваши данные.</div>
-      </div>
+      </article>
 
       <!-- Жалоба в суд (нотариус прекратил) -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="02">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-red"><i class="bi bi-building-fill-check"></i></div>
           <div>
@@ -258,7 +227,7 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: наименование суда, данные нотариуса, взыскатель, ваши данные, детали надписи.</div>
-      </div>
+      </article>
 
     </div>
   </section>
@@ -266,10 +235,11 @@
   <!-- ═══════════════════════════════════════════════
        БЛОК 2 — ЧСИ
        ═══════════════════════════════════════════════ -->
-  <section class="dok-section" id="sec-chsi">
+  <section class="dok-section dok-section--blue" id="sec-chsi">
     <div class="dok-section-head">
       <div class="dok-section-icon icon-blue"><i class="bi bi-shield-fill-exclamation"></i></div>
-      <div>
+      <div class="dok-section-head__copy">
+        <span class="dok-section-index">Категория 02</span>
         <div class="dok-section-title">Частный судебный исполнитель (ЧСИ)</div>
         <div class="dok-section-sub">Жалобы, запросы, оспаривание действий ЧСИ</div>
       </div>
@@ -278,7 +248,7 @@
     <div class="dok-grid">
 
       <!-- Ознакомление с материалами ИП -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="03">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-blue"><i class="bi bi-folder2-open"></i></div>
           <div>
@@ -296,10 +266,10 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: ФИО ЧСИ, номер ИП (если известен), ваши данные.</div>
-      </div>
+      </article>
 
       <!-- Жалоба на действия ЧСИ -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="04">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-blue"><i class="bi bi-exclamation-octagon-fill"></i></div>
           <div>
@@ -317,7 +287,7 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: ФИО ЧСИ, номер ИП, описание нарушения, ваши данные.</div>
-      </div>
+      </article>
 
     </div>
   </section>
@@ -325,10 +295,11 @@
   <!-- ═══════════════════════════════════════════════
        БЛОК 3 — РЕСТРУКТУРИЗАЦИЯ / ГРАФИК
        ═══════════════════════════════════════════════ -->
-  <section class="dok-section" id="sec-grafik">
+  <section class="dok-section dok-section--gold" id="sec-grafik">
     <div class="dok-section-head">
       <div class="dok-section-icon icon-gold"><i class="bi bi-calendar2-check-fill"></i></div>
-      <div>
+      <div class="dok-section-head__copy">
+        <span class="dok-section-index">Категория 03</span>
         <div class="dok-section-title">Реструктуризация и график погашения</div>
         <div class="dok-section-sub">Заявления в банки и МФО для получения нового графика без первоначального взноса</div>
       </div>
@@ -337,7 +308,7 @@
     <div class="dok-grid">
 
       <!-- Заявление в банк -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="05">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-gold"><i class="bi bi-bank2"></i></div>
           <div>
@@ -355,10 +326,10 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: наименование банка, номер договора, текущая задолженность, ваши данные.</div>
-      </div>
+      </article>
 
       <!-- Заявление в МФО -->
-      <div class="dok-card">
+      <article class="dok-card" data-number="06">
         <div class="dok-card-header">
           <div class="dok-card-icon icon-gold"><i class="bi bi-cash-coin"></i></div>
           <div>
@@ -376,28 +347,59 @@
           </a>
         </div>
         <div class="dok-hint">Заполните: наименование МФО, номер договора, дата, сумма долга, предлагаемый платёж.</div>
-      </div>
+      </article>
 
     </div>
   </section>
 
   <!-- CTA -->
-  <div class="dok-cta">
-    <h2>Скачали образец? Проверим перед подачей — бесплатно</h2>
-    <p>Шаблон — это основа. Если хотите проверить срок, основание или правильность заполнения — отправьте документ (или его фото/скан) в WhatsApp, посмотрим бесплатно. Работаем дистанционно по всему Казахстану.</p>
+  <section class="dok-cta" aria-labelledby="dok-cta-title">
+    <div class="dok-cta__icon"><i class="bi bi-file-earmark-check"></i></div>
+    <div class="dok-cta__copy">
+      <span>Бесплатная первичная проверка</span>
+      <h2 id="dok-cta-title">Скачали образец? Проверим перед подачей</h2>
+      <p>Отправьте заполненный документ или его фото в WhatsApp. Проверим адресата, срок, обязательные данные и подскажем, что исправить.</p>
+      <div class="dok-cta__points">
+        <small><i class="bi bi-check2"></i> Работаем по всему Казахстану</small>
+        <small><i class="bi bi-check2"></i> Ответ специалиста</small>
+        <small><i class="bi bi-check2"></i> Без обязательств</small>
+      </div>
+    </div>
     <a class="btn-dok-wa" href="https://wa.me/77752998738?text=Здравствуйте.+Скачал(а)+образец+документа%2C+хочу+проверить+перед+подачей." target="_blank" rel="noopener" onclick="window.ZE_trackEvent&&window.ZE_trackEvent('click_document_review','dokumenty-cta')">
-      <i class="bi bi-whatsapp"></i> Проверить документ в WhatsApp
+      <i class="bi bi-whatsapp"></i> Проверить в WhatsApp
     </a>
-  </div>
+  </section>
 
 </div>
 </main>
 
-<footer class="site-footer-bottom" style="background:#060e1f;padding:28px 0;text-align:center;color:rgba(255,255,255,.35);font-size:.82rem;">
-  <div class="landing-container">
-    © 2024–2026 ZakonExpert · <a href="https://zakonexpertt.kz" style="color:rgba(255,255,255,.35)">zakonexpertt.kz</a>
-    · <a href="/privacy" style="color:rgba(255,255,255,.35)">Политика конфиденциальности</a>
+<footer class="landing-footer">
+  <div class="footer-top-line"></div>
+  <div class="landing-container footer-shell">
+    <div class="footer-brand">
+      <div class="brand"><img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793" alt="ZakonExpert" class="brand-full-logo brand-full-logo--footer" loading="lazy"></div>
+      <p class="mt-3">Юридические документы и сопровождение по снятию арестов и ограничений по всему Казахстану.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <h3 class="h5 mb-3">Полезное</h3>
+        <div class="footer-links">
+          <a href="/services">Услуги</a>
+          <a href="/rezultaty">Результаты работы</a>
+          <a href="/zakony">Законы РК</a>
+          <a href="/contact">Контакты</a>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <h3 class="h5 mb-3">Связь</h3>
+        <div class="footer-contacts">
+          <a href="tel:+77752998738"><i class="bi bi-telephone me-2"></i>+7 (775) 299-87-38</a>
+          <a href="https://wa.me/77752998738" target="_blank" rel="noopener"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a>
+        </div>
+      </div>
+    </div>
   </div>
+  <div class="landing-container footer-bottom"><span>© 2024–2026 ZakonExpert.</span><span class="footer-note"><a href="/privacy">Политика конфиденциальности</a></span></div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
