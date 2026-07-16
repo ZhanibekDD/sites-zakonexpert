@@ -5,10 +5,11 @@ const path = require('path');
 const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
+const { readRegistrySource } = require('../modules/registry-source');
 
-const CSV_PATH = path.join(__dirname, '..', 'lawyers_all_regions.csv');
+const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'lawyers.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'lawyers.db');
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 slugify.extend({
   'ə': 'a', 'Ə': 'A',
@@ -38,47 +39,6 @@ function makeSlug(str) {
   });
 }
 
-// Minimal RFC-4180-compatible CSV parser that handles quoted fields
-function parseCSV(content) {
-  if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1); // strip BOM
-  const rows = [];
-  let i = 0;
-  const n = content.length;
-
-  while (i < n) {
-    const row = [];
-
-    while (i < n) {
-      let field;
-      if (content[i] === '"') {
-        i++;
-        field = '';
-        while (i < n) {
-          if (content[i] === '"' && i + 1 < n && content[i + 1] === '"') {
-            field += '"'; i += 2;
-          } else if (content[i] === '"') {
-            i++; break;
-          } else {
-            field += content[i++];
-          }
-        }
-      } else {
-        const start = i;
-        while (i < n && content[i] !== ',' && content[i] !== '\r' && content[i] !== '\n') i++;
-        field = content.slice(start, i).trim();
-      }
-      row.push(field);
-      if (i < n && content[i] === ',') { i++; } else { break; }
-    }
-
-    if (i < n && content[i] === '\r') i++;
-    if (i < n && content[i] === '\n') i++;
-
-    if (row.some(f => f.trim())) rows.push(row);
-  }
-  return rows;
-}
-
 function parsePhones(raw) {
   if (!raw) return [];
   return raw
@@ -87,33 +47,7 @@ function parsePhones(raw) {
     .filter(p => /[+\d]/.test(p) && p.replace(/\D/g, '').length >= 5);
 }
 
-async function importLawyers() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.error('[Lawyers] CSV not found:', CSV_PATH);
-    return 0;
-  }
-
-  const csvMtime = fs.statSync(CSV_PATH).mtimeMs;
-
-  const db = Datastore.create({ filename: DB_PATH, autoload: true });
-  await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
-  await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
-  await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
-
-  const existing = await db.findOne({}, { csvMtime: 1, dbVersion: 1 });
-  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
-    const count = await db.count({});
-    console.log(`[Lawyers] DB up to date (${count} records). Skipping.`);
-    return count;
-  }
-
-  console.log('[Lawyers] Reading CSV...');
-  const content = fs.readFileSync(CSV_PATH, 'utf8');
-  const rows    = parseCSV(content);
-  console.log(`[Lawyers] Parsed ${rows.length} rows`);
-
-  await db.remove({}, { multi: true });
-
+function buildLawyers(rows, sourceMtime) {
   const lawyers  = [];
   const slugUsed = {};
   let skipped    = 0;
@@ -156,17 +90,46 @@ async function importLawyers() {
       address,
       phones,
       slug,
-      csvMtime,
+      sourceMtime,
       dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
   }
 
-  if (lawyers.length === 0) {
-    console.error('[Lawyers] No valid rows found! Check CSV format.');
+  return { lawyers, skipped };
+}
+
+async function importLawyers() {
+  if (!fs.existsSync(SOURCE_PATH)) {
+    console.error('[Lawyers] Registry source not found:', SOURCE_PATH);
     return 0;
   }
 
+  const source = readRegistrySource(SOURCE_PATH, 'lawyers');
+  const sourceMtime = source.sourceMtime;
+
+  const db = Datastore.create({ filename: DB_PATH, autoload: true });
+  await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
+  await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
+  await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
+
+  const existing = await db.findOne({}, { sourceMtime: 1, dbVersion: 1 });
+  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
+    const count = await db.count({});
+    console.log(`[Lawyers] DB up to date (${count} records). Skipping.`);
+    return count;
+  }
+
+  console.log('[Lawyers] Reading compressed registry source...');
+  const rows = source.records;
+  console.log(`[Lawyers] Parsed ${rows.length} rows`);
+  const { lawyers, skipped } = buildLawyers(rows, sourceMtime);
+
+  if (lawyers.length < 100) {
+    throw new Error(`[Lawyers] Completeness check failed: total=${lawyers.length}`);
+  }
+
+  await db.remove({}, { multi: true });
   await db.insert(lawyers);
   await compactDatastore(db);
   console.log(`[Lawyers] Imported ${lawyers.length} lawyers (${skipped} rows skipped)`);
@@ -179,4 +142,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { importLawyers };
+module.exports = { DB_VERSION, importLawyers, buildLawyers, parsePhones };

@@ -1,13 +1,13 @@
 'use strict';
 
 const assert = require('assert');
-const fs = require('fs');
 const path = require('path');
-const { importBailiffs, parseCSV, parseCombinedField } = require('./import-bailiffs');
+const { importBailiffs, parseCombinedField } = require('./import-bailiffs');
+const { readRegistrySource } = require('../modules/registry-source');
 
 async function main() {
-  const csv = fs.readFileSync(path.join(__dirname, '..', 'bailiffs_all_regions.csv'), 'utf8');
-  const rows = parseCSV(csv).filter(row => /^\d+$/.test(String(row[1] || '').trim()));
+  const source = readRegistrySource(path.join(__dirname, '..', 'registry', 'bailiffs.json.gz'), 'bailiffs');
+  const rows = source.records;
   assert.strictEqual(rows.length, 2079, 'unexpected number of ChSI records in the fallback snapshot');
 
   const parsed = rows.map(row => parseCombinedField(row[3]));

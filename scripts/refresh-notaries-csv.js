@@ -3,8 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
+const { writeRegistrySource } = require('../modules/registry-source');
 
-const OUTPUT_PATH = path.join(__dirname, '..', 'notaries_all_regions.csv');
+const OUTPUT_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const STATUS_PATH = path.join(__dirname, '..', 'data', 'notaries-registry-status.json');
 const CHAMBERS = [
   [1, 'Акмолинская область'],
@@ -73,17 +74,11 @@ function parseNotaryPage(html, region) {
   return rows;
 }
 
-function csvCell(value) {
-  const text = String(value || '');
-  return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-}
-
-function toCSV(rows) {
-  const header = ['Область', '№', 'ФИО', 'Номер лицензии', 'Дата выдачи', 'Адрес офиса', 'Телефон', 'Email', 'Режим работы'];
-  return '\uFEFF' + [header, ...rows.map(row => [
+function toRegistryRows(rows) {
+  return rows.map(row => [
     row.region, row.num, row.name, row.license, row.licenseDate,
     row.address, row.phone, row.email, row.schedule,
-  ])].map(cols => cols.map(csvCell).join(',')).join('\n') + '\n';
+  ]);
 }
 
 async function fetchChamber(id, region) {
@@ -111,7 +106,7 @@ async function fetchChamber(id, region) {
   return rows;
 }
 
-async function refreshNotariesCSV() {
+async function refreshNotariesRegistry() {
   const groups = [];
   for (const [id, region] of CHAMBERS) groups.push(await fetchChamber(id, region));
   const rows = groups.flat();
@@ -121,7 +116,9 @@ async function refreshNotariesCSV() {
   if (rows.length < 5000 || active < 3000) {
     throw new Error(`Проверка полноты не пройдена: всего ${rows.length}, действующих ${active}`);
   }
-  fs.writeFileSync(OUTPUT_PATH, toCSV(rows), 'utf8');
+  writeRegistrySource(OUTPUT_PATH, 'notaries', toRegistryRows(rows), {
+    source: 'https://enis.kz/NotarySearch',
+  });
   fs.writeFileSync(STATUS_PATH, JSON.stringify({
     source: 'https://enis.kz/NotarySearch',
     checkedAt: new Date().toISOString(),
@@ -136,10 +133,10 @@ async function refreshNotariesCSV() {
 }
 
 if (require.main === module) {
-  refreshNotariesCSV().catch(error => {
+  refreshNotariesRegistry().catch(error => {
     console.error('[Notaries] Refresh failed:', error.message);
     process.exitCode = 1;
   });
 }
 
-module.exports = { CHAMBERS, clean, validEmail, parseNotaryPage, toCSV, refreshNotariesCSV };
+module.exports = { CHAMBERS, clean, validEmail, parseNotaryPage, toRegistryRows, refreshNotariesRegistry };

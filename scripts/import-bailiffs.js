@@ -5,10 +5,11 @@ const path = require('path');
 const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
+const { readRegistrySource } = require('../modules/registry-source');
 
-const CSV_PATH = path.join(__dirname, '..', 'bailiffs_all_regions.csv');
+const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'bailiffs.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'bailiffs.db');
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Kazakh Cyrillic extras not covered by slugify 'ru' locale
 slugify.extend({
@@ -23,44 +24,6 @@ function makeSlug(str) {
   return slugify(str.toLowerCase(), {
     locale: 'ru', replacement: '-', strict: true, trim: true,
   });
-}
-
-// Minimal RFC-4180 CSV parser (handles quoted fields with embedded commas/newlines)
-function parseCSV(content) {
-  if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
-  const rows = [];
-  let i = 0;
-  const n = content.length;
-
-  while (i < n) {
-    const row = [];
-    while (i < n) {
-      let field;
-      if (content[i] === '"') {
-        i++;
-        field = '';
-        while (i < n) {
-          if (content[i] === '"' && i + 1 < n && content[i + 1] === '"') {
-            field += '"'; i += 2;
-          } else if (content[i] === '"') {
-            i++; break;
-          } else {
-            field += content[i++];
-          }
-        }
-      } else {
-        const start = i;
-        while (i < n && content[i] !== ',' && content[i] !== '\r' && content[i] !== '\n') i++;
-        field = content.slice(start, i).trim();
-      }
-      row.push(field);
-      if (i < n && content[i] === ',') { i++; } else { break; }
-    }
-    if (i < n && content[i] === '\r') i++;
-    if (i < n && content[i] === '\n') i++;
-    if (row.some(f => f.trim())) rows.push(row);
-  }
-  return rows;
 }
 
 // Parse the combined info blob in column[3]:
@@ -96,34 +59,7 @@ function parseCombinedField(raw) {
   return { address, phones, license, licenseDate };
 }
 
-async function importBailiffs() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.error('[Bailiffs] CSV not found:', CSV_PATH);
-    return 0;
-  }
-
-  const csvMtime = fs.statSync(CSV_PATH).mtimeMs;
-  const db = Datastore.create({ filename: DB_PATH, autoload: true });
-
-  await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
-  await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
-  await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
-
-  // Skip import if DB already reflects this CSV version
-  const existing = await db.findOne({}, { csvMtime: 1, dbVersion: 1 });
-  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
-    const count = await db.count({});
-    console.log(`[Bailiffs] DB is up to date (${count} records). Skipping import.`);
-    return count;
-  }
-
-  console.log('[Bailiffs] Reading CSV...');
-  const content = fs.readFileSync(CSV_PATH, 'utf8');
-  const rows    = parseCSV(content);
-  console.log(`[Bailiffs] Parsed ${rows.length} rows`);
-
-  await db.remove({}, { multi: true });
-
+function buildBailiffs(rows, sourceMtime) {
   const bailiffs  = [];
   const slugUsed  = {};
   let skipped     = 0;
@@ -159,17 +95,46 @@ async function importBailiffs() {
       address,
       phones,
       slug,
-      csvMtime,
+      sourceMtime,
       dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
   }
 
-  if (bailiffs.length === 0) {
-    console.error('[Bailiffs] No valid rows found!');
+  return { bailiffs, skipped };
+}
+
+async function importBailiffs() {
+  if (!fs.existsSync(SOURCE_PATH)) {
+    console.error('[Bailiffs] Registry source not found:', SOURCE_PATH);
     return 0;
   }
 
+  const source = readRegistrySource(SOURCE_PATH, 'bailiffs');
+  const sourceMtime = source.sourceMtime;
+  const db = Datastore.create({ filename: DB_PATH, autoload: true });
+
+  await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
+  await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
+  await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
+
+  const existing = await db.findOne({}, { sourceMtime: 1, dbVersion: 1 });
+  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
+    const count = await db.count({});
+    console.log(`[Bailiffs] DB is up to date (${count} records). Skipping import.`);
+    return count;
+  }
+
+  console.log('[Bailiffs] Reading compressed registry source...');
+  const rows = source.records;
+  console.log(`[Bailiffs] Parsed ${rows.length} rows`);
+  const { bailiffs, skipped } = buildBailiffs(rows, sourceMtime);
+
+  if (bailiffs.length < 2000 || bailiffs.some(item => !item.license || !item.licenseDate)) {
+    throw new Error(`[Bailiffs] Completeness check failed: total=${bailiffs.length}`);
+  }
+
+  await db.remove({}, { multi: true });
   await db.insert(bailiffs);
   await compactDatastore(db);
   console.log(`[Bailiffs] Imported ${bailiffs.length} bailiffs (${skipped} skipped)`);
@@ -182,4 +147,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { importBailiffs, parseCSV, parseCombinedField };
+module.exports = { DB_VERSION, importBailiffs, buildBailiffs, parseCombinedField };
