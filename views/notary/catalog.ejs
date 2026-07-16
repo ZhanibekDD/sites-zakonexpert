@@ -1,185 +1,49 @@
-﻿<%
-const region   = (selectedRegion || '').trim();
-const regions  = allRegions  || [];
+<%
+const region = (selectedRegion || '').trim();
+const regions = allRegions || [];
 const notaries = regionItems || [];
-
+const total = regions.reduce(function(sum, item) { return sum + (item.count || 0); }, 0);
 const pageTitle = region
-  ? ('Нотариусы ' + region + ' — контакты и адреса | ZakonExpert')
-  : 'Нотариусы Казахстана — реестр всех регионов | ZakonExpert';
+  ? ('Нотариусы ' + region + ' — контакты, лицензии и график | ZakonExpert')
+  : 'Каталог нотариусов Казахстана — контакты и лицензии | ZakonExpert';
 const pageDesc = region
-  ? ('Нотариусы ' + region + ': ' + notaries.length + ' специалистов с адресами, телефонами и режимом работы. Реестр обновляется еженедельно с enis.kz.')
-  : 'Реестр нотариусов Казахстана — 6314 нотариусов всех регионов. Адреса, телефоны, лицензии. Данные с enis.kz.';
+  ? ('Нотариусы ' + region + ': ' + notaries.length + ' карточек с телефонами, email, адресами, лицензиями и режимом работы.')
+  : ('Каталог ' + total + ' нотариусов Казахстана. Актуальные контакты, адреса, лицензии и режим работы из официального реестра ЕНИС.');
 const canonical = region
   ? ('https://zakonexpertt.kz/notaries?region=' + encodeURIComponent(region))
   : 'https://zakonexpertt.kz/notaries';
-const schema = region
-  ? {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-        { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpertt.kz/notaries' },
-        { '@type': 'ListItem', position: 3, name: 'Нотариусы ' + region, item: canonical },
-      ],
-    }
-  : null;
-
-function titleCase(s) {
-  return (s || '').toLowerCase().split(' ').map(function(w){ return w ? w[0].toUpperCase() + w.slice(1) : ''; }).join(' ');
-}
-function fmtPhone(raw) {
-  var d = (raw || '').replace(/\D/g, '');
-  if (d.length === 11) return '+7 (' + d.slice(1,4) + ') ' + d.slice(4,7) + '-' + d.slice(7,9) + '-' + d.slice(9,11);
-  if (d.length === 10) return '+7 (' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6,8) + '-' + d.slice(8,10);
-  return raw;
-}
-
-var breadcrumb = '<nav class="npage-breadcrumb" aria-label="breadcrumb">'
-  + '<a href="/">Главная</a><span class="npage-bc-sep">/</span>'
-  + (region
-    ? '<a href="/notaries">Нотариусы</a><span class="npage-bc-sep">/</span><span>' + region + '</span>'
-    : '<span>Нотариусы</span>')
-  + '</nav>';
-
-var searchHtml = '<div class="catalog-search-block">'
-  + '<p class="catalog-search-label">Найти нотариуса по ФИО</p>'
-  + '<form method="GET" action="/notary-search" class="registry-search-form" style="margin-bottom:0;">'
-  + '<div class="registry-search-row">'
-  + '<input type="text" name="q" placeholder="Введите ФИО нотариуса..." class="registry-search-input" autocomplete="off">'
-  + '<button type="submit" class="registry-search-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Найти</button>'
-  + '</div></form></div>';
-
-var heroHtml = '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">Реестр нотариусов</span></div>'
-  + '<h1 class="npage-h1">'
-  + (region ? 'Нотариусы — ' + region : 'Нотариусы Казахстана')
-  + '</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">'
-  + (region ? 'Найдено нотариусов в регионе: <strong>' + notaries.length + '</strong>' : 'База данных нотариусов по всем регионам Казахстана')
-  + '</p></div>';
-
-var contentHtml = '';
-
-if (region) {
-  if (notaries.length === 0) {
-    contentHtml = '<div class="registry-empty"><p>Нотариусы в регионе <strong>' + region + '</strong> не найдены.</p></div>';
-  } else {
-    var proCSS = '<style>'
-      + '.pro-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:1rem;}'
-      + '.pro-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:16px 18px;transition:box-shadow .15s,border-color .15s;}'
-      + '.pro-card:hover{box-shadow:0 4px 18px rgba(13,31,60,.11);border-color:#94a3b8;}'
-      + '.pro-card--inactive{opacity:.72;border-color:#fde8e8;}'
-      + '.pro-name{font-weight:700;font-size:.95rem;color:#0d1f3c;margin-bottom:2px;line-height:1.3;display:flex;align-items:center;flex-wrap:wrap;gap:5px;}'
-      + '.pro-name a{color:inherit;text-decoration:none;}'
-      + '.pro-name a:hover{color:#1a56db;}'
-      + '.pro-badge-inactive{display:inline-block;font-size:.6rem;font-weight:700;background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 6px;vertical-align:middle;}'
-      + '.pro-lic{font-size:.72rem;color:#94a3b8;margin-bottom:8px;}'
-      + '.pro-contacts{display:flex;flex-direction:column;gap:5px;border-top:1px solid #f1f5f9;padding-top:8px;margin-top:6px;}'
-      + '.pro-row{display:flex;align-items:flex-start;gap:7px;font-size:.8rem;line-height:1.4;}'
-      + '.pro-icon{flex-shrink:0;font-size:.82rem;line-height:1.5;}'
-      + '.pro-val{color:#374151;}'
-      + '.pro-link{color:#1a56db;text-decoration:none;}'
-      + '.pro-link:hover{text-decoration:underline;}'
-      + '.pro-dim{color:#94a3b8;font-size:.72rem;}'
-      + '.pro-nophone{font-size:.74rem;color:#dc2626;font-style:italic;}'
-      + '.pro-page-link{display:block;margin-top:9px;padding-top:9px;border-top:1px solid #f1f5f9;font-size:.78rem;color:#1a56db;text-decoration:none;font-weight:600;}'
-      + '.pro-page-link:hover{text-decoration:underline;}'
-      + '@media(max-width:600px){.pro-grid{grid-template-columns:1fr;}}'
-      + '</style>';
-    var items = '';
-    for (var i = 0; i < notaries.length; i++) {
-      var n = notaries[i];
-      var name = titleCase(n.name);
-      var isInactive = n.active === false;
-      var statusBadge = isInactive ? '<span class="pro-badge-inactive">Прекращена</span>' : '';
-      var phonesHtml = '';
-      if (n.phone) {
-        var phoneLinks = n.phone.split(/[;,]/).slice(0,2).map(function(p) {
-          var t = p.trim();
-          var digits = t.replace(/[^\d+]/g, '');
-          return digits.length >= 7 ? '<a href="tel:' + digits + '" class="pro-link">' + fmtPhone(t) + '</a>' : '';
-        }).filter(Boolean).join(' &nbsp; ');
-        phonesHtml = phoneLinks
-          ? '<div class="pro-row"><span class="pro-icon">📞</span><span>' + phoneLinks + '</span></div>'
-          : '<div class="pro-row"><span class="pro-icon">📞</span><span class="pro-nophone">Телефон не указан</span></div>';
-      } else {
-        phonesHtml = '<div class="pro-row"><span class="pro-icon">📞</span><span class="pro-nophone">Телефон не указан</span></div>';
-      }
-      var emailHtml = n.email
-        ? '<div class="pro-row"><span class="pro-icon">✉️</span><a href="mailto:' + n.email + '" class="pro-link">' + n.email + '</a></div>'
-        : '<div class="pro-row"><span class="pro-icon">✉️</span><span class="pro-dim">Email не опубликован в ЕНИС</span></div>';
-      var addrHtml = n.address
-        ? '<div class="pro-row"><span class="pro-icon">📍</span><span class="pro-val">' + n.address + '</span></div>'
-        : '';
-      var schedHtml = n.schedule
-        ? '<div class="pro-row"><span class="pro-icon">🕐</span><span class="pro-dim">' + n.schedule + '</span></div>'
-        : '';
-      items += '<div class="pro-card' + (isInactive ? ' pro-card--inactive' : '') + '">'
-        + '<div class="pro-name"><a href="/notary/' + n.slug + '">' + name + '</a>' + statusBadge + '</div>'
-        + '<div class="pro-lic">Лицензия № ' + (n.license || '—') + (n.licenseDate ? ' от ' + n.licenseDate : '') + '</div>'
-        + '<div class="pro-contacts">' + phonesHtml + emailHtml + addrHtml + schedHtml + '</div>'
-        + '<a href="/notary/' + n.slug + '" class="pro-page-link">Полная карточка нотариуса →</a>'
-        + '</div>';
-    }
-    contentHtml = proCSS + '<div class="pro-grid">' + items + '</div>';
-  }
-} else {
-  var regionCards = '';
-  for (var j = 0; j < regions.length; j++) {
-    var r = regions[j];
-    regionCards += '<a href="/notaries?region=' + encodeURIComponent(r.region) + '" class="catalog-region-card">'
-      + '<span class="catalog-region-name">' + r.region + '</span>'
-      + '<span class="catalog-region-count">' + r.count + ' нотариусов</span>'
-      + '</a>';
-  }
-  contentHtml = '<div class="catalog-region-grid">' + regionCards + '</div>';
-}
-
-var quickCtaHtml = '<div class="npage-quick-cta">'
-  + '<p>Нашли своего нотариуса в списке? Если он сделал исполнительную надпись по кредиту, банку или МФО — проверим срок, бесспорность долга и основания для отмены бесплатно.</p>'
-  + '<a href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!+%D0%9D%D0%BE%D1%82%D0%B0%D1%80%D0%B8%D1%83%D1%81+%D1%81%D0%B4%D0%B5%D0%BB%D0%B0%D0%BB+%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%83%D1%8E+%D0%BD%D0%B0%D0%B4%D0%BF%D0%B8%D1%81%D1%8C%2C+%D0%BF%D1%80%D0%BE%D1%88%D1%83+%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%B8%D1%82%D1%8C." class="npage-wa-btn" target="_blank" rel="noopener">'
-  + '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
-  + 'Написать в WhatsApp</a></div>'
-  + '<div class="npage-links-row" style="margin-bottom:1.5rem;">'
-  + '<a href="/otmena-ispolnitelnoi-nadpisi">Отмена исполнительной надписи</a>'
-  + '<a href="/snyatie-aresta-so-scheta">Снятие ареста со счёта</a>'
-  + '<a href="/snyatie-ogranichenii-chsi">Действия ЧСИ</a>'
-  + '<a href="/besspornost-dolga">Бесспорность долга</a>'
-  + '</div>';
-
-var faqHtml = '<div class="law-faq mt-4"><h2 style="font-size:1.1rem;font-weight:800;margin-bottom:16px;color:#0f2044;">Частые вопросы о нотариальной исполнительной надписи</h2>'
-  + '<div class="law-faq-item"><button class="law-faq-question" aria-expanded="false">Что такое исполнительная надпись нотариуса?<span class="law-faq-question-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>'
-  + '<div class="law-faq-answer"><p>Документ, который позволяет банку или МФО взыскать долг без суда. Его можно оспорить, если долг спорный или нарушена процедура уведомления.</p></div></div>'
-  + '<div class="law-faq-item"><button class="law-faq-question" aria-expanded="false">Сколько времени есть на возражение?<span class="law-faq-question-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>'
-  + '<div class="law-faq-answer"><p>10 рабочих дней с момента, когда вы узнали о надписи. После истечения срока обжаловать сложнее — не затягивайте с обращением.</p></div></div>'
-  + '<div class="law-faq-item"><button class="law-faq-question" aria-expanded="false">Что будет с арестом счёта после отмены надписи?<span class="law-faq-question-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>'
-  + '<div class="law-faq-answer"><p>После отмены исполнительной надписи основание для ареста отпадает, и мы направляем документы ЧСИ для снятия ограничений со счёта.</p></div></div>'
-  + '</div>'
-  + '<script>document.querySelectorAll(".law-faq-question").forEach(function(btn){btn.addEventListener("click",function(){var item=btn.closest(".law-faq-item");var isOpen=item.classList.contains("open");document.querySelectorAll(".law-faq-item.open").forEach(function(i){i.classList.remove("open");});if(!isOpen)item.classList.add("open");btn.setAttribute("aria-expanded",!isOpen);});});</script>';
-
-var ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
-  + '<p class="npage-cta-label">Юридическая помощь</p><h2 class="npage-cta-title">Нужна консультация нотариуса?</h2>'
-  + '<p class="npage-cta-sub">Поможем разобраться с нотариальными документами и исполнительными надписями.</p></div>'
-  + '<a href="https://wa.me/77752998738?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C+%D0%BF%D0%BE+%D0%BD%D0%BE%D1%82%D0%B0%D1%80%D0%B8%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%BC%D1%83+%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D1%83." class="npage-wa-btn" target="_blank" rel="noopener">'
-  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
-  + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 775 299-87-38</span></span></a></div>';
-
-const sourceHtml = '<div style="margin-top:2rem;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;display:flex;align-items:flex-start;gap:12px;">'
-  + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-  + '<div style="font-size:.82rem;color:#64748b;line-height:1.6;">'
-  + '<strong style="color:#374151;">Источник данных:</strong> Реестр нотариусов Министерства юстиции Республики Казахстан (<a href="https://minjust.gov.kz" target="_blank" rel="noopener" style="color:#1a56db;">minjust.gov.kz</a>). '
-  + 'Сведения являются общедоступными в соответствии со <strong>ст. 7 Закона РК «О нотариате»</strong>. '
-  + 'Данные носят справочный характер — актуальность рекомендуем уточнять на официальном сайте Министерства юстиции.'
-  + '</div></div>';
-
-const body = '<div class="npage-wrap"><div class="landing-container">'
-  + breadcrumb
-  + heroHtml
-  + quickCtaHtml
-  + searchHtml
-  + '<div class="registry-results" style="margin-top:1.5rem;">' + contentHtml + '</div>'
-  + ctaHtml
-  + faqHtml
-  + sourceHtml
-  + '</div></div>';
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: pageTitle,
+  description: pageDesc,
+  url: canonical,
+};
+const catalog = {
+  type: 'notary',
+  baseUrl: '/notaries',
+  itemBaseUrl: '/notary/',
+  searchAction: '/notary-search',
+  searchLabel: 'Найти нотариуса по ФИО',
+  searchPlaceholder: 'Введите фамилию или полное ФИО нотариуса',
+  region,
+  regions,
+  items: notaries,
+  lastUpdated,
+  pluralLabel: 'Каталог нотариусов',
+  registryLabel: 'Официальные данные ЕНИС',
+  title: 'Нотариусы Казахстана',
+  regionTitle: 'Нотариусы',
+  subtitle: 'Телефоны, email, адреса, лицензии и режим работы нотариусов по всем 20 территориальным палатам Казахстана.',
+  countLabel: 'нотариусов',
+  heroIcon: 'bi-journal-bookmark',
+  cardIcon: 'bi-person-vcard',
+  whatsappText: 'Здравствуйте! Нужна помощь по исполнительной надписи нотариуса.',
+  sourceUrl: 'https://enis.kz/NotarySearch',
+  sourceName: 'Единая нотариальная информационная система Казахстана (ЕНИС)',
+  sourceText: 'Данные автоматически сверяются со всеми 20 территориальными нотариальными палатами.',
+};
+const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260716-1">'
+  + include('../partials/professional-catalog-body', { catalog });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

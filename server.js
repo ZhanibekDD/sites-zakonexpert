@@ -536,13 +536,15 @@ app.get('/bailiff-search', asyncHandler(async (req, res) => {
 app.get('/notaries', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!notariesDb) return res.status(503).send('Notary module not available');
+  const [allRegions, lastUpdated] = await Promise.all([
+    notariesDb.getRegions(),
+    notariesDb.getLastUpdated(),
+  ]);
   if (region) {
     const regionItems = await notariesDb.findByRegion(region);
-    const allRegions = await notariesDb.getRegions();
-    return res.render('notary/catalog', { selectedRegion: region, allRegions, regionItems });
+    return res.render('notary/catalog', { selectedRegion: region, allRegions, regionItems, lastUpdated });
   }
-  const allRegions = await notariesDb.getRegions();
-  res.render('notary/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+  res.render('notary/catalog', { selectedRegion: '', allRegions, regionItems: [], lastUpdated });
 }));
 
 // ===== REGIONAL LANDING PAGES =====
@@ -621,13 +623,15 @@ app.get('/snyatie-aresta-:city', asyncHandler(async (req, res, next) => {
 app.get('/bailiffs', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
+  const [allRegions, lastUpdated] = await Promise.all([
+    bailiffsDb.getRegions(),
+    bailiffsDb.getLastUpdated(),
+  ]);
   if (region) {
     const regionItems = await bailiffsDb.findByRegion(region);
-    const allRegions = await bailiffsDb.getRegions();
-    return res.render('bailiff/catalog', { selectedRegion: region, allRegions, regionItems });
+    return res.render('bailiff/catalog', { selectedRegion: region, allRegions, regionItems, lastUpdated });
   }
-  const allRegions = await bailiffsDb.getRegions();
-  res.render('bailiff/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+  res.render('bailiff/catalog', { selectedRegion: '', allRegions, regionItems: [], lastUpdated });
 }));
 
 app.get('/lawyers', asyncHandler(async (req, res) => {
