@@ -711,6 +711,120 @@
   line-height: 1.65;
 }
 
+/* Verified result */
+.ze-home-result {
+  background: #f4f7fb;
+  padding: 72px 0;
+}
+
+.ze-home-result__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+  gap: clamp(36px, 6vw, 80px);
+  align-items: center;
+}
+
+.ze-home-result__content {
+  max-width: 680px;
+}
+
+.ze-home-result__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9b6a1d;
+  font-size: .77rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.ze-home-result__content h2 {
+  color: #071a35;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.08;
+  margin: 0 0 18px;
+}
+
+.ze-home-result__content > p {
+  color: #536176;
+  font-size: 1rem;
+  line-height: 1.75;
+  margin: 0 0 22px;
+}
+
+.ze-home-result__facts {
+  display: grid;
+  gap: 11px;
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+}
+
+.ze-home-result__facts li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: #1e3048;
+  font-size: .92rem;
+}
+
+.ze-home-result__facts i {
+  color: #14864b;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.ze-home-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+}
+
+.ze-home-result__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #173a6a;
+  font-size: .88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ze-home-result__source:hover {
+  color: #071a35;
+  text-decoration: underline;
+}
+
+.ze-home-result__media {
+  display: block;
+  max-width: 410px;
+  justify-self: end;
+  overflow: hidden;
+  border: 1px solid #d9e1ec;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 22px 55px rgba(7, 26, 53, .16);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.ze-home-result__media:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 28px 64px rgba(7, 26, 53, .22);
+}
+
+.ze-home-result__media img {
+  display: block;
+  width: 100%;
+  height: 510px;
+  object-fit: contain;
+  background: #fff;
+}
+
 /* Footer uses the same transparent source as the header. */
 .landing-footer .brand-full-logo--footer {
   width: 190px;
@@ -754,6 +868,8 @@
   .ze-service-card { min-height: 270px; }
   .ze-home-process__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 0; }
   .ze-process-step:nth-child(2) { border-right: 0; }
+  .ze-home-result__grid { grid-template-columns: minmax(0, 1fr) minmax(260px, .65fr); gap: 36px; }
+  .ze-home-result__media img { height: 430px; }
 }
 
 @media (max-width: 760px) {
@@ -825,6 +941,11 @@
   .ze-home-process {
     padding-block: 50px;
   }
+
+  .ze-home-result { padding: 54px 0; }
+  .ze-home-result__grid { grid-template-columns: 1fr; }
+  .ze-home-result__media { width: min(100%, 390px); justify-self: center; }
+  .ze-home-result__media img { height: auto; max-height: 520px; }
 }
 
 @media (max-width: 560px) {
@@ -877,6 +998,9 @@
   .ze-service-card { min-height: 245px; padding: 22px; }
 
   .ze-home-process__grid { grid-template-columns: 1fr; gap: 0; }
+  .ze-home-result__actions { align-items: stretch; flex-direction: column; }
+  .ze-home-result__actions .landing-btn { justify-content: center; width: 100%; }
+  .ze-home-result__source { justify-content: center; min-height: 44px; }
   .ze-process-step {
     min-height: 190px;
     padding: 16px 20px 26px 102px;

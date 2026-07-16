@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://zakonexpertt.kz/rezultaty">
   <meta property="og:title" content="Результаты работы ZakonExpert — реальные постановления об отмене ИН">
   <meta property="og:description" content="Фото постановлений об отмене исполнительных надписей, графиков погашения и прекращения исполнительных производств. Команда юристов ZakonExpert.">
-  <meta property="og:image" content="https://zakonexpertt.kz/img/rezultaty/komanda-01.jpeg">
+  <meta property="og:image" content="https://zakonexpertt.kz/img/rezultaty/otmena-nadpisi-instagram-2025-09.webp">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
@@ -56,6 +56,57 @@
       padding: 12px 16px; background: #f1f5f9;
       font-size: .82rem; color: #64748b; text-align: center;
     }
+
+    /* Featured verified result */
+    .rez-featured {
+      display: grid; grid-template-columns: minmax(280px,.8fr) minmax(0,1.2fr); gap: 32px;
+      align-items: center; margin: 0 0 44px; padding: 26px;
+      border: 1px solid #dbe4f0; border-radius: 20px;
+      background: linear-gradient(135deg,#f8fafc 0%,#eef4fb 100%);
+      box-shadow: 0 18px 42px rgba(13,31,60,.1);
+    }
+    .rez-featured-media {
+      display: block; border: 0; border-radius: 14px; overflow: hidden;
+      background: #fff; padding: 0; cursor: zoom-in;
+      box-shadow: 0 8px 26px rgba(13,31,60,.16);
+    }
+    .rez-featured-media img { display: block; width: 100%; height: 460px; object-fit: contain; background: #fff; }
+    .rez-featured-kicker {
+      display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px;
+      color: #9a6817; font-size: .75rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+    }
+    .rez-featured h2 { color: #0d1f3c; font-size: clamp(1.45rem,3vw,2.1rem); font-weight: 900; margin-bottom: 12px; }
+    .rez-featured p { color: #526278; line-height: 1.7; margin-bottom: 16px; }
+    .rez-featured-facts { display: grid; gap: 9px; margin: 0 0 22px; padding: 0; list-style: none; }
+    .rez-featured-facts li { display: flex; gap: 9px; color: #1d2e47; font-size: .9rem; }
+    .rez-featured-facts i { color: #1f9d55; flex: 0 0 auto; }
+    .rez-featured-links { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .rez-source-link {
+      display: inline-flex; align-items: center; gap: 7px; color: #1a3560;
+      font-size: .85rem; font-weight: 700; text-decoration: none;
+    }
+    .rez-source-link:hover { color: #0d1f3c; text-decoration: underline; }
+    .rez-privacy-note { margin: 16px 0 0 !important; color: #718096 !important; font-size: .78rem; }
+
+    .rez-social-title { margin: 0 0 18px; color: #0d1f3c; font-size: 1.1rem; font-weight: 800; }
+    .rez-social-grid {
+      display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px;
+      margin-bottom: 44px;
+    }
+    .rez-social-card {
+      display: flex; min-width: 0; flex-direction: column; overflow: hidden;
+      border: 1px solid #dce5ef; border-radius: 14px; background: #fff;
+      box-shadow: 0 8px 26px rgba(13,31,60,.08);
+    }
+    .rez-social-media {
+      display: block; width: 100%; height: 330px; padding: 0; overflow: hidden;
+      border: 0; border-bottom: 1px solid #e4eaf1; background: #fff; cursor: zoom-in;
+    }
+    .rez-social-media img { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+    .rez-social-card-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; padding: 15px; }
+    .rez-social-card h3 { margin: 10px 0 7px; color: #0d1f3c; font-size: 1rem; font-weight: 800; line-height: 1.35; }
+    .rez-social-card p { margin: 0 0 14px; color: #64748b; font-size: .8rem; line-height: 1.55; }
+    .rez-social-card .rez-source-link { margin-top: auto; }
 
     /* Gallery */
     .rez-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-bottom: 52px; }
@@ -128,6 +179,10 @@
       .rez-stat + .rez-stat { border-left: none; }
       .rez-stat:nth-child(3), .rez-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,.08); }
       .rez-team-grid { grid-template-columns: 1fr; }
+      .rez-featured { grid-template-columns: 1fr; gap: 22px; padding: 16px; }
+      .rez-featured-media img { height: 390px; }
+      .rez-social-grid { grid-template-columns: 1fr; }
+      .rez-social-media { height: 390px; }
       .rez-gallery  { grid-template-columns: repeat(2,1fr); gap: 10px; }
       .rez-item img { height: 260px; }
       .rez-cta { padding: 28px 20px; }
@@ -149,13 +204,7 @@
     "availableLanguage": ["Russian", "Kazakh"]
   },
   "areaServed": "KZ",
-  "knowsAbout": ["исполнительная надпись", "снятие ареста", "ЧСИ", "исполнительное производство", "рассрочка долга"],
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "5",
-    "reviewCount": "10",
-    "bestRating": "5"
-  }
+  "knowsAbout": ["исполнительная надпись", "снятие ареста", "ЧСИ", "исполнительное производство", "рассрочка долга"]
 }
 </script>
 </head>
@@ -198,7 +247,7 @@
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/">
-      <img src="img/zakonexpert-logo-kazakhstan.png" width="1672" height="941" alt="ZakonExpert" class="brand-full-logo">
+      <img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793" alt="ZakonExpert" class="brand-full-logo">
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Меню" data-nav-toggle>
       <i class="bi bi-list fs-4"></i>
@@ -237,16 +286,16 @@
   <div class="landing-container">
     <div class="rez-stats-grid">
       <div class="rez-stat">
-        <div class="rez-stat-num">630<span style="font-size:1.2rem">+</span></div>
-        <div class="rez-stat-label">ЧСИ в базе данных</div>
+        <div class="rez-stat-num"><i class="bi bi-file-earmark-check"></i></div>
+        <div class="rez-stat-label">реальные постановления</div>
       </div>
       <div class="rez-stat">
-        <div class="rez-stat-num">6<span style="font-size:1.2rem">333</span></div>
-        <div class="rez-stat-label">нотариуса в каталоге</div>
+        <div class="rez-stat-num"><i class="bi bi-shield-check"></i></div>
+        <div class="rez-stat-label">данные клиентов скрыты</div>
       </div>
       <div class="rez-stat">
-        <div class="rez-stat-num">10<span style="font-size:1.2rem">+</span></div>
-        <div class="rez-stat-label">надписей отменено</div>
+        <div class="rez-stat-num"><i class="bi bi-globe2"></i></div>
+        <div class="rez-stat-label">работаем по Казахстану</div>
       </div>
       <div class="rez-stat">
         <div class="rez-stat-num">0<span style="font-size:1rem"> тг</span></div>
@@ -277,7 +326,75 @@
   <!-- Gallery -->
   <section>
     <div class="rez-section-title">Результаты клиентов</div>
-    <div class="rez-section-sub">Нажмите на документ, чтобы увидеть его подробнее</div>
+    <div class="rez-section-sub">Нажмите на документ, чтобы увидеть его подробнее. Персональные данные клиентов скрыты.</div>
+
+    <article class="rez-featured">
+      <button class="rez-featured-media" type="button" onclick="openLb(this)" aria-label="Открыть постановление крупнее">
+        <img src="/img/rezultaty/otmena-nadpisi-instagram-2025-09.webp" width="1086" height="1448" alt="Обезличенное постановление об отмене исполнительной надписи на сумму 79 300 тенге">
+      </button>
+      <div>
+        <span class="rez-featured-kicker"><i class="bi bi-patch-check-fill"></i> Подтверждённый результат</span>
+        <h2>Отменена исполнительная надпись на 79 300 ₸</h2>
+        <p>Постановлением нотариуса от 8 апреля 2024 года исполнительная надпись отменена. Публикуем документ в обезличенном виде.</p>
+        <ul class="rez-featured-facts">
+          <li><i class="bi bi-check-circle-fill"></i><span>Тип результата: отмена исполнительной надписи</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>Сумма по документу: 79 300 ₸</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>Дата публикации результата: 22 сентября 2025 года</span></li>
+        </ul>
+        <div class="rez-featured-links">
+          <a class="rez-source-link" href="https://www.instagram.com/p/DO7pE_GDJaq/" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-instagram"></i> Оригинальная публикация в Instagram
+          </a>
+        </div>
+        <p class="rez-privacy-note"><i class="bi bi-shield-lock"></i> Имя, дата рождения, ИИН и адрес клиента закрыты.</p>
+      </div>
+    </article>
+
+    <h3 class="rez-social-title">Ещё результаты из Instagram</h3>
+    <div class="rez-social-grid">
+      <article class="rez-social-card">
+        <button class="rez-social-media" type="button" onclick="openLb(this)" aria-label="Открыть постановление об отмене исполнительной надписи на 111 346 тенге">
+          <img src="/img/rezultaty/instagram-2025-09-22-111346.webp" width="1103" height="1426" alt="Обезличенное постановление об отмене исполнительной надписи на сумму 111 346 тенге" loading="lazy">
+        </button>
+        <div class="rez-social-card-body">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          <h3>Исполнительная надпись отменена на 111 346 ₸</h3>
+          <p>Постановление нотариуса опубликовано с полностью закрытыми данными клиента.</p>
+          <a class="rez-source-link" href="https://www.instagram.com/p/DO7o_lZDBw-/" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-instagram"></i> Публикация
+          </a>
+        </div>
+      </article>
+
+      <article class="rez-social-card">
+        <button class="rez-social-media" type="button" onclick="openLb(this)" aria-label="Открыть постановление об отмене исполнительной надписи на 118 723 тенге">
+          <img src="/img/rezultaty/instagram-2025-09-22-118723.webp" width="1086" height="1448" alt="Обезличенное постановление об отмене исполнительной надписи на общую сумму 118 723 тенге" loading="lazy">
+        </button>
+        <div class="rez-social-card-body">
+          <span class="rez-badge badge-green">Отмена ИН</span>
+          <h3>Общая сумма отмены — 118 723 ₸</h3>
+          <p>Отменены требования и расходы по исполнительной надписи. Персональные данные скрыты.</p>
+          <a class="rez-source-link" href="https://www.instagram.com/p/DO7pA8FDBt8/" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-instagram"></i> Публикация
+          </a>
+        </div>
+      </article>
+
+      <article class="rez-social-card">
+        <button class="rez-social-media" type="button" onclick="openLb(this)" aria-label="Открыть постановление ЧСИ с отметкой об отмене">
+          <img src="/img/rezultaty/instagram-2025-09-22-chsi-5388.webp" width="1087" height="1446" alt="Обезличенное постановление ЧСИ с отметкой об отмене, сумма оплаты 5 388 тенге 70 тиын" loading="lazy">
+        </button>
+        <div class="rez-social-card-body">
+          <span class="rez-badge badge-blue">Расходы ЧСИ</span>
+          <h3>Постановление ЧСИ с отметкой об отмене</h3>
+          <p>В документе указана сумма оплаты деятельности ЧСИ 5 388,70 ₸. Данные клиента закрыты.</p>
+          <a class="rez-source-link" href="https://www.instagram.com/p/DO7pD2uDLps/" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-instagram"></i> Публикация
+          </a>
+        </div>
+      </article>
+    </div>
+
     <div class="rez-gallery">
 
       <div class="rez-item" onclick="openLb(this)" role="button" tabindex="0" aria-label="Открыть документ крупнее" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLb(this);}">
@@ -305,14 +422,6 @@
       </div>
 
       <div class="rez-item" onclick="openLb(this)" role="button" tabindex="0" aria-label="Открыть документ крупнее" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLb(this);}">
-        <img src="/img/rezultaty/otmena-nadpisi-04.jpeg" width="828" height="1033" alt="Отмена исполнительной надписи" loading="lazy">
-        <div class="rez-item-label">
-          <span class="rez-badge badge-green">Отмена ИН</span>
-          Постановление нотариуса
-        </div>
-      </div>
-
-      <div class="rez-item" onclick="openLb(this)" role="button" tabindex="0" aria-label="Открыть документ крупнее" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLb(this);}">
         <img src="/img/rezultaty/otmena-nadpisi-05.jpeg" width="828" height="1024" alt="Отмена исполнительной надписи" loading="lazy">
         <div class="rez-item-label">
           <span class="rez-badge badge-green">Отмена ИН</span>
@@ -322,14 +431,6 @@
 
       <div class="rez-item" onclick="openLb(this)" role="button" tabindex="0" aria-label="Открыть документ крупнее" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLb(this);}">
         <img src="/img/rezultaty/otmena-nadpisi-06.jpeg" width="828" height="1037" alt="Отмена исполнительной надписи" loading="lazy">
-        <div class="rez-item-label">
-          <span class="rez-badge badge-green">Отмена ИН</span>
-          Постановление нотариуса
-        </div>
-      </div>
-
-      <div class="rez-item" onclick="openLb(this)" role="button" tabindex="0" aria-label="Открыть документ крупнее" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLb(this);}">
-        <img src="/img/rezultaty/otmena-nadpisi-07.jpeg" width="828" height="1034" alt="Отмена исполнительной надписи" loading="lazy">
         <div class="rez-item-label">
           <span class="rez-badge badge-green">Отмена ИН</span>
           Постановление нотариуса

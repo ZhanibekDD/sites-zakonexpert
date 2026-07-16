@@ -1,0 +1,11 @@
+{
+  "extends": [],
+  "rules": {
+    "close-order": "error",
+    "doctype-style": "error",
+    "element-required-attributes": "error",
+    "no-dup-id": "error",
+    "aria-label-misuse": "error",
+    "wcag/h63": "error"
+  }
+}
