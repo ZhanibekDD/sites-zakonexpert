@@ -1,87 +1,131 @@
-﻿<%
-const pageTitle = item.name + ' — коллектор, контакты | ZakonExpert';
-const pageDesc  = item.name + ': БИН ' + item.bin + '. Коллектор звонит и требует долг или угрожает арестом? Проверим законность требований бесплатно.';
+<%
+const displayName = String(item.name || '').replace(/^«/, '').trim();
+const pageTitle = displayName + ' — коллектор, контакты | ZakonExpert';
+const pageDesc = displayName + ': БИН ' + item.bin + '. Контакты и сведения из реестра коллекторских агентств. Юридическая помощь при незаконных требованиях.';
 const canonical = 'https://zakonexpertt.kz/collectors/' + item.slug;
 
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function escHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-function mapBlock(addr) {
-  if (!addr) return '';
-  var q = encodeURIComponent(addr + ', Казахстан');
-  var q2 = encodeURIComponent(addr);
-  return '<div style="margin-top:1.5rem;max-width:720px;">'
-    + '<iframe src="https://maps.google.com/maps?q=' + q + '&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>'
-    + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
-    + '<a href="https://2gis.kz/search/' + q2 + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>'
-    + '<a href="https://maps.google.com/?q=' + q + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>'
-    + '</div></div>';
+function dataRow(icon, label, value, options) {
+  if (!value) return '';
+  options = options || {};
+  var content = escHtml(value);
+  if (options.href) {
+    content = '<a class="collector-link" href="' + escHtml(options.href) + '"'
+      + (options.external ? ' target="_blank" rel="noopener"' : '') + '>' + content + '</a>';
+  }
+  return '<div class="collector-data-row">'
+    + '<span class="collector-data-row__icon" aria-hidden="true"><i class="bi ' + escHtml(icon) + '"></i></span>'
+    + '<span class="collector-data-row__label">' + escHtml(label) + '</span>'
+    + '<span class="collector-data-row__value">' + content + '</span>'
+    + '</div>';
 }
+
+const phone = item.phones && item.phones[0] ? item.phones[0] : '';
+const phoneHref = phone ? 'tel:' + phone.replace(/[^\d+]/g, '') : '';
+const email = item.emails && item.emails[0] ? item.emails[0] : '';
+const site = item.sites && item.sites[0] ? item.sites[0] : '';
+const siteHref = site ? (/^https?:\/\//i.test(site) ? site : 'https://' + site) : '';
+const mapQuery = encodeURIComponent((item.address || '') + ', Казахстан');
+const mapSearch = encodeURIComponent(item.address || '');
 
 const schema = {
   '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-    { '@type': 'ListItem', position: 2, name: 'Коллекторские агентства', item: 'https://zakonexpertt.kz/collectors' },
-    { '@type': 'ListItem', position: 3, name: item.name, item: canonical },
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Коллекторские агентства', item: 'https://zakonexpertt.kz/collectors' },
+        { '@type': 'ListItem', position: 3, name: displayName, item: canonical },
+      ],
+    },
+    {
+      '@type': 'Organization',
+      name: displayName,
+      identifier: item.bin,
+      telephone: phone || undefined,
+      email: email || undefined,
+      url: siteHref || undefined,
+      address: item.address ? { '@type': 'PostalAddress', streetAddress: item.address, addressCountry: 'KZ' } : undefined,
+    },
   ],
 };
 
-const CSS = '<style>'
-  + '.ci2-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:28px 32px;max-width:680px;}'
-  + '.ci2-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;}'
-  + '.ci2-row:last-child{border-bottom:none;}'
-  + '.ci2-icon{flex-shrink:0;width:22px;text-align:center;font-size:1rem;line-height:1.5;}'
-  + '.ci2-link{color:#1a56db;text-decoration:none;word-break:break-all;}'
-  + '.ci2-link:hover{text-decoration:underline;}'
-  + '.ci2-dim{color:#94a3b8;font-size:.8rem;}'
-  + '.ci2-warn{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:14px 18px;font-size:.85rem;color:#92400e;margin-top:1rem;line-height:1.6;}'
-  + '</style>';
+const pageStyles = '<link rel="stylesheet" href="/css/collector-item.css?v=20260716-1">';
+const detailsHtml = lowContentBoost({ entityLabel: 'этот коллектор', entityLabelGenitive: 'этого коллектора' })
+  .replace('Что делать, если по вам есть взыскание', 'Подробные рекомендации');
 
-var phonesHtml = '';
-if (item.phones && item.phones.length) {
-  phonesHtml = '<div class="ci2-row"><span class="ci2-icon">📞</span><span>'
-    + item.phones.slice(0,3).map(function(p){ var r=p.replace(/[^\d+]/g,''); return r.length>=7?'<a href="tel:'+r+'" class="ci2-link">'+escHtml(p)+'</a>':escHtml(p); }).join(' &nbsp; ')
-    + '</span></div>';
-}
-var emailsHtml = '';
-if (item.emails && item.emails.length) {
-  emailsHtml = '<div class="ci2-row"><span class="ci2-icon">✉️</span><span>'
-    + item.emails.slice(0,2).map(function(e){ return '<a href="mailto:'+escHtml(e)+'" class="ci2-link">'+escHtml(e)+'</a>'; }).join(' ')
-    + '</span></div>';
-}
-var sitesHtml = '';
-if (item.sites && item.sites.length) {
-  sitesHtml = '<div class="ci2-row"><span class="ci2-icon">🌐</span><a href="https://'+escHtml(item.sites[0])+'" target="_blank" rel="noopener" class="ci2-link">'+escHtml(item.sites[0])+'</a></div>';
-}
-
-const body = CSS
-  + '<div class="npage-wrap"><div class="landing-container">'
-  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/collectors">Коллекторы</a><span class="npage-bc-sep">/</span><span>' + escHtml(item.name) + '</span></nav>'
-  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">📋 Реестр АРРФР</span></div>'
-  + '<h1 class="npage-h1">' + escHtml(item.name) + '</h1>'
-  + (item.nameFull !== item.name ? '<p style="color:#94a3b8;font-size:.88rem;margin-top:4px;">' + escHtml(item.nameFull) + '</p>' : '')
+const body = pageStyles
+  + '<div class="collector-detail-page">'
+  + '<section class="collector-hero">'
+  + '<div class="collector-container">'
+  + '<nav class="collector-breadcrumbs" aria-label="breadcrumb">'
+  + '<a href="/">Главная</a><span>/</span><a href="/collectors">Коллекторы</a><span>/</span><span>' + escHtml(displayName) + '</span>'
+  + '</nav>'
+  + '<div class="collector-hero__badges">'
+  + '<span class="collector-badge"><i class="bi bi-file-earmark-text"></i> Реестр АРРФР</span>'
+  + '<span class="collector-badge collector-badge--active"><i class="bi bi-shield-check"></i> Действующее агентство</span>'
   + '</div>'
-  + '<div class="ci2-card" style="margin-top:1.5rem;">'
-  + (item.address ? '<div class="ci2-row"><span class="ci2-icon">📍</span><span>' + escHtml(item.address) + '</span></div>' : '')
-  + (item.leader ? '<div class="ci2-row"><span class="ci2-icon">👤</span><span>' + escHtml(item.leader) + ' <span class="ci2-dim">(Руководитель)</span></span></div>' : '')
-  + phonesHtml + emailsHtml + sitesHtml
-  + '<div class="ci2-row"><span class="ci2-icon">📋</span><span class="ci2-dim">Лицензия: ' + escHtml(item.regNum) + ' · БИН: ' + escHtml(item.bin) + (item.dateAdded ? ' · в реестре с ' + escHtml(item.dateAdded) : '') + '</span></div>'
-  + mapBlock(item.address)
-  + '<div class="ci2-warn">⚠️ <strong>Помните:</strong> Коллекторское агентство вправе только <strong>связываться с должником</strong>. Арестовывать счета и карты могут только суд и ЧСИ. Если счёт арестован или поступают угрозы — <a href="https://wa.me/77752998738" style="color:#1a56db;font-weight:600;">обратитесь в ZakonExpert</a>.</div>'
+  + '<h1>' + escHtml(displayName) + '</h1>'
   + '</div>'
-  + lowContentBoost({ entityLabel: 'этот коллектор' })
-  + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
-  + '<p class="npage-cta-label">Юридическая помощь</p>'
-  + '<h2 class="npage-cta-title">Коллектор угрожает или арестован счёт?</h2>'
-  + '<p class="npage-cta-sub">Поможем разобраться с долгом, оспорить незаконные действия и снять арест со счёта. Работаем по всему Казахстану.</p>'
-  + '<div class="npage-cta-tags"><span>Снятие ареста</span><span>Оспаривание долга</span><span>Реструктуризация</span></div></div>'
-  + '<a href="https://wa.me/77752998738?text=Здравствуйте!+Коллекторы+требуют+долг,+нужна+помощь." class="npage-wa-btn" target="_blank" rel="noopener">'
-  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
-  + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 775 299-87-38</span></span></a></div>'
-  + '<div style="margin-top:1.5rem;"><a href="/collectors" style="color:#1a56db;font-size:.9rem;text-decoration:none;">← Все коллекторские агентства</a></div>'
-  + '</div></div>';
+  + '</section>'
+  + '<div class="collector-main">'
+  + '<div class="collector-container">'
+  + '<div class="collector-layout">'
+  + '<section class="collector-card" aria-label="Сведения о коллекторском агентстве">'
+  + dataRow('bi-geo-alt', 'Адрес', item.address)
+  + dataRow('bi-person', 'Руководитель', item.leader)
+  + dataRow('bi-telephone', 'Телефон', phone, { href: phoneHref })
+  + dataRow('bi-envelope', 'Email', email, { href: email ? 'mailto:' + email : '' })
+  + dataRow('bi-globe2', 'Веб-сайт', site, { href: siteHref, external: true })
+  + dataRow('bi-file-earmark-text', 'Регистрационный номер', item.regNum ? 'Регистрация: ' + item.regNum : '')
+  + dataRow('bi-person-vcard', 'БИН', item.bin ? 'БИН: ' + item.bin : '')
+  + dataRow('bi-calendar3', 'Дата внесения в реестр', item.dateAdded ? 'В реестре с ' + item.dateAdded : '')
+  + (item.address ? '<div class="collector-map">'
+      + '<iframe src="https://maps.google.com/maps?q=' + mapQuery + '&output=embed&hl=ru&z=15" loading="lazy" title="Карта расположения ' + escHtml(displayName) + '" allowfullscreen></iframe>'
+      + '</div>'
+      + '<div class="collector-map-actions">'
+      + '<a class="collector-map-button" href="https://2gis.kz/search/' + mapSearch + '" target="_blank" rel="noopener"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>'
+      + '<a class="collector-map-button" href="https://maps.google.com/?q=' + mapQuery + '" target="_blank" rel="noopener"><i class="bi bi-geo-alt"></i> Google Maps</a>'
+      + '</div>' : '')
+  + '</section>'
+  + '<aside class="collector-sidebar">'
+  + '<section class="collector-help" aria-labelledby="collector-help-title">'
+  + '<div class="collector-help__title"><span class="collector-help__emblem"><i class="bi bi-shield-check"></i></span><h2 id="collector-help-title">Коллектор требует оплату?</h2></div>'
+  + '<p>Мы поможем проверить законность требований и защитим ваши права в рамках закона.</p>'
+  + '<ul class="collector-help__list">'
+  + '<li><i class="bi bi-check-lg"></i><span>Проверим законность взыскания</span></li>'
+  + '<li><i class="bi bi-check-lg"></i><span>Сопроводим при общении с коллектором</span></li>'
+  + '<li><i class="bi bi-check-lg"></i><span>Защитим от нарушений ваших прав</span></li>'
+  + '</ul>'
+  + '<a class="collector-help__cta" href="https://wa.me/77752998738?text=Здравствуйте!+Коллектор+требует+оплату,+нужна+консультация." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Получить бесплатную консультацию</a>'
+  + '<p class="collector-help__response"><i class="bi bi-clock"></i> Ответ специалиста в течение 10 минут</p>'
+  + '</section>'
+  + '<section class="collector-warning" aria-labelledby="collector-warning-title">'
+  + '<div class="collector-warning__title" id="collector-warning-title"><i class="bi bi-exclamation-triangle"></i> Важно знать</div>'
+  + '<p>Коллектор вправе связываться с должником, но не может арестовывать счета и имущество. Это могут делать только суд и ЧСИ.</p>'
+  + '</section>'
+  + '</aside>'
+  + '</div>'
+  + '<section class="collector-steps" aria-labelledby="collector-steps-title">'
+  + '<h2 id="collector-steps-title">Что делать, если по вам есть взыскание</h2>'
+  + '<div class="collector-steps__grid">'
+  + '<article class="collector-step"><span class="collector-step__number">1</span><i class="bi bi-file-earmark-zoom"></i><div><strong>Проверьте основание</strong><small>Убедитесь, что долг существует, и проверьте его в реестре должников и в суде.</small></div></article>'
+  + '<article class="collector-step"><span class="collector-step__number">2</span><i class="bi bi-folder2-open"></i><div><strong>Запросите документы</strong><small>Попросите у коллектора документы, подтверждающие право требования.</small></div></article>'
+  + '<article class="collector-step"><span class="collector-step__number">3</span><i class="bi bi-shield-check"></i><div><strong>Обратитесь за защитой</strong><small>Если есть нарушения — мы поможем защитить ваши права и прекратить давление.</small></div></article>'
+  + '</div>'
+  + '</section>'
+  + '<div class="collector-more">' + detailsHtml + '</div>'
+  + '<a class="collector-back" href="/collectors"><i class="bi bi-arrow-left"></i> Все коллекторские агентства</a>'
+  + '</div>'
+  + '</div>'
+  + '</div>';
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
