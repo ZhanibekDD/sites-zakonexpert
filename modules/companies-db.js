@@ -1,0 +1,135 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+
+const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
+const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
+const SITEMAP_LIMIT = 50000;
+
+let db = null;
+
+function open() {
+  if (db) return db;
+  if (!fs.existsSync(DB_PATH)) return null;
+  db = new DatabaseSync(DB_PATH, { readOnly: true });
+  db.exec('PRAGMA query_only = ON;');
+  return db;
+}
+
+function close() {
+  if (!db) return;
+  db.close();
+  db = null;
+}
+
+function available() {
+  return Boolean(open());
+}
+
+function getMeta(database, key) {
+  try {
+    const row = database.prepare('SELECT value FROM company_meta WHERE key = ?').get(key);
+    return row ? row.value : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function stats() {
+  const database = open();
+  if (!database) return { available: false, count: 0, updatedAt: null, source: null };
+  const row = database.prepare('SELECT COUNT(*) AS count FROM companies').get();
+  return {
+    available: true,
+    count: Number(row.count || 0),
+    updatedAt: getMeta(database, 'source_updated_at'),
+    source: getMeta(database, 'source_url'),
+  };
+}
+
+function normalizePage(value) {
+  const page = Number.parseInt(value, 10);
+  return Number.isFinite(page) && page > 0 ? page : 1;
+}
+
+function ftsQuery(query) {
+  return query
+    .trim()
+    .split(/\s+/)
+    .map(part => part.replace(/["'():*+\-^~{}[\]\\]/g, '').trim())
+    .filter(part => part.length >= 2)
+    .slice(0, 6)
+    .map(part => `"${part}"*`)
+    .join(' AND ');
+}
+
+function search(query, page = 1, limit = 30) {
+  const database = open();
+  const q = String(query || '').trim();
+  if (!database || q.length < 2) return { items: [], page: 1, hasMore: false };
+
+  const safePage = normalizePage(page);
+  const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
+  const offset = (safePage - 1) * safeLimit;
+  let items = [];
+
+  if (/^\d{12}$/.test(q)) {
+    items = database.prepare(`
+      SELECT id, slug, bin, name_ru, name_kk, registration_date, address_ru,
+             activity_ru, leader, status_ru
+      FROM companies WHERE bin = ? ORDER BY id LIMIT ? OFFSET ?
+    `).all(q, safeLimit + 1, offset);
+  } else {
+    const match = ftsQuery(q);
+    if (!match) return { items: [], page: safePage, hasMore: false };
+    items = database.prepare(`
+      SELECT c.id, c.slug, c.bin, c.name_ru, c.name_kk, c.registration_date,
+             c.address_ru, c.activity_ru, c.leader, c.status_ru
+      FROM companies_fts f
+      JOIN companies c ON c.id = f.rowid
+      WHERE companies_fts MATCH ?
+      ORDER BY rank LIMIT ? OFFSET ?
+    `).all(match, safeLimit + 1, offset);
+  }
+
+  return {
+    items: items.slice(0, safeLimit),
+    page: safePage,
+    hasMore: items.length > safeLimit,
+  };
+}
+
+function findById(id) {
+  const database = open();
+  const numericId = Number.parseInt(id, 10);
+  if (!database || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
+  return database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId) || null;
+}
+
+function sitemapChunkCount() {
+  const info = stats();
+  return info.available ? Math.ceil(info.count / SITEMAP_LIMIT) : 0;
+}
+
+function sitemapChunk(chunk) {
+  const database = open();
+  const safeChunk = Number.parseInt(chunk, 10);
+  if (!database || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
+  return database.prepare(`
+    SELECT slug FROM companies ORDER BY id LIMIT ? OFFSET ?
+  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT);
+}
+
+module.exports = {
+  DB_PATH,
+  SITEMAP_LIMIT,
+  available,
+  close,
+  findById,
+  search,
+  sitemapChunk,
+  sitemapChunkCount,
+  stats,
+};

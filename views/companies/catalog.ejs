@@ -1,118 +1,68 @@
-﻿<%
-// Крупные юридические лица, которые чаще всего фигурируют в долговых делах
-const COMPANY_TYPES = [
-  {
-    type: '🏦 Банки второго уровня',
-    desc: 'Лицензированные банки, выдающие кредиты и ипотеку',
-    link: '/banks',
-    linkLabel: 'Открыть каталог банков',
-    color: '#0369a1',
-    bg: '#e0f2fe',
-  },
-  {
-    type: '💳 МФО и МКО',
-    desc: 'Микрофинансовые организации и кредитные товарищества',
-    link: '/mfo',
-    linkLabel: 'Открыть каталог МФО',
-    color: '#6d28d9',
-    bg: '#ede9fe',
-  },
-  {
-    type: '⚖️ Коллекторские агентства',
-    desc: 'Организации по взысканию просроченной задолженности. Деятельность регулируется Законом РК «О коллекторской деятельности».',
-    link: null,
-    linkLabel: null,
-    color: '#b91c1c',
-    bg: '#fee2e2',
-  },
-  {
-    type: '📋 Страховые компании',
-    desc: 'Страховые организации, лицензированные АРРФР РК',
-    link: null,
-    linkLabel: null,
-    color: '#0d7c3e',
-    bg: '#dcfce7',
-  },
-  {
-    type: '🏢 ТОО и АО',
-    desc: 'Товарищества с ограниченной ответственностью и акционерные общества — основные формы юридических лиц в РК',
-    link: null,
-    linkLabel: null,
-    color: '#0d1f3c',
-    bg: '#f1f5f9',
-  },
-  {
-    type: '🏛 Государственные предприятия',
-    desc: 'РГП, КГП, государственные холдинги и институты развития',
-    link: null,
-    linkLabel: null,
-    color: '#7c3aed',
-    bg: '#ede9fe',
-  },
-];
+<%
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function number(value) { return new Intl.NumberFormat('ru-RU').format(value || 0); }
 
-const EGOV_LINKS = [
-  { label: 'Реестр юридических лиц РК', url: 'https://www.gov.kz/memleket/entities/minjust/activities/14762', desc: 'Государственный реестр на портале eGov' },
-  { label: 'ЦБДИ — база данных бизнеса', url: 'https://cbdi.stat.gov.kz', desc: 'Центральный бизнес-каталог Агентства по статистике' },
-  { label: 'Реестр коллекторов АРРФР', url: 'https://www.afsa.kz/ru/registries', desc: 'Список лицензированных коллекторских агентств' },
-  { label: 'Должники и банкроты (суды)', url: 'https://sud.gov.kz', desc: 'База судебных дел о банкротстве и взыскании' },
-];
-
-const pageTitle = 'Компании Казахстана — реестры юридических лиц, банков и МФО | ZakonExpert';
-const pageDesc  = 'Справочник по реестрам компаний Казахстана: банки, МФО, коллекторы, ТОО, АО. Долг перед компанией или арест счёта? ZakonExpert поможет защитить ваши права.';
+const pageTitle = 'Компании Казахстана — поиск по БИН и названию | ZakonExpert';
+const pageDesc = 'Официальные регистрационные данные юридических лиц, филиалов и представительств Казахстана. Поиск компании по БИН или названию.';
 const canonical = 'https://zakonexpertt.kz/companies';
-
 const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-    { '@type': 'ListItem', position: 2, name: 'Компании Казахстана', item: canonical },
-  ],
+  '@context': 'https://schema.org', '@type': 'CollectionPage',
+  name: 'Компании Казахстана', url: canonical, description: pageDesc,
 };
 
-var typeCards = '';
-for (var i = 0; i < COMPANY_TYPES.length; i++) {
-  var ct = COMPANY_TYPES[i];
-  var linkHtml = ct.link
-    ? '<a href="' + ct.link + '" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:' + ct.color + ';color:#fff;border-radius:8px;padding:6px 14px;font-size:.82rem;font-weight:600;text-decoration:none;">' + ct.linkLabel + ' →</a>'
-    : '';
-  typeCards += '<div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;padding:18px 20px;transition:box-shadow .15s;">'
-    + '<div style="display:inline-block;background:' + ct.bg + ';color:' + ct.color + ';font-weight:700;font-size:.85rem;border-radius:8px;padding:4px 12px;margin-bottom:10px;">' + ct.type + '</div>'
-    + '<div style="font-size:.88rem;color:#475569;line-height:1.55;">' + ct.desc + '</div>'
-    + linkHtml
+let resultsHtml = '';
+if (query && results.items.length === 0) {
+  resultsHtml = '<div class="npage-card" style="padding:24px;text-align:center;color:#64748b;">По запросу <strong>' + esc(query) + '</strong> ничего не найдено.</div>';
+} else if (results.items.length) {
+  resultsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;">'
+    + results.items.map(function(company) {
+      return '<a href="/company/' + esc(company.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
+        + '<div style="font-weight:750;font-size:1rem;line-height:1.35;">' + esc(company.name_ru || company.name_kk) + '</div>'
+        + (company.bin ? '<div style="margin-top:8px;color:#1a56db;font-size:.88rem;">БИН ' + esc(company.bin) + '</div>' : '')
+        + (company.status_ru ? '<div style="margin-top:7px;color:#64748b;font-size:.82rem;">' + esc(company.status_ru) + '</div>' : '')
+        + (company.address_ru ? '<div style="margin-top:7px;color:#475569;font-size:.84rem;line-height:1.45;">📍 ' + esc(company.address_ru) + '</div>' : '')
+        + '</a>';
+    }).join('') + '</div>';
+}
+
+let paginationHtml = '';
+if (query && (results.page > 1 || results.hasMore)) {
+  paginationHtml = '<div style="display:flex;gap:10px;justify-content:center;margin-top:22px;">'
+    + (results.page > 1 ? '<a class="btn btn-outline-primary" href="/companies?q=' + encodeURIComponent(query) + '&page=' + (results.page - 1) + '">← Назад</a>' : '')
+    + (results.hasMore ? '<a class="btn btn-primary" href="/companies?q=' + encodeURIComponent(query) + '&page=' + (results.page + 1) + '">Дальше →</a>' : '')
     + '</div>';
 }
 
-var egovRows = '';
-for (var j = 0; j < EGOV_LINKS.length; j++) {
-  var el = EGOV_LINKS[j];
-  egovRows += '<a href="' + el.url + '" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;text-decoration:none;transition:box-shadow .15s;">'
-    + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
-    + '<div><div style="font-weight:600;font-size:.88rem;color:#0d1f3c;">' + el.label + '</div>'
-    + '<div style="font-size:.78rem;color:#64748b;margin-top:2px;">' + el.desc + '</div></div>'
-    + '</a>';
-}
+const catalogLinks = [
+  ['/banks', '🏦', 'Банки'], ['/mfo', '💳', 'МФО'], ['/collectors', '⚖️', 'Коллекторы'],
+  ['/lombards', '🏪', 'Ломбарды'], ['/insurance', '🛡️', 'Страховые компании'],
+];
+const linksHtml = catalogLinks.map(function(item) {
+  return '<a href="' + item[0] + '" style="background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:15px;text-decoration:none;color:#0d1f3c;font-weight:650;">'
+    + '<span style="font-size:1.25rem;margin-right:8px;">' + item[1] + '</span>' + item[2] + '</a>';
+}).join('');
 
-const ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
-  + '<p class="npage-cta-label">Юридическая помощь</p><h2 class="npage-cta-title">Компания подала в суд или арестовала счёт?</h2>'
-  + '<p class="npage-cta-sub">Поможем оспорить требования банка, МФО или коллектора, снять арест, добиться рассрочки или признать долг спорным.</p>'
-  + '<div class="npage-cta-tags"><span>Спорность долга</span><span>Снятие ареста</span><span>Коллекторы</span><span>Рассрочка</span></div></div>'
-  + '<a href="https://wa.me/77752998738?text=Здравствуйте!+Компания+подала+в+суд+или+арестовала+счёт,+прошу+помочь." class="npage-wa-btn" target="_blank" rel="noopener">'
-  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
-  + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 775 299-87-38</span></span></a></div>';
-
+const countText = stats.available ? number(stats.count) + ' организаций' : 'База подготавливается';
 const body = '<div class="npage-wrap"><div class="landing-container">'
-  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Компании Казахстана</span></nav>'
-  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏢 Реестры компаний</span></div>'
+  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Компании Казахстана</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Официальные открытые данные</span></div>'
   + '<h1 class="npage-h1">Компании Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Справочник по видам юридических лиц РК и официальным реестрам для проверки компаний</p></div>'
-  + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:1.5rem;">' + typeCards + '</div>'
-  + '<div style="margin-top:2rem;">'
-  + '<h2 style="font-size:1.1rem;font-weight:700;color:#0d1f3c;margin-bottom:14px;">🔗 Официальные реестры для проверки компаний</h2>'
-  + '<div style="display:flex;flex-direction:column;gap:10px;">' + egovRows + '</div>'
-  + '</div>'
-  + ctaHtml
+  + '<p style="color:#475569;max-width:760px;">Поиск юридических лиц, филиалов и представительств по названию или БИН. Источник — Министерство юстиции РК через data.egov.kz.</p>'
+  + '<div style="margin-top:16px;color:#0d1f3c;font-weight:700;">' + countText + '</div></section>'
+  + '<form action="/companies" method="get" style="display:flex;gap:10px;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin:22px 0;box-shadow:0 8px 24px rgba(13,31,60,.06);">'
+  + '<label class="visually-hidden" for="company-q">Название или БИН</label>'
+  + '<input id="company-q" name="q" value="' + esc(query) + '" minlength="2" placeholder="Введите название или БИН компании" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:1rem;">'
+  + '<button type="submit" class="btn btn-primary" style="padding:0 24px;">Найти</button></form>'
+  + resultsHtml + paginationHtml
+  + '<section style="margin-top:34px;"><h2 style="color:#0d1f3c;font-size:1.35rem;">Отдельные финансовые реестры</h2>'
+  + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px;">' + linksHtml + '</div></section>'
+  + '<div class="npage-cta" style="margin-top:34px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
+  + '<h2 class="npage-cta-title">Компания требует оплату или арестовала счёт?</h2><p class="npage-cta-sub">Проверим основания взыскания и поможем защитить ваши права.</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=Здравствуйте!+Нужна+проверка+компании+и+юридическая+помощь." target="_blank" rel="noopener">Написать в WhatsApp</a></div>'
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !stats.available || Boolean(query), body }) %>
