@@ -214,6 +214,7 @@ async function main() {
   }
 
   const count = await lawsDb.count();
+  await lawsDb.compact();
   console.log(`\n🎉 Готово! Всего статей в базе: ${count}`);
   process.exit(0);
 }

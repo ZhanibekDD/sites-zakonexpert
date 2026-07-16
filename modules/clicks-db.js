@@ -2,6 +2,7 @@
 const Datastore = require('nedb-promises');
 const fs = require('fs');
 const path = require('path');
+const { enableAutocompaction } = require('./db-maintenance');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -10,6 +11,7 @@ const db = Datastore.create({
   filename: path.join(DATA_DIR, 'clicks.db'),
   autoload: true,
 });
+enableAutocompaction(db);
 
 const MAX_FIELD_LEN = 300;
 function clip(v) {
