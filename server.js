@@ -12,41 +12,49 @@ const { v4: uuidv4 } = require('uuid');
 const cron = require('node-cron');
 const winston = require('winston');
 
-// --- ДОБАВЛЕНО: Настройка логгера Winston ---
+const LOG_MAX_SIZE = 2 * 1024 * 1024;
+const LOG_MAX_FILES = 2;
+
+function fileLog(filename, level) {
+  return new winston.transports.File({
+    filename: path.join(__dirname, filename),
+    level,
+    maxsize: LOG_MAX_SIZE,
+    maxFiles: LOG_MAX_FILES,
+    tailable: true,
+  });
+}
+
+function consoleLog() {
+  return new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.printf(({ timestamp, level, message, stack }) => {
+        return `${timestamp} ${level}: ${stack || message}`;
+      })
+    ),
+    level: 'info',
+  });
+}
+
+// Plesk captures stdout/stderr. File logs are opt-in and always rotated, so
+// an unattended application can no longer fill the hosting disk.
+const FILE_LOGS_ENABLED = /^(1|true|yes)$/i.test(process.env.FILE_LOGS_ENABLED || '');
+
 const logger = winston.createLogger({
-  level: 'info', // Минимальный уровень логов для записи (info, warn, error)
+  level: 'info',
   format: winston.format.combine(
-    winston.format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss'
-    }),
-    winston.format.errors({ stack: true }), // Логировать стек ошибок
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
     winston.format.splat(),
     winston.format.printf(({ timestamp, level, message, stack }) => {
-      return `${timestamp} ${level}: ${stack || message}`; // Включаем стек в вывод, если он есть
+      return `${timestamp} ${level}: ${stack || message}`;
     })
   ),
-  transports: [
-    // Вывод в файл app.log
-    new winston.transports.File({ filename: path.join(__dirname, 'app.log'), level: 'info' }),
-    // Вывод в консоль (для Plesk stdout/stderr)
-    new winston.transports.Console({
-        format: winston.format.combine(
-            winston.format.colorize(), // Раскрашиваем вывод в консоли
-            winston.format.printf(({ timestamp, level, message, stack }) => {
-              return `${timestamp} ${level}: ${stack || message}`;
-            })
-        ),
-        level: 'info' // Можно поставить 'debug' для более детального вывода в консоль
-    })
-  ],
-  exceptionHandlers: [ // Логирование необработанных исключений
-      new winston.transports.File({ filename: path.join(__dirname, 'exceptions.log') })
-  ],
-  rejectionHandlers: [ // Логирование необработанных Promise rejections
-      new winston.transports.File({ filename: path.join(__dirname, 'rejections.log') })
-  ]
+  transports: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('app.log', 'info')] : [])],
+  exceptionHandlers: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('exceptions.log', 'error')] : [])],
+  rejectionHandlers: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('rejections.log', 'error')] : [])],
 });
-// --- КОНЕЦ: Настройка логгера Winston ---
 
 // Telegram notifications
 const telegram = require('./modules/telegram');
