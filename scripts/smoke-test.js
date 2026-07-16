@@ -70,6 +70,7 @@ async function run() {
     const routes = [
       '/',
       '/rezultaty',
+      '/companies',
       '/img/brand/zakonexpert-logo-transparent-hd.png',
       '/img/rezultaty/otmena-nadpisi-instagram-2025-09.webp',
       '/img/rezultaty/instagram-2025-09-22-111346.webp',

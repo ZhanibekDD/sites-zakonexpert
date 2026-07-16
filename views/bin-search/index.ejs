@@ -1,10 +1,10 @@
 <%
 const pageTitle = 'Поиск организации по БИН Казахстана | ZakonExpert';
-const pageDesc  = 'Найдите банк, МФО, коллектора или страховую компанию по БИН. Реестры АРРФР, НБ РК.';
+const pageDesc  = 'Найдите любую компанию Казахстана по БИН. Официальные реестры Министерства юстиции, АРРФР и НБ РК.';
 const canonical = 'https://zakonexpertt.kz/bin-search';
 const schema = { '@context':'https://schema.org','@type':'BreadcrumbList',itemListElement:[{' @type':'ListItem',position:1,name:'Главная',item:'https://zakonexpertt.kz/'},{' @type':'ListItem',position:2,name:'Поиск по БИН',item:canonical}]};
 
-const typeColor = {'Банк':'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe','МФО':'background:#fef3c7;color:#92400e;border:1px solid #fde68a','Ломбард':'background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff','Коллектор':'background:#fee2e2;color:#991b1b;border:1px solid #fecaca','Страховая':'background:#dcfce7;color:#166534;border:1px solid #bbf7d0','ГСИ':'background:#e0f2fe;color:#075985;border:1px solid #bae6fd'};
+const typeColor = {'Банк':'background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe','МФО':'background:#fef3c7;color:#92400e;border:1px solid #fde68a','Ломбард':'background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff','Коллектор':'background:#fee2e2;color:#991b1b;border:1px solid #fecaca','Страховая':'background:#dcfce7;color:#166534;border:1px solid #bbf7d0','ГСИ':'background:#e0f2fe;color:#075985;border:1px solid #bae6fd','Компания':'background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe'};
 
 const CSS = '<style>'
   + '.bs-wrap{max-width:640px;margin:0 auto}'
@@ -49,7 +49,7 @@ const body = CSS
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Поиск по БИН</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🔍 Поиск по реестрам</span></div>'
   + '<h1 class="npage-h1">Поиск организации по БИН</h1>'
-  + '<p style="color:#475569;margin-top:.5rem;">Банки, МФО, коллекторы, страховые — все реестры АРРФР, НБ РК и Минюст</p>'
+  + '<p style="color:#475569;margin-top:.5rem;">Юридические лица, банки, МФО, коллекторы и страховые — официальные реестры Минюста, АРРФР и НБ РК</p>'
   + '<button class="copy-link-btn" type="button" data-copy-link="https://zakonexpertt.kz/bin-search" data-track-page="/bin-search"><i class="bi bi-link-45deg"></i> Скопировать ссылку на проверку по БИН</button>'
   + '</div>'
   + infoBox

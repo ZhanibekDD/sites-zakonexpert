@@ -1,0 +1,43 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+const name = company.name_ru || company.name_kk;
+const canonical = 'https://zakonexpertt.kz/company/' + company.slug;
+const pageTitle = name + (company.bin ? ' — БИН ' + company.bin : '') + ' | ZakonExpert';
+const pageDesc = name + ': регистрационные данные' + (company.bin ? ', БИН ' + company.bin : '') + (company.address_ru ? ', адрес ' + company.address_ru : '') + '. Источник data.egov.kz.';
+const schema = {
+  '@context': 'https://schema.org', '@type': 'Organization', name: name, url: canonical,
+  identifier: company.bin || String(company.id),
+  foundingDate: company.registration_date || undefined,
+  address: company.address_ru ? { '@type': 'PostalAddress', streetAddress: company.address_ru, addressCountry: 'KZ' } : undefined,
+};
+
+const rows = [
+  ['БИН', company.bin], ['Дата регистрации', company.registration_date],
+  ['Статус', company.status_ru], ['Основной вид деятельности', company.activity_ru],
+  ['Руководитель', company.leader], ['Юридический адрес', company.address_ru],
+  ['Наименование на казахском языке', company.name_kk],
+].filter(function(row) { return row[1]; });
+const rowsHtml = rows.map(function(row) {
+  return '<div style="display:grid;grid-template-columns:minmax(170px,240px) 1fr;gap:18px;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
+    + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[0]) + '</div>'
+    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[1]) + '</div></div>';
+}).join('');
+
+const body = '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Реестр юридических лиц</span>'
+  + (company.status_ru ? '<span class="npage-badge npage-badge-active">' + esc(company.status_ru) + '</span>' : '') + '</div>'
+  + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
+  + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">БИН ' + esc(company.bin) + '</p>' : '') + '</section>'
+  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);">' + rowsHtml + '</div>'
+  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(sourceUpdatedAt || '—') + '.</div>'
+  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
+  + '<h2 class="npage-cta-title">Эта организация требует оплату?</h2><p class="npage-cta-sub">Проверим законность требований, документы и основания взыскания.</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=Здравствуйте!+Нужна+проверка+компании+' + encodeURIComponent(name) + '." target="_blank" rel="noopener">Получить консультацию</a></div>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !name, body }) %>

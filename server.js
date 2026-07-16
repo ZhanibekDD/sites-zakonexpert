@@ -115,6 +115,15 @@ try {
   logger.warn('Lawyers module not loaded: ' + e.message);
 }
 
+// Initialize the large Kazakhstan companies registry (SQLite, loaded on demand)
+let companiesDb = null;
+try {
+  companiesDb = require('./modules/companies-db');
+  logger.info('Companies module loaded ✓');
+} catch (e) {
+  logger.warn('Companies module not loaded: ' + e.message);
+}
+
 // Initialize laws DB
 let lawsDb = null;
 try {
@@ -952,7 +961,27 @@ function getInsuranceData() {
 app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData(), lowContentBoost }));
 app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: getCourtsData() }));
 app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
-app.get('/companies',     (req, res) => res.render('companies/catalog'));
+app.get('/companies', (req, res) => {
+  const query = String(req.query.q || '').trim().slice(0, 120);
+  const page = Number.parseInt(req.query.page, 10) || 1;
+  const stats = companiesDb
+    ? companiesDb.stats()
+    : { available: false, count: 0, updatedAt: null, source: null };
+  const results = companiesDb
+    ? companiesDb.search(query, page, 30)
+    : { items: [], page: 1, hasMore: false };
+  res.render('companies/catalog', { query, results, stats });
+});
+
+app.get('/company/:slug', (req, res) => {
+  if (!companiesDb || !companiesDb.available()) return res.status(404).redirect('/companies');
+  const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
+  const company = id ? companiesDb.findById(id) : null;
+  if (!company) return res.status(404).redirect('/companies');
+  if (company.slug !== req.params.slug) return res.redirect(301, `/company/${company.slug}`);
+  const sourceUpdatedAt = companiesDb.stats().updatedAt;
+  res.render('companies/item', { company, sourceUpdatedAt });
+});
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
 app.get('/gsi/:slug',     (req, res) => {
   const item = getGsiData().find(g => g.slug === req.params.slug);
@@ -1712,6 +1741,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/courts',         priority: '0.8',  freq: 'weekly' },
     { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
     { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
+    { url: '/companies',      priority: '0.9',  freq: 'weekly' },
     { url: '/gsi',            priority: '0.8',  freq: 'weekly' },
     { url: '/insurance',      priority: '0.75', freq: 'weekly' },
     { url: '/credit-bureaus', priority: '0.7',  freq: 'monthly' },
@@ -1776,6 +1806,27 @@ app.get('/sitemap-lombards.xml', (req, res) => {
   csvSitemap(res, lombards, 'lombards');
 });
 
+// COMPANY SITEMAPS — 50,000 URLs per file, suitable for a million-record registry.
+app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
+  const chunk = Number.parseInt(req.params[0], 10);
+  const totalChunks = companiesDb ? companiesDb.sitemapChunkCount() : 0;
+  if (!chunk || chunk > totalChunks) return res.status(404).send('Sitemap chunk not found');
+
+  const today = new Date().toISOString().substring(0, 10);
+  const urls = companiesDb.sitemapChunk(chunk).map(company => `
+  <url>
+    <loc>https://zakonexpertt.kz/company/${company.slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>`).join('');
+
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
+</urlset>`);
+});
+
 // IMAGE SITEMAP — key SEO images (gallery + hero images on money pages)
 app.get('/sitemap-image.xml', (req, res) => {
   const galleryImages = [
@@ -1835,6 +1886,13 @@ ${urls}
 // SITEMAP INDEX
 app.get('/sitemap-index.xml', (req, res) => {
   const today = new Date().toISOString().substring(0, 10);
+  const companySitemaps = companiesDb
+    ? Array.from({ length: companiesDb.sitemapChunkCount() }, (_, index) => `
+  <sitemap>
+    <loc>https://zakonexpertt.kz/sitemap-companies-${index + 1}.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>`).join('')
+    : '';
   res.set('Content-Type', 'application/xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -1898,6 +1956,7 @@ app.get('/sitemap-index.xml', (req, res) => {
     <loc>https://zakonexpertt.kz/sitemap-lombards.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
+  ${companySitemaps}
 </sitemapindex>`);
 });
 
@@ -2189,7 +2248,8 @@ function classifyPageType(page) {
   if (page === '/' ) return 'home';
   if (/^\/bailiff\//.test(page)) return 'bailiff_card';
   if (/^\/notary\//.test(page)) return 'notary_card';
-  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi)$/.test(page)) return 'catalog';
+  if (/^\/company\//.test(page)) return 'company_card';
+  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi|companies)$/.test(page)) return 'catalog';
   if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
   if (page === '/dokumenty') return 'documents';
   if (page === '/calculator') return 'calculator';
@@ -2322,6 +2382,15 @@ app.get('/bin-search', (req, res) => {
   try { getCollectors().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Коллектор', name: c.name, url: '/collectors/' + c.slug })); } catch(e){}
   try { getInsuranceData().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Страховая', name: c.shortName || c.name, url: '/insurance/' + c.slug })); } catch(e){}
   try { getGsiData().filter(g => g.bin && g.bin === bin).forEach(g => results.push({ type: 'ГСИ', name: g.name, url: '/gsi/' + g.slug })); } catch(e){}
+  try {
+    if (companiesDb && companiesDb.available()) {
+      companiesDb.search(bin, 1, 5).items.forEach(company => results.push({
+        type: 'Компания',
+        name: company.name_ru || company.name_kk,
+        url: '/company/' + company.slug,
+      }));
+    }
+  } catch(e){}
   if (clicksDb) clicksDb.recordClick({ type: 'bin_search_completed', target: bin, page: '/bin-search', ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown', ua: req.headers['user-agent'] || '' }).catch(() => {});
   res.render('bin-search/index', { bin, results, searched: true });
 });
