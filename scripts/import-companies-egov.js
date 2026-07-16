@@ -1,5 +1,7 @@
 'use strict';
 
+require('dotenv').config();
+
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -10,8 +12,8 @@ const { companySlug } = require('../modules/company-slug');
 const ROOT = path.join(__dirname, '..');
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
 const DATASET_URL = 'https://data.egov.kz/datasets/view?index=gbd_ul';
-const PUBLIC_DATA_URL = 'https://data.egov.kz/datasets/getdata';
 const API_URL = 'https://data.egov.kz/api/v4/gbd_ul/v1';
+const API_KEY_URL = 'https://data.egov.kz/profile/apikeylist';
 const DEFAULT_PAGE_SIZE = 100;
 const MIN_FULL_RECORDS = 900000;
 
@@ -82,45 +84,12 @@ async function withRetry(fn, label, attempts = 5) {
   throw lastError;
 }
 
-async function createPublicClient() {
-  const response = await axios.get(DATASET_URL, {
-    timeout: 30000,
-    headers: { 'User-Agent': 'ZakonExpert registry importer/1.0' },
-  });
-  const cookies = (response.headers['set-cookie'] || []).map(v => v.split(';')[0]).join('; ');
-  return axios.create({
-    timeout: 45000,
-    headers: {
-      'User-Agent': 'ZakonExpert registry importer/1.0',
-      'X-Requested-With': 'XMLHttpRequest',
-      Referer: DATASET_URL,
-      ...(cookies ? { Cookie: cookies } : {}),
-    },
-  });
-}
-
-async function fetchPublicPage(client, page, pageSize) {
-  const response = await client.get(PUBLIC_DATA_URL, {
-    params: {
-      index: 'gbd_ul', version: 'v1', page, count: pageSize,
-      text: '', column: '', order: '',
-    },
-  });
-  const body = response.data || {};
-  if (!Array.isArray(body.elements)) throw new Error('Unexpected data.egov.kz response');
-  return {
-    rows: body.elements,
-    totalCount: Number.parseInt(body.totalCount, 10) || 0,
-    totalPages: Number.parseInt(body.totalPages, 10) || 0,
-  };
-}
-
-async function fetchApiPage(apiKey, searchAfter, pageSize) {
+async function fetchApiPage(apiKey, page, pageSize) {
   const source = {
+    from: (page - 1) * pageSize,
     size: pageSize,
     sort: [{ id: { order: 'asc' } }],
   };
-  if (searchAfter) source.search_after = [Number(searchAfter)];
   const response = await axios.get(API_URL, {
     timeout: 45000,
     params: { apiKey, source: JSON.stringify(source) },
@@ -128,8 +97,7 @@ async function fetchApiPage(apiKey, searchAfter, pageSize) {
   });
   const rows = Array.isArray(response.data) ? response.data : response.data?.data;
   if (!Array.isArray(rows)) throw new Error('Unexpected data.egov.kz API response');
-  const last = rows.length ? normalizeCompanyRow(rows[rows.length - 1]) : null;
-  return { rows, totalCount: 0, totalPages: 0, lastId: last?.id || null };
+  return { rows, totalCount: 0, totalPages: 0 };
 }
 
 function setMeta(db, key, value) {
@@ -195,29 +163,31 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     throw new Error('Full activation requires --confirm-offline (stop Node.js before running)');
   }
 
+  const apiKey = clean(process.env.EGOV_API_KEY);
+  if (!apiKey) {
+    throw new Error(
+      `EGOV_API_KEY is missing. Create a key at ${API_KEY_URL} and add EGOV_API_KEY=... to .env`
+    );
+  }
+
   fs.mkdirSync(path.dirname(FINAL_DB), { recursive: true });
   if (options.fresh && fs.existsSync(FINAL_DB)) fs.rmSync(FINAL_DB, { force: true });
 
   const database = new DatabaseSync(FINAL_DB);
   createSchema(database);
-  const apiKey = clean(process.env.EGOV_API_KEY);
-  const publicClient = apiKey ? null : await withRetry(createPublicClient, 'dataset session');
   const startPage = Number.parseInt(getMeta(database, 'next_page', '1'), 10) || 1;
   const importedAt = getMeta(database, 'import_run_id') || String(Math.floor(Date.now() / 1000));
   setMeta(database, 'import_run_id', importedAt);
-  let searchAfter = Number.parseInt(getMeta(database, 'last_subject_id', '0'), 10) || 0;
   const lastPage = options.all ? Number.POSITIVE_INFINITY : startPage + options.pages - 1;
 
-  console.log(`[Companies] Source: ${apiKey ? 'API v4' : 'public dataset'}; start page ${startPage}`);
+  console.log(`[Companies] Source: API v4; start page ${startPage}`);
   let page = startPage;
   let completed = false;
   let totalCount = Number.parseInt(getMeta(database, 'total_count', '0'), 10) || 0;
 
   while (page <= lastPage) {
     const data = await withRetry(
-      () => apiKey
-        ? fetchApiPage(apiKey, searchAfter, options.pageSize)
-        : fetchPublicPage(publicClient, page, options.pageSize),
+      () => fetchApiPage(apiKey, page, options.pageSize),
       `page ${page}`
     );
 
@@ -226,13 +196,6 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
       setMeta(database, 'total_count', totalCount);
     }
     insertRows(database, data.rows, importedAt);
-    if (apiKey && data.rows.length && !data.lastId) {
-      throw new Error(`API page ${page} has no sortable subject id`);
-    }
-    if (data.lastId) {
-      searchAfter = data.lastId;
-      setMeta(database, 'last_subject_id', searchAfter);
-    }
     setMeta(database, 'next_page', page + 1);
     setMeta(database, 'source_url', DATASET_URL);
     setMeta(database, 'last_import_progress_at', new Date().toISOString());
@@ -266,7 +229,6 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     setMeta(database, 'source_updated_at', new Date().toISOString());
     setMeta(database, 'record_count', stored);
     setMeta(database, 'next_page', 1);
-    setMeta(database, 'last_subject_id', 0);
     setMeta(database, 'import_run_id', '');
     database.exec('PRAGMA optimize;');
     database.close();
