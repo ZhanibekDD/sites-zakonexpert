@@ -1,75 +1,44 @@
-﻿<%
-const pageTitle = item.name + ' — ломбард, контакты | ZakonExpert';
-const pageDesc  = item.name + ': БИН ' + item.bin + '. Ломбард требует долг или взыскивает через суд? Проверим основание и поможем бесплатно.';
+<%
+const pageTitle = item.name + ' — ломбард, контакты и БИН | ZakonExpert';
+const pageDesc = item.name + ': БИН ' + item.bin + ', адрес и сведения из реестра. Помощь при споре с ломбардом.';
 const canonical = 'https://zakonexpertt.kz/lombards/' + item.slug;
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function mapBlock(addr) {
-  if (!addr) return '';
-  var q = encodeURIComponent(addr + ', Казахстан');
-  var q2 = encodeURIComponent(addr);
-  return '<div style="margin-top:1.5rem;max-width:720px;">'
-    + '<iframe src="https://maps.google.com/maps?q=' + q + '&output=embed&hl=ru&z=15" width="100%" height="280" style="border:0;border-radius:12px;display:block;" loading="lazy" allowfullscreen></iframe>'
-    + '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">'
-    + '<a href="https://2gis.kz/search/' + q2 + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#1a56db;text-decoration:none;padding:6px 14px;border:1.5px solid #bfdbfe;border-radius:8px;background:#eff6ff;font-weight:500;">🗺 Открыть в 2ГИС</a>'
-    + '<a href="https://maps.google.com/?q=' + q + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;font-size:.82rem;color:#374151;text-decoration:none;padding:6px 14px;border:1.5px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;">📌 Google Maps</a>'
-    + '</div></div>';
-}
-
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-    { '@type': 'ListItem', position: 2, name: 'Ломбарды', item: 'https://zakonexpertt.kz/lombards' },
+    { '@type': 'ListItem', position: 2, name: 'Ломбарды Казахстана', item: 'https://zakonexpertt.kz/lombards' },
     { '@type': 'ListItem', position: 3, name: item.name, item: canonical },
   ],
 };
-
-const CSS = '<style>'
-  + '.li-card{background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;padding:28px 32px;max-width:680px;}'
-  + '.li-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:.9rem;}'
-  + '.li-row:last-child{border-bottom:none;}'
-  + '.li-icon{flex-shrink:0;width:22px;text-align:center;font-size:1rem;line-height:1.5;}'
-  + '.li-dim{color:#94a3b8;font-size:.8rem;}'
-  + '.li-warn{background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:14px 18px;font-size:.85rem;color:#92400e;margin-top:1rem;line-height:1.6;}'
-  + '.li-link{color:#1a56db;text-decoration:none;}'
-  + '.li-link:hover{text-decoration:underline;}'
-  + '</style>';
-
-const noteHtml = item.note
-  ? '<div class="li-row"><span class="li-icon">ℹ️</span><span class="li-dim">' + escHtml(item.note) + '</span></div>'
-  : '';
-
-const body = CSS
-  + '<div class="npage-wrap"><div class="landing-container">'
-  + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/lombards">Ломбарды</a><span class="npage-bc-sep">/</span><span>' + escHtml(item.name) + '</span></nav>'
-  + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">💎 Реестр АРРФР</span></div>'
-  + '<h1 class="npage-h1">' + escHtml(item.name) + '</h1>'
-  + (item.nameFull && item.nameFull !== item.name ? '<p style="color:#94a3b8;font-size:.88rem;margin-top:4px;">' + escHtml(item.nameFull) + '</p>' : '')
-  + '</div>'
-  + '<div class="li-card" style="margin-top:1.5rem;">'
-  + (item.address ? '<div class="li-row"><span class="li-icon">📍</span><span>' + escHtml(item.address) + '</span></div>' : '')
-  + (item.leader ? '<div class="li-row"><span class="li-icon">👤</span><span>' + escHtml(item.leader) + ' <span class="li-dim">(Руководитель)</span></span></div>' : '')
-  + '<div class="li-row"><span class="li-icon">🆔</span><span class="li-dim">БИН: ' + escHtml(item.bin) + '</span></div>'
-  + '<div class="li-row"><span class="li-icon">📞</span><span class="li-dim">Контакты — уточните на сайте <a href="https://www.afsa.kz" target="_blank" rel="noopener" class="li-link">АРРФР (afsa.kz)</a></span></div>'
-  + noteHtml
-  + mapBlock(item.address)
-  + '<div class="li-warn">⚠️ <strong>Важно:</strong> Ломбард вправе реализовать залог только через суд или нотариальную надпись. Если ломбард угрожает арестом счёта или имущества — это незаконно. <a href="https://wa.me/77752998738" style="color:#1a56db;font-weight:600;">Обратитесь в ZakonExpert</a>.</div>'
-  + '</div>'
-  + lowContentBoost({ entityLabel: 'этот ломбард' })
-  + '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npage-cta-left">'
-  + '<p class="npage-cta-label">Юридическая помощь</p>'
-  + '<h2 class="npage-cta-title">Проблема с ломбардом?</h2>'
-  + '<p class="npage-cta-sub">Поможем оспорить незаконную реализацию залога, защитить права и снять арест со счёта. Работаем по всему Казахстану.</p>'
-  + '<div class="npage-cta-tags"><span>Защита залога</span><span>Снятие ареста</span><span>Все регионы</span></div></div>'
-  + '<a href="https://wa.me/77752998738?text=Здравствуйте!+Проблема+с+ломбардом,+нужна+помощь." class="npage-wa-btn" target="_blank" rel="noopener">'
-  + '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>'
-  + ' <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;"><span>Написать в ZakonExpert</span><span style="font-size:.75rem;font-weight:400;opacity:.85;">+7 775 299-87-38</span></span></a></div>'
-  + '<div style="margin-top:1.5rem;"><a href="/lombards" style="color:#1a56db;font-size:.9rem;text-decoration:none;">← Все ломбарды Казахстана</a></div>'
-  + '</div></div>';
+const detail = {
+  name: item.name,
+  subtitle: item.nameFull && item.nameFull !== item.name ? item.nameFull : '',
+  breadcrumbs: [{ href: '/lombards', label: 'Ломбарды' }, { label: item.name }],
+  badges: [{ icon: 'bi-file-earmark-text', label: 'Реестр АРРФР' }, { icon: 'bi-shield-check', label: 'Ломбард', active: true }],
+  rows: [
+    { icon: 'bi-geo-alt', label: 'Адрес', value: item.address },
+    { icon: 'bi-person', label: 'Руководитель', value: item.leader },
+    { icon: 'bi-person-vcard', label: 'БИН', value: item.bin ? 'БИН: ' + item.bin : '' },
+    { icon: 'bi-info-circle', label: 'Примечание', value: item.note },
+  ],
+  address: item.address,
+  help: {
+    icon: 'bi-shield-check', title: 'Возник спор с ломбардом?',
+    text: 'Проверим договор залога, начисления и порядок реализации имущества.',
+    items: ['Проверим условия договора', 'Сверим задолженность и начисления', 'Поможем защитить заложенное имущество'],
+    whatsappText: 'Здравствуйте! Возник спор с ломбардом ' + item.name + ', нужна консультация.',
+  },
+  warning: { title: 'Важно знать', text: 'Ломбард обязан предоставить договор и расчёт задолженности. Продажа залога должна проходить в установленном законом порядке.' },
+  stepsTitle: 'Что делать при споре с ломбардом',
+  steps: [
+    { icon: 'bi-file-earmark-zoom', title: 'Изучите договор', text: 'Проверьте срок займа, ставку и условия обращения взыскания.' },
+    { icon: 'bi-calculator', title: 'Сверьте расчёт', text: 'Сопоставьте начисления с условиями договора и платежами.' },
+    { icon: 'bi-shield-check', title: 'Подайте претензию', text: 'Зафиксируйте нарушения до продажи заложенного имущества.' },
+  ],
+  moreHtml: lowContentBoost({ entityLabel: 'этот ломбард' }),
+  backUrl: '/lombards', backLabel: 'Все ломбарды Казахстана',
+};
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

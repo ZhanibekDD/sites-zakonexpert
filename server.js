@@ -66,9 +66,11 @@ try {
 // Initialize notaries DB
 let notariesDb = null;
 let importNotaries = null;
+let refreshNotariesCSV = null;
 try {
   notariesDb  = require('./modules/notaries-db');
   ({ importNotaries } = require('./scripts/import-notaries'));
+  ({ refreshNotariesCSV } = require('./scripts/refresh-notaries-csv'));
   logger.info('Notaries module loaded ✓');
 } catch (e) {
   logger.warn('Notaries module not loaded: ' + e.message);
@@ -503,6 +505,14 @@ app.get('/api/notaries/import', asyncHandler(async (req, res) => {
   if (!importNotaries) return res.status(503).json({ error: 'Notary module not available' });
   const count = await importNotaries();
   res.json({ ok: true, imported: count });
+}));
+
+app.get('/api/notaries/refresh', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!refreshNotariesCSV || !importNotaries) return res.status(503).json({ error: 'Notary module not available' });
+  const refreshed = await refreshNotariesCSV();
+  const imported = await importNotaries();
+  res.json({ ok: true, refreshed, imported });
 }));
 
 // ===== BAILIFF SEARCH =====
@@ -2034,9 +2044,18 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
 }));
 
 // ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if empty or CSV is newer =====
-if (BACKGROUND_JOBS_ENABLED) {
+// This is data initialization, not an optional background job. It must run even
+// when cron/Telegram polling are disabled in production.
 setTimeout(async () => {
   if (importNotaries) {
+    if (refreshNotariesCSV) {
+      try {
+        const refreshed = await refreshNotariesCSV();
+        logger.info(`[Notaries] ENIS refreshed: ${refreshed.total} records`);
+      } catch (e) {
+        logger.warn('[Notaries] ENIS refresh failed, using validated fallback CSV: ' + e.message);
+      }
+    }
     try {
       const count = await importNotaries();
       if (count > 0) logger.info(`[Notaries] DB ready: ${count} notaries`);
@@ -2056,11 +2075,17 @@ setTimeout(async () => {
   }
 }, 5000);
 
-// Weekly re-import every Sunday at 03:00 (after pushing fresh CSVs to git)
+if (BACKGROUND_JOBS_ENABLED) {
+
+// Weekly refresh from the official ENIS registry, followed by a validated import.
 cron.schedule('0 3 * * 0', async () => {
   logger.info('[Cron] Weekly notary+bailiff+lawyer re-import starting...');
   if (importNotaries) {
-    try { const n = await importNotaries(); logger.info(`[Cron] Notaries: ${n}`); }
+    try {
+      if (refreshNotariesCSV) await refreshNotariesCSV();
+      const n = await importNotaries();
+      logger.info(`[Cron] Notaries: ${n}`);
+    }
     catch (e) { logger.error('[Cron] Notary re-import failed: ' + e.message); }
   }
   if (importBailiffs) {
