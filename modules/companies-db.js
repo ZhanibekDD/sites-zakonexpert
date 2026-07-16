@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
+const { companySlug } = require('./company-slug');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
@@ -40,12 +41,22 @@ function getMeta(database, key) {
 function stats() {
   const database = open();
   if (!database) return { available: false, count: 0, updatedAt: null, source: null };
+  const completedAt = getMeta(database, 'completed_at');
+  if (!completedAt) return { available: false, count: 0, updatedAt: null, source: null };
   const row = database.prepare('SELECT COUNT(*) AS count FROM companies').get();
   return {
     available: true,
     count: Number(row.count || 0),
     updatedAt: getMeta(database, 'source_updated_at'),
     source: getMeta(database, 'source_url'),
+  };
+}
+
+function addSlug(company) {
+  if (!company) return null;
+  return {
+    ...company,
+    slug: companySlug(company.id, company.name_ru || company.name_kk),
   };
 }
 
@@ -68,7 +79,9 @@ function ftsQuery(query) {
 function search(query, page = 1, limit = 30) {
   const database = open();
   const q = String(query || '').trim();
-  if (!database || q.length < 2) return { items: [], page: 1, hasMore: false };
+  if (!database || !getMeta(database, 'completed_at') || q.length < 2) {
+    return { items: [], page: 1, hasMore: false };
+  }
 
   const safePage = normalizePage(page);
   const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
@@ -77,7 +90,7 @@ function search(query, page = 1, limit = 30) {
 
   if (/^\d{12}$/.test(q)) {
     items = database.prepare(`
-      SELECT id, slug, bin, name_ru, name_kk, registration_date, address_ru,
+      SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
              activity_ru, leader, status_ru
       FROM companies WHERE bin = ? ORDER BY id LIMIT ? OFFSET ?
     `).all(q, safeLimit + 1, offset);
@@ -85,7 +98,7 @@ function search(query, page = 1, limit = 30) {
     const match = ftsQuery(q);
     if (!match) return { items: [], page: safePage, hasMore: false };
     items = database.prepare(`
-      SELECT c.id, c.slug, c.bin, c.name_ru, c.name_kk, c.registration_date,
+      SELECT c.id, c.bin, c.name_ru, c.name_kk, c.registration_date,
              c.address_ru, c.activity_ru, c.leader, c.status_ru
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
@@ -95,7 +108,7 @@ function search(query, page = 1, limit = 30) {
   }
 
   return {
-    items: items.slice(0, safeLimit),
+    items: items.slice(0, safeLimit).map(addSlug),
     page: safePage,
     hasMore: items.length > safeLimit,
   };
@@ -104,8 +117,9 @@ function search(query, page = 1, limit = 30) {
 function findById(id) {
   const database = open();
   const numericId = Number.parseInt(id, 10);
-  if (!database || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
-  return database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId) || null;
+  if (!database || !getMeta(database, 'completed_at')
+      || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
+  return addSlug(database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId));
 }
 
 function sitemapChunkCount() {
@@ -118,8 +132,8 @@ function sitemapChunk(chunk) {
   const safeChunk = Number.parseInt(chunk, 10);
   if (!database || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
   return database.prepare(`
-    SELECT slug FROM companies ORDER BY id LIMIT ? OFFSET ?
-  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT);
+    SELECT id, name_ru, name_kk FROM companies ORDER BY id LIMIT ? OFFSET ?
+  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT).map(addSlug);
 }
 
 module.exports = {

@@ -37,6 +37,7 @@ createSchema(database);
 assert.strictEqual(insertRows(database, [sample], '2026-07-16T00:00:00.000Z'), 1);
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_updated_at', '2026-07-16');
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_url', 'https://data.egov.kz/datasets/view?index=gbd_ul');
+database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('completed_at', '2026-07-16');
 rebuildSearch(database);
 database.close();
 

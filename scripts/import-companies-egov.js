@@ -3,24 +3,17 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
-const slugify = require('slugify');
 const { DatabaseSync } = require('node:sqlite');
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
+const { companySlug } = require('../modules/company-slug');
 
 const ROOT = path.join(__dirname, '..');
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
-const IMPORT_DB = `${FINAL_DB}.importing`;
 const DATASET_URL = 'https://data.egov.kz/datasets/view?index=gbd_ul';
 const PUBLIC_DATA_URL = 'https://data.egov.kz/datasets/getdata';
 const API_URL = 'https://data.egov.kz/api/v4/gbd_ul/v1';
 const DEFAULT_PAGE_SIZE = 100;
 const MIN_FULL_RECORDS = 900000;
-
-slugify.extend({
-  'ә': 'a', 'Ә': 'A', 'ғ': 'g', 'Ғ': 'G', 'қ': 'k', 'Қ': 'K',
-  'ң': 'n', 'Ң': 'N', 'ө': 'o', 'Ө': 'O', 'ұ': 'u', 'Ұ': 'U',
-  'ү': 'u', 'Ү': 'U', 'һ': 'h', 'Һ': 'H', 'і': 'i', 'І': 'I',
-});
 
 function clean(value) {
   if (value === null || value === undefined) return '';
@@ -55,24 +48,17 @@ function normalizeCompanyRow(row) {
   const displayName = nameRu || nameKk;
   if (!displayName) return null;
 
-  const nameSlug = slugify(displayName.toLowerCase(), {
-    locale: 'ru', replacement: '-', strict: true, trim: true,
-  }).slice(0, 96);
-
   return {
     id,
-    slug: `${id}-${nameSlug || 'organization'}`,
+    slug: companySlug(id, displayName),
     bin: pick(values, ['bin', 'businessidentificationnumber', 'businessid']),
     nameRu,
     nameKk,
     registrationDate: pick(values, ['registerdate', 'registrationdate', 'regdate', 'dateregistration']),
     addressRu: pick(values, ['addressru', 'addressrus', 'rusaddress', 'address']),
-    addressKk: pick(values, ['addresskz', 'addresskk', 'kazaddress']),
     activityRu: pick(values, ['okedru', 'activityru', 'mainactivityru', 'okednameru', 'activity']),
-    activityKk: pick(values, ['okedkz', 'okedkk', 'activitykz', 'mainactivitykz', 'okednamekz']),
     leader: pick(values, ['fio', 'leader', 'head', 'director', 'headfio', 'fiohead']),
     statusRu: pick(values, ['statusru', 'subjectstatusru', 'status']),
-    statusKk: pick(values, ['statuskz', 'statuskk', 'subjectstatuskz']),
   };
 }
 
@@ -161,16 +147,14 @@ function getMeta(db, key, fallback = null) {
 function insertRows(db, rows, importedAt) {
   const statement = db.prepare(`
     INSERT INTO companies(
-      id, slug, bin, name_ru, name_kk, registration_date, address_ru, address_kk,
-      activity_ru, activity_kk, leader, status_ru, status_kk, imported_at
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, bin, name_ru, name_kk, registration_date, address_ru,
+      activity_ru, leader, status_ru, imported_at
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
-      slug=excluded.slug, bin=excluded.bin, name_ru=excluded.name_ru,
-      name_kk=excluded.name_kk, registration_date=excluded.registration_date,
-      address_ru=excluded.address_ru, address_kk=excluded.address_kk,
-      activity_ru=excluded.activity_ru, activity_kk=excluded.activity_kk,
-      leader=excluded.leader, status_ru=excluded.status_ru,
-      status_kk=excluded.status_kk, imported_at=excluded.imported_at
+      bin=excluded.bin, name_ru=excluded.name_ru, name_kk=excluded.name_kk,
+      registration_date=excluded.registration_date, address_ru=excluded.address_ru,
+      activity_ru=excluded.activity_ru, leader=excluded.leader,
+      status_ru=excluded.status_ru, imported_at=excluded.imported_at
   `);
 
   let inserted = 0;
@@ -180,10 +164,9 @@ function insertRows(db, rows, importedAt) {
       const company = normalizeCompanyRow(raw);
       if (!company) continue;
       statement.run(
-        company.id, company.slug, company.bin, company.nameRu, company.nameKk,
-        company.registrationDate, company.addressRu, company.addressKk,
-        company.activityRu, company.activityKk, company.leader,
-        company.statusRu, company.statusKk, importedAt
+        company.id, company.bin, company.nameRu, company.nameKk,
+        company.registrationDate, company.addressRu, company.activityRu,
+        company.leader, company.statusRu, importedAt
       );
       inserted += 1;
     }
@@ -207,33 +190,21 @@ function parseArgs(argv) {
   };
 }
 
-function activateDatabase() {
-  const oldPath = `${FINAL_DB}.old`;
-  if (fs.existsSync(oldPath)) fs.rmSync(oldPath, { force: true });
-  if (fs.existsSync(FINAL_DB)) fs.renameSync(FINAL_DB, oldPath);
-  try {
-    fs.renameSync(IMPORT_DB, FINAL_DB);
-    if (fs.existsSync(oldPath)) fs.rmSync(oldPath, { force: true });
-  } catch (error) {
-    if (fs.existsSync(oldPath) && !fs.existsSync(FINAL_DB)) fs.renameSync(oldPath, FINAL_DB);
-    throw error;
-  }
-}
-
 async function importCompanies(options = parseArgs(process.argv.slice(2))) {
   if (options.all && !options.confirmOffline) {
     throw new Error('Full activation requires --confirm-offline (stop Node.js before running)');
   }
 
   fs.mkdirSync(path.dirname(FINAL_DB), { recursive: true });
-  if (options.fresh && fs.existsSync(IMPORT_DB)) fs.rmSync(IMPORT_DB, { force: true });
+  if (options.fresh && fs.existsSync(FINAL_DB)) fs.rmSync(FINAL_DB, { force: true });
 
-  const database = new DatabaseSync(IMPORT_DB);
+  const database = new DatabaseSync(FINAL_DB);
   createSchema(database);
-  const importedAt = new Date().toISOString();
   const apiKey = clean(process.env.EGOV_API_KEY);
   const publicClient = apiKey ? null : await withRetry(createPublicClient, 'dataset session');
   const startPage = Number.parseInt(getMeta(database, 'next_page', '1'), 10) || 1;
+  const importedAt = getMeta(database, 'import_run_id') || String(Math.floor(Date.now() / 1000));
+  setMeta(database, 'import_run_id', importedAt);
   let searchAfter = Number.parseInt(getMeta(database, 'last_subject_id', '0'), 10) || 0;
   const lastPage = options.all ? Number.POSITIVE_INFINITY : startPage + options.pages - 1;
 
@@ -264,7 +235,7 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     }
     setMeta(database, 'next_page', page + 1);
     setMeta(database, 'source_url', DATASET_URL);
-    setMeta(database, 'source_updated_at', importedAt);
+    setMeta(database, 'last_import_progress_at', new Date().toISOString());
 
     if (page === startPage || page % 50 === 0) {
       const count = database.prepare('SELECT COUNT(*) AS count FROM companies').get().count;
@@ -280,20 +251,26 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     await sleep(100);
   }
 
-  const stored = Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+  let stored = Number(database.prepare(
+    'SELECT COUNT(*) AS count FROM companies WHERE imported_at = ?'
+  ).get(importedAt).count || 0);
   if (options.all && completed) {
     if (stored < MIN_FULL_RECORDS) {
       database.close();
       throw new Error(`Completeness check failed: ${stored} records (minimum ${MIN_FULL_RECORDS})`);
     }
+    database.prepare('DELETE FROM companies WHERE imported_at != ?').run(importedAt);
     console.log('[Companies] Building full-text search index...');
     rebuildSearch(database);
     setMeta(database, 'completed_at', new Date().toISOString());
+    setMeta(database, 'source_updated_at', new Date().toISOString());
     setMeta(database, 'record_count', stored);
+    setMeta(database, 'next_page', 1);
+    setMeta(database, 'last_subject_id', 0);
+    setMeta(database, 'import_run_id', '');
     database.exec('PRAGMA optimize;');
     database.close();
-    activateDatabase();
-    console.log(`[Companies] Activated ${stored} records. Restart Node.js to open the new database.`);
+    console.log(`[Companies] Activated ${stored} records in one compact database. Restart Node.js.`);
   } else {
     database.close();
     console.log(`[Companies] Checkpoint saved: ${stored} records. Run again to continue.`);

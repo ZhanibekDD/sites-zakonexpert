@@ -7,18 +7,14 @@ function createSchema(db) {
     PRAGMA temp_store = MEMORY;
     CREATE TABLE IF NOT EXISTS companies (
       id INTEGER PRIMARY KEY,
-      slug TEXT NOT NULL UNIQUE,
       bin TEXT,
       name_ru TEXT NOT NULL,
       name_kk TEXT,
       registration_date TEXT,
       address_ru TEXT,
-      address_kk TEXT,
       activity_ru TEXT,
-      activity_kk TEXT,
       leader TEXT,
       status_ru TEXT,
-      status_kk TEXT,
       imported_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS company_meta (
@@ -26,7 +22,7 @@ function createSchema(db) {
       value TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS companies_bin_idx ON companies(bin);
-    CREATE INDEX IF NOT EXISTS companies_status_idx ON companies(status_ru);
+    DROP INDEX IF EXISTS companies_status_idx;
   `);
 }
 
@@ -37,13 +33,12 @@ function rebuildSearch(db) {
       name_ru,
       name_kk,
       bin,
-      activity_ru,
       content='companies',
       content_rowid='id',
       tokenize='unicode61 remove_diacritics 2'
     );
-    INSERT INTO companies_fts(rowid, name_ru, name_kk, bin, activity_ru)
-      SELECT id, name_ru, name_kk, bin, activity_ru FROM companies;
+    INSERT INTO companies_fts(rowid, name_ru, name_kk, bin)
+      SELECT id, name_ru, name_kk, bin FROM companies;
   `);
 }
 
