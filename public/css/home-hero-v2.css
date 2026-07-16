@@ -690,8 +690,8 @@
 }
 
 .ze-process-step > img {
-  width: 72px;
-  height: 72px;
+  width: 84px;
+  height: 84px;
   display: block;
   margin: 0 auto 25px;
   object-fit: contain;
@@ -1011,7 +1011,7 @@
 
   .ze-process-step:last-child { border-bottom: 0; }
   .ze-process-step__number { top: 29px; left: 0; }
-  .ze-process-step > img { position: absolute; top: 16px; left: 35px; width: 58px; height: 58px; margin: 0; }
+  .ze-process-step > img { position: absolute; top: 14px; left: 31px; width: 64px; height: 64px; margin: 0; }
   .ze-process-step h3 { padding-top: 7px; }
 }
 
