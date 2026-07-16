@@ -122,6 +122,7 @@ function maskIin(iin) {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BACKGROUND_JOBS_ENABLED = !/^(1|true|yes)$/i.test(process.env.DISABLE_BACKGROUND_JOBS || '');
 
 // Template engine for news pages
 app.set('view engine', 'ejs');
@@ -360,7 +361,7 @@ async function checkDebtorViaApi(iin) {
 
 // Маршрут для проверки ИИН
 app.post('/check', asyncHandler(async (req, res) => {
-    const { iin } = req.body;
+    const iin = String(req.body?.iin || '').replace(/\D/g, '');
     // ИЗМЕНЕНО: logger.info
     logger.info(`Получен запрос на проверку ИИН: ${iin ? iin.substring(0, 4) + '********' : 'пустой'}`); // Маскируем ИИН в логах
 
@@ -368,6 +369,17 @@ app.post('/check', asyncHandler(async (req, res) => {
         // ИЗМЕНЕНО: logger.warn
         logger.warn('Запрос на проверку без ИИН.');
         return res.status(400).json({ error: 'ИИН не предоставлен' });
+    }
+    if (iin.length !== 12) {
+        logger.warn(`Запрос на проверку с неверной длиной ИИН: ${maskIin(iin)}`);
+        return res.status(400).json({ error: 'ИИН должен содержать 12 цифр' });
+    }
+    if (!EGOV_API_KEY) {
+        logger.error('Проверка ИИН недоступна: EGOV_API_KEY не настроен.');
+        return res.status(503).json({
+            error: 'Сервис проверки временно недоступен',
+            details: 'Обратитесь через WhatsApp — специалист проверит ограничения вручную.'
+        });
     }
 
     try {
@@ -2022,6 +2034,7 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
 }));
 
 // ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if empty or CSV is newer =====
+if (BACKGROUND_JOBS_ENABLED) {
 setTimeout(async () => {
   if (importNotaries) {
     try {
@@ -2088,6 +2101,9 @@ if (newsImporter) {
       logger.warn('[Startup] Initial import check failed: ' + e.message);
     }
   }, 10000);
+}
+} else {
+  logger.info('Background jobs disabled by DISABLE_BACKGROUND_JOBS');
 }
 
 // ===== APPLICATION FORM =====
@@ -2281,6 +2297,10 @@ app.listen(PORT, '0.0.0.0', () => {
     logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
     logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'задан ✓' : 'НЕ ЗАДАН — проверка ИИН не будет работать!'}`);
     // Запускаем Telegram бот (принимает команды /stats, /leads, /help)
-    telegram.startPolling();
-    logger.info('Telegram bot polling started ✓');
+    if (BACKGROUND_JOBS_ENABLED) {
+      telegram.startPolling();
+      logger.info('Telegram bot polling started ✓');
+    } else {
+      logger.info('Telegram bot polling disabled');
+    }
 });

@@ -6,6 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "check:js": "node --check server.js && node --check public/js/main.js && node --check public/js/site.js",
+    "check:html": "html-validate public/*.html",
+    "check:css": "stylelint \"public/css/**/*.css\"",
+    "test:smoke": "node scripts/smoke-test.js",
+    "test": "npm run check:js && npm run check:html && npm run check:css && npm run test:smoke",
     "import-news": "node scripts/import_news.js",
     "import-notaries": "node scripts/import-notaries.js",
     "import-bailiffs": "node scripts/import-bailiffs.js",
@@ -39,6 +44,8 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "html-validate": "^10.3.0",
+    "nodemon": "^3.0.2",
+    "stylelint": "^16.23.1"
   }
 }
