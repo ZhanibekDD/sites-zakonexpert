@@ -14,7 +14,7 @@
 | Сайт | https://zakonexpertt.kz |
 | Основной телефон | +7 775 299-87-38 |
 | WhatsApp | +7 775 299-87-38 (https://wa.me/77752998738) |
-| Email | info@zakonexpertt.kz |
+| Email | zakonexpert.kz@mail.ru |
 | Страна | Казахстан |
 | Регион | Алматы |
 | Город | Алматы |

@@ -18,7 +18,7 @@
 
 [Имя], ZakonExpert
 +7 775 299-87-38 (WhatsApp)
-info@zakonexpertt.kz
+zakonexpert.kz@mail.ru
 https://zakonexpertt.kz/press
 
 ## WhatsApp / Telegram (для оперативных запросов)
