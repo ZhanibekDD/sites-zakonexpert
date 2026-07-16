@@ -74,11 +74,11 @@ try {
 // Initialize notaries DB
 let notariesDb = null;
 let importNotaries = null;
-let refreshNotariesCSV = null;
+let refreshNotariesRegistry = null;
 try {
   notariesDb  = require('./modules/notaries-db');
   ({ importNotaries } = require('./scripts/import-notaries'));
-  ({ refreshNotariesCSV } = require('./scripts/refresh-notaries-csv'));
+  ({ refreshNotariesRegistry } = require('./scripts/refresh-notaries-csv'));
   logger.info('Notaries module loaded ✓');
 } catch (e) {
   logger.warn('Notaries module not loaded: ' + e.message);
@@ -517,8 +517,8 @@ app.get('/api/notaries/import', asyncHandler(async (req, res) => {
 
 app.get('/api/notaries/refresh', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
-  if (!refreshNotariesCSV || !importNotaries) return res.status(503).json({ error: 'Notary module not available' });
-  const refreshed = await refreshNotariesCSV();
+  if (!refreshNotariesRegistry || !importNotaries) return res.status(503).json({ error: 'Notary module not available' });
+  const refreshed = await refreshNotariesRegistry();
   const imported = await importNotaries();
   res.json({ ok: true, refreshed, imported });
 }));
@@ -2055,17 +2055,17 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
   });
 }));
 
-// ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if empty or CSV is newer =====
+// ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if source is newer =====
 // This is data initialization, not an optional background job. It must run even
 // when cron/Telegram polling are disabled in production.
 setTimeout(async () => {
   if (importNotaries) {
-    if (refreshNotariesCSV) {
+    if (refreshNotariesRegistry) {
       try {
-        const refreshed = await refreshNotariesCSV();
+        const refreshed = await refreshNotariesRegistry();
         logger.info(`[Notaries] ENIS refreshed: ${refreshed.total} records`);
       } catch (e) {
-        logger.warn('[Notaries] ENIS refresh failed, using validated fallback CSV: ' + e.message);
+        logger.warn('[Notaries] ENIS refresh failed, using validated compressed snapshot: ' + e.message);
       }
     }
     try {
@@ -2094,7 +2094,7 @@ cron.schedule('0 3 * * 0', async () => {
   logger.info('[Cron] Weekly notary+bailiff+lawyer re-import starting...');
   if (importNotaries) {
     try {
-      if (refreshNotariesCSV) await refreshNotariesCSV();
+      if (refreshNotariesRegistry) await refreshNotariesRegistry();
       const n = await importNotaries();
       logger.info(`[Cron] Notaries: ${n}`);
     }

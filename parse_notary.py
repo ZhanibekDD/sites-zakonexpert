@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Scraper for enis.kz notary list - all regions."""
 
-import csv
+import gzip
+import json
+import os
 import time
+from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 
@@ -164,13 +167,22 @@ def main():
         print("No data collected. Check debug output above.")
         return
 
-    # Save to CSV
-    output_file = "notaries_all_regions.csv"
-    fieldnames = ["Область", "№", "ФИО", "Номер лицензии", "Дата выдачи", "Адрес офиса", "Телефон", "Email", "Режим работы"]
-    with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(all_notaries)
+    output_file = "registry/notaries.json.gz"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    records = [[
+        item["Область"], item["№"], item["ФИО"], item["Номер лицензии"],
+        item["Дата выдачи"], item["Адрес офиса"], item["Телефон"],
+        item["Email"], item["Режим работы"],
+    ] for item in all_notaries]
+    document = {
+        "format": "zakonexpert.registry.v1",
+        "entity": "notaries",
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "source": "https://enis.kz/NotarySearch",
+        "records": records,
+    }
+    with gzip.open(output_file, "wt", encoding="utf-8", compresslevel=9) as f:
+        json.dump(document, f, ensure_ascii=False, separators=(",", ":"))
 
     print(f"Saved to {output_file}")
 

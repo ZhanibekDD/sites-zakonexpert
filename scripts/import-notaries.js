@@ -5,10 +5,11 @@ const path = require('path');
 const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
+const { readRegistrySource } = require('../modules/registry-source');
 
-const CSV_PATH = path.join(__dirname, '..', 'notaries_all_regions.csv');
+const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 3; // increment to force re-import on schema changes
+const DB_VERSION = 4; // increment to force re-import on schema changes
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -39,55 +40,12 @@ function makeSlug(str) {
   });
 }
 
-// Minimal RFC-4180-compatible CSV parser that handles quoted fields with embedded newlines
-function parseCSV(content) {
-  if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1); // strip BOM
-  const rows = [];
-  let i = 0;
-  const n = content.length;
-
-  while (i < n) {
-    const row = [];
-
-    while (i < n) {
-      let field;
-      if (content[i] === '"') {
-        // Quoted field
-        i++;
-        field = '';
-        while (i < n) {
-          if (content[i] === '"' && i + 1 < n && content[i + 1] === '"') {
-            field += '"'; i += 2;
-          } else if (content[i] === '"') {
-            i++; break;
-          } else {
-            field += content[i++];
-          }
-        }
-      } else {
-        // Unquoted field — stops at comma or line ending
-        const start = i;
-        while (i < n && content[i] !== ',' && content[i] !== '\r' && content[i] !== '\n') i++;
-        field = content.slice(start, i).trim();
-      }
-      row.push(field);
-      if (i < n && content[i] === ',') { i++; } else { break; }
-    }
-
-    if (i < n && content[i] === '\r') i++;
-    if (i < n && content[i] === '\n') i++;
-
-    if (row.some(f => f.trim())) rows.push(row);
-  }
-  return rows;
-}
-
 function validEmail(value) {
   const email = String(value || '').trim().toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
-function buildNotaries(rows, csvMtime) {
+function buildNotaries(rows, sourceMtime) {
   const notaries = [];
   const slugUsed = {};
   let skipped = 0;
@@ -130,7 +88,7 @@ function buildNotaries(rows, csvMtime) {
       email,
       schedule,
       slug,
-      csvMtime,
+      sourceMtime,
       dbVersion: DB_VERSION,
       source: 'ЕНІС',
       sourceUrl: 'https://enis.kz/NotarySearch',
@@ -141,13 +99,13 @@ function buildNotaries(rows, csvMtime) {
 }
 
 async function importNotaries() {
-  if (!fs.existsSync(CSV_PATH)) {
-    console.error('[Notaries] CSV not found:', CSV_PATH);
+  if (!fs.existsSync(SOURCE_PATH)) {
+    console.error('[Notaries] Registry source not found:', SOURCE_PATH);
     return 0;
   }
 
-  const csvStat = fs.statSync(CSV_PATH);
-  const csvMtime = csvStat.mtimeMs;
+  const source = readRegistrySource(SOURCE_PATH, 'notaries');
+  const sourceMtime = source.sourceMtime;
 
   // Check if DB is already up to date
   const db = Datastore.create({ filename: DB_PATH, autoload: true });
@@ -155,19 +113,18 @@ async function importNotaries() {
   await db.ensureIndex({ fieldName: 'name'  }).catch(() => {});
   await db.ensureIndex({ fieldName: 'active' }).catch(() => {});
 
-  const existing = await db.findOne({}, { updatedAt: 1, csvMtime: 1, dbVersion: 1 });
-  if (existing && existing.csvMtime >= csvMtime && existing.dbVersion === DB_VERSION) {
+  const existing = await db.findOne({}, { updatedAt: 1, sourceMtime: 1, dbVersion: 1 });
+  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
     const count = await db.count({});
     console.log(`[Notaries] DB is up to date (${count} records). Skipping import.`);
     return count;
   }
 
-  console.log('[Notaries] Reading CSV...');
-  const content = fs.readFileSync(CSV_PATH, 'utf8');
-  const rows = parseCSV(content);
+  console.log('[Notaries] Reading compressed registry source...');
+  const rows = source.records;
   console.log(`[Notaries] Parsed ${rows.length} rows`);
 
-  const { notaries, skipped } = buildNotaries(rows, csvMtime);
+  const { notaries, skipped } = buildNotaries(rows, sourceMtime);
 
   const regionCount = new Set(notaries.map(notary => notary.region)).size;
   const phoneCount = notaries.filter(notary => notary.phone).length;
@@ -191,4 +148,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { DB_VERSION, parseCSV, validEmail, buildNotaries, importNotaries };
+module.exports = { DB_VERSION, validEmail, buildNotaries, importNotaries };

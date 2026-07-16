@@ -36,7 +36,7 @@ function total(files) {
 const files = walk(ROOT);
 console.log(`Project (without .git): ${bytes(total(files))}`);
 
-for (const directory of ['node_modules', 'data', 'public']) {
+for (const directory of ['node_modules', 'data', 'registry', 'public']) {
   console.log(`${directory}: ${bytes(total(walk(path.join(ROOT, directory), [])))}`);
 }
 

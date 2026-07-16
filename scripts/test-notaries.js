@@ -1,10 +1,10 @@
 'use strict';
 
 const assert = require('assert');
-const fs = require('fs');
 const path = require('path');
-const { parseCSV, buildNotaries, validEmail } = require('./import-notaries');
+const { buildNotaries, validEmail } = require('./import-notaries');
 const { CHAMBERS, parseNotaryPage } = require('./refresh-notaries-csv');
+const { readRegistrySource } = require('../modules/registry-source');
 
 const sample = `
 <table border="1">
@@ -20,8 +20,8 @@ assert.strictEqual(CHAMBERS.length, 20, 'all 20 ENIS chambers must be covered');
 assert.strictEqual(validEmail('Test@Mail.KZ'), 'test@mail.kz');
 assert.strictEqual(validEmail('10.00-18.00'), null);
 
-const csv = fs.readFileSync(path.join(__dirname, '..', 'notaries_all_regions.csv'), 'utf8');
-const { notaries } = buildNotaries(parseCSV(csv), Date.now());
+const source = readRegistrySource(path.join(__dirname, '..', 'registry', 'notaries.json.gz'), 'notaries');
+const { notaries } = buildNotaries(source.records, source.sourceMtime);
 const regions = new Set(notaries.map(item => item.region));
 const slugs = new Set(notaries.map(item => item.slug));
 assert.ok(notaries.length >= 6000, 'fallback snapshot is unexpectedly incomplete');

@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Scraper for findh.org - private judicial bailiffs (ЧСИ) all regions of Kazakhstan."""
 
-import csv
+import gzip
+import json
+import os
 import time
+from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 
@@ -109,12 +112,21 @@ def main():
         print("No data collected.")
         return
 
-    output_file = "bailiffs_all_regions.csv"
-    fieldnames = ["Область", "№", "ФИО", "Номер лицензии", "Адрес офиса", "Контакты"]
-    with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(all_bailiffs)
+    output_file = "registry/bailiffs.json.gz"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    records = [[
+        item["Область"], item["№"], item["ФИО"], item["Номер лицензии"],
+        item["Адрес офиса"], item["Контакты"],
+    ] for item in all_bailiffs]
+    document = {
+        "format": "zakonexpert.registry.v1",
+        "entity": "bailiffs",
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "source": BASE_URL,
+        "records": records,
+    }
+    with gzip.open(output_file, "wt", encoding="utf-8", compresslevel=9) as f:
+        json.dump(document, f, ensure_ascii=False, separators=(",", ":"))
 
     print(f"Saved to {output_file}")
 
