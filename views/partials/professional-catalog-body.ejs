@@ -1,0 +1,128 @@
+<%
+function titleCase(value) {
+  return String(value || '').toLowerCase().split(' ').map(function(word) {
+    return word ? word[0].toUpperCase() + word.slice(1) : '';
+  }).join(' ');
+}
+
+function phoneParts(raw) {
+  var values = Array.isArray(raw) ? raw : String(raw || '').split(/[;,]+/);
+  return values.map(function(value) {
+    var text = String(value || '').trim();
+    var digits = text.replace(/\D/g, '');
+    if (digits.length === 11 && digits[0] === '8') digits = '7' + digits.slice(1);
+    if (digits.length === 10) digits = '7' + digits;
+    var formatted = text;
+    if (digits.length === 11 && digits[0] === '7') {
+      formatted = '+7 (' + digits.slice(1, 4) + ') ' + digits.slice(4, 7) + '-' + digits.slice(7, 9) + '-' + digits.slice(9, 11);
+    }
+    return { href: digits.length >= 10 ? 'tel:+' + digits : '', text: formatted };
+  }).filter(function(item) { return item.text; }).slice(0, 2);
+}
+
+var regions = catalog.regions || [];
+var items = catalog.items || [];
+var total = regions.reduce(function(sum, region) { return sum + (region.count || 0); }, 0);
+var verifiedDate = catalog.lastUpdated
+  ? new Date(catalog.lastUpdated).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
+  : '';
+%>
+<div class="professional-catalog">
+  <section class="collector-hero">
+    <div class="collector-container">
+      <nav class="collector-breadcrumbs" aria-label="breadcrumb">
+        <a href="/">Главная</a><span>/</span>
+        <% if (catalog.region) { %><a href="<%= catalog.baseUrl %>"><%= catalog.pluralLabel %></a><span>/</span><span><%= catalog.region %></span><% } else { %><span><%= catalog.pluralLabel %></span><% } %>
+      </nav>
+      <div class="collector-hero__badges">
+        <span class="collector-badge"><i class="bi <%= catalog.heroIcon %>"></i> <%= catalog.registryLabel %></span>
+        <span class="collector-badge collector-badge--active"><i class="bi bi-database-check"></i> <%= total %> записей</span>
+      </div>
+      <h1><%= catalog.region ? catalog.regionTitle + ' — ' + catalog.region : catalog.title %></h1>
+      <p class="professional-catalog__subtitle"><%= catalog.region ? ('В регионе найдено ' + items.length + ' ' + catalog.countLabel + '. Контакты, адреса и лицензии собраны в одном каталоге.') : catalog.subtitle %></p>
+    </div>
+  </section>
+
+  <main class="professional-catalog__main">
+    <div class="collector-container">
+      <section class="professional-catalog__toolbar" aria-label="Поиск по каталогу">
+        <form method="GET" action="<%= catalog.searchAction %>" class="professional-catalog__search">
+          <label for="professional-search"><%= catalog.searchLabel %></label>
+          <div class="professional-catalog__search-row">
+            <input id="professional-search" type="search" name="q" placeholder="<%= catalog.searchPlaceholder %>" autocomplete="off">
+            <button type="submit"><i class="bi bi-search"></i> Найти</button>
+          </div>
+        </form>
+        <a class="professional-catalog__wa" href="https://wa.me/77752998738?text=<%= encodeURIComponent(catalog.whatsappText) %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Бесплатная консультация</a>
+      </section>
+
+      <% if (!catalog.region) { %>
+        <div class="professional-catalog__heading">
+          <h2>Выберите регион</h2>
+          <span class="professional-catalog__meta"><%= regions.length %> регионов · <%= total %> записей</span>
+        </div>
+        <div class="professional-catalog__regions">
+          <% regions.forEach(function(region) { %>
+            <a class="professional-catalog__region" href="<%= catalog.baseUrl %>?region=<%= encodeURIComponent(region.region) %>">
+              <span class="professional-catalog__region-icon"><i class="bi bi-geo-alt"></i></span>
+              <span><strong><%= region.region %></strong><small><%= region.count %> <%= catalog.countLabel %></small></span>
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          <% }); %>
+        </div>
+      <% } else { %>
+        <div class="professional-catalog__heading">
+          <h2><%= catalog.regionTitle %> в регионе</h2>
+          <span class="professional-catalog__meta"><%= items.length %> записей<%= verifiedDate ? ' · обновлено ' + verifiedDate : '' %></span>
+        </div>
+        <% if (!items.length) { %>
+          <div class="professional-catalog__empty">В выбранном регионе записи не найдены.</div>
+        <% } else { %>
+          <div class="professional-catalog__grid">
+            <% items.forEach(function(item) {
+              var isNotary = catalog.type === 'notary';
+              var inactive = isNotary && item.active === false;
+              var phones = phoneParts(isNotary ? item.phone : item.phones);
+              var detailUrl = catalog.itemBaseUrl + item.slug;
+            %>
+              <article class="professional-card<%= inactive ? ' professional-card--inactive' : '' %>">
+                <div class="professional-card__head">
+                  <span class="professional-card__icon"><i class="bi <%= catalog.cardIcon %>"></i></span>
+                  <div>
+                    <h3 class="professional-card__name"><a href="<%= detailUrl %>"><%= titleCase(item.name) %></a></h3>
+                    <% if (isNotary) { %>
+                      <span class="professional-card__status<%= inactive ? ' professional-card__status--inactive' : '' %>"><i class="bi <%= inactive ? 'bi-x-circle' : 'bi-check-circle' %>"></i> <%= inactive ? 'Деятельность прекращена' : 'Действующий нотариус' %></span>
+                    <% } else { %>
+                      <span class="professional-card__status"><i class="bi bi-check-circle"></i> Частный судебный исполнитель</span>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="professional-card__license"><i class="bi bi-file-earmark-check"></i><span><%= item.license ? ('Лицензия № ' + item.license + (item.licenseDate ? ' от ' + item.licenseDate : '')) : 'Номер лицензии не опубликован' %></span></div>
+                <div class="professional-card__rows">
+                  <div class="professional-card__row">
+                    <span class="professional-card__icon"><i class="bi bi-telephone"></i></span>
+                    <span>
+                      <% if (phones.length) { phones.forEach(function(phone, index) { %><% if (index) { %><br><% } %><% if (phone.href) { %><a href="<%= phone.href %>"><%= phone.text %></a><% } else { %><%= phone.text %><% } %><% }); } else { %><span class="professional-card__missing"><%= isNotary ? 'Не опубликован в ЕНИС' : 'Телефон не указан' %></span><% } %>
+                    </span>
+                  </div>
+                  <div class="professional-card__row">
+                    <span class="professional-card__icon"><i class="bi bi-envelope"></i></span>
+                    <% if (item.email) { %><a href="mailto:<%= item.email %>"><%= item.email %></a><% } else { %><span class="professional-card__missing"><%= isNotary ? 'Не опубликован в ЕНИС' : 'Email не указан' %></span><% } %>
+                  </div>
+                  <% if (item.address) { %><div class="professional-card__row"><span class="professional-card__icon"><i class="bi bi-geo-alt"></i></span><span><%= item.address %></span></div><% } %>
+                  <% if (isNotary && item.schedule) { %><div class="professional-card__row"><span class="professional-card__icon"><i class="bi bi-clock"></i></span><span><%= item.schedule %></span></div><% } %>
+                </div>
+                <a class="professional-card__link" href="<%= detailUrl %>">Открыть полную карточку <i class="bi bi-arrow-right"></i></a>
+              </article>
+            <% }); %>
+          </div>
+        <% } %>
+      <% } %>
+
+      <div class="professional-catalog__source">
+        <i class="bi bi-database-check"></i>
+        <div><strong>Источник данных:</strong> <a href="<%= catalog.sourceUrl %>" target="_blank" rel="noopener"><%= catalog.sourceName %></a>. <%= catalog.sourceText %><%= verifiedDate ? ' Последнее обновление базы ZakonExpert: ' + verifiedDate + '.' : '' %></div>
+      </div>
+    </div>
+  </main>
+</div>

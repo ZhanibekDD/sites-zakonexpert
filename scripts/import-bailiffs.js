@@ -180,4 +180,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { importBailiffs };
+module.exports = { importBailiffs, parseCSV, parseCombinedField };

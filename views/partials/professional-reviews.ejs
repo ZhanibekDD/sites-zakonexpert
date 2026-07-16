@@ -1,0 +1,33 @@
+<section class="professional-reviews" id="reviews" aria-labelledby="professional-reviews-title">
+  <div class="professional-reviews__heading">
+    <h2 id="professional-reviews-title">Отзывы</h2>
+    <% if (commentStats) { %><span><i class="bi bi-star-fill"></i> <%= commentStats.avg %> из 5 · <%= commentStats.count %> отзывов</span><% } %>
+  </div>
+  <% if (commentSent) { %><div class="professional-reviews__success"><i class="bi bi-check-circle"></i> Спасибо! Отзыв отправлен на проверку.</div><% } %>
+  <% if (comments && comments.length) { %>
+    <div class="professional-reviews__list">
+      <% comments.forEach(function(comment) {
+        var rating = comment.rating || 5;
+        var date = new Date(comment.createdAt).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+      %>
+        <article class="professional-review">
+          <div class="professional-review__meta"><span class="professional-review__stars"><%= '★'.repeat(rating) + '☆'.repeat(5 - rating) %></span><strong><%= comment.name %></strong><time><%= date %></time></div>
+          <p><%= comment.text %></p>
+        </article>
+      <% }); %>
+    </div>
+  <% } else { %><p class="professional-reviews__empty">Отзывов пока нет. Будьте первым.</p><% } %>
+  <details class="professional-reviews__form-wrap">
+    <summary><i class="bi bi-pencil-square"></i> Оставить отзыв</summary>
+    <form method="POST" action="/comments" class="professional-reviews__form">
+      <input type="hidden" name="type" value="<%= itemType %>">
+      <input type="hidden" name="slug" value="<%= slug %>">
+      <input type="hidden" name="backUrl" value="<%= backUrl %>#reviews">
+      <label>Ваше имя <input name="name" type="text" maxlength="50" placeholder="Аноним"></label>
+      <fieldset><legend>Оценка</legend><div class="professional-reviews__ratings"><% [5, 4, 3, 2, 1].forEach(function(rating) { %><label><input type="radio" name="rating" value="<%= rating %>"<%= rating === 5 ? ' checked' : '' %>> <%= rating %> ★</label><% }); %></div></fieldset>
+      <label>Комментарий <textarea name="text" required minlength="3" maxlength="600" rows="4" placeholder="Поделитесь опытом работы с <%= subjectLabel %>"></textarea></label>
+      <button type="submit">Отправить отзыв</button>
+      <small>Отзыв появится после модерации.</small>
+    </form>
+  </details>
+</section>

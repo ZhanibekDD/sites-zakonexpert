@@ -9,3 +9,145 @@
   font-size: .88rem;
   line-height: 1.45;
 }
+
+.professional-reviews__heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.professional-reviews__heading h2 {
+  margin: 0;
+  color: #0b2a50;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+}
+
+.professional-reviews__heading > span {
+  color: #657c97;
+  font-size: .78rem;
+}
+
+.professional-reviews__heading i,
+.professional-review__stars {
+  color: #e0a72d;
+}
+
+.professional-reviews__success {
+  margin-bottom: 13px;
+  padding: 12px 14px;
+  border: 1px solid #8bd3a5;
+  border-radius: 9px;
+  color: #176f39;
+  background: #edf9f1;
+  font-size: .82rem;
+}
+
+.professional-reviews__list {
+  display: grid;
+  gap: 10px;
+}
+
+.professional-review {
+  padding: 15px 17px;
+  border: 1px solid #d9e3ef;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.professional-review__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 7px;
+  font-size: .78rem;
+}
+
+.professional-review__meta time {
+  margin-left: auto;
+  color: #8496ab;
+}
+
+.professional-review p,
+.professional-reviews__empty {
+  margin: 0;
+  color: #48617e;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.professional-reviews__form-wrap {
+  margin-top: 16px;
+}
+
+.professional-reviews__form-wrap summary {
+  color: #0755ba;
+  font-size: .84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.professional-reviews__form {
+  display: grid;
+  gap: 13px;
+  margin-top: 12px;
+  padding: 18px;
+  border: 1px solid #d9e3ef;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.professional-reviews__form label,
+.professional-reviews__form legend {
+  color: #48617e;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.professional-reviews__form input[type="text"],
+.professional-reviews__form textarea {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid #bfd0e3;
+  border-radius: 8px;
+  color: #10233e;
+  background: #f9fbfd;
+  font: inherit;
+}
+
+.professional-reviews__form fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.professional-reviews__ratings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.professional-reviews__form button {
+  width: max-content;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #0755ba;
+  font-size: .82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.professional-reviews__form small {
+  color: #8496ab;
+  font-size: .7rem;
+}
