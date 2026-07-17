@@ -11,10 +11,23 @@ const KEY = '666b24a135bdeacb4dd7376da5267f9a';
 const KEY_LOCATION = `https://${HOST}/${KEY}.txt`;
 const BATCH_SIZE = 10000;
 
-async function fetchText(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
-  return res.text();
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchText(url, attempts = 3) {
+  let lastError;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
+      return await res.text();
+    } catch (error) {
+      lastError = error;
+      if (i < attempts) await sleep(2000 * i);
+    }
+  }
+  throw lastError;
 }
 
 function extractLocs(xml) {
@@ -37,6 +50,7 @@ async function collectAllUrls(baseUrl) {
     } catch (error) {
       console.warn(`[IndexNow] skip ${sitemapUrl}: ${error.message}`);
     }
+    await sleep(300);
   }
   return urls;
 }

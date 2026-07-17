@@ -1295,24 +1295,30 @@ app.get('/sitemap-lawyers.xml', asyncHandler(async (req, res) => {
 </urlset>`);
 }));
 
+let _lawsSitemapCache = null;
+let _lawsSitemapCacheAt = 0;
 app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
   res.set('Content-Type', 'application/xml');
   if (!lawsDb) {
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const all = await lawsDb.getAllSlugs();
-  const today = new Date().toISOString().substring(0, 10);
-  const urls = all.map(a => `
+  if (!_lawsSitemapCache || Date.now() - _lawsSitemapCacheAt > 15 * 60 * 1000) {
+    const all = await lawsDb.getAllSlugs();
+    const today = new Date().toISOString().substring(0, 10);
+    const urls = all.map(a => `
   <url>
     <loc>https://zakonexpertt.kz/statya/${a.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>`).join('');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+    _lawsSitemapCache = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   ${urls}
-</urlset>`);
+</urlset>`;
+    _lawsSitemapCacheAt = Date.now();
+  }
+  res.send(_lawsSitemapCache);
 }));
 
 app.get('/api/lawyers/import', asyncHandler(async (req, res) => {
