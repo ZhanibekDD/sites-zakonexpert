@@ -117,8 +117,10 @@ try {
 
 // Initialize the large Kazakhstan companies registry (SQLite, loaded on demand)
 let companiesDb = null;
+let regionLabel = () => null;
 try {
   companiesDb = require('./modules/companies-db');
+  regionLabel = require('./modules/company-region').regionLabel;
   logger.info('Companies module loaded ✓');
 } catch (e) {
   logger.warn('Companies module not loaded: ' + e.message);
@@ -995,7 +997,8 @@ app.get('/company/:slug', (req, res) => {
   if (!company) return res.status(404).redirect('/companies');
   if (company.slug !== req.params.slug) return res.redirect(301, `/company/${company.slug}`);
   const sourceUpdatedAt = companiesDb.stats().updatedAt;
-  res.render('companies/item', { company, sourceUpdatedAt });
+  const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
+  res.render('companies/item', { company, sourceUpdatedAt, regionName });
 });
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
 app.get('/gsi/:slug',     (req, res) => {

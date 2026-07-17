@@ -65,13 +65,15 @@ var infoRows = [
   ['bi-person-badge', 'Руководитель', company.leader],
   ['bi-geo-alt', 'Юридический адрес', company.address_ru],
   ['bi-translate', 'Наименование на казахском языке', company.name_kk],
+  ['bi-map', 'Регион', typeof regionName !== 'undefined' ? regionName : null, typeof regionName !== 'undefined' && regionName ? '/companies/region/' + company.region_slug : null],
 ].filter(function(row) { return row[2]; });
 
 var rowsHtml = infoRows.map(function(row) {
+  var value = row[3] ? '<a href="' + esc(row[3]) + '" style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(row[2]) + '</a>' : esc(row[2]);
   return '<div style="display:grid;grid-template-columns:26px minmax(170px,240px) 1fr;gap:12px;align-items:start;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
     + '<i class="bi ' + row[0] + '" style="color:#94a3b8;font-size:1.05rem;margin-top:1px;" aria-hidden="true"></i>'
     + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[1]) + '</div>'
-    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[2]) + '</div></div>';
+    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + value + '</div></div>';
 }).join('');
 
 var mapQuery = company.address_ru ? encodeURIComponent(mapSearchAddress(company.address_ru) + ', Казахстан') : '';
