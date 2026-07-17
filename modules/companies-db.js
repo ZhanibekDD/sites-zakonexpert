@@ -8,7 +8,11 @@ const { REGIONS, regionLabel } = require('./company-region');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
-const SITEMAP_LIMIT = 50000;
+// Google Search Console showed 16 of 17 50k-url chunks stuck at "Не получено"
+// (never successfully fetched) — only the smallest (5,281 urls) succeeded.
+// Smaller chunks generate and transfer faster, well clear of the reverse
+// proxy's response timeout.
+const SITEMAP_LIMIT = 10000;
 
 let db = null;
 

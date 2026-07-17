@@ -1935,6 +1935,10 @@ ${urls}
 </urlset>`);
 });
 
+// Legacy static index (frozen 2026-06-19, only 6 of the current 32 sitemaps)
+// — redirect so it doesn't sit in Search Console as a separate stale entry.
+app.get('/sitemap.xml', (req, res) => res.redirect(301, '/sitemap-index.xml'));
+
 // SITEMAP INDEX
 app.get('/sitemap-index.xml', (req, res) => {
   const today = new Date().toISOString().substring(0, 10);
