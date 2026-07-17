@@ -505,7 +505,7 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
   const regionUrls = regions.map(r => `
   <url>
-    <loc>https://zakonexpertt.kz/notaries?region=${encodeURIComponent(r)}</loc>
+    <loc>https://zakonexpertt.kz/notaries?region=${encodeURIComponent(r.region)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -1245,7 +1245,7 @@ app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
   const regionUrls = regions.map(r => `
   <url>
-    <loc>https://zakonexpertt.kz/bailiffs?region=${encodeURIComponent(r)}</loc>
+    <loc>https://zakonexpertt.kz/bailiffs?region=${encodeURIComponent(r.region)}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
