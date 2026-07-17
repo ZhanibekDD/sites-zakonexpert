@@ -1142,7 +1142,13 @@ function getMfoData() {
     _mfoCache = { mfo: [], lombards: [], kredTov: [] };
     rows.forEach(r => {
       const cat = (r['Категория'] || '').trim();
-      const entryName = (r['Название (реестр АРРФР)'] || '').replace(/^[«"ТОО\s«»]+|[«»"]+$/g,'').trim();
+      const entryName = (r['Название (реестр АРРФР)'] || '')
+        .trim()
+        .replace(/^[«»"'“”]+/, '')
+        .replace(/^(товарищество с ограниченной ответственностью|тоо)\s+/i, '')
+        .replace(/^[«»"'“”]+/, '')
+        .replace(/[«»"'“”]+$/, '')
+        .trim();
       const entry = {
         name: entryName,
         slug: slugify(entryName) || 'bin-' + (r['БИН'] || ''),
