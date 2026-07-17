@@ -1,6 +1,6 @@
 <%
-const pageTitle = court.name + ' — телефон, email, адрес | ZakonExpert';
-const pageDesc = court.name + ': адрес, телефон, email и режим работы. Помощь с подготовкой документов в суд.';
+const pageTitle = court.name + (court.region ? ' (' + court.region + ')' : '') + ' — телефон, email, адрес | ZakonExpert';
+const pageDesc = court.name + (court.region ? ', ' + court.region : '') + (court.address ? ': ' + court.address : ': адрес') + ', телефон, email и режим работы. Помощь с подготовкой документов в суд.';
 const canonical = 'https://zakonexpertt.kz/courts/' + court.slug;
 const webHref = court.web ? (/^https?:\/\//i.test(court.web) ? court.web : 'https://' + court.web) : '';
 const schema = { '@context': 'https://schema.org', '@type': 'GovernmentOrganization', name: court.name,
