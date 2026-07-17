@@ -24,6 +24,11 @@ function createSchema(db) {
     CREATE INDEX IF NOT EXISTS companies_bin_idx ON companies(bin);
     DROP INDEX IF EXISTS companies_status_idx;
   `);
+  const hasRegionColumn = db.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = 'region_slug'").get();
+  if (!hasRegionColumn) {
+    db.exec('ALTER TABLE companies ADD COLUMN region_slug TEXT;');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS companies_region_idx ON companies(region_slug);');
 }
 
 function rebuildSearch(db) {

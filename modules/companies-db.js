@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const { companySlug } = require('./company-slug');
+const { REGIONS, regionLabel } = require('./company-region');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
@@ -122,6 +123,42 @@ function findById(id) {
   return addSlug(database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId));
 }
 
+function regionStats() {
+  const database = open();
+  if (!database || !getMeta(database, 'completed_at')) return [];
+  const rows = database.prepare(`
+    SELECT region_slug, COUNT(*) AS count FROM companies
+    WHERE region_slug IS NOT NULL GROUP BY region_slug
+  `).all();
+  const counts = new Map(rows.map(r => [r.region_slug, Number(r.count)]));
+  return REGIONS
+    .map(([slug, label]) => ({ slug, label, count: counts.get(slug) || 0 }))
+    .filter(r => r.count > 0)
+    .sort((a, b) => b.count - a.count);
+}
+
+function byRegion(slug, page = 1, limit = 30) {
+  const database = open();
+  const label = regionLabel(slug);
+  if (!database || !getMeta(database, 'completed_at') || !label) {
+    return { items: [], page: 1, hasMore: false, label: null };
+  }
+  const safePage = normalizePage(page);
+  const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
+  const offset = (safePage - 1) * safeLimit;
+  const items = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
+           activity_ru, leader, status_ru
+    FROM companies WHERE region_slug = ? ORDER BY id LIMIT ? OFFSET ?
+  `).all(slug, safeLimit + 1, offset);
+  return {
+    items: items.slice(0, safeLimit).map(addSlug),
+    page: safePage,
+    hasMore: items.length > safeLimit,
+    label,
+  };
+}
+
 function sitemapChunkCount() {
   const info = stats();
   return info.available ? Math.ceil(info.count / SITEMAP_LIMIT) : 0;
@@ -140,8 +177,10 @@ module.exports = {
   DB_PATH,
   SITEMAP_LIMIT,
   available,
+  byRegion,
   close,
   findById,
+  regionStats,
   search,
   sitemapChunk,
   sitemapChunkCount,

@@ -6,6 +6,7 @@ const axios = require('axios');
 const { DatabaseSync } = require('node:sqlite');
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
 const { companySlug } = require('../modules/company-slug');
+const { detectRegion } = require('../modules/company-region');
 
 const ROOT = path.join(__dirname, '..');
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
@@ -60,6 +61,10 @@ function normalizeCompanyRow(row) {
     leader: pick(values, ['fio', 'leader', 'head', 'director', 'headfio', 'fiohead']),
     statusRu: pick(values, ['statusru', 'subjectstatusru', 'status']),
   };
+}
+
+function withRegion(company) {
+  return { ...company, regionSlug: detectRegion(company.addressRu) };
 }
 
 function sleep(ms) {
@@ -148,13 +153,14 @@ function insertRows(db, rows, importedAt) {
   const statement = db.prepare(`
     INSERT INTO companies(
       id, bin, name_ru, name_kk, registration_date, address_ru,
-      activity_ru, leader, status_ru, imported_at
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      activity_ru, leader, status_ru, imported_at, region_slug
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       bin=excluded.bin, name_ru=excluded.name_ru, name_kk=excluded.name_kk,
       registration_date=excluded.registration_date, address_ru=excluded.address_ru,
       activity_ru=excluded.activity_ru, leader=excluded.leader,
-      status_ru=excluded.status_ru, imported_at=excluded.imported_at
+      status_ru=excluded.status_ru, imported_at=excluded.imported_at,
+      region_slug=excluded.region_slug
   `);
 
   let inserted = 0;
@@ -163,10 +169,11 @@ function insertRows(db, rows, importedAt) {
     for (const raw of rows) {
       const company = normalizeCompanyRow(raw);
       if (!company) continue;
+      const withRegionSlug = withRegion(company);
       statement.run(
         company.id, company.bin, company.nameRu, company.nameKk,
         company.registrationDate, company.addressRu, company.activityRu,
-        company.leader, company.statusRu, importedAt
+        company.leader, company.statusRu, importedAt, withRegionSlug.regionSlug
       );
       inserted += 1;
     }

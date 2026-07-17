@@ -57,6 +57,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<label class="visually-hidden" for="company-q">Название или БИН</label>'
   + '<input id="company-q" name="q" value="' + esc(query) + '" minlength="2" placeholder="Введите название или БИН компании" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:1rem;">'
   + '<button type="submit" class="btn btn-primary" style="padding:0 24px;">Найти</button></form>'
+  + (!query ? '<a href="/companies/regions" style="display:inline-flex;align-items:center;gap:8px;color:#1a56db;font-weight:650;font-size:.88rem;text-decoration:none;margin-bottom:18px;">🗺️ Смотреть компании по регионам</a>' : '')
   + resultsHtml + paginationHtml
   + '<section style="margin-top:34px;"><h2 style="color:#0d1f3c;font-size:1.35rem;">Отдельные финансовые реестры</h2>'
   + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px;">' + linksHtml + '</div></section>'
