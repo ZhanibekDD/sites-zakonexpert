@@ -1718,7 +1718,7 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
 }));
 
 // SITEMAP-PAGES.XML
-app.get('/sitemap-pages.xml', (req, res) => {
+function getCorePages() {
   const pages = [
     { url: '/', priority: '1.0', freq: 'weekly' },
     { url: '/services.html', priority: '0.9', freq: 'monthly' },
@@ -1803,6 +1803,11 @@ app.get('/sitemap-pages.xml', (req, res) => {
       pages.push({ url: `/companies/region/${region.slug}`, priority: '0.6', freq: 'weekly' });
     });
   }
+  return pages;
+}
+
+app.get('/sitemap-pages.xml', (req, res) => {
+  const pages = getCorePages();
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
   <url>
@@ -1818,6 +1823,18 @@ app.get('/sitemap-pages.xml', (req, res) => {
   ${urls}
 </urlset>`);
 });
+
+// SITEMAP.TXT — plain URL list for AI crawlers (GPTBot, PerplexityBot, ClaudeBot, etc.)
+// that prefer a lightweight format over parsing XML.
+app.get('/sitemap.txt', asyncHandler(async (req, res) => {
+  const urls = getCorePages().map(p => `https://zakonexpertt.kz${p.url}`);
+  if (newsDb) {
+    const articles = await newsDb.getAllForSitemap();
+    articles.forEach(a => urls.push(`https://zakonexpertt.kz/news/${a.slug}`));
+  }
+  res.set('Content-Type', 'text/plain; charset=utf-8');
+  res.send(urls.join('\n'));
+}));
 
 // SITEMAPS: CSV-backed catalogs (banks, courts, mfo, lombards, gsi, insurance, collectors, chambers)
 function csvSitemap(res, items, prefix) {
