@@ -196,6 +196,12 @@ app.get(/^\/.+\.html$/, (req, res, next) => {
   res.redirect(301, cleanPath + qs);
 });
 
+// Working databases/exports must never be web-reachable, even if something
+// is dropped into public/data/ by mistake (found a stray .db-wal file there
+// during a storage audit — nothing in the app writes there, but express.static
+// would have served it to anyone who requested the URL directly).
+app.use('/data', (req, res) => res.status(404).end());
+
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
 // ===== VISITOR TRACKING =====
