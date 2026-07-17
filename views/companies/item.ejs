@@ -17,6 +17,11 @@ function formatDate(value) {
   }
   return raw;
 }
+function mapSearchAddress(value) {
+  // Strip the leading KazPost alphanumeric code (e.g. "M28D3G3, ") — it isn't
+  // a place name and confuses map-provider search.
+  return String(value == null ? '' : value).replace(/^[A-ZА-Я]\d{2}[A-ZА-Я]\d[A-ZА-Я]\d\s*,?\s*/i, '').trim();
+}
 function registrationYear(value) {
   var raw = String(value == null ? '' : value).trim();
   var iso = raw.match(/^(\d{4})-/);
@@ -69,7 +74,7 @@ var rowsHtml = infoRows.map(function(row) {
     + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[2]) + '</div></div>';
 }).join('');
 
-var mapQuery = company.address_ru ? encodeURIComponent(company.address_ru + ', Казахстан') : '';
+var mapQuery = company.address_ru ? encodeURIComponent(mapSearchAddress(company.address_ru) + ', Казахстан') : '';
 var mapHtml = company.address_ru
   ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">'
     + '<a href="https://2gis.kz/search/' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>'
