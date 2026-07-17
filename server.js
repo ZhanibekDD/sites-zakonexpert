@@ -1837,11 +1837,13 @@ app.get('/sitemap-lombards.xml', (req, res) => {
 });
 
 // COMPANY SITEMAPS — 50,000 URLs per file, suitable for a million-record registry.
-app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
-  const chunk = Number.parseInt(req.params[0], 10);
-  const totalChunks = companiesDb ? companiesDb.sitemapChunkCount() : 0;
-  if (!chunk || chunk > totalChunks) return res.status(404).send('Sitemap chunk not found');
-
+// Each chunk pulls 50,000 rows through SQLite + slugify synchronously, which can
+// block the event loop for seconds; cache the rendered XML per chunk so repeat
+// crawler requests (and concurrent site traffic) don't pay that cost every time.
+const _companiesSitemapCache = new Map();
+function buildCompaniesSitemapChunk(chunk) {
+  let xml = _companiesSitemapCache.get(chunk);
+  if (xml) return xml;
   const today = new Date().toISOString().substring(0, 10);
   const urls = companiesDb.sitemapChunk(chunk).map(company => `
   <url>
@@ -1850,11 +1852,19 @@ app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>`).join('');
+  xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
+</urlset>`;
+  _companiesSitemapCache.set(chunk, xml);
+  return xml;
+}
+app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
+  const chunk = Number.parseInt(req.params[0], 10);
+  const totalChunks = companiesDb ? companiesDb.sitemapChunkCount() : 0;
+  if (!chunk || chunk > totalChunks) return res.status(404).send('Sitemap chunk not found');
 
   res.set('Content-Type', 'application/xml');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
-</urlset>`);
+  res.send(buildCompaniesSitemapChunk(chunk));
 });
 
 // IMAGE SITEMAP — key SEO images (gallery + hero images on money pages)
@@ -2438,5 +2448,16 @@ app.listen(PORT, '0.0.0.0', () => {
       logger.info('Telegram bot polling started ✓');
     } else {
       logger.info('Telegram bot polling disabled');
+    }
+    // Pre-warm the companies sitemap cache one chunk at a time, staggered so
+    // each blocking build (SQLite + slugify over 50k rows) doesn't queue up
+    // behind real traffic right after a restart.
+    if (companiesDb && companiesDb.available()) {
+      const totalChunks = companiesDb.sitemapChunkCount();
+      for (let i = 1; i <= totalChunks; i++) {
+        setTimeout(() => {
+          try { buildCompaniesSitemapChunk(i); } catch (e) { logger.warn(`Sitemap pre-warm chunk ${i} failed: ${e.message}`); }
+        }, i * 4000);
+      }
     }
 });
