@@ -4,40 +4,147 @@ function esc(value) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-const name = company.name_ru || company.name_kk;
-const canonical = 'https://zakonexpertt.kz/company/' + company.slug;
-const pageTitle = name + (company.bin ? ' — БИН ' + company.bin : '') + ' | ZakonExpert';
-const pageDesc = name + ': регистрационные данные' + (company.bin ? ', БИН ' + company.bin : '') + (company.address_ru ? ', адрес ' + company.address_ru : '') + '. Источник data.egov.kz.';
-const schema = {
+function formatDate(value) {
+  var raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  var d = null;
+  var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  var dmy = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+  if (iso) d = new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
+  else if (dmy) d = new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1])));
+  if (d && !isNaN(d.getTime())) {
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  }
+  return raw;
+}
+function registrationYear(value) {
+  var raw = String(value == null ? '' : value).trim();
+  var iso = raw.match(/^(\d{4})-/);
+  var dmy = raw.match(/(\d{4})$/);
+  var year = iso ? Number(iso[1]) : (dmy ? Number(dmy[1]) : null);
+  return year && year >= 1990 && year <= new Date().getFullYear() ? year : null;
+}
+
+var name = company.name_ru || company.name_kk;
+var canonical = 'https://zakonexpertt.kz/company/' + company.slug;
+var pageTitle = name + (company.bin ? ' — БИН ' + company.bin : '') + ' | ZakonExpert';
+var pageDesc = name + ': регистрационные данные' + (company.bin ? ', БИН ' + company.bin : '') + (company.address_ru ? ', адрес ' + company.address_ru : '') + '. Источник data.egov.kz.';
+var schema = {
   '@context': 'https://schema.org', '@type': 'Organization', name: name, url: canonical,
   identifier: company.bin || String(company.id),
   foundingDate: company.registration_date || undefined,
   address: company.address_ru ? { '@type': 'PostalAddress', streetAddress: company.address_ru, addressCountry: 'KZ' } : undefined,
 };
 
-const rows = [
-  ['БИН', company.bin], ['Дата регистрации', company.registration_date],
-  ['Статус', company.status_ru], ['Основной вид деятельности', company.activity_ru],
-  ['Руководитель', company.leader], ['Юридический адрес', company.address_ru],
-  ['Наименование на казахском языке', company.name_kk],
-].filter(function(row) { return row[1]; });
-const rowsHtml = rows.map(function(row) {
-  return '<div style="display:grid;grid-template-columns:minmax(170px,240px) 1fr;gap:18px;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
-    + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[0]) + '</div>'
-    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[1]) + '</div></div>';
+var statusRaw = String(company.status_ru || '');
+var statusState = /ликвид/i.test(statusRaw) ? 'liquidated' : (statusRaw ? 'active' : 'unknown');
+var statusColors = {
+  active: { fg: '#166534', bg: '#f0fdf4', border: '#bbf7d0', icon: 'bi-check-circle-fill' },
+  liquidated: { fg: '#991b1b', bg: '#fef2f2', border: '#fecaca', icon: 'bi-x-circle-fill' },
+  unknown: { fg: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', icon: 'bi-question-circle-fill' },
+};
+var statusColor = statusColors[statusState];
+var statusNote = statusState === 'active'
+  ? 'Компания числится действующей в официальном реестре.'
+  : (statusState === 'liquidated'
+    ? 'Компания числится ликвидированной в официальном реестре.'
+    : 'Статус не опубликован в официальном реестре.');
+
+var regYear = registrationYear(company.registration_date);
+var yearsOnMarket = regYear ? (new Date().getFullYear() - regYear) : null;
+
+var infoRows = [
+  ['bi-building', 'БИН', company.bin],
+  ['bi-calendar3', 'Дата регистрации', formatDate(company.registration_date)],
+  ['bi-briefcase', 'Основной вид деятельности', company.activity_ru],
+  ['bi-person-badge', 'Руководитель', company.leader],
+  ['bi-geo-alt', 'Юридический адрес', company.address_ru],
+  ['bi-translate', 'Наименование на казахском языке', company.name_kk],
+].filter(function(row) { return row[2]; });
+
+var rowsHtml = infoRows.map(function(row) {
+  return '<div style="display:grid;grid-template-columns:26px minmax(170px,240px) 1fr;gap:12px;align-items:start;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
+    + '<i class="bi ' + row[0] + '" style="color:#94a3b8;font-size:1.05rem;margin-top:1px;" aria-hidden="true"></i>'
+    + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[1]) + '</div>'
+    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[2]) + '</div></div>';
 }).join('');
 
-const body = '<div class="npage-wrap"><div class="landing-container">'
+var mapQuery = company.address_ru ? encodeURIComponent(company.address_ru + ', Казахстан') : '';
+var mapHtml = company.address_ru
+  ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">'
+    + '<a href="https://2gis.kz/search/' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>'
+    + '<a href="https://maps.google.com/?q=' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-map"></i> Google Maps</a>'
+    + '</div>'
+  : '';
+
+var statCards = [];
+if (yearsOnMarket !== null) {
+  statCards.push(['bi-graph-up-arrow', yearsOnMarket + (yearsOnMarket % 10 === 1 && yearsOnMarket % 100 !== 11 ? ' год' : (yearsOnMarket % 10 >= 2 && yearsOnMarket % 10 <= 4 && (yearsOnMarket % 100 < 10 || yearsOnMarket % 100 >= 20) ? ' года' : ' лет')), 'На рынке', 'С ' + regYear + ' года']);
+}
+statCards.push(['bi-patch-check-fill', 'Официальные данные', 'Источник', 'Реестр Минюста РК']);
+if (sourceUpdatedAt) {
+  statCards.push(['bi-clock-history', 'Актуальность', 'Обновлено', formatDate(sourceUpdatedAt) || sourceUpdatedAt]);
+}
+var statCardsHtml = statCards.map(function(card) {
+  return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;display:flex;gap:12px;align-items:flex-start;">'
+    + '<i class="bi ' + card[0] + '" style="color:#1a56db;font-size:1.3rem;margin-top:2px;" aria-hidden="true"></i>'
+    + '<div><div style="font-weight:750;color:#0d1f3c;font-size:.95rem;">' + esc(card[1]) + '</div>'
+    + '<div style="color:#94a3b8;font-size:.74rem;margin-top:2px;">' + esc(card[2]) + '</div>'
+    + '<div style="color:#475569;font-size:.82rem;margin-top:1px;">' + esc(card[3]) + '</div></div></div>';
+}).join('');
+
+var shareUrl = encodeURIComponent(canonical);
+var shareText = encodeURIComponent(name + ' — БИН ' + (company.bin || '') + ' | ZakonExpert');
+var reportText = encodeURIComponent('Здравствуйте! Хочу сообщить об ошибке в данных компании "' + name + '" (БИН ' + (company.bin || '—') + ', ' + canonical + ').');
+var consultText = encodeURIComponent('Здравствуйте! Нужна консультация по компании ' + name + '.');
+
+var body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
   + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Реестр юридических лиц</span>'
   + (company.status_ru ? '<span class="npage-badge npage-badge-active">' + esc(company.status_ru) + '</span>' : '') + '</div>'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">БИН ' + esc(company.bin) + '</p>' : '') + '</section>'
+
+  + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
+  + '<div>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);">' + rowsHtml + '</div>'
-  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(sourceUpdatedAt || '—') + '.</div>'
+  + mapHtml
+  + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px;">' + statCardsHtml + '</div>'
+  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(formatDate(sourceUpdatedAt) || sourceUpdatedAt || '—') + '. Часть сведений (контакты, учредители, филиалы) реестр не публикует — мы не подставляем непроверенные данные.</div>'
+  + '</div>'
+
+  + '<aside style="display:grid;gap:14px;">'
+  + '<div style="background:' + statusColor.bg + ';border:1px solid ' + statusColor.border + ';border-radius:14px;padding:18px;">'
+  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:10px;">Статус компании</div>'
+  + '<div style="display:flex;align-items:center;gap:9px;color:' + statusColor.fg + ';font-weight:750;font-size:.92rem;"><i class="bi ' + statusColor.icon + '"></i>' + esc(statusRaw || 'Не опубликован') + '</div>'
+  + '<p style="margin:8px 0 0;color:#475569;font-size:.8rem;line-height:1.5;">' + esc(statusNote) + '</p>'
+  + '</div>'
+
+  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;">'
+  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:12px;">Быстрые действия</div>'
+  + '<div style="display:grid;gap:9px;">'
+  + '<a href="/companies" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-search" style="color:#1a56db;"></i> Проверить другую компанию</a>'
+  + '<a href="https://wa.me/77752998738?text=' + consultText + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> Получить консультацию юриста</a>'
+  + '<a href="https://wa.me/77752998738?text=' + reportText + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-flag" style="color:#1a56db;"></i> Сообщить об ошибке в данных</a>'
+  + '</div></div>'
+
+  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;">'
+  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:12px;">Поделиться</div>'
+  + '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+  + '<a href="https://www.facebook.com/sharer/sharer.php?u=' + shareUrl + '" target="_blank" rel="noopener" aria-label="Поделиться в Facebook" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#1a56db;text-decoration:none;"><i class="bi bi-facebook"></i></a>'
+  + '<a href="https://t.me/share/url?url=' + shareUrl + '&text=' + shareText + '" target="_blank" rel="noopener" aria-label="Поделиться в Telegram" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#1a56db;text-decoration:none;"><i class="bi bi-telegram"></i></a>'
+  + '<a href="https://wa.me/?text=' + shareText + '%20' + shareUrl + '" target="_blank" rel="noopener" aria-label="Поделиться в WhatsApp" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#25a862;text-decoration:none;"><i class="bi bi-whatsapp"></i></a>'
+  + '<button type="button" class="company-copy-link" data-url="' + esc(canonical) + '" aria-label="Скопировать ссылку" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;border:0;display:flex;align-items:center;justify-content:center;color:#475569;cursor:pointer;"><i class="bi bi-link-45deg"></i></button>'
+  + '</div></div>'
+  + '</aside>'
+  + '</div>'
+
   + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
   + '<h2 class="npage-cta-title">Эта организация требует оплату?</h2><p class="npage-cta-sub">Проверим законность требований, документы и основания взыскания.</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=Здравствуйте!+Нужна+проверка+компании+' + encodeURIComponent(name) + '." target="_blank" rel="noopener">Получить консультацию</a></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=' + consultText + '" target="_blank" rel="noopener">Получить консультацию</a></div>'
+
+  + '<script>document.addEventListener("click",function(e){var b=e.target.closest(".company-copy-link");if(!b)return;navigator.clipboard.writeText(b.dataset.url).then(function(){var i=b.querySelector("i");i.className="bi bi-check-lg";setTimeout(function(){i.className="bi bi-link-45deg";},1500);});});</script>'
+
   + '</div></div>';
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !name, body }) %>
