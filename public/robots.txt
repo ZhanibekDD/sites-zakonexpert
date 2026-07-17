@@ -7,5 +7,22 @@ Disallow: /admin/
 Disallow: /data/
 Disallow: /node_modules/
 
-# Sitemap index
+# AI crawlers — explicitly allowed (not just covered by the wildcard above)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+# Sitemaps
 Sitemap: https://zakonexpertt.kz/sitemap-index.xml
+Sitemap: https://zakonexpertt.kz/sitemap.txt
