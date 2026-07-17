@@ -1,0 +1,45 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function number(value) { return new Intl.NumberFormat('ru-RU').format(value || 0); }
+function pluralize(n, one, few, many) {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+const pageTitle = 'Компании Казахстана по регионам | ZakonExpert';
+const pageDesc = 'Официальные регистрационные данные юридических лиц Казахстана, сгруппированные по регионам. Источник — Министерство юстиции РК, data.egov.kz.';
+const canonical = 'https://zakonexpertt.kz/companies/regions';
+const schema = {
+  '@context': 'https://schema.org', '@type': 'CollectionPage',
+  name: 'Компании Казахстана по регионам', url: canonical, description: pageDesc,
+};
+
+const cardsHtml = regions.map(function(region) {
+  return '<a href="/companies/region/' + esc(region.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
+    + '<div style="font-weight:750;font-size:1rem;">' + esc(region.label) + '</div>'
+    + '<div style="margin-top:8px;color:#1a56db;font-size:.86rem;font-weight:650;">' + number(region.count) + ' ' + pluralize(region.count, 'компания', 'компании', 'компаний') + '</div>'
+    + '</a>';
+}).join('');
+
+const countText = stats.available ? number(stats.count) + ' организаций' : 'База подготавливается';
+const body = '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><span>По регионам</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Официальные открытые данные</span></div>'
+  + '<h1 class="npage-h1">Компании Казахстана по регионам</h1>'
+  + '<p style="color:#475569;max-width:760px;">Реестр юридических лиц, сгруппированный по области или городу регистрации. Источник — Министерство юстиции РК через data.egov.kz.</p>'
+  + '<div style="margin-top:16px;color:#0d1f3c;font-weight:700;">' + countText + '</div></section>'
+  + (regions.length
+    ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:24px;">' + cardsHtml + '</div>'
+    : '<div class="npage-card" style="padding:24px;text-align:center;color:#64748b;">Распределение по регионам подготавливается.</div>')
+  + '<div class="npage-cta" style="margin-top:34px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
+  + '<h2 class="npage-cta-title">Компания требует оплату или арестовала счёт?</h2><p class="npage-cta-sub">Проверим основания взыскания и поможем защитить ваши права.</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=Здравствуйте!+Нужна+проверка+компании+и+юридическая+помощь." target="_blank" rel="noopener">Написать в WhatsApp</a></div>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !stats.available, body }) %>

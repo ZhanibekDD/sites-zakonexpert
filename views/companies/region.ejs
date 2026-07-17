@@ -1,0 +1,51 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const label = results.label;
+const pageTitle = 'Компании: ' + label + ' | ZakonExpert';
+const pageDesc = 'Официальные регистрационные данные юридических лиц региона «' + label + '». Источник — Министерство юстиции РК, data.egov.kz.';
+const canonical = 'https://zakonexpertt.kz/companies/region/' + encodeURIComponent(slug);
+const schema = {
+  '@context': 'https://schema.org', '@type': 'CollectionPage',
+  name: 'Компании: ' + label, url: canonical, description: pageDesc,
+};
+
+let resultsHtml = '';
+if (results.items.length) {
+  resultsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;">'
+    + results.items.map(function(company) {
+      return '<a href="/company/' + esc(company.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
+        + '<div style="font-weight:750;font-size:1rem;line-height:1.35;">' + esc(company.name_ru || company.name_kk) + '</div>'
+        + (company.bin ? '<div style="margin-top:8px;color:#1a56db;font-size:.88rem;">БИН ' + esc(company.bin) + '</div>' : '')
+        + (company.status_ru ? '<div style="margin-top:7px;color:#64748b;font-size:.82rem;">' + esc(company.status_ru) + '</div>' : '')
+        + (company.address_ru ? '<div style="margin-top:7px;color:#475569;font-size:.84rem;line-height:1.45;">📍 ' + esc(company.address_ru) + '</div>' : '')
+        + '</a>';
+    }).join('') + '</div>';
+} else {
+  resultsHtml = '<div class="npage-card" style="padding:24px;text-align:center;color:#64748b;">В этом регионе пока нет распределённых компаний.</div>';
+}
+
+let paginationHtml = '';
+if (results.page > 1 || results.hasMore) {
+  paginationHtml = '<div style="display:flex;gap:10px;justify-content:center;margin-top:22px;">'
+    + (results.page > 1 ? '<a class="btn btn-outline-primary" href="/companies/region/' + esc(slug) + '?page=' + (results.page - 1) + '">← Назад</a>' : '')
+    + (results.hasMore ? '<a class="btn btn-primary" href="/companies/region/' + esc(slug) + '?page=' + (results.page + 1) + '">Дальше →</a>' : '')
+    + '</div>';
+}
+
+const body = '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><a href="/companies/regions">По регионам</a><span class="npage-bc-sep">/</span><span>' + esc(label) + '</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Официальные открытые данные</span></div>'
+  + '<h1 class="npage-h1">Компании: ' + esc(label) + '</h1>'
+  + '<p style="color:#475569;max-width:760px;">Юридические лица, зарегистрированные по адресу в регионе «' + esc(label) + '». Источник — Министерство юстиции РК через data.egov.kz.</p></section>'
+  + resultsHtml + paginationHtml
+  + '<div class="npage-cta" style="margin-top:34px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
+  + '<h2 class="npage-cta-title">Компания требует оплату или арестовала счёт?</h2><p class="npage-cta-sub">Проверим основания взыскания и поможем защитить ваши права.</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77752998738?text=Здравствуйте!+Нужна+проверка+компании+и+юридическая+помощь." target="_blank" rel="noopener">Написать в WhatsApp</a></div>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: results.page > 1, body }) %>

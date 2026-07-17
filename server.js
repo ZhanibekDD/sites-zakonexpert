@@ -973,6 +973,21 @@ app.get('/companies', (req, res) => {
   res.render('companies/catalog', { query, results, stats });
 });
 
+app.get('/companies/regions', (req, res) => {
+  if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
+  const regions = companiesDb.regionStats();
+  const stats = companiesDb.stats();
+  res.render('companies/regions', { regions, stats });
+});
+
+app.get('/companies/region/:slug', (req, res) => {
+  if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
+  const page = Number.parseInt(req.query.page, 10) || 1;
+  const results = companiesDb.byRegion(req.params.slug, page, 30);
+  if (!results.label) return res.status(404).redirect('/companies/regions');
+  res.render('companies/region', { slug: req.params.slug, results });
+});
+
 app.get('/company/:slug', (req, res) => {
   if (!companiesDb || !companiesDb.available()) return res.status(404).redirect('/companies');
   const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
@@ -1742,6 +1757,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
     { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
     { url: '/companies',      priority: '0.9',  freq: 'weekly' },
+    { url: '/companies/regions', priority: '0.8', freq: 'weekly' },
     { url: '/gsi',            priority: '0.8',  freq: 'weekly' },
     { url: '/insurance',      priority: '0.75', freq: 'weekly' },
     { url: '/credit-bureaus', priority: '0.7',  freq: 'monthly' },
@@ -1761,6 +1777,11 @@ app.get('/sitemap-pages.xml', (req, res) => {
     { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
     { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
   ];
+  if (companiesDb) {
+    companiesDb.regionStats().forEach(region => {
+      pages.push({ url: `/companies/region/${region.slug}`, priority: '0.6', freq: 'weekly' });
+    });
+  }
   const today = new Date().toISOString().substring(0, 10);
   const urls = pages.map(p => `
   <url>
