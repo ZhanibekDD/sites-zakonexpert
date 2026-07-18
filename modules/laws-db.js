@@ -18,6 +18,9 @@ db.ensureIndex({ fieldName: 'slug',    unique: true }).catch(() => {});
 db.ensureIndex({ fieldName: 'code'                  }).catch(() => {});
 db.ensureIndex({ fieldName: 'numInt'                }).catch(() => {});
 
+let _codesCache = null;
+let _codesCacheAt = 0;
+
 module.exports = {
   compact() {
     return compactDatastore(db);
@@ -43,11 +46,17 @@ module.exports = {
     return db.find({}, { slug: 1, updatedAt: 1, _id: 0 });
   },
 
+  // Called on every /statyi and /statya/:slug request — cache briefly so a
+  // full-collection scan doesn't run on each page view.
   getCodes() {
+    const now = Date.now();
+    if (_codesCache && now - _codesCacheAt < 5 * 60 * 1000) return Promise.resolve(_codesCache);
     return db.find({}, { code: 1, codeName: 1, shortName: 1, _id: 0 }).then(docs => {
       const seen = {};
       docs.forEach(d => { seen[d.code] = { code: d.code, codeName: d.codeName, shortName: d.shortName }; });
-      return Object.values(seen);
+      _codesCache = Object.values(seen);
+      _codesCacheAt = now;
+      return _codesCache;
     });
   },
 
