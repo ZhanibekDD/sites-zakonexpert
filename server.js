@@ -2357,6 +2357,43 @@ app.post('/api/lead', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// ===== LIVE CHAT (widget → Telegram, owner replies via Telegram Reply) =====
+let chatDb = null;
+try { chatDb = require('./modules/chat-db'); } catch (e) { logger.warn('chat-db not loaded: ' + e.message); }
+
+const chatSendLimiter = new Map(); // sessionId -> [timestamps]
+function chatRateLimited(sessionId) {
+  const now = Date.now();
+  const hits = (chatSendLimiter.get(sessionId) || []).filter(t => now - t < 60000);
+  hits.push(now);
+  chatSendLimiter.set(sessionId, hits);
+  return hits.length > 20; // 20 messages/minute per session is plenty for a real conversation
+}
+
+app.post('/api/chat/send', asyncHandler(async (req, res) => {
+  const sessionId = String(req.body?.sessionId || '').slice(0, 64);
+  const text = String(req.body?.text || '').trim().slice(0, 1000);
+  const page = String(req.body?.page || '').slice(0, 200);
+  if (!chatDb) return res.status(503).json({ error: 'Чат временно недоступен' });
+  if (!sessionId || !text) return res.status(400).json({ error: 'Пустое сообщение' });
+  if (chatRateLimited(sessionId)) return res.status(429).json({ error: 'Слишком много сообщений, подождите немного' });
+
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  const chatNumber = await chatDb.addClientMessage(sessionId, text, page);
+  const sent = await telegram.notifyChatMessage(chatNumber, text, page, ip, ua);
+  if (sent?.message_id) await chatDb.pushBotMsgId(sessionId, sent.message_id);
+  res.json({ ok: true });
+}));
+
+app.get('/api/chat/poll', asyncHandler(async (req, res) => {
+  const sessionId = String(req.query?.session || '').slice(0, 64);
+  const since = Number.parseInt(req.query?.since, 10) || 0;
+  if (!chatDb || !sessionId) return res.json({ messages: [], now: Date.now() });
+  const messages = await chatDb.getMessagesSince(sessionId, since);
+  res.json({ messages, now: Date.now() });
+}));
+
 // ===== TELEGRAM SETUP: определить CHAT_ID =====
 app.get('/api/telegram/setup', asyncHandler(async (req, res) => {
   const token = process.env.TELEGRAM_BOT_TOKEN;

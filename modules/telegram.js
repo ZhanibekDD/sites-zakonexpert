@@ -109,14 +109,15 @@ function pageLabel(url) { return PAGE_LABELS[url] || url; }
 async function send(text, opts = {}) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chatId) return;
+  if (!token || !chatId) return null;
   try {
-    await axios.post(
+    const res = await axios.post(
       `https://api.telegram.org/bot${token}/sendMessage`,
       { chat_id: chatId, text, parse_mode: 'HTML', ...opts },
       { timeout: 6000 }
     );
-  } catch (_) {}
+    return res.data?.result || null;
+  } catch (_) { return null; }
 }
 
 async function sendToChat(chatId, text, opts = {}) {
@@ -251,6 +252,26 @@ function notifyLead(data, ip, ua) {
   send(lines.join('\n')).catch(() => {});
 }
 
+// ── Live chat widget message ──────────────────────────────────────────────────
+async function notifyChatMessage(chatNumber, text, page, ip, ua) {
+  const lines = [
+    `💬 <b>Чат №${chatNumber} — сообщение с сайта</b>`,
+    ``,
+    esc(text),
+    ``,
+    page ? `📄 Страница: ${esc(pageLabel(page) || page)}` : null,
+    `⏰ ${now()}`,
+    `🌐 IP: <code>${esc(String(ip || '').split(',')[0].trim())}</code>`,
+    `📱 ${esc(device(ua))}`,
+  ].filter(Boolean);
+  // force_reply puts Telegram's input box straight into "replying to this
+  // message" mode — no manual swipe-to-reply needed, and it keeps multiple
+  // concurrent visitor chats from getting mixed up.
+  return send(lines.join('\n'), {
+    reply_markup: { force_reply: true, selective: true, input_field_placeholder: `Ответ в чат №${chatNumber}` },
+  });
+}
+
 // ── Bot polling & commands ────────────────────────────────────────────────────
 let _pollOffset = 0;
 let _pollActive = false;
@@ -273,8 +294,10 @@ async function getUpdates() {
 // Lazy-loaded so we don't break startup if DB isn't ready
 let _clicksDb = null;
 let _leadsDb  = null;
+let _chatDb   = null;
 function clicksDb() { if (!_clicksDb) _clicksDb = require('./clicks-db'); return _clicksDb; }
 function leadsDb()  { if (!_leadsDb)  _leadsDb  = require('./leads-db');  return _leadsDb;  }
+function chatDb()   { if (!_chatDb)   _chatDb   = require('./chat-db');   return _chatDb;   }
 
 function fmtStats(stats, leadsCount, period) {
   const t = (n, s) => `${n} ${s}`;
@@ -314,6 +337,14 @@ async function handleUpdate(update) {
     const fromId = String(msg.chat?.id || '');
     if (ownChatId && fromId !== String(ownChatId)) return; // ignore strangers
     const text = (msg.text || '').trim();
+
+    if (msg.reply_to_message && text) {
+      const routed = await chatDb().addAdminMessageByBotMsgId(msg.reply_to_message.message_id, text);
+      if (routed) {
+        await sendToChat(fromId, `✅ Отправлено в чат №${routed.chatNumber} на сайте`);
+        return;
+      }
+    }
 
     if (text === '/stats' || text === '/stat') {
       await sendToChat(fromId, '📊 <b>Выберите период для статистики:</b>', { reply_markup: STATS_KB });
@@ -406,6 +437,6 @@ async function detectChatId() {
 
 module.exports = {
   send, notifyVisit, notifyIinCheck, notifyApplication,
-  notifyLead, notifyClick,
+  notifyLead, notifyClick, notifyChatMessage,
   startPolling, stopPolling, detectChatId,
 };
