@@ -125,6 +125,10 @@
       </div>
       <div class="zke-messages" id="zke-messages"></div>
       <div class="zke-btns" id="zke-btns"></div>
+      <div class="zke-input-row" id="zke-live-row">
+        <input class="zke-input" id="zke-live-input" type="text" placeholder="Напишите сообщение…" maxlength="1000" aria-label="Сообщение">
+        <button class="zke-send" id="zke-live-send" aria-label="Отправить сообщение">→</button>
+      </div>
     `;
     document.body.appendChild(box);
 
@@ -133,9 +137,70 @@
       if (isOpen) {
         btn.querySelector('.zke-badge').style.display = 'none';
         if (!document.getElementById('zke-messages').children.length) showStep('start');
+        startChatPolling();
+      } else {
+        stopChatPolling();
       }
     });
-    document.getElementById('zke-close').addEventListener('click', () => box.classList.remove('open'));
+    document.getElementById('zke-close').addEventListener('click', () => {
+      box.classList.remove('open');
+      stopChatPolling();
+    });
+
+    const liveInput = document.getElementById('zke-live-input');
+    document.getElementById('zke-live-send').addEventListener('click', sendLiveMessage);
+    liveInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendLiveMessage(); });
+  }
+
+  // ── Live chat (free text → Telegram → owner replies there) ─────────────────
+  function getSessionId() {
+    let id = localStorage.getItem('zke_chat_session');
+    if (!id) {
+      id = (window.crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2));
+      localStorage.setItem('zke_chat_session', id);
+    }
+    return id;
+  }
+
+  let _pollTimer = null;
+  let _lastMsgTs = Number(localStorage.getItem('zke_chat_last_ts') || 0);
+
+  function sendLiveMessage() {
+    const input = document.getElementById('zke-live-input');
+    const text = (input.value || '').trim();
+    if (!text) return;
+    addMsg(text, 'user');
+    input.value = '';
+    fetch('/api/chat/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: getSessionId(), text, page: location.pathname }),
+    }).catch(() => {});
+  }
+
+  function pollChat() {
+    fetch(`/api/chat/poll?session=${encodeURIComponent(getSessionId())}&since=${_lastMsgTs}`)
+      .then(r => r.json())
+      .then(data => {
+        (data.messages || []).forEach(m => {
+          if (m.from === 'admin') addMsg(m.text, 'bot');
+          if (m.ts > _lastMsgTs) _lastMsgTs = m.ts;
+        });
+        if (data.messages && data.messages.length) {
+          localStorage.setItem('zke_chat_last_ts', String(_lastMsgTs));
+        }
+      })
+      .catch(() => {});
+  }
+
+  function startChatPolling() {
+    if (_pollTimer) return;
+    pollChat();
+    _pollTimer = setInterval(pollChat, 3500);
+  }
+
+  function stopChatPolling() {
+    if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
   }
 
   function addMsg(text, who) {
