@@ -406,7 +406,8 @@
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 1.5rem;
-  max-height: 380px;
+  aspect-ratio: 1200 / 630;
+  max-height: 440px;
   background: linear-gradient(135deg, #0f2044, #1a3560);
 }
 .news-detail-cover img {
@@ -425,6 +426,15 @@
   font-size: clamp(1.3rem, 2.5vw, 1.85rem);
   font-weight: 800; color: #0f2044;
   line-height: 1.35; margin-bottom: 1.5rem;
+}
+.news-detail-lead {
+  margin: -0.35rem 0 1.9rem;
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #405169;
+  font-size: 1.12rem;
+  line-height: 1.75;
+  font-weight: 500;
 }
 .news-kратко {
   background: #f0f5ff;
@@ -448,6 +458,15 @@
 .news-section-block--main p {
   font-size: 1.05rem; line-height: 1.85; color: #1e2d40; margin-bottom: 1rem;
 }
+.news-section-block p {
+  margin: 0 0 1rem;
+}
+.news-section-block ul {
+  margin: 0 0 1rem;
+  padding-left: 1.35rem;
+  color: #334155;
+}
+.news-section-block li { margin-bottom: 0.55rem; }
 .news-source-ref {
   font-size: 0.8rem; color: #94a3b8; margin-top: 0.5rem;
 }
@@ -462,8 +481,55 @@
 }
 .news-commentary-header svg { color: #1a3560; }
 .news-commentary-header h2 { margin: 0; font-size: 1.05rem; }
+.news-commentary-mark {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  border-radius: 50%;
+  background: #0f2a4e;
+  color: #e4b64d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.news-check-panel {
+  padding: 1.35rem 1.5rem;
+  border: 1px solid #dbe5f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 26px rgba(15,42,78,0.06);
+}
 .news-checklist {
-  padding-left: 1.25rem; margin: 0 0 1rem; color: #334155; line-height: 1.7;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  color: #334155;
+  line-height: 1.55;
+}
+.news-checklist li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 0;
+}
+.news-checklist li > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #e9f8ef;
+  color: #15803d;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 .news-inline-cta {
   display: inline-block; color: #1a3560; font-weight: 600; text-decoration: none; font-size: 0.9rem;
@@ -531,6 +597,10 @@
 .news-when-help h2 { color: #0f2044; margin-bottom: 0.75rem; font-size: 1.1rem; }
 .news-when-help p { color: #334155; margin-bottom: 1rem; }
 .news-when-help-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.news-when-help .btn-legal-outline {
+  border-color: #1a3560;
+  color: #1a3560;
+}
 .news-full-content { font-size: 1.05rem; line-height: 1.85; color: #1e293b; }
 .news-full-content p { margin-bottom: 1.2rem; }
 .news-full-content p:last-child { margin-bottom: 0; }
@@ -566,6 +636,34 @@
   background: rgba(26,53,96,0.06);
   border-color: rgba(26,53,96,0.4);
   color: #0f2044;
+}
+.news-source-box {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin: 1.75rem 0 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid #dbe5f1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.news-source-box div { display: grid; gap: 0.2rem; }
+.news-source-box strong { color: #0f2044; font-size: 0.88rem; }
+.news-source-box span { color: #64748b; font-size: 0.8rem; line-height: 1.45; }
+.news-source-box a {
+  flex-shrink: 0;
+  color: #1a3560;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.news-source-box a:hover { text-decoration: underline; }
+.news-editorial-note {
+  margin: 0 0 1.4rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1.55;
 }
 
 /* Sidebar widgets */
@@ -616,6 +714,8 @@
   .news-cta-strip { padding: 1rem 1.25rem; gap: 1rem; }
   .news-cta-strip-icon { display: none; }
   .news-detail-main { padding: 1.25rem 1rem; }
+  .news-detail-lead { font-size: 1rem; }
+  .news-source-box { align-items: flex-start; flex-direction: column; }
   .news-cta-block { padding: 1.5rem 1.25rem; }
 }
 @media (max-width: 480px) {

@@ -1650,6 +1650,66 @@ function xmlEscape(value = '') {
     .replace(/'/g, '&apos;');
 }
 
+function newsCoverLines(value, maxChars = 34, maxLines = 3) {
+  const words = cleanNewsText(value).split(' ').filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (next.length > maxChars && line) {
+      lines.push(line);
+      line = word;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      line = next;
+    }
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  const used = lines.join(' ').length;
+  if (used < cleanNewsText(value).length && lines.length) {
+    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.,:;!?—-]+$/u, '')}…`;
+  }
+  return lines;
+}
+
+function newsCoverTheme(article) {
+  const text = `${article.category || ''} ${article.tags || ''} ${newsDisplayTitle(article)}`.toLowerCase();
+  if (/чси|исполнител/.test(text)) return { label: 'ЧСИ И ВЗЫСКАНИЕ', accent: '#e4b64d', symbol: '§' };
+  if (/нотари|надпис/.test(text)) return { label: 'НОТАРИАТ', accent: '#77b7ff', symbol: 'N' };
+  if (/авто|транспорт/.test(text)) return { label: 'АВТО И ОГРАНИЧЕНИЯ', accent: '#65d1b4', symbol: 'A' };
+  if (/суд|апелляц/.test(text)) return { label: 'СУДЕБНАЯ ПРАКТИКА', accent: '#caa7ff', symbol: '⚖' };
+  if (/банк|кредит|мфо|долг/.test(text)) return { label: 'ФИНАНСЫ И ДОЛГИ', accent: '#e4b64d', symbol: '₸' };
+  return { label: 'НОВОСТИ И ПРАВО', accent: '#e4b64d', symbol: 'ZE' };
+}
+
+function buildNewsCoverSvg(article) {
+  const title = newsDisplayTitle(article);
+  const theme = newsCoverTheme(article);
+  const lines = newsCoverLines(title);
+  const tspans = lines.map((line, index) =>
+    `<tspan x="88" dy="${index === 0 ? 0 : 67}">${xmlEscape(line)}</tspan>`
+  ).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">${xmlEscape(title)}</title>
+  <desc id="desc">Редакционная обложка ZakonExpert</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#06172d"/><stop offset="0.58" stop-color="#0d2f58"/><stop offset="1" stop-color="#174e7d"/></linearGradient>
+    <radialGradient id="glow" cx="80%" cy="20%" r="70%"><stop stop-color="${theme.accent}" stop-opacity=".24"/><stop offset="1" stop-color="${theme.accent}" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g fill="none" stroke="${theme.accent}" stroke-opacity=".16"><circle cx="1010" cy="205" r="178" stroke-width="2"/><circle cx="1010" cy="205" r="132"/><path d="M1010 58l126 70v142l-126 76-126-76V128z" stroke-width="3"/></g>
+  <g transform="translate(910 105)"><rect width="200" height="200" rx="100" fill="#06172d" fill-opacity=".58" stroke="${theme.accent}" stroke-width="3"/><text x="100" y="125" text-anchor="middle" fill="${theme.accent}" font-family="Arial, sans-serif" font-size="72" font-weight="700">${xmlEscape(theme.symbol)}</text></g>
+  <rect x="88" y="72" width="74" height="4" rx="2" fill="${theme.accent}"/>
+  <text x="88" y="113" fill="${theme.accent}" font-family="Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="2">${xmlEscape(theme.label)}</text>
+  <text x="88" y="218" fill="#ffffff" font-family="Arial, sans-serif" font-size="53" font-weight="700">${tspans}</text>
+  <line x1="88" y1="525" x2="1112" y2="525" stroke="#ffffff" stroke-opacity=".18"/>
+  <text x="88" y="574" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="2">ZAKONEXPERT</text>
+  <text x="1112" y="574" text-anchor="end" fill="#ffffff" fill-opacity=".62" font-family="Arial, sans-serif" font-size="19">Юридический разбор · Казахстан</text>
+</svg>`;
+}
+
 // NEWS LIST
 app.get('/news', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
@@ -1686,7 +1746,7 @@ app.get('/news', asyncHandler(async (req, res) => {
     currentPage: page,
     totalPages,
     currentCategory: category,
-    allowSourceImages: process.env.NEWS_USE_SOURCE_IMAGES === 'true',
+    allowSourceImages: process.env.NEWS_USE_SOURCE_IMAGES !== 'false',
     schema,
   });
 }));
@@ -2079,7 +2139,23 @@ app.get('/sitemap-index.xml', (req, res) => {
 </sitemapindex>`);
 });
 
-// NEWS DETAIL (must be after feed.xml and category routes)
+// Unique, lightweight editorial cover for every article. The SVG is generated
+// on request, so hundreds of news pages do not consume extra hosting storage
+// and never depend on third-party image hotlinks.
+app.get('/news/cover/:slug', asyncHandler(async (req, res) => {
+  if (!newsDb) return res.status(503).send('News module not available');
+  const slug = String(req.params.slug || '').replace(/\.svg$/i, '');
+  const article = await newsDb.getBySlug(slug);
+  if (!article) return res.status(404).send('Cover not found');
+  res.set({
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.send(buildNewsCoverSvg(article));
+}));
+
+// NEWS DETAIL (must be after feed.xml, category and cover routes)
 app.get('/news/:slug', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
   const article = await newsDb.getBySlug(req.params.slug);
@@ -2087,14 +2163,31 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
 
   const displayTitle = newsDisplayTitle(article);
   const displayExcerpt = newsDisplayExcerpt(article);
-  const articleView = { ...article, display_title: displayTitle, display_excerpt: displayExcerpt };
-  const rawSchemaImage = article.category_cover || article.og_image || '/img/zakonexpert-logo-kazakhstan.png';
+  const isAdvokat = article.category === 'Адвокат';
+  const generated = !isAdvokat && newsImporter?.buildGeneratedContent
+    ? newsImporter.buildGeneratedContent(displayTitle, displayExcerpt)
+    : {};
+  const articleView = {
+    ...article,
+    display_title: displayTitle,
+    display_excerpt: displayExcerpt,
+    event_summary: article.event_summary || generated.event_summary || displayExcerpt,
+    why_important: article.why_important || generated.why_important || '',
+    legal_commentary: article.legal_commentary || generated.legal_commentary || '',
+    what_to_check: article.what_to_check || JSON.stringify(generated.what_to_check || []),
+    when_to_seek_help: article.when_to_seek_help || generated.when_to_seek_help || '',
+    display_cover: (
+      String(article.og_image || '').startsWith('/img/')
+      || (process.env.NEWS_USE_SOURCE_IMAGES !== 'false' && /^https:\/\//i.test(article.og_image || ''))
+    ) ? article.og_image : `/news/cover/${encodeURIComponent(article.slug)}.svg`,
+    fallback_cover: `/news/cover/${encodeURIComponent(article.slug)}.svg`,
+  };
+  const rawSchemaImage = articleView.display_cover;
   const schemaImage = /^https:\/\//i.test(rawSchemaImage)
     ? rawSchemaImage
     : `https://zakonexpertt.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
 
   const tagsArr = JSON.parse(article.tags || '[]');
-  const isAdvokat = article.category === 'Адвокат';
   const relatedRaw = tagsArr.length > 0
     ? await newsDb.getByTags(tagsArr[0])
     : await newsDb.getPublished(5, 0);
@@ -2124,7 +2217,7 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
     description: (article.meta_desc || displayExcerpt).substring(0, 160),
     canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
     ogType: 'article',
-    ogImage: article.category_cover || article.og_image,
+    ogImage: articleView.display_cover,
     article: articleView,
     related,
     schema,
@@ -2187,32 +2280,27 @@ app.get('/api/news/reset', asyncHandler(async (req, res) => {
 // GET /api/news/fix-images?key=... — fetch og:image for existing articles that have none
 app.get('/api/news/fix-images', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
-  if (!newsDb) return res.status(503).json({ error: 'News DB not available' });
+  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
   res.json({ ok: true, message: 'Image fetch started in background. Check logs.' });
-  const axios = require('axios');
-  const cheerio = require('cheerio');
   try {
     const articles = await newsDb.getAllWithoutImage();
     logger.info(`[fix-images] Found ${articles.length} articles without og_image`);
     let updated = 0;
     for (const a of articles) {
-      const url = a.source_url || a.original_url;
-      if (!url || url.startsWith('https://news.google.com')) continue;
-      try {
-        const resp = await axios.get(url, {
-          timeout: 8000,
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpert-NewsBot/1.0)' },
-          maxRedirects: 3,
-          maxContentLength: 300_000,
-        });
-        const $ = cheerio.load(resp.data);
-        const img = $('meta[property="og:image"]').attr('content');
-        if (img) {
-          await newsDb.updateOgImage(a._id, img);
-          updated++;
-        }
-        await new Promise(r => setTimeout(r, 500));
-      } catch (_) {}
+      const urls = [...new Set([a.source_url, a.original_url].filter(Boolean))];
+      for (const url of urls) {
+        try {
+          const { ogImage } = await newsImporter.fetchPageMeta(url);
+          const img = newsImporter.normalizeSourceImage(ogImage);
+          if (img) {
+            await newsDb.updateOgImage(a._id, img);
+            updated++;
+            if (updated % 25 === 0) logger.info(`[fix-images] Progress: ${updated} images found`);
+            break;
+          }
+        } catch (_) {}
+        await new Promise(r => setTimeout(r, 350));
+      }
     }
     logger.info(`[fix-images] Done. Updated ${updated}/${articles.length}`);
   } catch (e) {
@@ -2244,7 +2332,7 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
       AUTO_PUBLISH_NEWS:    process.env.AUTO_PUBLISH_NEWS    || 'true',
       NEWS_MIN_RELEVANCE:   process.env.NEWS_MIN_RELEVANCE   || '0.45',
       NEWS_IMPORT_LIMIT:    process.env.NEWS_IMPORT_LIMIT    || '50',
-      NEWS_USE_SOURCE_IMAGES: process.env.NEWS_USE_SOURCE_IMAGES || 'false',
+      NEWS_USE_SOURCE_IMAGES: process.env.NEWS_USE_SOURCE_IMAGES || 'true',
     },
   });
 }));

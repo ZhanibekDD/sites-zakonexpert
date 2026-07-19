@@ -21,7 +21,9 @@ const AUTO_PUBLISH     = process.env.AUTO_PUBLISH_NEWS !== 'false';
 const MIN_RELEVANCE    = parseFloat(process.env.NEWS_MIN_RELEVANCE  || '0.45');
 const IMPORT_LIMIT     = parseInt(process.env.NEWS_IMPORT_LIMIT     || '50', 10);
 const MAX_AGE_DAYS     = parseInt(process.env.NEWS_MAX_AGE_DAYS     || '30', 10);
-const USE_SOURCE_IMAGES = process.env.NEWS_USE_SOURCE_IMAGES === 'true';
+// RSS/Open Graph images stay on the publisher's host, so they do not consume
+// our disk quota. Every page also has a generated local fallback.
+const USE_SOURCE_IMAGES = process.env.NEWS_USE_SOURCE_IMAGES !== 'false';
 const IMPORT_STATUS_FILE = path.join(__dirname, '..', 'data', 'news-import-status.json');
 
 function cleanText(value = '') {
@@ -383,18 +385,56 @@ function generateWhenToSeekHelp(origTitle, description) {
   return `Обратитесь за анализом, если вы узнали себя в описанной ситуации или хотите заранее проверить своё положение.\n\nПервый шаг прост: проверьте наличие исполнительных производств по своему ИИН. Большинство арестов выявляются именно так — ещё до того, как деньги фактически списаны или движимость заблокирована.\n\nМы помогаем установить:\n— Основание взыскания (исполнительная надпись, решение суда, штраф, алименты)\n— Имя взыскателя и сумму производства\n— Действия ЧСИ и их соответствие закону\n— Правовой путь: есть ли основания для оспаривания или снятия ограничений\n\nОбращайтесь удобным способом: через форму на сайте, по ИИН или напрямую в WhatsApp.`;
 }
 
+/**
+ * Build the complete original ZakonExpert analysis for a source item.
+ * Kept as one public helper so old database rows that predate the structured
+ * fields can be completed at render time without deleting or re-importing them.
+ */
+function buildGeneratedContent(origTitle, excerpt) {
+  return {
+    event_summary: generateEventSummary(origTitle, excerpt),
+    why_important: generateWhyImportant(origTitle, excerpt),
+    legal_commentary: generateLegalCommentary(origTitle, excerpt),
+    what_to_check: generateWhatToCheck(origTitle, excerpt),
+    when_to_seek_help: generateWhenToSeekHelp(origTitle, excerpt),
+  };
+}
+
 // ─── IMAGE EXTRACTION ─────────────────────────────────────────────────────────
+function normalizeSourceImage(value) {
+  if (!value) return null;
+  let url = String(value).trim();
+  if (url.startsWith('//')) url = `https:${url}`;
+  if (!/^https:\/\//i.test(url)) return null;
+  if (/\b(?:logo|favicon|icon|avatar|sprite|pixel)\b/i.test(url)) return null;
+  if (/(?:news\.google|gstatic|googleusercontent)\./i.test(url)) return null;
+  return url;
+}
+
 function extractRssImage(item) {
-  if (item.mediaContent?.['$']?.url)      return item.mediaContent['$'].url;
-  if (item.mediaThumbnail?.['$']?.url)    return item.mediaThumbnail['$'].url;
-  if (item.enclosure?.url)                return item.enclosure.url;
-  if (item['media:thumbnail']?.['$']?.url) return item['media:thumbnail']['$'].url;
+  const candidates = [
+    item.mediaContent?.['$']?.url,
+    item.mediaThumbnail?.['$']?.url,
+    item.enclosure?.url,
+    item['media:thumbnail']?.['$']?.url,
+  ];
+  const rawHtml = item['content:encoded'] || item.content || item.summary || '';
+  if (/<img\b/i.test(rawHtml)) {
+    const $ = cheerio.load(rawHtml);
+    candidates.push($('img').first().attr('src'));
+  }
+  for (let value of candidates) {
+    if (!value) continue;
+    const normalized = normalizeSourceImage(value);
+    if (normalized) return normalized;
+  }
   return null;
 }
 
 /**
- * Fetch og:image and short page excerpt for relevance boosting.
- * Does NOT store full article text — only uses it for analysis.
+ * Fetch Open Graph data and a short factual lead for relevance/summary.
+ * We deliberately do not copy a publisher's full article: the saved page is
+ * an original ZakonExpert analysis with a visible link to the source.
  */
 async function fetchPageMeta(url) {
   return new Promise((resolve) => {
@@ -402,7 +442,7 @@ async function fetchPageMeta(url) {
     const source = CancelToken.source();
     let chunks = [];
     let totalBytes = 0;
-    const MAX_BYTES = 80_000; // read only first 80 KB — head section is always there
+    const MAX_BYTES = 300_000; // enough for heavy heads and the first article paragraphs
 
     axios.get(url, {
       timeout: 10000,
@@ -440,7 +480,11 @@ async function fetchPageMeta(url) {
         const descMeta = $('meta[name="description"]').attr('content')
           || $('meta[property="og:description"]').attr('content')
           || '';
-        resolve({ ogImage, pageDesc: descMeta.substring(0, 400) });
+        const articleLead = $('article p, main p, [itemprop="articleBody"] p')
+          .map((_, el) => cleanText($(el).text()))
+          .get()
+          .find(text => text.length >= 80) || '';
+        resolve({ ogImage, pageDesc: cleanText(descMeta || articleLead).substring(0, 600) });
       } catch {
         resolve({ ogImage: null, pageDesc: '' });
       }
@@ -517,11 +561,7 @@ async function fetchSource(source) {
 
     // Generate unique structured content from the best available summary,
     // including the source page description when RSS only contains a title.
-    const eventSummary     = generateEventSummary(origTitle, excerpt);
-    const whyImportant     = generateWhyImportant(origTitle, excerpt);
-    const legalCommentary  = generateLegalCommentary(origTitle, excerpt);
-    const whatToCheck      = generateWhatToCheck(origTitle, excerpt);
-    const whenToSeekHelp   = generateWhenToSeekHelp(origTitle, excerpt);
+    const generated = buildGeneratedContent(origTitle, excerpt);
 
     // Status based on score and env config
     let status = 'draft';
@@ -542,7 +582,9 @@ async function fetchSource(source) {
     const metaDesc     = excerpt.substring(0, 155) || `Разбор: ${legalTitle.substring(0, 100)}`;
 
     const rssImg = extractRssImage(item);
-    const ogImage = USE_SOURCE_IMAGES ? (rssImg || pageOgImg || null) : null;
+    const ogImage = USE_SOURCE_IMAGES
+      ? (normalizeSourceImage(rssImg) || normalizeSourceImage(pageOgImg) || null)
+      : null;
 
     // Category cover image (our own SVG — always available)
     const categoryCover = `/img/news/news-cover-${getCoverName(tags)}.svg`;
@@ -561,11 +603,11 @@ async function fetchSource(source) {
       title:               legalTitle,
       slug,
       excerpt,
-      event_summary:       eventSummary,
-      why_important:       whyImportant,
-      legal_commentary:    legalCommentary,
-      what_to_check:       JSON.stringify(whatToCheck),
-      when_to_seek_help:   whenToSeekHelp,
+      event_summary:       generated.event_summary,
+      why_important:       generated.why_important,
+      legal_commentary:    generated.legal_commentary,
+      what_to_check:       JSON.stringify(generated.what_to_check),
+      when_to_seek_help:   generated.when_to_seek_help,
 
       // Metadata
       category:          normalizeCategory(source.category, tags),
@@ -649,7 +691,16 @@ async function importAll() {
 
     const totals = { imported: 0, rejected: 0, duplicate: 0, errors: 0 };
 
-    for (const source of sources) {
+    // Direct publisher feeds usually contain a factual lead and media:content.
+    // Process them before Google News search feeds so deduplication keeps the
+    // richer original record (with its publisher URL and image).
+    const orderedSources = [...sources].sort((a, b) => {
+      const aIsAggregator = /news\.google\.com/i.test(a.rss_url || '');
+      const bIsAggregator = /news\.google\.com/i.test(b.rss_url || '');
+      return Number(aIsAggregator) - Number(bIsAggregator);
+    });
+
+    for (const source of orderedSources) {
       if (!source.enabled) continue;
       if (totalImportedThisRun >= IMPORT_LIMIT) break;
 
@@ -695,5 +746,18 @@ module.exports = {
   importAll,
   fetchSource,
   getLastImportInfo,
-  __test: { cleanText, cleanHeadline, cleanExcerpt, buildExcerpt, normalizeCategory, isPrefilterRelevant },
+  buildGeneratedContent,
+  fetchPageMeta,
+  normalizeSourceImage,
+  __test: {
+    cleanText,
+    cleanHeadline,
+    cleanExcerpt,
+    buildExcerpt,
+    normalizeCategory,
+    isPrefilterRelevant,
+    buildGeneratedContent,
+    normalizeSourceImage,
+    extractRssImage,
+  },
 };

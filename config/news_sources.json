@@ -100,6 +100,17 @@
     "keywords": ["запрет", "авто", "ЧСИ", "регистрационных действий"]
   },
   {
+    "id": "tengrinews",
+    "name": "Tengrinews.kz",
+    "base_url": "https://tengrinews.kz",
+    "rss_url": "https://tengrinews.kz/news.rss",
+    "enabled": true,
+    "category": "general",
+    "allowed": true,
+    "parser_type": "rss",
+    "keywords": ["арест", "банк", "кредит", "должник", "ЧСИ", "нотариус", "исполнительное производство", "взыскание", "МФО", "запрет выезда", "штраф", "алименты"]
+  },
+  {
     "id": "ranking",
     "name": "Ranking.kz",
     "base_url": "https://ranking.kz",
