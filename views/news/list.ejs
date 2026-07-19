@@ -198,7 +198,7 @@ const body = `
           <div class="news-featured-main-img" style="background:${getCoverBlock(featured).grad}">
             <div class="news-cover-icon"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${getCoverBlock(featured).icon}</svg></div>
             ${getArticleImage(featured)
-              ? `<img src="${escapeHtml(getArticleImage(featured))}" alt="${escapeHtml(getDisplayTitle(featured))}" loading="eager" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
+              ? `<img src="${escapeHtml(getArticleImage(featured))}" alt="${escapeHtml(getDisplayTitle(featured))}" loading="eager" referrerpolicy="no-referrer" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
               : ``
             }
             <span class="news-featured-cat-badge">${getCatLabel(featured)}</span>
@@ -229,7 +229,7 @@ const body = `
           <div class="news-secondary-img" style="background:${cb.grad}">
             <div class="news-cover-icon-sm"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${cb.icon}</svg></div>
             ${getArticleImage(a)
-              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
+              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" referrerpolicy="no-referrer" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
               : ``
             }
           </div>
@@ -283,7 +283,7 @@ const body = `
           <div class="news-card-cover" style="background:${cover.grad}">
             <div class="news-card-cover-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${cover.icon}</svg></div>
             ${getArticleImage(a)
-              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" onerror="this.remove()">`
+              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
               : ``
             }
             <span class="news-card-category">${cover.label}</span>
