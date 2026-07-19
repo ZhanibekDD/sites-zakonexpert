@@ -117,6 +117,8 @@ module.exports = {
     docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
     return docs.map(a => ({
       slug:             a.slug,
+      title:            a.title,
+      original_title:   a.original_title,
       published_at_source: a.published_at_source,
       published_at_site: a.published_at_site,
       updatedAt:        a.updatedAt,

@@ -1641,6 +1641,15 @@ function xmlCdata(value = '') {
   return String(value).replace(/\]\]>/g, ']]]]><![CDATA[>');
 }
 
+function xmlEscape(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 // NEWS LIST
 app.get('/news', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
@@ -1725,18 +1734,32 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
     res.set('Content-Type', 'application/xml');
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const articles = await newsDb.getAllForSitemap();
-  const urls = articles.map(a => `
+  const cutoff = Date.now() - (2 * 24 * 60 * 60 * 1000);
+  const articles = (await newsDb.getAllForSitemap()).filter(article => {
+    const publishedAt = article.published_at_source || article.published_at_site;
+    return publishedAt && Date.parse(publishedAt) >= cutoff;
+  });
+  const urls = articles.map(a => {
+    const publishedAt = a.published_at_source || a.published_at_site;
+    return `
   <url>
-    <loc>https://zakonexpertt.kz/news/${a.slug}</loc>
+    <loc>https://zakonexpertt.kz/news/${xmlEscape(a.slug)}</loc>
     <lastmod>${(a.updatedAt || a.published_at_source || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>`).join('');
+    <news:news>
+      <news:publication>
+        <news:name>ZakonExpert</news:name>
+        <news:language>ru</news:language>
+      </news:publication>
+      <news:publication_date>${xmlEscape(new Date(publishedAt).toISOString())}</news:publication_date>
+      <news:title>${xmlEscape(newsDisplayTitle(a))}</news:title>
+    </news:news>
+  </url>`;
+  }).join('');
 
   res.set('Content-Type', 'application/xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   ${urls}
 </urlset>`);
 }));
