@@ -69,15 +69,39 @@ async function run() {
 
     const routes = [
       '/',
+      '/news',
+      '/advocate',
+      '/mediator',
+      '/services',
+      '/contact',
+      '/dokumenty',
       '/rezultaty',
+      '/notaries',
+      '/bailiffs',
+      '/lawyers',
+      '/banks',
+      '/mfo',
+      '/lombards',
+      '/courts',
+      '/collectors',
       '/companies',
+      '/statyi',
+      '/sitemap.xml',
+      '/sitemap-news.xml',
+      '/robots.txt',
       '/img/brand/zakonexpert-logo-transparent-hd.png',
+      '/img/advocate-maulen.jpeg',
+      '/img/mediator-nurgisa.jpeg',
       '/img/rezultaty/otmena-nadpisi-instagram-2025-09.webp',
       '/img/rezultaty/instagram-2025-09-22-111346.webp',
       '/img/rezultaty/instagram-2025-09-22-118723.webp',
       '/img/rezultaty/instagram-2025-09-22-chsi-5388.webp',
     ];
     for (const route of routes) await expectGet(route);
+
+    const newsSitemap = await (await fetch(`${origin}/sitemap-news.xml`)).text();
+    assert(newsSitemap.includes('xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"'),
+      'News sitemap is missing the Google News namespace');
 
     await expectCheck({}, 400);
     await expectCheck({ iin: '123' }, 400);

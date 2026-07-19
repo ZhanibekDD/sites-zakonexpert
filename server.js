@@ -1618,6 +1618,38 @@ for (const [route, file] of Object.entries(servicePages)) {
 // ===== NEWS ROUTES =====
 const NEWS_PER_PAGE = 20;
 
+function cleanNewsText(value = '') {
+  return String(value)
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+(?:[\w-]+\.)+(?:kz|ru|com|org|net)$/iu, '')
+    .trim();
+}
+
+function newsDisplayTitle(article) {
+  return cleanNewsText(article.original_title || article.title || 'Новости ZakonExpert');
+}
+
+function newsDisplayExcerpt(article) {
+  const value = cleanNewsText(article.excerpt || article.original_excerpt || '');
+  return value.length >= 45
+    ? value
+    : 'Разбираем событие, объясняем правовые последствия и даём понятный алгоритм действий.';
+}
+
+function xmlCdata(value = '') {
+  return String(value).replace(/\]\]>/g, ']]]]><![CDATA[>');
+}
+
+function xmlEscape(value = '') {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 // NEWS LIST
 app.get('/news', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
@@ -1654,6 +1686,7 @@ app.get('/news', asyncHandler(async (req, res) => {
     currentPage: page,
     totalPages,
     currentCategory: category,
+    allowSourceImages: process.env.NEWS_USE_SOURCE_IMAGES === 'true',
     schema,
   });
 }));
@@ -1670,12 +1703,12 @@ app.get('/news/feed.xml', asyncHandler(async (req, res) => {
   const articles = await newsDb.getPublished(20, 0);
   const items = articles.map(a => `
     <item>
-      <title><![CDATA[${a.title}]]></title>
+      <title><![CDATA[${xmlCdata(newsDisplayTitle(a))}]]></title>
       <link>https://zakonexpertt.kz/news/${a.slug}</link>
       <guid isPermaLink="true">https://zakonexpertt.kz/news/${a.slug}</guid>
-      <pubDate>${new Date(a.published_at_site || a.created_at).toUTCString()}</pubDate>
-      <description><![CDATA[${a.excerpt || ''}]]></description>
-      <category>${a.category || 'general'}</category>
+      <pubDate>${new Date(a.published_at_source || a.published_at_site || a.created_at).toUTCString()}</pubDate>
+      <description><![CDATA[${xmlCdata(newsDisplayExcerpt(a))}]]></description>
+      <category><![CDATA[${xmlCdata(a.category || 'general')}]]></category>
     </item>`).join('');
 
   res.set('Content-Type', 'application/rss+xml; charset=utf-8');
@@ -1701,18 +1734,32 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
     res.set('Content-Type', 'application/xml');
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
-  const articles = await newsDb.getAllForSitemap();
-  const urls = articles.map(a => `
+  const cutoff = Date.now() - (2 * 24 * 60 * 60 * 1000);
+  const articles = (await newsDb.getAllForSitemap()).filter(article => {
+    const publishedAt = article.published_at_source || article.published_at_site;
+    return publishedAt && Date.parse(publishedAt) >= cutoff;
+  });
+  const urls = articles.map(a => {
+    const publishedAt = a.published_at_source || a.published_at_site;
+    return `
   <url>
-    <loc>https://zakonexpertt.kz/news/${a.slug}</loc>
-    <lastmod>${(a.updated_at || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>`).join('');
+    <loc>https://zakonexpertt.kz/news/${xmlEscape(a.slug)}</loc>
+    <lastmod>${(a.updatedAt || a.published_at_source || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
+    <news:news>
+      <news:publication>
+        <news:name>ZakonExpert</news:name>
+        <news:language>ru</news:language>
+      </news:publication>
+      <news:publication_date>${xmlEscape(new Date(publishedAt).toISOString())}</news:publication_date>
+      <news:title>${xmlEscape(newsDisplayTitle(a))}</news:title>
+    </news:news>
+  </url>`;
+  }).join('');
 
   res.set('Content-Type', 'application/xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   ${urls}
 </urlset>`);
 }));
@@ -1721,9 +1768,8 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
 function getCorePages() {
   const pages = [
     { url: '/', priority: '1.0', freq: 'weekly' },
-    { url: '/services.html', priority: '0.9', freq: 'monthly' },
-    { url: '/contact.html', priority: '0.8', freq: 'monthly' },
-    { url: '/zakony.html', priority: '0.85', freq: 'weekly' },
+    { url: '/services', priority: '0.9', freq: 'monthly' },
+    { url: '/contact', priority: '0.8', freq: 'monthly' },
     { url: '/news', priority: '0.9', freq: 'daily' },
     { url: '/notaries', priority: '0.85', freq: 'weekly' },
     { url: '/bailiffs', priority: '0.85', freq: 'weekly' },
@@ -2039,6 +2085,14 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   const article = await newsDb.getBySlug(req.params.slug);
   if (!article) return res.status(404).redirect('/news');
 
+  const displayTitle = newsDisplayTitle(article);
+  const displayExcerpt = newsDisplayExcerpt(article);
+  const articleView = { ...article, display_title: displayTitle, display_excerpt: displayExcerpt };
+  const rawSchemaImage = article.category_cover || article.og_image || '/img/zakonexpert-logo-kazakhstan.png';
+  const schemaImage = /^https:\/\//i.test(rawSchemaImage)
+    ? rawSchemaImage
+    : `https://zakonexpertt.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
+
   const tagsArr = JSON.parse(article.tags || '[]');
   const isAdvokat = article.category === 'Адвокат';
   const relatedRaw = tagsArr.length > 0
@@ -2048,12 +2102,12 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
     .filter(r => r.slug !== article.slug && (isAdvokat ? r.category === 'Адвокат' : r.category !== 'Адвокат'))
     .slice(0, 4);
 
-  const pubDate = new Date(article.published_at_site || article.created_at);
+  const pubDate = new Date(article.published_at_source || article.published_at_site || article.created_at);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
-    headline: article.title,
-    description: article.meta_description || article.excerpt,
+    headline: displayTitle,
+    description: article.meta_desc || displayExcerpt,
     url: `https://zakonexpertt.kz/news/${article.slug}`,
     datePublished: pubDate.toISOString(),
     dateModified: article.updated_at || pubDate.toISOString(),
@@ -2062,16 +2116,16 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
       name: 'ZakonExpert',
       url: 'https://zakonexpertt.kz'
     },
-    image: article.og_image || 'https://zakonexpertt.kz/img/zakonexpert-logo-kazakhstan.png'
+    image: schemaImage,
   };
 
   res.render('news/detail', {
-    title: article.meta_title || article.title + ' | ZakonExpert',
-    description: article.meta_description || article.excerpt || '',
+    title: `${displayTitle.substring(0, 62)} | ZakonExpert`,
+    description: (article.meta_desc || displayExcerpt).substring(0, 160),
     canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
     ogType: 'article',
-    ogImage: article.og_image,
-    article,
+    ogImage: article.category_cover || article.og_image,
+    article: articleView,
     related,
     schema,
   });
@@ -2171,19 +2225,43 @@ app.get('/api/news/status', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!newsDb) return res.status(503).json({ error: 'News DB not available' });
   const stats    = await newsDb.getStats();
+  const latestPublishedAt = await newsDb.getLatestPublishedAt();
   const importInfo = newsImporter ? newsImporter.getLastImportInfo() : {};
+  const parserReference = importInfo.lastImportTime || latestPublishedAt;
+  const parserStale = !parserReference || Date.now() - new Date(parserReference).getTime() > 8 * 60 * 60 * 1000;
+  const contentStale = !latestPublishedAt || Date.now() - new Date(latestPublishedAt).getTime() > 48 * 60 * 60 * 1000;
   res.json({
     ok: true,
     ...stats,
     sources: require('./config/news_sources.json').filter(s => s.enabled).length,
     lastImportTime:  importInfo.lastImportTime  || null,
     lastImportStats: importInfo.lastImportStats || null,
+    importInProgress: Boolean(importInfo.importInProgress),
+    latestPublishedAt,
+    stale: parserStale,
+    contentStale,
     env: {
       AUTO_PUBLISH_NEWS:    process.env.AUTO_PUBLISH_NEWS    || 'true',
-      NEWS_MIN_RELEVANCE:   process.env.NEWS_MIN_RELEVANCE   || '0.55',
-      NEWS_IMPORT_LIMIT:    process.env.NEWS_IMPORT_LIMIT    || '20',
+      NEWS_MIN_RELEVANCE:   process.env.NEWS_MIN_RELEVANCE   || '0.45',
+      NEWS_IMPORT_LIMIT:    process.env.NEWS_IMPORT_LIMIT    || '50',
       NEWS_USE_SOURCE_IMAGES: process.env.NEWS_USE_SOURCE_IMAGES || 'false',
     },
+  });
+}));
+
+// Public, non-sensitive parser health check for uptime monitoring.
+app.get('/api/news/health', asyncHandler(async (_req, res) => {
+  if (!newsDb) return res.status(503).json({ ok: false, error: 'News DB not available' });
+  const latestPublishedAt = await newsDb.getLatestPublishedAt();
+  const importInfo = newsImporter ? newsImporter.getLastImportInfo() : {};
+  const parserReference = importInfo.lastImportTime || latestPublishedAt;
+  const stale = !parserReference || Date.now() - new Date(parserReference).getTime() > 8 * 60 * 60 * 1000;
+  res.status(stale ? 503 : 200).json({
+    ok: !stale,
+    scheduled: BACKGROUND_JOBS_ENABLED,
+    latestPublishedAt,
+    lastImportTime: importInfo.lastImportTime || null,
+    importInProgress: Boolean(importInfo.importInProgress),
   });
 }));
 
@@ -2257,12 +2335,16 @@ if (newsImporter) {
   });
   logger.info('News cron scheduled: every 4 hours');
 
-  // Run initial import after 10 seconds of server start (if DB is empty)
+  // Run an initial import after startup when the feed is empty or stale.
   setTimeout(async () => {
     try {
       const existing = await newsDb.countPublished();
-      if (existing === 0) {
-        logger.info('[Startup] No news found, running initial import...');
+      const latestPublishedAt = await newsDb.getLatestPublishedAt();
+      const lastImportTime = newsImporter.getLastImportInfo().lastImportTime;
+      const freshnessReference = lastImportTime || latestPublishedAt;
+      const stale = !freshnessReference || Date.now() - new Date(freshnessReference).getTime() > 6 * 60 * 60 * 1000;
+      if (existing === 0 || stale) {
+        logger.info(`[Startup] News feed ${existing === 0 ? 'empty' : 'stale'}, running import...`);
         await newsImporter.importAll();
         logger.info('[Startup] Initial import done.');
       }

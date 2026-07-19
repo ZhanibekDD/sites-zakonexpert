@@ -21,6 +21,26 @@ enableAutocompaction(news);
 news.ensureIndex({ fieldName: 'original_url', unique: true, sparse: true }).catch(() => {});
 news.ensureIndex({ fieldName: 'slug',         unique: true               }).catch(() => {});
 
+function newsTimestamp(article) {
+  return article.published_at_source || article.published_at_site || article.imported_at || '';
+}
+
+const CATEGORY_ALIASES = {
+  'аресты': ['finance', 'bank', 'кредит'],
+  finance: ['finance', 'bank', 'кредит', 'банкротство'],
+  chsi: ['chsi', 'ЧСИ'],
+  notarius: ['notarius', 'нотариус'],
+  alimenty: ['alimenty', 'алименты'],
+  shtrafy: ['shtrafy', 'штрафы'],
+  avto: ['avto', 'авто'],
+  laws: ['laws', 'законы'],
+};
+
+function categoryQuery(category) {
+  const aliases = CATEGORY_ALIASES[category] || [category];
+  return { $in: aliases };
+}
+
 module.exports = {
 
   async insertNews(article) {
@@ -46,7 +66,7 @@ module.exports = {
 
   async getPublished(limit = 20, offset = 0) {
     const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } });
-    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
     return docs.slice(offset, offset + limit);
   },
 
@@ -59,13 +79,13 @@ module.exports = {
   },
 
   async getByCategory(category, limit = 20, offset = 0) {
-    const docs = await news.find({ category, status: 'published' });
-    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    const docs = await news.find({ category: categoryQuery(category), status: 'published' });
+    docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
     return docs.slice(offset, offset + limit);
   },
 
   async countByCategory(category) {
-    return news.count({ category, status: 'published' });
+    return news.count({ category: categoryQuery(category), status: 'published' });
   },
 
   async getByTags(tagQuery) {
@@ -77,7 +97,7 @@ module.exports = {
 
   async getLatest(limit = 6) {
     const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } });
-    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
     return docs.slice(0, limit).map(a => ({
       title:            a.title,
       slug:             a.slug,
@@ -86,6 +106,7 @@ module.exports = {
       excerpt:          a.excerpt,
       category_cover:   a.category_cover,
       og_image:         a.og_image,
+      published_at_source: a.published_at_source,
       published_at_site: a.published_at_site,
       tags:             a.tags,
     }));
@@ -93,9 +114,12 @@ module.exports = {
 
   async getAllForSitemap() {
     const docs = await news.find({ status: 'published' });
-    docs.sort((a, b) => (b.published_at_site || '').localeCompare(a.published_at_site || ''));
+    docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
     return docs.map(a => ({
       slug:             a.slug,
+      title:            a.title,
+      original_title:   a.original_title,
+      published_at_source: a.published_at_source,
       published_at_site: a.published_at_site,
       updatedAt:        a.updatedAt,
     }));
@@ -109,6 +133,13 @@ module.exports = {
       news.count({}),
     ]);
     return { published, drafts, rejected, total: all };
+  },
+
+  async getLatestPublishedAt() {
+    const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } });
+    if (!docs.length) return null;
+    docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));
+    return newsTimestamp(docs[0]) || null;
   },
 
   async updateOgImage(id, ogImage) {

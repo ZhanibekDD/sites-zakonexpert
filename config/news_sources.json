@@ -4,7 +4,7 @@
     "name": "Аресты счетов КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%B0%D1%80%D0%B5%D1%81%D1%82+%D1%81%D1%87%D0%B5%D1%82%D0%B0+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "bank",
+    "category": "finance",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["арест счета", "заблокировал", "счет", "банк"]
@@ -14,7 +14,7 @@
     "name": "Кредиты и долги КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%BA%D1%80%D0%B5%D0%B4%D0%B8%D1%82+%D0%B4%D0%BE%D0%BB%D0%B3+%D0%B2%D0%B7%D1%8B%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D0%B5+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "кредит",
+    "category": "finance",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["кредит", "долг", "взыскание", "банк", "МФО"]
@@ -24,7 +24,7 @@
     "name": "ЧСИ и исполнительное производство",
     "rss_url": "https://news.google.com/rss/search?q=%D0%A7%D0%A1%D0%98+%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5+%D0%BF%D1%80%D0%BE%D0%B8%D0%B7%D0%B2%D0%BE%D0%B4%D1%81%D1%82%D0%B2%D0%BE+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "ЧСИ",
+    "category": "chsi",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["ЧСИ", "исполнительное производство", "судебный исполнитель", "взыскание"]
@@ -34,7 +34,7 @@
     "name": "МФО займы Казахстан",
     "rss_url": "https://news.google.com/rss/search?q=%D0%9C%D0%A4%D0%9E+%D0%B7%D0%B0%D0%B9%D0%BC+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD+%D0%B7%D0%B0%D0%B4%D0%BE%D0%BB%D0%B6%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "кредит",
+    "category": "finance",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["МФО", "займ", "задолженность", "должник", "микрозаём"]
@@ -44,7 +44,7 @@
     "name": "Банкротство физлиц КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%B1%D0%B0%D0%BD%D0%BA%D1%80%D0%BE%D1%82%D1%81%D1%82%D0%B2%D0%BE+%D1%84%D0%B8%D0%B7%D0%BB%D0%B8%D1%86+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "банкротство",
+    "category": "finance",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["банкротство", "долг", "должник", "кредит"]
@@ -54,7 +54,7 @@
     "name": "Исполнительная надпись нотариус КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%BD%D0%BE%D1%82%D0%B0%D1%80%D0%B8%D1%83%D1%81+%D0%B8%D1%81%D0%BF%D0%BE%D0%BB%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F+%D0%BD%D0%B0%D0%B4%D0%BF%D0%B8%D1%81%D1%8C+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "нотариус",
+    "category": "notarius",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["нотариус", "исполнительная надпись", "взыскание", "долг"]
@@ -64,7 +64,7 @@
     "name": "Kaspi банк аресты",
     "rss_url": "https://news.google.com/rss/search?q=Kaspi+%D0%B1%D0%B0%D0%BD%D0%BA+%D0%B7%D0%B0%D0%B4%D0%BE%D0%BB%D0%B6%D0%B5%D0%BD%D0%BD%D0%BE%D1%81%D1%82%D1%8C+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "bank",
+    "category": "finance",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["kaspi", "банк", "долг", "задолженность", "кредит"]
@@ -74,7 +74,7 @@
     "name": "Штрафы должники КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D1%88%D1%82%D1%80%D0%B0%D1%84+%D0%B4%D0%BE%D0%BB%D0%B6%D0%BD%D0%B8%D0%BA%D0%B8+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "штрафы",
+    "category": "shtrafy",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["штраф", "должник", "взыскание", "административный"]
@@ -84,7 +84,7 @@
     "name": "Алименты взыскание КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%B0%D0%BB%D0%B8%D0%BC%D0%B5%D0%BD%D1%82%D1%8B+%D0%B2%D0%B7%D1%8B%D1%81%D0%BA%D0%B0%D0%BD%D0%B8%D0%B5+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "алименты",
+    "category": "alimenty",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["алименты", "взыскание", "должник", "суд"]
@@ -94,7 +94,7 @@
     "name": "Запрет авто ЧСИ КЗ",
     "rss_url": "https://news.google.com/rss/search?q=%D0%B7%D0%B0%D0%BF%D1%80%D0%B5%D1%82+%D0%B0%D0%B2%D1%82%D0%BE%D0%BC%D0%BE%D0%B1%D0%B8%D0%BB%D1%8C+%D0%A7%D0%A1%D0%98+%D0%9A%D0%B0%D0%B7%D0%B0%D1%85%D1%81%D1%82%D0%B0%D0%BD&hl=ru&gl=KZ&ceid=KZ:ru",
     "enabled": true,
-    "category": "авто",
+    "category": "avto",
     "allowed": true,
     "parser_type": "rss",
     "keywords": ["запрет", "авто", "ЧСИ", "регистрационных действий"]

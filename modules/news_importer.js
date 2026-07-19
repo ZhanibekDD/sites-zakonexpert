@@ -11,13 +11,77 @@ const RSSParser = require('rss-parser');
 const slugify = require('slugify');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const fs = require('fs');
+const path = require('path');
 const db = require('./db');
 const sources = require('../config/news_sources.json');
 
 // ─── ENV CONFIG ───────────────────────────────────────────────────────────────
 const AUTO_PUBLISH     = process.env.AUTO_PUBLISH_NEWS !== 'false';
-const MIN_RELEVANCE    = parseFloat(process.env.NEWS_MIN_RELEVANCE  || '0.3');
+const MIN_RELEVANCE    = parseFloat(process.env.NEWS_MIN_RELEVANCE  || '0.45');
 const IMPORT_LIMIT     = parseInt(process.env.NEWS_IMPORT_LIMIT     || '50', 10);
+const MAX_AGE_DAYS     = parseInt(process.env.NEWS_MAX_AGE_DAYS     || '30', 10);
+const USE_SOURCE_IMAGES = process.env.NEWS_USE_SOURCE_IMAGES === 'true';
+const IMPORT_STATUS_FILE = path.join(__dirname, '..', 'data', 'news-import-status.json');
+
+function cleanText(value = '') {
+  const decoded = cheerio.load(`<div>${String(value)}</div>`)('div').text();
+  return decoded
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .trim();
+}
+
+function truncateAtWord(value, maxLength) {
+  const text = cleanText(value);
+  if (text.length <= maxLength) return text;
+  const cut = text.substring(0, maxLength + 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${cut.substring(0, lastSpace > maxLength * 0.65 ? lastSpace : maxLength).trim()}…`;
+}
+
+function cleanHeadline(value = '') {
+  return truncateAtWord(
+    cleanText(value)
+      .replace(/\s+[|—–-]\s+(?:[\w.-]+\.)?(?:kz|ru|com|org|net)$/iu, '')
+      .replace(/\s+(?:[\w-]+\.)+(?:kz|ru|com|org|net)$/iu, ''),
+    118
+  );
+}
+
+function cleanExcerpt(value = '', headline = '') {
+  const text = truncateAtWord(
+    cleanText(value).replace(/\s+(?:[\w-]+\.)+(?:kz|ru|com|org|net)$/iu, ''),
+    300
+  );
+  if (text.length < 45 || text.toLowerCase() === cleanText(headline).toLowerCase()) return '';
+  return text;
+}
+
+function buildExcerpt(rssExcerpt, pageDesc, headline) {
+  const rss = cleanExcerpt(rssExcerpt, headline);
+  const page = cleanExcerpt(pageDesc, headline);
+  if (page.length > rss.length + 25) return page;
+  if (rss) return rss;
+  if (page) return page;
+  return `Что произошло и как эта ситуация может повлиять на должников в Казахстане — объясняем простым языком и даём практический алгоритм действий.`;
+}
+
+function normalizeCategory(category = '', tags = []) {
+  const value = String(category).toLowerCase();
+  if (value === 'адвокат') return 'Адвокат';
+  if (['bank', 'finance', 'кредит', 'банкротство'].includes(value)) return 'finance';
+  if (['чси', 'chsi'].includes(value)) return 'chsi';
+  if (['нотариус', 'notarius'].includes(value)) return 'notarius';
+  if (['штрафы', 'shtrafy'].includes(value)) return 'shtrafy';
+  if (['алименты', 'alimenty'].includes(value)) return 'alimenty';
+  if (['авто', 'avto'].includes(value)) return 'avto';
+  if (['законы', 'laws'].includes(value)) return 'laws';
+  if (tags.includes('ЧСИ')) return 'chsi';
+  if (tags.includes('нотариус')) return 'notarius';
+  return 'general';
+}
 
 // ─── RSS PARSER ───────────────────────────────────────────────────────────────
 const parser = new RSSParser({
@@ -124,22 +188,27 @@ function isPrefilterRelevant(title, description, extraKeywords = []) {
     if (text.includes(bad)) return false;
   }
 
-  // One high keyword is enough
-  for (const kw of HIGH_KEYWORDS) {
-    if (text.includes(kw)) return true;
-  }
-  // Extra source-level keywords
-  for (const kw of extraKeywords.map(k => k.toLowerCase())) {
-    if (text.includes(kw)) return true;
-  }
-  // One medium keyword is enough if it's a strong one
-  const strongMed = ['банк', 'кредит', 'займ', 'мфо', 'долг', 'задолж', 'взыскан', 'должник', 'штраф', 'алимент', 'нотариус', 'исполнительн'];
-  for (const kw of strongMed) {
-    if (text.includes(kw)) return true;
-  }
-  // Or two medium keywords
-  const medMatches = MED_KEYWORDS.filter(kw => text.includes(kw)).length;
-  return medMatches >= 2;
+  if (HIGH_KEYWORDS.some(kw => text.includes(kw))) return true;
+
+  // Broad RSS feeds used to accept any item containing one word such as
+  // "банк" or "суд". Require a financial subject plus a debt/enforcement
+  // signal so lifestyle and general crime stories do not become legal news.
+  const financialSignals = [
+    'банк', 'кредит', 'займ', 'заем', 'мфо', 'микрофинанс', 'ипотек',
+    'коллектор', 'долг', 'задолж', 'заёмщик', 'заемщик', 'банкротств',
+  ];
+  const enforcementSignals = [
+    'арест', 'взыскан', 'должник', 'чси', 'исполнительн', 'нотариус',
+    'просроч', 'реструктуризац', 'рефинансирован', 'списали деньги',
+    'запрет выезда', 'запрет на авто',
+  ];
+  const publicLawSignals = ['закон', 'поправк', 'правил', 'нацбанк', 'аррфр', 'агентство'];
+
+  const hasFinancial = financialSignals.some(kw => text.includes(kw));
+  const hasEnforcement = enforcementSignals.some(kw => text.includes(kw));
+  const hasPublicLaw = publicLawSignals.some(kw => text.includes(kw));
+
+  return (hasFinancial && hasEnforcement) || (hasPublicLaw && (hasFinancial || hasEnforcement));
 }
 
 // ─── SLUG ─────────────────────────────────────────────────────────────────────
@@ -181,58 +250,9 @@ function detectTags(title, description) {
  * Appends a short differentiator so two similar topics don't get identical titles.
  */
 function generateLegalTitle(origTitle, description) {
-  const text = (origTitle + ' ' + (description || '')).toLowerCase();
-
-  // Extract a short "context" phrase from the original title (first 5 words)
-  const origWords = origTitle.trim().split(/\s+/).slice(0, 6).join(' ');
-
-  if (text.includes('стоп-кредит') || text.includes('stop kredit') || text.includes('stop-kredit')) {
-    return `Сервис «Стоп-кредит»: защита от мошеннических займов и арестов счетов`;
-  }
-  if (text.includes('мошенни') || text.includes('серых') || text.includes('сомнительн') || text.includes('нелегальн')) {
-    return `Серые кредиторы и аресты счетов: ${origWords} — что это значит для должников`;
-  }
-  if (text.includes('арест счет') || text.includes('заблокировал') || text.includes('арест карт')) {
-    const bank = text.includes('kaspi') ? 'Kaspi' : text.includes('halyk') ? 'Halyk' : text.includes('freedom') ? 'Freedom' : '';
-    return bank
-      ? `Арест счёта ${bank}: разбор ситуации — ${origWords}`
-      : `Арест счёта или карты: разбор — ${origWords}`;
-  }
-  if (text.includes('исполнительн надпис') || (text.includes('нотариус') && text.includes('долг'))) {
-    return `Исполнительная надпись: ${origWords} — правовой разбор`;
-  }
-  if (text.includes('чси') || text.includes('исполнительное производство') || text.includes('судебный исполнитель')) {
-    return `ЧСИ и должники: ${origWords} — что нужно знать`;
-  }
-  if (text.includes('запрет регистрационных') || (text.includes('авто') && text.includes('запрет'))) {
-    return `Запрет на авто от ЧСИ: ${origWords} — разбор`;
-  }
-  if (text.includes('алимент') && (text.includes('чси') || text.includes('арест') || text.includes('долг'))) {
-    return `Алименты и ЧСИ: ${origWords} — что делать должнику`;
-  }
-  if (text.includes('штраф') && (text.includes('чси') || text.includes('долг') || text.includes('арест'))) {
-    return `Штраф у ЧСИ: ${origWords} — правовой разбор для должников`;
-  }
-  if (text.includes('банкротств')) {
-    return `Банкротство физлица в Казахстане: ${origWords} — что важно знать`;
-  }
-  if (text.includes('кредит') && (text.includes('мфо') || text.includes('микро'))) {
-    return `МФО и кредитные долги: ${origWords} — разбор`;
-  }
-  if (text.includes('кредит') || text.includes('займ') || text.includes('задолженность')) {
-    return `Долг по кредиту: ${origWords} — что делать`;
-  }
-  if (text.includes('закон') || text.includes('поправк') || text.includes('вступил')) {
-    return `Изменения в законах: ${origWords} — что это значит для должников`;
-  }
-  if (text.includes('банк') || text.includes('kaspi') || text.includes('halyk') || text.includes('freedom')) {
-    return `Банки и должники: ${origWords} — правовой разбор`;
-  }
-  if (text.includes('имуществ') || text.includes('недвижим')) {
-    return `Арест имущества: ${origWords} — разбор`;
-  }
-  // Generic fallback — keep original title + context
-  return `${origWords} — разбор для должников`;
+  // Preserve the actual news headline. The previous generator kept only six
+  // words and glued on a template, producing unreadable and misleading titles.
+  return cleanHeadline(origTitle);
 }
 
 function generateEventSummary(origTitle, rssExcerpt) {
@@ -456,8 +476,8 @@ async function fetchSource(source) {
     if (totalImportedThisRun >= IMPORT_LIMIT) break;
 
     // Google News titles sometimes contain " - Source Name" suffix — clean it
-    let origTitle = (item.title || '').trim().replace(/\s*-\s*[^-]{3,40}$/, '').trim();
-    if (!origTitle) origTitle = (item.title || '').trim();
+    let origTitle = cleanHeadline((item.title || '').trim().replace(/\s+-\s+[^-]{3,40}$/, '').trim());
+    if (!origTitle) origTitle = cleanHeadline(item.title || '');
 
     // Google News RSS links are redirects — use guid as stable dedup key
     const origUrl = item.guid || item.link;
@@ -467,8 +487,8 @@ async function fetchSource(source) {
     // URL dedup
     if (await db.existsByUrl(origUrl)) { duplicate++; continue; }
 
-    const rssExcerpt = (item.contentSnippet || item.content || item.summary || '')
-      .replace(/<[^>]+>/g, '').trim().substring(0, 500);
+    const rssExcerpt = cleanText(item.contentSnippet || item.content || item.summary || '')
+      .substring(0, 500);
 
     // Quick relevance pre-filter (fast, no HTTP request)
     if (!isPrefilterRelevant(origTitle, rssExcerpt, source.keywords || [])) {
@@ -493,14 +513,15 @@ async function fetchSource(source) {
     if (await db.existsByGeneratedTitle(legalTitle)) { duplicate++; continue; }
     batchTitles.add(titleKey);
 
-    // Generate unique structured content
-    const eventSummary     = generateEventSummary(origTitle, rssExcerpt);
-    const whyImportant     = generateWhyImportant(origTitle, rssExcerpt);
-    const legalCommentary  = generateLegalCommentary(origTitle, rssExcerpt);
-    const whatToCheck      = generateWhatToCheck(origTitle, rssExcerpt);
-    const whenToSeekHelp   = generateWhenToSeekHelp(origTitle, rssExcerpt);
+    const excerpt = buildExcerpt(rssExcerpt, pageDesc, origTitle);
 
-    const excerpt = rssExcerpt.substring(0, 280) || origTitle;
+    // Generate unique structured content from the best available summary,
+    // including the source page description when RSS only contains a title.
+    const eventSummary     = generateEventSummary(origTitle, excerpt);
+    const whyImportant     = generateWhyImportant(origTitle, excerpt);
+    const legalCommentary  = generateLegalCommentary(origTitle, excerpt);
+    const whatToCheck      = generateWhatToCheck(origTitle, excerpt);
+    const whenToSeekHelp   = generateWhenToSeekHelp(origTitle, excerpt);
 
     // Status based on score and env config
     let status = 'draft';
@@ -509,13 +530,19 @@ async function fetchSource(source) {
 
     const urlHash = origUrl.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
     const slug         = makeSlug(legalTitle, Math.abs(urlHash));
-    const publishedAt  = item.pubDate ? new Date(item.pubDate).toISOString() : now;
+    const parsedPublishedAt = item.pubDate ? new Date(item.pubDate) : new Date(now);
+    const safePublishedAt = Number.isNaN(parsedPublishedAt.getTime()) ? new Date(now) : parsedPublishedAt;
+    if (item.pubDate && Date.now() - safePublishedAt.getTime() > MAX_AGE_DAYS * 86400000) {
+      rejected++;
+      continue;
+    }
+    const publishedAt  = safePublishedAt.toISOString();
     const canonicalUrl = `https://zakonexpertt.kz/news/${slug}`;
     const metaTitle    = legalTitle.substring(0, 65) + ' | ZakonExpert';
     const metaDesc     = excerpt.substring(0, 155) || `Разбор: ${legalTitle.substring(0, 100)}`;
 
     const rssImg = extractRssImage(item);
-    const ogImage = rssImg || pageOgImg || null;
+    const ogImage = USE_SOURCE_IMAGES ? (rssImg || pageOgImg || null) : null;
 
     // Category cover image (our own SVG — always available)
     const categoryCover = `/img/news/news-cover-${getCoverName(tags)}.svg`;
@@ -541,7 +568,7 @@ async function fetchSource(source) {
       when_to_seek_help:   whenToSeekHelp,
 
       // Metadata
-      category:          source.category || 'general',
+      category:          normalizeCategory(source.category, tags),
       tags:              JSON.stringify(tags),
       relevance_score:   relevanceScore,
       status,
@@ -554,7 +581,7 @@ async function fetchSource(source) {
       category_cover:    categoryCover,
 
       // Timestamps
-      published_at_site: status === 'published' ? now : null,
+      published_at_site: status === 'published' ? publishedAt : null,
       imported_at:       now,
     };
 
@@ -593,53 +620,80 @@ function getCoverName(tags) {
 // ─── MAIN ENTRY POINT ─────────────────────────────────────────────────────────
 let lastImportTime = null;
 let lastImportStats = null;
+let importInProgress = false;
+
+try {
+  const savedStatus = JSON.parse(fs.readFileSync(IMPORT_STATUS_FILE, 'utf8'));
+  lastImportTime = savedStatus.lastImportTime || null;
+  lastImportStats = savedStatus.lastImportStats || null;
+} catch (_) {}
 
 async function importAll() {
-  totalImportedThisRun = 0;
-  const started = Date.now();
-  console.log(`[NewsImporter] ─── Import started at ${new Date().toLocaleString('ru-RU')} ───`);
-
-  // Clean up old drafts and rejected articles older than 7 days
-  try {
-    const removed = await db.removeIrrelevant();
-    if (removed > 0) console.log(`[NewsImporter] Cleaned ${removed} irrelevant/old-draft articles`);
-  } catch (e) {
-    console.warn('[NewsImporter] Cleanup warning:', e.message);
+  if (importInProgress) {
+    console.log('[NewsImporter] Import already running; duplicate trigger skipped');
+    return 0;
   }
+  importInProgress = true;
+  try {
+    totalImportedThisRun = 0;
+    const started = Date.now();
+    console.log(`[NewsImporter] ─── Import started at ${new Date().toLocaleString('ru-RU')} ───`);
 
-  let totals = { imported: 0, rejected: 0, duplicate: 0, errors: 0 };
-
-  for (const source of sources) {
-    if (!source.enabled) continue;
-    if (totalImportedThisRun >= IMPORT_LIMIT) break;
-
+    // Clean up old drafts and rejected articles older than 7 days
     try {
-      const stats = await fetchSource(source);
-      console.log(`[NewsImporter] ${source.name}: +${stats.imported} imported, ${stats.rejected} rejected, ${stats.duplicate} dup`);
-      totals.imported  += stats.imported;
-      totals.rejected  += stats.rejected;
-      totals.duplicate += stats.duplicate;
+      const removed = await db.removeIrrelevant();
+      if (removed > 0) console.log(`[NewsImporter] Cleaned ${removed} irrelevant/old-draft articles`);
     } catch (e) {
-      console.error(`[NewsImporter] Source error (${source.name}): ${e.message}`);
-      totals.errors++;
+      console.warn('[NewsImporter] Cleanup warning:', e.message);
     }
 
-    await new Promise(r => setTimeout(r, 2000));
+    const totals = { imported: 0, rejected: 0, duplicate: 0, errors: 0 };
+
+    for (const source of sources) {
+      if (!source.enabled) continue;
+      if (totalImportedThisRun >= IMPORT_LIMIT) break;
+
+      try {
+        const stats = await fetchSource(source);
+        console.log(`[NewsImporter] ${source.name}: +${stats.imported} imported, ${stats.rejected} rejected, ${stats.duplicate} dup`);
+        totals.imported  += stats.imported;
+        totals.rejected  += stats.rejected;
+        totals.duplicate += stats.duplicate;
+      } catch (e) {
+        console.error(`[NewsImporter] Source error (${source.name}): ${e.message}`);
+        totals.errors++;
+      }
+
+      await new Promise(r => setTimeout(r, 2000));
+    }
+
+    const elapsed = ((Date.now() - started) / 1000).toFixed(1);
+    console.log(`[NewsImporter] ─── Done in ${elapsed}s | imported: ${totals.imported}, rejected: ${totals.rejected}, dup: ${totals.duplicate} ───`);
+
+    lastImportTime  = new Date().toISOString();
+    lastImportStats = totals;
+
+    try {
+      fs.writeFileSync(IMPORT_STATUS_FILE, JSON.stringify({ lastImportTime, lastImportStats }, null, 2));
+    } catch (e) {
+      console.warn('[NewsImporter] Could not persist import status:', e.message);
+    }
+
+    await db.compact();
+
+    return totals.imported;
+  } finally {
+    importInProgress = false;
   }
-
-  const elapsed = ((Date.now() - started) / 1000).toFixed(1);
-  console.log(`[NewsImporter] ─── Done in ${elapsed}s | imported: ${totals.imported}, rejected: ${totals.rejected}, dup: ${totals.duplicate} ───`);
-
-  lastImportTime  = new Date().toISOString();
-  lastImportStats = totals;
-
-  await db.compact();
-
-  return totals.imported;
 }
 
 function getLastImportInfo() {
-  return { lastImportTime, lastImportStats };
+  return { lastImportTime, lastImportStats, importInProgress };
 }
 
-module.exports = { importAll, fetchSource, getLastImportInfo };
+module.exports = {
+  importAll,
+  fetchSource,
+  getLastImportInfo,
+  __test: { cleanText, cleanHeadline, cleanExcerpt, buildExcerpt, normalizeCategory, isPrefilterRelevant },
+};

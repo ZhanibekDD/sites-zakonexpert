@@ -82,26 +82,59 @@ function getCoverBlock(a) {
 
 function getCatLabel(a) {
   if (a.category === 'laws') return 'Законы';
-  if (a.category === 'finance') return 'Банки';
-  if (a.category === 'chsi') return 'ЧСИ';
-  if (a.category === 'notarius') return 'Нотариус';
+  if (['finance','bank','кредит','банкротство'].includes(a.category)) return 'Финансы и долги';
+  if (['chsi','ЧСИ'].includes(a.category)) return 'ЧСИ';
+  if (['notarius','нотариус'].includes(a.category)) return 'Нотариус';
   if (a.category === 'sud') return 'Суд';
-  if (a.category === 'alimenty') return 'Алименты';
-  if (a.category === 'shtrafy') return 'Штрафы';
-  if (a.category === 'avto') return 'Авто';
+  if (['alimenty','алименты'].includes(a.category)) return 'Алименты';
+  if (['shtrafy','штрафы'].includes(a.category)) return 'Штрафы';
+  if (['avto','авто'].includes(a.category)) return 'Авто';
   return 'Новости';
 }
 
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function cleanDisplayText(value) {
+  return String(value || '')
+    .replace(/[\u00a0\u2007\u202f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+(?:[\w-]+\.)+(?:kz|ru|com|org|net)$/iu, '')
+    .trim();
+}
+
+function getDisplayTitle(a) {
+  return cleanDisplayText(a.original_title || a.title || 'Новости ZakonExpert');
+}
+
+function getDisplayExcerpt(a) {
+  const text = cleanDisplayText(a.excerpt || a.original_excerpt || '');
+  return text.length >= 45
+    ? text
+    : 'Разбираем событие, правовые последствия и практические действия для должника.';
+}
+
+function getArticleImage(a) {
+  const value = String(a.og_image || '');
+  if (value.startsWith('/img/')) return value;
+  if (allowSourceImages && /^https:\/\//i.test(value)) return value;
+  return '';
+}
+
 function getDateStr(a, long) {
-  if (!a.published_at_site) return '';
+  const rawDate = a.published_at_source || a.published_at_site;
+  if (!rawDate) return '';
   const opts = long
     ? { day: 'numeric', month: 'long', year: 'numeric' }
     : { day: 'numeric', month: 'short' };
-  return new Date(a.published_at_site).toLocaleDateString('ru-RU', opts);
+  return new Date(rawDate).toLocaleDateString('ru-RU', opts);
 }
 
 function getTags(a) {
-  try { return JSON.parse(a.tags || '[]'); } catch { return []; }
+  try { return JSON.parse(a.tags || '[]').filter(t => typeof t === 'string'); } catch { return []; }
 }
 
 const featured   = articles.length > 0 ? articles[0] : null;
@@ -120,6 +153,11 @@ const body = `
       Отслеживаем события в банках, судах, у ЧСИ и в законодательстве РК.
       Каждый материал — юридический разбор ZakonExpert для должников.
     </p>
+    <div class="news-freshness" role="status">
+      <span class="news-freshness-dot" aria-hidden="true"></span>
+      Лента обновляется автоматически каждые 4 часа
+      ${featured ? `<span>· Последняя публикация: ${escapeHtml(getDateStr(featured, true))}</span>` : ''}
+    </div>
     <nav class="news-categories" aria-label="Фильтр">
       ${CATEGORIES.map(c => `
       <a href="${c.slug ? '/news?cat=' + c.slug : '/news'}"
@@ -159,8 +197,8 @@ const body = `
         <a href="/news/${featured.slug}" class="news-featured-main-img-link">
           <div class="news-featured-main-img" style="background:${getCoverBlock(featured).grad}">
             <div class="news-cover-icon"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${getCoverBlock(featured).icon}</svg></div>
-            ${featured.og_image
-              ? `<img src="${featured.og_image}" alt="${featured.title}" loading="eager" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
+            ${getArticleImage(featured)
+              ? `<img src="${escapeHtml(getArticleImage(featured))}" alt="${escapeHtml(getDisplayTitle(featured))}" loading="eager" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
               : ``
             }
             <span class="news-featured-cat-badge">${getCatLabel(featured)}</span>
@@ -168,12 +206,12 @@ const body = `
         </a>
         <div class="news-featured-main-body">
           <div class="news-featured-main-meta">
-            <span class="news-source">${featured.source_name || 'ZakonExpert'}</span>
+            <span class="news-source">${escapeHtml(featured.source_name || 'ZakonExpert')}</span>
             <time class="news-date">${getDateStr(featured, true)}</time>
-            ${getTags(featured).slice(0,2).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+            ${getTags(featured).slice(0,2).map(t => `<span class="legal-pill news-tag">${escapeHtml(t)}</span>`).join('')}
           </div>
-          <h2><a href="/news/${featured.slug}">${featured.title}</a></h2>
-          <p class="news-featured-excerpt">${(featured.excerpt || '').substring(0, 260)}</p>
+          <h2><a href="/news/${featured.slug}">${escapeHtml(getDisplayTitle(featured))}</a></h2>
+          <p class="news-featured-excerpt">${escapeHtml(getDisplayExcerpt(featured).substring(0, 300))}</p>
           <a href="/news/${featured.slug}" class="news-featured-readmore">
             Читать полный разбор
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -190,8 +228,8 @@ const body = `
         <a href="/news/${a.slug}" class="news-secondary-card">
           <div class="news-secondary-img" style="background:${cb.grad}">
             <div class="news-cover-icon-sm"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${cb.icon}</svg></div>
-            ${a.og_image
-              ? `<img src="${a.og_image}" alt="${a.title}" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
+            ${getArticleImage(a)
+              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="this.remove()">`
               : ``
             }
           </div>
@@ -201,9 +239,10 @@ const body = `
               <span> · </span>
               <time>${getDateStr(a, false)}</time>
             </div>
-            <div class="news-secondary-title">${a.title}</div>
+            <div class="news-secondary-title">${escapeHtml(getDisplayTitle(a))}</div>
+            <p class="news-secondary-excerpt">${escapeHtml(getDisplayExcerpt(a).substring(0, 150))}</p>
             <div class="news-secondary-tags">
-              ${getTags(a).slice(0,2).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+              ${getTags(a).slice(0,2).map(t => `<span class="legal-pill news-tag">${escapeHtml(t)}</span>`).join('')}
             </div>
           </div>
         </a>`;
@@ -243,8 +282,8 @@ const body = `
         <a href="/news/${a.slug}" class="news-card-cover-link">
           <div class="news-card-cover" style="background:${cover.grad}">
             <div class="news-card-cover-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(215,167,66,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${cover.icon}</svg></div>
-            ${a.og_image
-              ? `<img src="${a.og_image}" alt="${a.title}" loading="lazy" onerror="this.remove()">`
+            ${getArticleImage(a)
+              ? `<img src="${escapeHtml(getArticleImage(a))}" alt="${escapeHtml(getDisplayTitle(a))}" loading="lazy" onerror="this.remove()">`
               : ``
             }
             <span class="news-card-category">${cover.label}</span>
@@ -252,16 +291,16 @@ const body = `
         </a>
         <div class="news-card-body">
           <div class="news-card-meta">
-            <span class="news-source">${a.source_name || 'ZakonExpert'}</span>
+            <span class="news-source">${escapeHtml(a.source_name || 'ZakonExpert')}</span>
             <time class="news-date">${dateStr}</time>
           </div>
           <h2 class="news-card-title">
-            <a href="/news/${a.slug}">${a.title}</a>
+            <a href="/news/${a.slug}">${escapeHtml(getDisplayTitle(a))}</a>
           </h2>
-          <p class="news-card-excerpt">${(a.excerpt || '').substring(0, 140)}</p>
+          <p class="news-card-excerpt">${escapeHtml(getDisplayExcerpt(a).substring(0, 180))}</p>
           <div class="news-card-footer">
             <a href="/news/${a.slug}" class="news-read-more">Читать разбор →</a>
-            ${tags.slice(0,2).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+            ${tags.slice(0,2).map(t => `<span class="legal-pill news-tag">${escapeHtml(t)}</span>`).join('')}
           </div>
         </div>
       </article>`;
