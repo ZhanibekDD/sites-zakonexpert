@@ -1,14 +1,29 @@
 ﻿<%
-const tagsArr   = JSON.parse(article.tags || '[]');
-const pubDate   = article.published_at_site ? new Date(article.published_at_site) : new Date();
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function cleanDisplayText(value) {
+  return String(value || '').replace(/[\u00a0\u2007\u202f]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function relatedTitle(item) {
+  return cleanDisplayText(item.original_title || item.title || 'Материал ZakonExpert');
+}
+let tagsArr = [];
+try { tagsArr = JSON.parse(article.tags || '[]').filter(t => typeof t === 'string'); } catch (_) {}
+const displayTitle = cleanDisplayText(article.display_title || article.original_title || article.title);
+const displayExcerpt = cleanDisplayText(article.display_excerpt || article.excerpt || article.original_excerpt);
+const pubDateRaw = article.published_at_source || article.published_at_site;
+const pubDate   = pubDateRaw ? new Date(pubDateRaw) : new Date();
 const pubDateStr = pubDate.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
-const coverImg  = article.og_image || article.category_cover || '/img/news/news-cover-default.svg';
-const sourceLink = article.source_url || article.original_url || '#';
 const isAdvokat  = article.category === 'Адвокат';
+const localOgImage = String(article.og_image || '').startsWith('/img/') ? article.og_image : '';
+const coverImg  = (isAdvokat ? localOgImage : '') || article.category_cover || '/img/news/news-cover-default.svg';
 
 // Render article body: if content has HTML tags, use directly; otherwise split by \n\n
 const rawContent = (article.event_summary || article.original_excerpt || '').trim();
-const hasHtml = /<p\b|<br\b|<blockquote\b|<ul\b|<ol\b/i.test(rawContent);
+const hasHtml = isAdvokat && /<p\b|<br\b|<blockquote\b|<ul\b|<ol\b/i.test(rawContent);
 let renderedBody;
 if (hasHtml) {
   renderedBody = rawContent;
@@ -19,8 +34,8 @@ if (hasHtml) {
     !p.startsWith('Ниже — юридический')
   );
   renderedBody = paragraphs.length > 0
-    ? paragraphs.map(p => `<p>${p}</p>`).join('\n          ')
-    : `<p>${article.excerpt || ''}</p>`;
+    ? paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('\n          ')
+    : `<p>${escapeHtml(displayExcerpt)}</p>`;
 }
 
 const waAdvText = encodeURIComponent('Здравствуйте, Маулен! Пишу с сайта ZakonExpert. Хочу получить консультацию адвоката.');
@@ -36,7 +51,7 @@ const body = `
       ${isAdvokat
         ? `<a href="/advocate">Адвокат Маулен Ержанов</a>`
         : `<a href="/news">Новости</a>`} /
-      <span>${article.title.substring(0,55)}${article.title.length > 55 ? '…' : ''}</span>
+      <span>${escapeHtml(displayTitle.substring(0,55))}${displayTitle.length > 55 ? '…' : ''}</span>
     </nav>
   </div>
 </section>
@@ -51,19 +66,19 @@ const body = `
 
         <!-- COVER -->
         <div class="news-detail-cover">
-          <img src="${coverImg}" alt="${article.title}" loading="eager" itemprop="image"
+          <img src="${escapeHtml(coverImg)}" alt="${escapeHtml(displayTitle)}" loading="eager" itemprop="image"
                onerror="this.src='/img/news/news-cover-default.svg'">
         </div>
 
         <!-- META -->
         <div class="news-detail-meta">
-          <span class="news-source-badge">${article.source_name || 'Источник'}</span>
+          <span class="news-source-badge">${escapeHtml(article.source_name || 'Источник')}</span>
           <time class="news-date" datetime="${pubDate.toISOString()}" itemprop="datePublished">${pubDateStr}</time>
-          ${tagsArr.slice(0,4).map(t => `<span class="legal-pill news-tag">${t}</span>`).join('')}
+          ${tagsArr.slice(0,4).map(t => `<span class="legal-pill news-tag">${escapeHtml(t)}</span>`).join('')}
         </div>
 
         <!-- H1 -->
-        <h1 itemprop="headline">${article.title}</h1>
+        <h1 itemprop="headline">${escapeHtml(displayTitle)}</h1>
 
         <!-- CONTENT -->
         <div class="news-article-body" itemprop="articleBody">
@@ -96,9 +111,9 @@ const body = `
         <!-- SHARE -->
         <div class="news-share">
           <span>Поделиться:</span>
-          <a href="https://wa.me/?text=${encodeURIComponent(article.title + ' — https://zakonexpertt.kz/news/' + article.slug)}"
+          <a href="https://wa.me/?text=${encodeURIComponent(displayTitle + ' — https://zakonexpertt.kz/news/' + article.slug)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-wa">WhatsApp</a>
-          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(article.title)}"
+          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(displayTitle)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-tg">Telegram</a>
           <button class="news-share-btn news-share-copy"
                   onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'">
@@ -139,7 +154,7 @@ const body = `
           <h3>Похожие материалы</h3>
           ${related.map(r => `
           <a href="/news/${r.slug}" class="news-related-item">
-            ${r.title.substring(0, 80)}${r.title.length > 80 ? '…' : ''}
+            ${escapeHtml(relatedTitle(r).substring(0, 80))}${relatedTitle(r).length > 80 ? '…' : ''}
           </a>`).join('')}
         </div>
         ` : ''}
@@ -186,4 +201,4 @@ const body = `
 </section>
 `;
 %>
-<%- include('layout', { title: article.meta_title || article.title + ' | ZakonExpert', description: article.meta_desc || article.excerpt || '', canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: article.og_image || article.category_cover || '/img/brand/zakonexpert-logo-transparent-hd.png', schema, activeNav: 'news', body }) %>
+<%- include('layout', { title: displayTitle.substring(0, 62) + ' | ZakonExpert', description: (article.meta_desc || displayExcerpt).substring(0, 160), canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: coverImg, schema, activeNav: 'news', body }) %>

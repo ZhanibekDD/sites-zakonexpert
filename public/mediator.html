@@ -28,22 +28,25 @@
     "knowsAbout": ["медиация", "досудебное урегулирование", "исполнительные производства", "защита прав граждан", "правовое сопровождение"]
   }
   </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Главная","item":"https://zakonexpertt.kz/"},{"@type":"ListItem","position":2,"name":"Юрист-медиатор Нұрғиса Нұрғазыұлы","item":"https://zakonexpertt.kz/mediator"}]}
+  </script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
-  <link rel="stylesheet" href="css/landing.css?v=20260619-3">
-  <link rel="stylesheet" href="css/style.css?v=20260619-3">
+  <link rel="stylesheet" href="/css/design-system.css?v=20260715-1">
+  <link rel="stylesheet" href="/css/landing.css?v=20260619-3">
+  <link rel="stylesheet" href="/css/style.css?v=20260619-3">
   <style>
-    .med-hero { background: linear-gradient(135deg,#081830 0%,#0f2044 60%,#152d55 100%); padding: 48px 0 40px; }
-    .med-profile { display: flex; gap: 28px; align-items: flex-start; }
+    .med-hero { background:radial-gradient(circle at 84% 15%,rgba(37,211,102,.12),transparent 25%),linear-gradient(135deg,#081830 0%,#0f2044 60%,#152d55 100%); padding:54px 0 46px; overflow:hidden; }
+    .med-profile { display:flex; gap:42px; align-items:center; }
     .med-photo-wrap { flex-shrink: 0; }
-    .med-photo { width: 160px; height: 200px; border-radius: 18px; border: 3px solid rgba(215,167,66,.5); overflow: hidden; }
+    .med-photo { width:220px; height:276px; border-radius:24px; border:3px solid rgba(215,167,66,.55); overflow:hidden; background:#fff; box-shadow:0 22px 55px rgba(0,0,0,.28); }
     .med-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
     .med-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(215,167,66,.15);
                  border: 1px solid rgba(215,167,66,.35); border-radius: 6px;
                  font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
                  color: #f0c040; padding: 4px 10px; margin-bottom: 10px; }
-    .med-name { font-size: clamp(1.3rem,3vw,1.85rem); font-weight: 900; color: #fff; margin: 0 0 4px; line-height: 1.2; }
+    .med-name { font-size:clamp(1.7rem,3vw,2.35rem); font-weight:900; color:#fff; margin:0 0 7px; line-height:1.16; }
     .med-title { font-size: .92rem; color: rgba(255,255,255,.6); margin-bottom: 14px; }
     .med-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
     .med-tag { font-size: .75rem; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
@@ -60,12 +63,13 @@
     .btn-med-tel:hover { border-color: rgba(255,255,255,.5); color: #fff; }
 
     /* Content sections */
-    .med-section { padding: 44px 0 12px; }
+    .med-section { padding:48px 0 12px; }
     .med-section-title { font-size: 1.2rem; font-weight: 800; color: #0d1f3c; margin-bottom: 18px; }
     .med-prose { font-size: .93rem; color: #374151; line-height: 1.75; }
     .med-prose p { margin-bottom: 14px; }
 
-    .med-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 22px 22px 18px; }
+    .med-card { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:24px 24px 21px; height:100%; box-shadow:0 7px 24px rgba(15,32,68,.06); transition:transform .18s,box-shadow .18s; }
+    .med-card:hover { transform:translateY(-3px); box-shadow:0 14px 34px rgba(15,32,68,.11); }
     .med-card-icon { width: 40px; height: 40px; border-radius: 10px; background: rgba(59,130,246,.1);
                      color: #3b82f6; display: flex; align-items: center; justify-content: center;
                      font-size: 1.2rem; margin-bottom: 12px; }
@@ -102,6 +106,7 @@
       .med-profile { flex-direction: column; align-items: center; text-align: center; }
       .med-tags, .med-contacts { justify-content: center; }
       .med-cta { padding: 24px 16px; }
+      .med-photo { width:168px; height:210px; }
     }
   </style>
 </head>
@@ -172,6 +177,9 @@
 <!-- Hero / Profile -->
 <section class="med-hero">
   <div class="landing-container">
+    <nav aria-label="breadcrumb" style="margin-bottom:20px;font-size:.8rem;color:rgba(255,255,255,.48);">
+      <a href="/" style="color:rgba(255,255,255,.65);text-decoration:none;">Главная</a> <span style="margin:0 7px;">›</span> Медиатор
+    </nav>
     <div class="med-profile">
       <div class="med-photo-wrap">
         <div class="med-photo">
@@ -365,8 +373,8 @@
   <section class="med-section" style="padding:0 0 8px;">
     <div class="text-center mb-4">
       <span class="section-kicker">Наша команда</span>
-      <h2 class="section-title" style="color:#0d1f3c;">Юрист-медиатор и помощница</h2>
-      <p class="section-lead">Сопровождаем клиента на каждом этапе</p>
+      <h2 class="section-title" style="color:#0d1f3c;">Ваш юрист-медиатор</h2>
+      <p class="section-lead">Персонально сопровождает переговоры, документы и урегулирование спора</p>
     </div>
     <div class="row g-4 justify-content-center">
 
@@ -456,7 +464,7 @@
   <i class="bi bi-whatsapp"></i>
 </a>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/site.js?v=20260619-3"></script>
+<script src="/js/site.js?v=20260619-3"></script>
 <script src="/js/analytics-events.js"></script>
 <script src="/js/chatbot.js" defer></script>
 </body>
