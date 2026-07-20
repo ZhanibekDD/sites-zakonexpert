@@ -1,5 +1,11 @@
 ﻿<%
 const REGISTRY = (typeof mfo !== 'undefined' && mfo && mfo.length) ? mfo : [];
+const CATALOG = (typeof catalog !== 'undefined' && catalog) ? catalog : {
+  query: '', page: 1, total: REGISTRY.length, filteredTotal: REGISTRY.length, totalPages: 1,
+};
+const QUERY = CATALOG.query || '';
+const PAGE = CATALOG.page || 1;
+const TOTAL = CATALOG.total || REGISTRY.length;
 
 const POPULAR = [
   { name:'KMF Банк', shortName:'KMF Bank', tag:'Конвертирован в банк', phone:'+7 (727) 331-74-74', phoneRaw:'+77273317474', email:'info@kmf.kz', web:'kmf.kz', note:'Бывшая крупнейшая МКО. С 12.08.2025 работает как банк второго уровня. Кредитование МСБ и физлиц.' },
@@ -16,9 +22,9 @@ const POPULAR = [
   { name:'Aldyz Finance', shortName:'Aldyz Finance', tag:'', phone:'', phoneRaw:'', email:'', web:'', note:'Займы для физических лиц.' },
 ];
 
-const pageTitle = 'МФО Казахстана — реестр ' + REGISTRY.length + ' организаций | ZakonExpert';
-const pageDesc  = 'Долг перед МФО арестовали счёт? Проверим ЧСИ, сумму и основание ареста бесплатно. Реестр ' + REGISTRY.length + ' МФО из АРРФР. Помощь по всей РК.';
-const canonical = 'https://zakonexpertt.kz/mfo';
+const pageTitle = 'МФО Казахстана — реестр ' + TOTAL + ' организаций' + (PAGE > 1 ? ', страница ' + PAGE : '') + ' | ZakonExpert';
+const pageDesc  = 'Долг перед МФО или арестовали счёт? Проверим ЧСИ, сумму и основание бесплатно. Реестр ' + TOTAL + ' МФО из АРРФР.';
+const canonical = 'https://zakonexpertt.kz/mfo' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
 
 const schema = {
   '@context': 'https://schema.org',
@@ -31,6 +37,25 @@ const schema = {
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function pageHref(page) {
+  const params = [];
+  if (QUERY) params.push('q=' + encodeURIComponent(QUERY));
+  if (page > 1) params.push('page=' + page);
+  return '/mfo' + (params.length ? '?' + params.join('&') : '');
+}
+
+var paginationHtml = '';
+if (CATALOG.totalPages > 1) {
+  paginationHtml = '<nav class="cat-pagination" aria-label="Страницы каталога">'
+    + (PAGE > 1 ? '<a href="' + pageHref(PAGE - 1) + '">← Назад</a>' : '<span class="disabled">← Назад</span>');
+  for (var p = 1; p <= CATALOG.totalPages; p++) {
+    if (p === 1 || p === CATALOG.totalPages || Math.abs(p - PAGE) <= 2) {
+      paginationHtml += p === PAGE ? '<span class="current" aria-current="page">' + p + '</span>' : '<a href="' + pageHref(p) + '">' + p + '</a>';
+    } else if (p === 2 || p === CATALOG.totalPages - 1) paginationHtml += '<span class="ellipsis">…</span>';
+  }
+  paginationHtml += PAGE < CATALOG.totalPages ? '<a href="' + pageHref(PAGE + 1) + '">Вперёд →</a></nav>' : '<span class="disabled">Вперёд →</span></nav>';
 }
 
 const CSS = '<style>'
@@ -56,7 +81,9 @@ const CSS = '<style>'
   + '.cc-row{display:flex;align-items:flex-start;gap:5px;font-size:.77rem;line-height:1.4;margin-bottom:3px;}'
   + '.cc-icon{flex-shrink:0;width:16px;text-align:center;font-size:.8rem;}'
   + '.cc-dim{color:#94a3b8;font-size:.74rem;}'
-  + '@media(max-width:600px){.cb-grid,.cc-grid{grid-template-columns:1fr;}}'
+  + '.cat-search{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:1rem 0 .6rem;}.cat-search input{flex:1;min-width:240px;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.95rem;outline:none;box-sizing:border-box;}.cat-search input:focus{border-color:#1a56db;}.cat-search button{border:0;border-radius:10px;background:#1a56db;color:#fff;padding:12px 22px;font-weight:700;cursor:pointer;}.cat-search a{color:#1a56db;text-decoration:none;padding:10px;}.cat-count{color:#64748b;font-size:.85rem;margin-bottom:.8rem;}'
+  + '.cat-pagination{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin:1.4rem 0;}.cat-pagination a,.cat-pagination span{min-width:38px;padding:9px 10px;border:1px solid #dbe3ee;border-radius:9px;text-align:center;text-decoration:none;color:#1a56db;background:#fff;font-size:.85rem;}.cat-pagination .current{background:#0d2d59;color:#fff;border-color:#0d2d59;font-weight:700;}.cat-pagination .disabled,.cat-pagination .ellipsis{color:#94a3b8;background:#f8fafc;}'
+  + '@media(max-width:600px){.cb-grid,.cc-grid{grid-template-columns:1fr;}.cat-search button{flex:1}.cat-pagination a,.cat-pagination span{min-width:34px;padding:8px;}}'
   + '</style>';
 
 // === Popular MFO cards ===
@@ -79,12 +106,12 @@ for (var i = 0; i < POPULAR.length; i++) {
 }
 
 // === Full registry cards ===
-const searchHtml = '<div style="margin:1rem 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'
-  + '<input id="mfo-q" type="text" placeholder="Поиск по названию, адресу, БИН..." '
-  + 'style="flex:1;min-width:240px;max-width:480px;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.9rem;outline:none;" '
-  + 'oninput="filterMfo(this.value)">'
-  + '<span id="mfo-cnt" style="color:#64748b;font-size:.85rem;white-space:nowrap;">' + REGISTRY.length + ' МФО</span>'
-  + '</div>';
+const searchHtml = '<form class="cat-search" method="get" action="/mfo">'
+  + '<label class="visually-hidden" for="mfo-q">Поиск МФО</label>'
+  + '<input id="mfo-q" name="q" type="search" value="' + escHtml(QUERY) + '" placeholder="Название, адрес или БИН" autocomplete="off">'
+  + '<button type="submit">Найти</button>'
+  + (QUERY ? '<a href="/mfo">Сбросить</a>' : '')
+  + '</form><div class="cat-count">' + (QUERY ? 'Найдено: ' + CATALOG.filteredTotal + ' из ' + TOTAL : 'Всего в реестре: ' + TOTAL + ' МФО') + '</div>';
 
 var regCards = '';
 for (var j = 0; j < REGISTRY.length; j++) {
@@ -100,13 +127,6 @@ for (var j = 0; j < REGISTRY.length; j++) {
     + '<div class="cc-row"><span class="cc-icon">🆔</span><span class="cc-dim">БИН: ' + escHtml(r.bin) + '</span></div>'
     + '</div>';
 }
-
-const filterJS = '<script>'
-  + 'function filterMfo(q){'
-  + 'var t=q.toLowerCase(),els=document.querySelectorAll(".cc-card"),n=0;'
-  + 'els.forEach(function(el){var show=el.dataset.search.includes(t);el.style.display=show?"":"none";if(show)n++;});'
-  + 'document.getElementById("mfo-cnt").textContent=n+" МФО";}'
-  + '</script>';
 
 const infoBox = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px 20px;margin-top:1rem;font-size:.88rem;color:#92400e;line-height:1.6;">'
   + '<strong>⚠️ Важно знать:</strong> МФО вправе взыскивать долги <strong>только через суд или нотариальную исполнительную надпись</strong>. '
@@ -130,18 +150,17 @@ const body = CSS
   + '<p style="color:#475569;margin-top:.5rem;">Микрофинансовые организации Казахстана — телефоны, сайты и полный реестр АРРФР</p>'
   + '<p style="color:#475569;font-size:.92rem;margin-top:.6rem;max-width:720px;">МФО вправе только требовать возврат долга и обращаться в суд — арестовать счёт может лишь ЧСИ на основании исполнительного документа. Если счёт уже арестован — проверим основание бесплатно.</p></div>'
   + infoBox
-  + '<h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin:1.5rem 0 .75rem;">Популярные МФО</h2>'
-  + '<div class="cb-grid">' + popCards + '</div>'
-  + '<h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin:2rem 0 .5rem;">Полный реестр АРРФР — ' + REGISTRY.length + ' организаций</h2>'
+  + (!QUERY && PAGE === 1 ? '<h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin:1.5rem 0 .75rem;">Популярные МФО</h2><div class="cb-grid">' + popCards + '</div>' : '')
+  + '<h2 style="font-size:1.05rem;font-weight:700;color:#0d1f3c;margin:2rem 0 .5rem;">Полный реестр АРРФР — ' + TOTAL + ' организаций</h2>'
   + '<p style="font-size:.83rem;color:#64748b;margin-bottom:.5rem;">Все лицензированные МФО и МКО из официального реестра. Нажмите на название для подробной информации.</p>'
   + searchHtml
-  + '<div class="cc-grid">' + regCards + '</div>'
+  + (REGISTRY.length ? '<div class="cc-grid">' + regCards + '</div>' : '<p style="padding:2rem 0;color:#64748b;">По вашему запросу МФО не найдены.</p>')
+  + paginationHtml
   + ctaHtml
   + lowContentBoost({ entityLabel: 'МФО' })
   + '<div style="margin-top:1.5rem;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:.78rem;color:#64748b;">'
   + '📋 <strong style="color:#374151;">Источник:</strong> Реестр МФО АРРФР РК (<a href="https://www.afsa.kz" target="_blank" rel="noopener" style="color:#1a56db;">afsa.kz</a>)'
   + '</div>'
-  + '</div></div>'
-  + filterJS;
+  + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: Boolean(QUERY), body }) %>

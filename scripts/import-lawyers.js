@@ -9,7 +9,7 @@ const { readRegistrySource } = require('../modules/registry-source');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'lawyers.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'lawyers.db');
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 slugify.extend({
   'ə': 'a', 'Ə': 'A',
@@ -41,10 +41,53 @@ function makeSlug(str) {
 
 function parsePhones(raw) {
   if (!raw) return [];
-  return raw
-    .split(/[,;]+/)
+  const values = Array.isArray(raw) ? raw : String(raw).split(/[,;]+/);
+  return values
     .map(p => p.trim())
     .filter(p => /[+\d]/.test(p) && p.replace(/\D/g, '').length >= 5);
+}
+
+function clean(value) {
+  return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeSourceRow(row, index) {
+  if (!Array.isArray(row)) {
+    return {
+      num: clean(row.officialId || index + 1),
+      region: clean(row.region) || 'Казахстан',
+      fio: clean(row.name),
+      licNo: clean(row.licenseNo),
+      licDate: clean(row.licenseDate),
+      since: clean(row.since),
+      address: clean(row.address),
+      phones: parsePhones(row.phones),
+      email: clean(row.email).toLowerCase(),
+      legalOrganization: clean(row.legalOrganization),
+      specializations: Array.isArray(row.specializations) ? row.specializations.map(clean).filter(Boolean) : [],
+      lawyerStatus: clean(row.lawyerStatus),
+      officialId: clean(row.officialId),
+      sourceUpdatedAt: clean(row.sourceUpdatedAt),
+    };
+  }
+
+  // Legacy fallback format: num, region, FIO, licence, date, membership, address, phones.
+  return {
+    num: clean(row[0]),
+    region: clean(row[1]),
+    fio: clean(row[2]),
+    licNo: clean(row[3]),
+    licDate: clean(row[4]),
+    since: clean(row[5]),
+    address: clean(row[6]),
+    phones: parsePhones(clean(row[7])),
+    email: '',
+    legalOrganization: '',
+    specializations: [],
+    lawyerStatus: '',
+    officialId: '',
+    sourceUpdatedAt: '',
+  };
 }
 
 function buildLawyers(rows, sourceMtime) {
@@ -52,23 +95,16 @@ function buildLawyers(rows, sourceMtime) {
   const slugUsed = {};
   let skipped    = 0;
 
-  for (const row of rows) {
-    // Columns: num(0), region(1), fio(2), license_no(3), license_date(4), since(5), address(6), phones(7)
-    const num     = (row[0] || '').trim();
-    const region  = (row[1] || '').trim();
-    const fio     = (row[2] || '').trim();
-    const licNo   = (row[3] || '').trim();
-    const licDate = (row[4] || '').trim();
-    const since   = (row[5] || '').trim();
-    const address = (row[6] || '').trim();
-    const phonesRaw = (row[7] || '').trim();
+  for (let index = 0; index < rows.length; index++) {
+    const row = normalizeSourceRow(rows[index], index);
+    const { num, region, fio, licNo, licDate, since, address } = row;
 
     // Skip header and junk rows
     if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
     if (!fio || fio.length < 3)    { skipped++; continue; }
 
     const cleanName = fio.toUpperCase().replace(/\s+/g, ' ');
-    const phones    = parsePhones(phonesRaw);
+    const phones = row.phones;
 
     let baseSlug = makeSlug(cleanName) || ('lawyer-' + num);
     let slug     = baseSlug;
@@ -89,6 +125,12 @@ function buildLawyers(rows, sourceMtime) {
       since,
       address,
       phones,
+      email: row.email,
+      legalOrganization: row.legalOrganization,
+      specializations: row.specializations,
+      lawyerStatus: row.lawyerStatus,
+      officialId: row.officialId,
+      sourceUpdatedAt: row.sourceUpdatedAt,
       slug,
       sourceMtime,
       dbVersion: DB_VERSION,
@@ -125,7 +167,9 @@ async function importLawyers() {
   console.log(`[Lawyers] Parsed ${rows.length} rows`);
   const { lawyers, skipped } = buildLawyers(rows, sourceMtime);
 
-  if (lawyers.length < 100) {
+  const usesOfficialRecords = rows.some(row => row && !Array.isArray(row));
+  const minimum = usesOfficialRecords ? 3500 : 100;
+  if (lawyers.length < minimum) {
     throw new Error(`[Lawyers] Completeness check failed: total=${lawyers.length}`);
   }
 
@@ -142,4 +186,4 @@ if (require.main === module) {
     .catch(e => { console.error('Import failed:', e.message); process.exit(1); });
 }
 
-module.exports = { DB_VERSION, importLawyers, buildLawyers, parsePhones };
+module.exports = { DB_VERSION, importLawyers, buildLawyers, parsePhones, normalizeSourceRow };

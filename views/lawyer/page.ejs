@@ -6,23 +6,34 @@ const nameTitle = lawyer.name.toLowerCase()
 const pageTitle = `Адвокат ${nameTitle} — ${lawyer.region} | ZakonExpert`;
 const _addrSnippet = lawyer.address ? `Адрес: ${lawyer.address.slice(0,60)}. ` : '';
 const _phoneSnippet = lawyer.phones && lawyer.phones.length ? `Телефон: ${lawyer.phones[0]}. ` : '';
-const _licSnippet = lawyer.license ? `Лицензия №${lawyer.license}. ` : '';
+const _licSnippet = lawyer.licenseNo ? `Лицензия №${lawyer.licenseNo}. ` : '';
 const pageDesc  = `Адвокат ${nameTitle} — ${lawyer.region}. ${_addrSnippet}${_phoneSnippet}${_licSnippet}ZakonExpert Казахстан.`;
 const canonical = `https://zakonexpertt.kz/lawyer/${lawyer.slug}`;
 
 const schema = [
   {
     '@context': 'https://schema.org',
-    '@type': 'LegalService',
-    name: `Адвокат ${nameTitle}`,
+    '@type': 'Person',
+    name: nameTitle,
+    jobTitle: 'Адвокат',
     description: pageDesc,
-    address: {
+    ...(lawyer.address ? { address: {
       '@type': 'PostalAddress',
-      streetAddress: lawyer.address || '',
+      streetAddress: lawyer.address,
       addressRegion: lawyer.region,
       addressCountry: 'KZ',
-    },
+    } } : {}),
     ...(lawyer.phones && lawyer.phones.length ? { telephone: lawyer.phones[0] } : {}),
+    ...(lawyer.email ? { email: lawyer.email } : {}),
+    ...(lawyer.licenseNo ? { identifier: {
+      '@type': 'PropertyValue',
+      propertyID: 'Лицензия адвоката Республики Казахстан',
+      value: lawyer.licenseNo,
+    } } : {}),
+    ...(lawyer.legalOrganization ? { memberOf: {
+      '@type': 'Organization',
+      name: lawyer.legalOrganization,
+    } } : {}),
     url: canonical,
   },
   {
@@ -42,11 +53,16 @@ function fmtPhone(raw) {
   if (d.length === 10) return '+7 (' + d.slice(0,3) + ') ' + d.slice(3,6) + '-' + d.slice(6,8) + '-' + d.slice(8,10);
   return raw;
 }
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 function fmtPhones(phones) {
   if (!phones || !phones.length) return '';
   return phones.map(p => {
     const digits = p.replace(/[^\d+]/g, '');
-    return `<a href="tel:${digits}" class="npage-phone-link">${fmtPhone(p)}</a>`;
+    return `<a href="tel:${esc(digits)}" class="npage-phone-link">${esc(fmtPhone(p))}</a>`;
   }).join(', ');
 }
 
@@ -59,7 +75,7 @@ const body = `
       <span class="npage-bc-sep">/</span>
       <a href="/lawyers">Адвокаты</a>
       <span class="npage-bc-sep">/</span>
-      <span>${nameTitle}</span>
+      <span>${esc(nameTitle)}</span>
     </nav>
 
     <div class="npage-hero">
@@ -70,9 +86,9 @@ const body = `
           </svg>
           Адвокат
         </span>
-        <span class="npage-region-tag">${lawyer.region}</span>
+        <span class="npage-region-tag">${esc(lawyer.region)}</span>
       </div>
-      <h1 class="npage-h1">${nameTitle}</h1>
+      <h1 class="npage-h1">${esc(nameTitle)}</h1>
     </div>
 
     <div class="npage-card">
@@ -85,7 +101,7 @@ const body = `
         </span>
         <div class="npage-row-body">
           <span class="npage-row-label">Адрес / Форма деятельности</span>
-          <span class="npage-row-val">${lawyer.address}</span>
+          <span class="npage-row-val">${esc(lawyer.address)}</span>
         </div>
       </div>` : ''}
 
@@ -113,7 +129,7 @@ const body = `
         </span>
         <div class="npage-row-body">
           <span class="npage-row-label">Лицензия</span>
-          <span class="npage-row-val">№ ${lawyer.licenseNo}${lawyer.licenseDate ? ' от ' + lawyer.licenseDate : ''}</span>
+          <span class="npage-row-val">№ ${esc(lawyer.licenseNo)}${lawyer.licenseDate ? ' от ' + esc(lawyer.licenseDate) : ''}</span>
         </div>
       </div>` : ''}
 
@@ -126,7 +142,40 @@ const body = `
         </span>
         <div class="npage-row-body">
           <span class="npage-row-label">Адвокат</span>
-          <span class="npage-row-val">${lawyer.since}</span>
+          <span class="npage-row-val">${esc(lawyer.since)}</span>
+        </div>
+      </div>` : ''}
+
+      ${lawyer.legalOrganization ? `
+      <div class="npage-row">
+        <span class="npage-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+        </span>
+        <div class="npage-row-body">
+          <span class="npage-row-label">Коллегия адвокатов</span>
+          <span class="npage-row-val">${esc(lawyer.legalOrganization)}</span>
+        </div>
+      </div>` : ''}
+
+      ${lawyer.email ? `
+      <div class="npage-row">
+        <span class="npage-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 6 8 6 8-6"/></svg>
+        </span>
+        <div class="npage-row-body">
+          <span class="npage-row-label">Электронная почта</span>
+          <span class="npage-row-val"><a class="npage-phone-link" href="mailto:${esc(lawyer.email)}">${esc(lawyer.email)}</a></span>
+        </div>
+      </div>` : ''}
+
+      ${lawyer.lawyerStatus ? `
+      <div class="npage-row">
+        <span class="npage-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+        </span>
+        <div class="npage-row-body">
+          <span class="npage-row-label">Статус в официальном реестре</span>
+          <span class="npage-row-val">${esc(lawyer.lawyerStatus)}</span>
         </div>
       </div>` : ''}
     </div>
@@ -154,8 +203,8 @@ const body = `
     </div>
 
     <p class="npage-source-note">
-      Данные предоставлены <a href="https://adilet.zan.kz" target="_blank" rel="noopener noreferrer">Министерством юстиции РК (КАОЖ)</a>.
-      Обновляются по мере публикации новых списков.
+      Источник: <a href="https://eup.adilet.gov.kz/#/lawyers/advocate" target="_blank" rel="noopener noreferrer">официальный публичный реестр Министерства юстиции РК «Е‑Заң көмегі»</a>.
+      Сведения обновляются автоматически раз в неделю и носят справочный характер.
     </p>
 
   </div>

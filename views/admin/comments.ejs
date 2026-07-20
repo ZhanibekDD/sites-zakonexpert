@@ -35,11 +35,9 @@ button{border:none;border-radius:8px;padding:6px 14px;font-size:.8rem;font-weigh
   <div class="text"><%= c.text %></div>
   <div class="actions">
     <form method="POST" action="/admin/comments/<%= c._id %>/approve" style="margin:0">
-      <input type="hidden" name="pw" value="<%= pw %>">
       <button class="btn-approve" type="submit">✓ Опубликовать</button>
     </form>
     <form method="POST" action="/admin/comments/<%= c._id %>/delete" style="margin:0">
-      <input type="hidden" name="pw" value="<%= pw %>">
       <button class="btn-delete" type="submit">✗ Удалить</button>
     </form>
   </div>
@@ -55,7 +53,6 @@ button{border:none;border-radius:8px;padding:6px 14px;font-size:.8rem;font-weigh
   <div class="text"><%= c.text %></div>
   <div class="actions">
     <form method="POST" action="/admin/comments/<%= c._id %>/delete" style="margin:0">
-      <input type="hidden" name="pw" value="<%= pw %>">
       <button class="btn-delete" type="submit">✗ Удалить</button>
     </form>
   </div>

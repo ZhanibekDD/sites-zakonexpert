@@ -148,11 +148,17 @@ const COURTS_STATIC = [
     email: 'ulytau@sud.gov.kz', web: 'sud.gov.kz'
   },
 ];
-const COURTS = (typeof courts !== 'undefined' && courts && courts.length) ? courts : COURTS_STATIC;
+const COURTS = (typeof courts !== 'undefined' && Array.isArray(courts)) ? courts : COURTS_STATIC;
+const CATALOG = (typeof catalog !== 'undefined' && catalog) ? catalog : {
+  query: '', page: 1, total: COURTS.length, filteredTotal: COURTS.length, totalPages: 1,
+};
+const QUERY = CATALOG.query || '';
+const PAGE = CATALOG.page || 1;
+const TOTAL = CATALOG.total || COURTS.length;
 
-const pageTitle = 'Суды Казахстана — ' + COURTS.length + ' судов, адреса, телефоны, email | ZakonExpert';
-const pageDesc  = 'Полный реестр ' + COURTS.length + ' судов Казахстана по всем регионам: Верховный суд, областные, городские, районные. Адреса, телефоны, email, руководители. Нужна помощь в суде? ZakonExpert.';
-const canonical = 'https://zakonexpertt.kz/courts';
+const pageTitle = 'Суды Казахстана — ' + TOTAL + ' судов' + (PAGE > 1 ? ', страница ' + PAGE : '') + ' | ZakonExpert';
+const pageDesc  = 'Полный реестр ' + TOTAL + ' судов Казахстана по всем регионам: адреса, телефоны, email и руководители. Нужна помощь в суде? ZakonExpert.';
+const canonical = 'https://zakonexpertt.kz/courts' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
 
 const schema = {
   '@context': 'https://schema.org',
@@ -172,6 +178,39 @@ function courtLevelStyle(level) {
 }
 
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function pageHref(page) {
+  const params = [];
+  if (QUERY) params.push('q=' + encodeURIComponent(QUERY));
+  if (page > 1) params.push('page=' + page);
+  return '/courts' + (params.length ? '?' + params.join('&') : '');
+}
+
+var paginationHtml = '';
+if (CATALOG.totalPages > 1) {
+  paginationHtml = '<nav class="cat-pagination" aria-label="Страницы каталога">'
+    + (PAGE > 1 ? '<a href="' + pageHref(PAGE - 1) + '">← Назад</a>' : '<span class="disabled">← Назад</span>');
+  for (var p = 1; p <= CATALOG.totalPages; p++) {
+    if (p === 1 || p === CATALOG.totalPages || Math.abs(p - PAGE) <= 2) {
+      paginationHtml += p === PAGE
+        ? '<span class="current" aria-current="page">' + p + '</span>'
+        : '<a href="' + pageHref(p) + '">' + p + '</a>';
+    } else if (p === 2 || p === CATALOG.totalPages - 1) {
+      paginationHtml += '<span class="ellipsis">…</span>';
+    }
+  }
+  paginationHtml += PAGE < CATALOG.totalPages
+    ? '<a href="' + pageHref(PAGE + 1) + '">Вперёд →</a></nav>'
+    : '<span class="disabled">Вперёд →</span></nav>';
+}
+
+const searchHtml = '<form class="cat-search" method="get" action="/courts">'
+  + '<label class="visually-hidden" for="ct-search">Поиск суда</label>'
+  + '<input id="ct-search" name="q" type="search" value="' + escHtml(QUERY) + '" placeholder="Название, регион, категория или председатель" autocomplete="off">'
+  + '<button type="submit">Найти</button>'
+  + (QUERY ? '<a href="/courts">Сбросить</a>' : '')
+  + '</form>'
+  + '<div id="ct-count">' + (QUERY ? 'Найдено: ' + CATALOG.filteredTotal + ' из ' + TOTAL : 'Всего в реестре: ' + TOTAL + ' судов') + '</div>';
 
 var cards = '';
 for (var i = 0; i < COURTS.length; i++) {
@@ -243,33 +282,29 @@ const CSS = '<style>'
   + '.cb-dim{color:#94a3b8;font-size:.74rem;}'
   + '.cb-link{color:#1a56db;text-decoration:none;word-break:break-all;}'
   + '.cb-link:hover{text-decoration:underline;}'
-  + '#ct-search{width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.95rem;outline:none;margin:1.2rem 0;box-sizing:border-box;}'
-  + '#ct-search:focus{border-color:#1a56db;}'
+  + '.cat-search{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:1.2rem 0 .6rem;}'
+  + '.cat-search input{flex:1;min-width:240px;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:.95rem;outline:none;box-sizing:border-box;}'
+  + '.cat-search input:focus{border-color:#1a56db;}'
+  + '.cat-search button{border:0;border-radius:10px;background:#1a56db;color:#fff;padding:12px 22px;font-weight:700;cursor:pointer;}'
+  + '.cat-search a{color:#1a56db;text-decoration:none;padding:10px;}'
   + '#ct-count{font-size:.82rem;color:#64748b;margin-bottom:.8rem;}'
-  + '@media(max-width:600px){.cb-grid{grid-template-columns:1fr;}}'
+  + '.cat-pagination{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin:1.4rem 0;}'
+  + '.cat-pagination a,.cat-pagination span{min-width:38px;padding:9px 10px;border:1px solid #dbe3ee;border-radius:9px;text-align:center;text-decoration:none;color:#1a56db;background:#fff;font-size:.85rem;}'
+  + '.cat-pagination .current{background:#0d2d59;color:#fff;border-color:#0d2d59;font-weight:700;}.cat-pagination .disabled,.cat-pagination .ellipsis{color:#94a3b8;background:#f8fafc;}'
+  + '@media(max-width:600px){.cb-grid{grid-template-columns:1fr;}.cat-search button{flex:1}.cat-pagination a,.cat-pagination span{min-width:34px;padding:8px;}}'
   + '</style>';
-
-const JS = '<script>'
-  + 'var ctCards=document.querySelectorAll(".cb-card"),ctCnt=document.getElementById("ct-count"),ctTotal=ctCards.length;'
-  + 'document.getElementById("ct-search").addEventListener("input",function(){'
-  + '  var q=this.value.toLowerCase().trim(),vis=0;'
-  + '  ctCards.forEach(function(c){var m=!q||c.dataset.search.includes(q);c.classList.toggle("hidden",!m);if(m)vis++;});'
-  + '  ctCnt.textContent="Показано: "+vis+" из "+ctTotal;'
-  + '});'
-  + 'ctCnt.textContent="Всего в реестре: "+ctTotal+" судов";'
-  + '</script>';
 
 const body = CSS
   + '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Суды Казахстана</span></nav>'
   + '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge">🏛 Судебная система РК</span></div>'
   + '<h1 class="npage-h1">Суды Казахстана</h1>'
-  + '<p style="color:#475569;margin-top:0.5rem;">Полный реестр — <strong>' + COURTS.length + ' судов</strong> по всем регионам РК: адреса, телефоны, email, руководители</p></div>'
+  + '<p style="color:#475569;margin-top:0.5rem;">Полный реестр — <strong>' + TOTAL + ' судов</strong> по всем регионам РК: адреса, телефоны, email, руководители</p></div>'
   + infoBox
-  + '<input id="ct-search" type="search" placeholder="🔍 Поиск по названию, региону, категории или председателю..." autocomplete="off">'
-  + '<div id="ct-count"></div>'
-  + '<div class="cb-grid">' + cards + '</div>'
+  + searchHtml
+  + (COURTS.length ? '<div class="cb-grid">' + cards + '</div>' : '<p style="padding:2rem 0;color:#64748b;">По вашему запросу суды не найдены.</p>')
+  + paginationHtml
   + ctaHtml + sourceHtml
-  + '</div></div>' + JS;
+  + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: Boolean(QUERY), body }) %>
