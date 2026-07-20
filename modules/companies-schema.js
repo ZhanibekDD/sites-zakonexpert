@@ -15,7 +15,9 @@ function createSchema(db) {
       activity_ru TEXT,
       leader TEXT,
       status_ru TEXT,
-      imported_at TEXT NOT NULL
+      imported_at TEXT NOT NULL,
+      quality_score INTEGER NOT NULL DEFAULT 0,
+      is_indexable INTEGER NOT NULL DEFAULT 0
     );
     CREATE TABLE IF NOT EXISTS company_meta (
       key TEXT PRIMARY KEY,
@@ -28,7 +30,14 @@ function createSchema(db) {
   if (!hasRegionColumn) {
     db.exec('ALTER TABLE companies ADD COLUMN region_slug TEXT;');
   }
-  db.exec('CREATE INDEX IF NOT EXISTS companies_region_idx ON companies(region_slug);');
+  const hasQualityColumn = db.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = 'quality_score'").get();
+  if (!hasQualityColumn) db.exec('ALTER TABLE companies ADD COLUMN quality_score INTEGER NOT NULL DEFAULT 0;');
+  const hasIndexableColumn = db.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = 'is_indexable'").get();
+  if (!hasIndexableColumn) db.exec('ALTER TABLE companies ADD COLUMN is_indexable INTEGER NOT NULL DEFAULT 0;');
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS companies_region_idx ON companies(region_slug);
+    CREATE INDEX IF NOT EXISTS companies_indexable_idx ON companies(is_indexable, id);
+  `);
 }
 
 function rebuildSearch(db) {

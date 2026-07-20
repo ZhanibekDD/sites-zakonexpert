@@ -25,6 +25,11 @@ const sample = {
   okedru: 'Юридическая деятельность',
   statusru: 'Зарегистрирован',
 };
+const lowQualitySample = {
+  id: 7137222,
+  nameru: 'ТОО «Без данных»',
+  bin: '',
+};
 
 const normalized = normalizeCompanyRow(sample);
 assert(normalized, 'row must normalize');
@@ -34,15 +39,22 @@ assert(normalized.slug.startsWith('7137221-'));
 
 const database = new DatabaseSync(dbPath);
 createSchema(database);
-assert.strictEqual(insertRows(database, [sample], '2026-07-16T00:00:00.000Z'), 1);
+assert.strictEqual(insertRows(database, [sample, lowQualitySample], '2026-07-16T00:00:00.000Z'), 2);
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_updated_at', '2026-07-16');
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_url', 'https://data.egov.kz/datasets/view?index=gbd_ul');
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('completed_at', '2026-07-16');
 rebuildSearch(database);
+database.prepare('UPDATE companies SET quality_score = 0, is_indexable = 0').run();
 database.close();
 
+process.argv.push('--confirm-offline');
+require('./backfill-company-quality').backfill();
+process.argv.pop();
+
 const companies = require('../modules/companies-db');
-assert.strictEqual(companies.stats().count, 1);
+assert.strictEqual(companies.stats().count, 2);
+assert.strictEqual(companies.stats().indexableCount, 1);
+assert.strictEqual(companies.stats().excludedCount, 1);
 assert.strictEqual(companies.findById(7137221).bin, '970540001234');
 assert.strictEqual(companies.search('Альфа').items.length, 1);
 assert.strictEqual(companies.search('970540001234').items.length, 1);
@@ -50,6 +62,7 @@ assert.strictEqual(companies.sitemapChunkCount(), 1);
 assert.strictEqual(companies.sitemapChunk(1).length, 1);
 
 const company = companies.findById(7137221);
+const lowQualityCompany = companies.findById(7137222);
 const catalogData = {
   query: 'Альфа',
   results: companies.search('Альфа'),
@@ -61,12 +74,20 @@ Promise.all([
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
     company,
     sourceUpdatedAt: '2026-07-16',
+    companyQuality: companies.quality(company),
   }),
-]).then(([catalogHtml, itemHtml]) => {
+  ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
+    company: lowQualityCompany,
+    sourceUpdatedAt: '2026-07-16',
+    companyQuality: companies.quality(lowQualityCompany),
+  }),
+]).then(([catalogHtml, itemHtml, lowQualityHtml]) => {
   assert(catalogHtml.includes('Альфа Право'));
   assert(catalogHtml.includes('noindex'));
   assert(itemHtml.includes('БИН 970540001234'));
   assert(itemHtml.includes('application/ld+json'));
+  assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
+  assert(lowQualityHtml.includes('noindex,follow'), 'thin company must be noindex');
   console.log('Company data OK: normalization, SQLite search, templates and sitemap chunks');
 }).finally(() => {
   companies.close();

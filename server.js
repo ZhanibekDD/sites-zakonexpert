@@ -60,6 +60,7 @@ const logger = winston.createLogger({
 // Telegram notifications
 const telegram = require('./modules/telegram');
 const { lowContentBoost } = require('./modules/seo-blocks');
+const { TOOLS, findTool } = require('./modules/tools-catalog');
 
 // Initialize DB and news importer
 let newsDb = null;
@@ -1121,7 +1122,8 @@ app.get('/company/:slug', (req, res) => {
   if (company.slug !== req.params.slug) return res.redirect(301, `/company/${company.slug}`);
   const sourceUpdatedAt = companiesDb.stats().updatedAt;
   const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
-  res.render('companies/item', { company, sourceUpdatedAt, regionName });
+  const companyQuality = companiesDb.quality(company);
+  res.render('companies/item', { company, sourceUpdatedAt, regionName, companyQuality });
 });
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
 app.get('/gsi/:slug',     (req, res) => {
@@ -2057,6 +2059,11 @@ function getCorePages() {
     { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
     { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
   ];
+  TOOLS.forEach(tool => {
+    if (!pages.some(page => page.url === tool.href)) {
+      pages.push({ url: tool.href, priority: '0.82', freq: 'monthly' });
+    }
+  });
   if (companiesDb) {
     companiesDb.regionStats().forEach(region => {
       pages.push({ url: `/companies/region/${region.slug}`, priority: '0.6', freq: 'weekly' });
@@ -2136,11 +2143,11 @@ function buildCompaniesSitemapChunk(chunk) {
     _companiesSitemapCache.set(chunk, xml);
     return xml;
   }
-  const today = new Date().toISOString().substring(0, 10);
+  const sourceDate = String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || new Date().toISOString()).substring(0, 10);
   const urls = companiesDb.sitemapChunk(chunk).map(company => `
   <url>
     <loc>https://zakonexpertt.kz/company/${company.slug}</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${sourceDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>`).join('');
@@ -2226,11 +2233,14 @@ app.get('/sitemap.xml', (req, res) => res.redirect(301, '/sitemap-index.xml'));
 // SITEMAP INDEX
 app.get('/sitemap-index.xml', (req, res) => {
   const today = new Date().toISOString().substring(0, 10);
+  const companyLastmod = companiesDb
+    ? String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || today).substring(0, 10)
+    : today;
   const companySitemaps = companiesDb
     ? Array.from({ length: companiesDb.sitemapChunkCount() }, (_, index) => `
   <sitemap>
     <loc>https://zakonexpertt.kz/sitemap-companies-${index + 1}.xml</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${companyLastmod}</lastmod>
   </sitemap>`).join('')
     : '';
   res.set('Content-Type', 'application/xml');
@@ -2677,7 +2687,7 @@ function classifyPageType(page) {
   if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi|companies)$/.test(page)) return 'catalog';
   if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
   if (page === '/dokumenty') return 'documents';
-  if (page === '/calculator') return 'calculator';
+  if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
   if (page === '/bin-search') return 'bin_search';
   return 'other';
 }
@@ -2858,6 +2868,12 @@ app.get('/bin-search', (req, res) => {
 
 // ===== КАЛЬКУЛЯТОР =====
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
+app.get('/tools', (req, res) => res.render('tools/index', { tools: TOOLS }));
+app.get('/tools/:slug', (req, res) => {
+  const tool = findTool(req.params.slug);
+  if (!tool) return sendNotFound(res);
+  res.render('tools/tool', { tool, tools: TOOLS });
+});
 
 // A real 404 response prevents crawlers from treating missing profiles as
 // indexable soft-404 redirects and gives visitors useful recovery links.

@@ -17,7 +17,7 @@
 Контакты для оперативной связи — в подписи. Готовы ответить в течение дня.
 
 [Имя], ZakonExpert
-+7 775 299-87-38 (WhatsApp)
++7 747 995-76-35 (WhatsApp)
 zakonexpert.kz@mail.ru
 https://zakonexpertt.kz/press
 

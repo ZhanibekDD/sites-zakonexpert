@@ -5,6 +5,7 @@ const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const { companySlug } = require('./company-slug');
 const { REGIONS, regionLabel } = require('./company-region');
+const { evaluateCompany, QUALITY_VERSION } = require('./company-quality');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
@@ -42,17 +43,44 @@ function getMeta(database, key) {
   }
 }
 
+function hasColumn(database, column) {
+  try {
+    return Boolean(database.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = ?").get(column));
+  } catch (_) {
+    return false;
+  }
+}
+
 function stats() {
   const database = open();
-  if (!database) return { available: false, count: 0, updatedAt: null, source: null };
+  if (!database) return {
+    available: false, count: 0, updatedAt: null, source: null,
+    qualityReady: false, indexableCount: 0, excludedCount: 0, qualityUpdatedAt: null,
+  };
   const completedAt = getMeta(database, 'completed_at');
-  if (!completedAt) return { available: false, count: 0, updatedAt: null, source: null };
-  const row = database.prepare('SELECT COUNT(*) AS count FROM companies').get();
+  if (!completedAt) return {
+    available: false, count: 0, updatedAt: null, source: null,
+    qualityReady: false, indexableCount: 0, excludedCount: 0, qualityUpdatedAt: null,
+  };
+  const qualityReady = hasColumn(database, 'is_indexable')
+    && getMeta(database, 'quality_version') === QUALITY_VERSION;
+  const metaCount = Number.parseInt(getMeta(database, 'record_count'), 10);
+  const count = Number.isInteger(metaCount) && metaCount >= 0
+    ? metaCount
+    : Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+  const metaIndexableCount = Number.parseInt(getMeta(database, 'indexable_count'), 10);
+  const indexableCount = qualityReady && Number.isInteger(metaIndexableCount) && metaIndexableCount >= 0
+    ? metaIndexableCount
+    : 0;
   return {
     available: true,
-    count: Number(row.count || 0),
+    count,
     updatedAt: getMeta(database, 'source_updated_at'),
     source: getMeta(database, 'source_url'),
+    qualityReady,
+    indexableCount,
+    excludedCount: qualityReady ? Math.max(0, count - indexableCount) : count,
+    qualityUpdatedAt: getMeta(database, 'quality_backfilled_at') || getMeta(database, 'source_updated_at'),
   };
 }
 
@@ -164,16 +192,21 @@ function byRegion(slug, page = 1, limit = 30) {
 
 function sitemapChunkCount() {
   const info = stats();
-  return info.available ? Math.ceil(info.count / SITEMAP_LIMIT) : 0;
+  return info.available && info.qualityReady ? Math.ceil(info.indexableCount / SITEMAP_LIMIT) : 0;
 }
 
 function sitemapChunk(chunk) {
   const database = open();
   const safeChunk = Number.parseInt(chunk, 10);
-  if (!database || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
+  if (!database || !stats().qualityReady || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
   return database.prepare(`
-    SELECT id, name_ru, name_kk FROM companies ORDER BY id LIMIT ? OFFSET ?
+    SELECT id, name_ru, name_kk, quality_score, is_indexable
+    FROM companies WHERE is_indexable = 1 ORDER BY id LIMIT ? OFFSET ?
   `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT).map(addSlug);
+}
+
+function quality(company) {
+  return evaluateCompany(company);
 }
 
 module.exports = {
@@ -183,6 +216,7 @@ module.exports = {
   byRegion,
   close,
   findById,
+  quality,
   regionStats,
   search,
   sitemapChunk,

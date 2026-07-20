@@ -1,0 +1,23 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+const pageTitle = 'Юридические калькуляторы Казахстана | ZakonExpert';
+const pageDesc = 'Бесплатные онлайн-калькуляторы: долг и пеня, график платежей, МРП 2026, госпошлина в суд и процессуальные сроки.';
+const canonical = 'https://zakonexpertt.kz/tools';
+const schema = {
+  '@context':'https://schema.org', '@type':'CollectionPage', name:'Юридические калькуляторы Казахстана', url:canonical,
+  hasPart: tools.map(function(tool) { return { '@type':'WebApplication', name:tool.title, url:'https://zakonexpertt.kz' + tool.href, applicationCategory:'FinanceApplication' }; }),
+};
+const cards = tools.map(function(tool) {
+  return '<a class="tool-card" href="' + esc(tool.href) + '"><span class="tool-icon"><i class="bi ' + esc(tool.icon) + '"></i></span>'
+    + '<span><strong>' + esc(tool.short) + '</strong><small>' + esc(tool.description) + '</small><b>Открыть калькулятор →</b></span></a>';
+}).join('');
+const body = '<style>'
+  + '.tools-hero{padding:34px 0 12px;max-width:850px}.tools-kicker{color:#b7791f;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.tools-title{font-family:Georgia,serif;color:#0d1f3c;font-size:clamp(2rem,5vw,3.6rem);line-height:1.05;margin:10px 0}.tools-lead{color:#64748b;font-size:1.05rem;line-height:1.65;max-width:760px}.tools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:28px 0 40px}.tool-card{display:flex;gap:16px;background:#fff;border:1px solid #dbe4f0;border-radius:17px;padding:22px;text-decoration:none;box-shadow:0 8px 26px rgba(13,31,60,.06);transition:.2s}.tool-card:hover{transform:translateY(-2px);border-color:#8fb2e5;box-shadow:0 14px 34px rgba(13,31,60,.1)}.tool-icon{width:52px;height:52px;border-radius:14px;background:#eef5ff;color:#154f9b;display:grid;place-items:center;font-size:1.45rem;flex:0 0 auto}.tool-card strong{display:block;color:#0d1f3c;font-size:1.05rem}.tool-card small{display:block;color:#64748b;line-height:1.5;margin:6px 0 12px}.tool-card b{color:#1a56db;font-size:.84rem}.tools-note{background:#0d2d59;color:#fff;border-radius:18px;padding:24px;margin:10px 0 40px}.tools-note h2{font-size:1.2rem;margin:0 0 8px}.tools-note p{margin:0;color:#dbeafe;line-height:1.6}@media(max-width:700px){.tools-grid{grid-template-columns:1fr}.tool-card{padding:18px}}'
+  + '</style><div class="npage-wrap"><div class="landing-container"><nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Инструменты</span></nav>'
+  + '<section class="tools-hero"><div class="tools-kicker">Полезные инструменты</div><h1 class="tools-title">Юридические калькуляторы Казахстана</h1><p class="tools-lead">Быстрые предварительные расчёты без регистрации. Каждый инструмент объясняет формулу, ограничения и источник данных.</p></section>'
+  + '<div class="tools-grid">' + cards + '</div><section class="tools-note"><h2>Расчёт не заменяет проверку документов</h2><p>Мы показываем понятный ориентир. Итоговая сумма и срок зависят от вида дела, договора, льгот и действующей редакции закона. Сложный случай можно бесплатно отправить специалисту ZakonExpert.</p></section>'
+  + '</div></div>';
+%>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
