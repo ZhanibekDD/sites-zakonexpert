@@ -17,7 +17,7 @@
 Готовы ответить оперативно, если у вас есть дедлайн по материалу.
 
 [Имя], ZakonExpert
-+7 775 299-87-38 (WhatsApp)
++7 700 311-06-38 (WhatsApp)
 https://zakonexpertt.kz/press
 
 ## WhatsApp
