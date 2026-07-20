@@ -1,10 +1,15 @@
 'use strict';
 
-// Submits every URL currently listed in the site's sitemaps to IndexNow
+// Submits changed/high-priority URLs to IndexNow. A full 800k+ submission is
+// deliberately opt-in with --all; repeatedly resending the whole registry
+// wastes crawl capacity and hides failed batches.
 // (fans out to Yandex, Bing and other participating engines). Google does
 // not support IndexNow — this script intentionally does not touch it.
 //
-// Usage: node scripts/submit-indexnow.js [https://zakonexpertt.kz]
+// Usage:
+//   node scripts/submit-indexnow.js                         # pages + news
+//   node scripts/submit-indexnow.js --sitemap=sitemap-laws.xml
+//   node scripts/submit-indexnow.js --all                  # exceptional full run
 
 const HOST = 'zakonexpertt.kz';
 const KEY = '666b24a135bdeacb4dd7376da5267f9a';
@@ -35,10 +40,23 @@ function extractLocs(xml) {
   return Array.from(matches, m => m[1].trim());
 }
 
-async function collectAllUrls(baseUrl) {
+function parseArgs(argv = process.argv.slice(2)) {
+  const baseUrl = (argv.find(arg => /^https?:\/\//i.test(arg)) || `https://${HOST}`).replace(/\/$/, '');
+  const sitemap = argv.find(arg => arg.startsWith('--sitemap='))?.slice('--sitemap='.length) || '';
+  return { baseUrl, all: argv.includes('--all'), sitemap };
+}
+
+async function collectAllUrls(baseUrl, options = {}) {
   const indexXml = await fetchText(`${baseUrl}/sitemap-index.xml`);
-  const childSitemaps = extractLocs(indexXml);
-  console.log(`[IndexNow] ${childSitemaps.length} child sitemaps found`);
+  const allChildSitemaps = extractLocs(indexXml);
+  let childSitemaps = allChildSitemaps;
+  if (options.sitemap) {
+    childSitemaps = allChildSitemaps.filter(url => url.endsWith('/' + options.sitemap.replace(/^\//, '')));
+    if (!childSitemaps.length) throw new Error(`Sitemap not found in index: ${options.sitemap}`);
+  } else if (!options.all) {
+    childSitemaps = allChildSitemaps.filter(url => /\/sitemap-(?:pages|news)\.xml$/.test(url));
+  }
+  console.log(`[IndexNow] ${allChildSitemaps.length} child sitemaps found; ${childSitemaps.length} selected`);
 
   const urls = [];
   for (const sitemapUrl of childSitemaps) {
@@ -65,27 +83,33 @@ async function submitBatch(urlList) {
 }
 
 async function main() {
-  const baseUrl = (process.argv[2] || `https://${HOST}`).replace(/\/$/, '');
+  const options = parseArgs();
+  const { baseUrl } = options;
 
   const keyCheck = await fetch(KEY_LOCATION).catch(() => null);
   if (!keyCheck || !keyCheck.ok) {
     throw new Error(`Key file not reachable at ${KEY_LOCATION} — deploy it before submitting.`);
   }
 
-  const urls = await collectAllUrls(baseUrl);
+  const urls = [...new Set(await collectAllUrls(baseUrl, options))];
   console.log(`[IndexNow] ${urls.length} urls total, submitting in batches of ${BATCH_SIZE}`);
 
-  let submitted = 0;
+  let attempted = 0;
+  let accepted = 0;
+  let failed = 0;
   for (let i = 0; i < urls.length; i += BATCH_SIZE) {
     const batch = urls.slice(i, i + BATCH_SIZE);
     const result = await submitBatch(batch);
-    submitted += batch.length;
-    console.log(`[IndexNow] batch ${Math.floor(i / BATCH_SIZE) + 1}: ${result.status} (${submitted}/${urls.length})`);
-    if (!result.ok) console.warn('[IndexNow] batch failed, continuing with the rest');
+    attempted += batch.length;
+    if (result.ok) accepted += batch.length;
+    else failed += batch.length;
+    console.log(`[IndexNow] batch ${Math.floor(i / BATCH_SIZE) + 1}: ${result.status} (${attempted}/${urls.length})`);
+    if (!result.ok) console.warn(`[IndexNow] batch rejected: HTTP ${result.status}`);
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  console.log(`[IndexNow] Done. Submitted ${submitted} urls.`);
+  console.log(`[IndexNow] Done. Accepted: ${accepted}; failed: ${failed}; attempted: ${attempted}.`);
+  if (failed) throw new Error(`${failed} URLs were not accepted by IndexNow`);
 }
 
 if (require.main === module) {
@@ -95,4 +119,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { collectAllUrls, submitBatch };
+module.exports = { collectAllUrls, parseArgs, submitBatch };

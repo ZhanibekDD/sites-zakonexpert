@@ -5,6 +5,7 @@ const path = require('path');
 const axios = require('axios');
 const { DatabaseSync } = require('node:sqlite');
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
+const { evaluateCompany, minScore, QUALITY_VERSION } = require('../modules/company-quality');
 const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
 
@@ -153,14 +154,16 @@ function insertRows(db, rows, importedAt) {
   const statement = db.prepare(`
     INSERT INTO companies(
       id, bin, name_ru, name_kk, registration_date, address_ru,
-      activity_ru, leader, status_ru, imported_at, region_slug
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      activity_ru, leader, status_ru, imported_at, region_slug,
+      quality_score, is_indexable
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       bin=excluded.bin, name_ru=excluded.name_ru, name_kk=excluded.name_kk,
       registration_date=excluded.registration_date, address_ru=excluded.address_ru,
       activity_ru=excluded.activity_ru, leader=excluded.leader,
       status_ru=excluded.status_ru, imported_at=excluded.imported_at,
-      region_slug=excluded.region_slug
+      region_slug=excluded.region_slug, quality_score=excluded.quality_score,
+      is_indexable=excluded.is_indexable
   `);
 
   let inserted = 0;
@@ -170,10 +173,12 @@ function insertRows(db, rows, importedAt) {
       const company = normalizeCompanyRow(raw);
       if (!company) continue;
       const withRegionSlug = withRegion(company);
+      const quality = evaluateCompany(withRegionSlug);
       statement.run(
         company.id, company.bin, company.nameRu, company.nameKk,
         company.registrationDate, company.addressRu, company.activityRu,
-        company.leader, company.statusRu, importedAt, withRegionSlug.regionSlug
+        company.leader, company.statusRu, importedAt, withRegionSlug.regionSlug,
+        quality.score, quality.indexable ? 1 : 0
       );
       inserted += 1;
     }
@@ -272,6 +277,14 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     setMeta(database, 'completed_at', new Date().toISOString());
     setMeta(database, 'source_updated_at', new Date().toISOString());
     setMeta(database, 'record_count', stored);
+    setMeta(database, 'quality_version', QUALITY_VERSION);
+    setMeta(database, 'quality_min_score', minScore());
+    const indexableCount = Number(database.prepare(
+      'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
+    ).get().count || 0);
+    setMeta(database, 'indexable_count', indexableCount);
+    setMeta(database, 'excluded_count', Math.max(0, stored - indexableCount));
+    setMeta(database, 'quality_backfilled_at', new Date().toISOString());
     setMeta(database, 'next_page', 1);
     setMeta(database, 'last_subject_id', 0);
     setMeta(database, 'import_run_id', '');

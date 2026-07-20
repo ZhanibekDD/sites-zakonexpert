@@ -6,7 +6,8 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/advocate', '/mediator', '/contact',
   '/notaries', '/bailiffs', '/lawyers', '/banks', '/mfo', '/collectors',
-  '/lombards', '/companies', '/courts', '/chambers', '/statyi',
+  '/lombards', '/companies', '/courts', '/chambers', '/statyi', '/tools',
+  '/tools/payment-plan', '/tools/mrp', '/tools/state-duty', '/tools/deadline',
 ];
 
 const failures = [];

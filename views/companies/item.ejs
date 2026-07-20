@@ -31,6 +31,9 @@ function registrationYear(value) {
 }
 
 var name = company.name_ru || company.name_kk;
+var quality = (typeof companyQuality !== 'undefined' && companyQuality)
+  ? companyQuality
+  : { score: 0, minScore: 7, indexable: false };
 var canonical = 'https://zakonexpertt.kz/company/' + company.slug;
 var pageTitle = name + (company.bin ? ' — БИН ' + company.bin : '') + ' | ZakonExpert';
 var pageDesc = name + ': регистрационные данные' + (company.bin ? ', БИН ' + company.bin : '') + (company.address_ru ? ', адрес ' + company.address_ru : '') + '. Источник data.egov.kz.';
@@ -157,4 +160,4 @@ var body = '<div class="npage-wrap"><div class="landing-container">'
 
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !name, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !name || !quality.indexable, body }) %>
