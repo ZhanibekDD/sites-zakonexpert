@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const helmet = require('helmet');
 const compression = require('compression');
 const axios = require('axios');
@@ -107,9 +108,11 @@ try {
 // Initialize lawyers DB
 let lawyersDb = null;
 let importLawyers = null;
+let refreshLawyersRegistry = null;
 try {
   lawyersDb  = require('./modules/lawyers-db');
   ({ importLawyers } = require('./scripts/import-lawyers'));
+  ({ refreshLawyersRegistry } = require('./scripts/refresh-lawyers-registry'));
   logger.info('Lawyers module loaded ✓');
 } catch (e) {
   logger.warn('Lawyers module not loaded: ' + e.message);
@@ -145,21 +148,69 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKGROUND_JOBS_ENABLED = !/^(1|true|yes)$/i.test(process.env.DISABLE_BACKGROUND_JOBS || '');
 
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
 // Template engine for news pages
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middleware — порядок важен: helmet → compression → cors → body-parser → static
 app.use(helmet({
-    contentSecurityPolicy: false, // отключаем CSP чтобы не ломать CDN Bootstrap/Bootstrap-Icons
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+        formAction: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://mc.yandex.ru'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'https://mc.yandex.ru'],
+        frameSrc: ["'self'", 'https://maps.google.com', 'https://www.google.com'],
+        upgradeInsecureRequests: [],
+      },
+    },
 }));
 app.use(compression());
 app.use(cors({
     origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpertt.kz
     methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
+    allowedHeaders: ['Content-Type', 'X-Admin-Key'],
 }));
 app.use(express.json()); // заменяет bodyParser.json()
+
+function createRateLimiter({ windowMs, max, name }) {
+  const buckets = new Map();
+  let lastSweep = 0;
+  return (req, res, next) => {
+    const now = Date.now();
+    if (now - lastSweep > windowMs) {
+      for (const [key, value] of buckets) {
+        if (now - value.startedAt >= windowMs) buckets.delete(key);
+      }
+      lastSweep = now;
+    }
+    const key = req.ip || req.socket.remoteAddress || 'unknown';
+    let bucket = buckets.get(key);
+    if (!bucket || now - bucket.startedAt >= windowMs) {
+      bucket = { count: 0, startedAt: now };
+      buckets.set(key, bucket);
+    }
+    bucket.count += 1;
+    if (bucket.count > max) {
+      res.set('Retry-After', String(Math.ceil((windowMs - (now - bucket.startedAt)) / 1000)));
+      return res.status(429).json({ error: `Слишком много запросов к ${name}. Повторите позже.` });
+    }
+    next();
+  };
+}
+
+const externalApiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, name: 'внешнему реестру' });
+const leadLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 10, name: 'форме' });
+const commentLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 8, name: 'комментариям' });
 
 // ===== LEGACY ALIAS URL → CANONICAL URL 301 REDIRECTS =====
 // These filenames still exist as physical files (serving the canonical route
@@ -202,7 +253,16 @@ app.get(/^\/.+\.html$/, (req, res, next) => {
 // would have served it to anyone who requested the URL directly).
 app.use('/data', (req, res) => res.status(404).end());
 
-app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+app.use(express.static(path.join(__dirname, 'public'), {
+  extensions: ['html'],
+  setHeaders(res, filePath) {
+    if (/\.(?:avif|webp|png|jpe?g|gif|svg|ico|woff2?)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    } else if (/\.(?:css|js)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    }
+  },
+}));
 
 // ===== VISITOR TRACKING =====
 const TRACKED_PATHS = new Set([
@@ -234,7 +294,8 @@ const TRACKED_PATHS = new Set([
   '/news', '/statyi',
 ]);
 app.use((req, res, next) => {
-  if (req.method === 'GET' && TRACKED_PATHS.has(req.path)) {
+  const notifyVisits = /^(1|true|yes)$/i.test(process.env.TELEGRAM_VISIT_NOTIFICATIONS || '');
+  if (notifyVisits && req.method === 'GET' && TRACKED_PATHS.has(req.path)) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const ua = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
@@ -243,12 +304,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Увеличиваем таймауты для долгих запросов
+// Не держим обычные веб-запросы открытыми 10 минут: это расходует воркеры и
+// делает приложение уязвимее к медленным соединениям. Долгие admin-задачи
+// запускаются отдельными POST-маршрутами.
 app.use((req, res, next) => {
-    req.setTimeout(600000); // 10 минут
-    res.setTimeout(600000); // 10 минут
+    const timeoutMs = req.path.startsWith('/api/') ? 120000 : 30000;
+    req.setTimeout(timeoutMs);
+    res.setTimeout(timeoutMs);
     res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Keep-Alive', 'timeout=600');
+    res.setHeader('Keep-Alive', 'timeout=5');
     next();
 });
 
@@ -268,6 +332,12 @@ const asyncHandler = fn => (req, res, next) =>
       logger.error('Ошибка в асинхронном обработчике:', err); // Логируем ошибку
       next(err); // Передаем ошибку дальше стандартному обработчику Express
   });
+
+function sendNotFound(res) {
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'), error => {
+    if (error && !res.headersSent) res.status(404).send('Страница не найдена');
+  });
+}
 
 // Конфигурация для API eGov
 const EGOV_API_URL = "https://data.egov.kz/egov-opendata-ws/ODWebServiceImpl";
@@ -387,7 +457,7 @@ async function checkDebtorViaApi(iin) {
 
 
 // Маршрут для проверки ИИН
-app.post('/check', asyncHandler(async (req, res) => {
+app.post('/check', externalApiLimiter, asyncHandler(async (req, res) => {
     const iin = String(req.body?.iin || '').replace(/\D/g, '');
     // ИЗМЕНЕНО: logger.info
     logger.info(`Получен запрос на проверку ИИН: ${iin ? iin.substring(0, 4) + '********' : 'пустой'}`); // Маскируем ИИН в логах
@@ -440,7 +510,7 @@ app.get('/notary-search', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'notary-search.html'));
 });
 
-app.get('/api/notary-search', asyncHandler(async (req, res) => {
+app.get('/api/notary-search', externalApiLimiter, asyncHandler(async (req, res) => {
   const cheerio = require('cheerio');
   const { fio = '', phone = '', license = '', region = '0' } = req.query;
   if (!fio && !phone && !license) {
@@ -487,7 +557,7 @@ app.get('/api/notary-search', asyncHandler(async (req, res) => {
 app.get('/notary/:slug', asyncHandler(async (req, res) => {
   if (!notariesDb) return res.status(503).send('Notary module not available');
   const notary = await notariesDb.findBySlug(req.params.slug);
-  if (!notary) return res.status(404).redirect('/notary-search');
+  if (!notary) return sendNotFound(res);
   const [comments, commentStats] = commentsDb
     ? await Promise.all([commentsDb.getApproved('notary', req.params.slug), commentsDb.stats('notary', req.params.slug)])
     : [[], null];
@@ -525,14 +595,14 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
 }));
 
 // Admin: manual notary import trigger
-app.get('/api/notaries/import', asyncHandler(async (req, res) => {
+app.post('/api/notaries/import', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!importNotaries) return res.status(503).json({ error: 'Notary module not available' });
   const count = await importNotaries();
   res.json({ ok: true, imported: count });
 }));
 
-app.get('/api/notaries/refresh', asyncHandler(async (req, res) => {
+app.post('/api/notaries/refresh', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!refreshNotariesRegistry || !importNotaries) return res.status(503).json({ error: 'Notary module not available' });
   const refreshed = await refreshNotariesRegistry();
@@ -662,13 +732,32 @@ app.get('/bailiffs', asyncHandler(async (req, res) => {
 app.get('/lawyers', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!lawyersDb) return res.status(503).send('Lawyer module not available');
+  const requestedPage = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const [allRegions, lastUpdated] = await Promise.all([
+    lawyersDb.getRegions(),
+    lawyersDb.getLastUpdated(),
+  ]);
   if (region) {
-    const regionItems = await lawyersDb.findByRegion(region);
-    const allRegions = await lawyersDb.getRegions();
-    return res.render('lawyer/catalog', { selectedRegion: region, allRegions, regionItems });
+    const total = await lawyersDb.countByRegion(region);
+    const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
+    const page = Math.min(requestedPage, totalPages);
+    const regionItems = await lawyersDb.findByRegion(
+      region,
+      CATALOG_PAGE_SIZE,
+      (page - 1) * CATALOG_PAGE_SIZE,
+    );
+    return res.render('lawyer/catalog', {
+      selectedRegion: region,
+      allRegions,
+      regionItems,
+      lastUpdated,
+      catalog: { page, pageSize: CATALOG_PAGE_SIZE, total, totalPages },
+    });
   }
-  const allRegions = await lawyersDb.getRegions();
-  res.render('lawyer/catalog', { selectedRegion: '', allRegions, regionItems: [] });
+  res.render('lawyer/catalog', {
+    selectedRegion: '', allRegions, regionItems: [], lastUpdated,
+    catalog: { page: 1, pageSize: CATALOG_PAGE_SIZE, total: 0, totalPages: 1 },
+  });
 }));
 
 // ===== SLUGIFY =====
@@ -967,7 +1056,35 @@ function getInsuranceData() {
 
 // ===== NEW CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
 app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData(), lowContentBoost }));
-app.get('/courts',    (req, res) => res.render('courts/catalog', { courts: getCourtsData() }));
+
+const CATALOG_PAGE_SIZE = 60;
+function paginateCatalog(items, req, searchText) {
+  const query = String(req.query.q || '').trim().slice(0, 100);
+  const needle = query.toLocaleLowerCase('ru-RU');
+  const filtered = needle
+    ? items.filter(item => String(searchText(item) || '').toLocaleLowerCase('ru-RU').includes(needle))
+    : items;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / CATALOG_PAGE_SIZE));
+  const requestedPage = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const page = Math.min(requestedPage, totalPages);
+  const offset = (page - 1) * CATALOG_PAGE_SIZE;
+  return {
+    items: filtered.slice(offset, offset + CATALOG_PAGE_SIZE),
+    query,
+    page,
+    pageSize: CATALOG_PAGE_SIZE,
+    total: items.length,
+    filteredTotal: filtered.length,
+    totalPages,
+  };
+}
+
+app.get('/courts', (req, res) => {
+  const catalog = paginateCatalog(getCourtsData(), req, court => [
+    court.name, court.region, court.level, court.address, court.chairman, court.email,
+  ].join(' '));
+  res.render('courts/catalog', { courts: catalog.items, catalog });
+});
 app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
 app.get('/companies', (req, res) => {
   const query = String(req.query.q || '').trim().slice(0, 120);
@@ -992,15 +1109,15 @@ app.get('/companies/region/:slug', (req, res) => {
   if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
   const page = Number.parseInt(req.query.page, 10) || 1;
   const results = companiesDb.byRegion(req.params.slug, page, 30);
-  if (!results.label) return res.status(404).redirect('/companies/regions');
+  if (!results.label) return sendNotFound(res);
   res.render('companies/region', { slug: req.params.slug, results });
 });
 
 app.get('/company/:slug', (req, res) => {
-  if (!companiesDb || !companiesDb.available()) return res.status(404).redirect('/companies');
+  if (!companiesDb || !companiesDb.available()) return sendNotFound(res);
   const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
   const company = id ? companiesDb.findById(id) : null;
-  if (!company) return res.status(404).redirect('/companies');
+  if (!company) return sendNotFound(res);
   if (company.slug !== req.params.slug) return res.redirect(301, `/company/${company.slug}`);
   const sourceUpdatedAt = companiesDb.stats().updatedAt;
   const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
@@ -1009,13 +1126,13 @@ app.get('/company/:slug', (req, res) => {
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
 app.get('/gsi/:slug',     (req, res) => {
   const item = getGsiData().find(g => g.slug === req.params.slug);
-  if (!item) return res.status(404).redirect('/gsi');
+  if (!item) return sendNotFound(res);
   res.render('gsi/item', { item, lowContentBoost });
 });
 app.get('/insurance',     (req, res) => res.render('insurance/catalog', { items: getInsuranceData() }));
 app.get('/insurance/:slug', (req, res) => {
   const item = getInsuranceData().find(c => c.slug === req.params.slug);
-  if (!item) return res.status(404).redirect('/insurance');
+  if (!item) return sendNotFound(res);
   res.render('insurance/item', { item, lowContentBoost });
 });
 app.get('/credit-bureaus',(req, res) => res.render('credit-bureaus/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Кредитные_бюро_Казахстана.csv')) }));
@@ -1025,21 +1142,21 @@ app.get('/emergency',     (req, res) => res.render('emergency/catalog', { items:
 // ITEM PAGES: BANKS
 app.get('/banks/:slug', (req, res) => {
   const bank = getBanksData().find(b => b.slug === req.params.slug);
-  if (!bank) return res.status(404).redirect('/banks');
+  if (!bank) return sendNotFound(res);
   res.render('banks/item', { bank, lowContentBoost });
 });
 
 // ITEM PAGES: COURTS
 app.get('/courts/:slug', (req, res) => {
   const court = getCourtsData().find(c => c.slug === req.params.slug);
-  if (!court) return res.status(404).redirect('/courts');
+  if (!court) return sendNotFound(res);
   res.render('courts/item', { court });
 });
 
 // ITEM PAGES: CHAMBERS
 app.get('/chambers/:slug', (req, res) => {
   const chamber = getChambersData().find(c => c.slug === req.params.slug);
-  if (!chamber) return res.status(404).redirect('/chambers');
+  if (!chamber) return sendNotFound(res);
   res.render('chambers/item', { chamber });
 });
 
@@ -1173,37 +1290,46 @@ function getMfoData() {
 }
 
 app.get('/collectors', (req, res) => {
-  const items = getCollectors();
-  res.render('collectors/catalog', { items, lowContentBoost });
+  const catalog = paginateCatalog(getCollectors(), req, item => [
+    item.name, item.nameFull, item.bin, item.regNum, item.leader, item.address,
+    ...(item.phones || []), ...(item.emails || []), ...(item.sites || []),
+  ].join(' '));
+  res.render('collectors/catalog', { items: catalog.items, catalog, lowContentBoost });
 });
 
 app.get('/collectors/:slug', (req, res) => {
   const item = getCollectors().find(c => c.slug === req.params.slug);
-  if (!item) return res.status(404).redirect('/collectors');
+  if (!item) return sendNotFound(res);
   res.render('collectors/item', { item, lowContentBoost });
 });
 
 app.get('/mfo', (req, res) => {
   const { mfo } = getMfoData();
-  res.render('mfo/catalog', { mfo, lowContentBoost });
+  const catalog = paginateCatalog(mfo, req, item => [
+    item.name, item.nameFull, item.bin, item.address, item.leader,
+  ].join(' '));
+  res.render('mfo/catalog', { mfo: catalog.items, catalog, lowContentBoost });
 });
 
 app.get('/mfo/:slug', (req, res) => {
   const { mfo } = getMfoData();
   const item = mfo.find(m => m.slug === req.params.slug);
-  if (!item) return res.status(404).redirect('/mfo');
+  if (!item) return sendNotFound(res);
   res.render('mfo/item', { item, lowContentBoost });
 });
 
 app.get('/lombards', (req, res) => {
   const { lombards } = getMfoData();
-  res.render('lombards/catalog', { items: lombards, lowContentBoost });
+  const catalog = paginateCatalog(lombards, req, item => [
+    item.name, item.nameFull, item.bin, item.address, item.leader,
+  ].join(' '));
+  res.render('lombards/catalog', { items: catalog.items, catalog, lowContentBoost });
 });
 
 app.get('/lombards/:slug', (req, res) => {
   const { lombards } = getMfoData();
   const item = lombards.find(l => l.slug === req.params.slug);
-  if (!item) return res.status(404).redirect('/lombards');
+  if (!item) return sendNotFound(res);
   res.render('lombards/item', { item, lowContentBoost });
 });
 
@@ -1228,7 +1354,7 @@ app.get('/lawyer-search', asyncHandler(async (req, res) => {
 app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
   if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
   const bailiff = await bailiffsDb.findBySlug(req.params.slug);
-  if (!bailiff) return res.status(404).redirect('/bailiff-search');
+  if (!bailiff) return sendNotFound(res);
   const [comments, commentStats] = commentsDb
     ? await Promise.all([commentsDb.getApproved('bailiff', req.params.slug), commentsDb.stats('bailiff', req.params.slug)])
     : [[], null];
@@ -1264,7 +1390,7 @@ app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
 </urlset>`);
 }));
 
-app.get('/api/bailiffs/import', asyncHandler(async (req, res) => {
+app.post('/api/bailiffs/import', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!importBailiffs) return res.status(503).json({ error: 'Bailiff module not available' });
   const count = await importBailiffs();
@@ -1276,7 +1402,7 @@ app.get('/api/bailiffs/import', asyncHandler(async (req, res) => {
 app.get('/lawyer/:slug', asyncHandler(async (req, res) => {
   if (!lawyersDb) return res.status(503).send('Lawyer module not available');
   const lawyer = await lawyersDb.findBySlug(req.params.slug);
-  if (!lawyer) return res.status(404).redirect('/lawyer-search');
+  if (!lawyer) return sendNotFound(res);
   res.render('lawyer/page', { lawyer });
 }));
 
@@ -1305,6 +1431,7 @@ let _lawsSitemapCache = null;
 let _lawsSitemapCacheAt = 0;
 app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
   res.set('Content-Type', 'application/xml');
+  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   if (!lawsDb) {
     return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
@@ -1327,11 +1454,21 @@ app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
   res.send(_lawsSitemapCache);
 }));
 
-app.get('/api/lawyers/import', asyncHandler(async (req, res) => {
+app.post('/api/lawyers/import', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!importLawyers) return res.status(503).json({ error: 'Lawyer module not available' });
   const count = await importLawyers();
   res.json({ ok: true, imported: count });
+}));
+
+app.post('/api/lawyers/refresh', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
+  if (!refreshLawyersRegistry || !importLawyers) {
+    return res.status(503).json({ error: 'Lawyer module not available' });
+  }
+  const registry = await refreshLawyersRegistry();
+  const count = await importLawyers();
+  res.json({ ok: true, registry, imported: count });
 }));
 
 // ===== ADVOCATE PAGE =====
@@ -1355,20 +1492,36 @@ app.get('/statyi', asyncHandler(async (req, res) => {
   if (!lawsDb) return res.redirect('/zakony.html');
   const q    = (req.query.q    || '').trim();
   const code = (req.query.code || '').trim();
-  const [articles, codes] = await Promise.all([
-    code && !q ? lawsDb.findByCode(code, 60)
+  const requestedPage = Math.max(1, Math.min(10000, Number.parseInt(req.query.page, 10) || 1));
+  const page = code && !q ? requestedPage : 1;
+  const pageSize = 30;
+  const [articles, codes, total] = await Promise.all([
+    code && !q ? lawsDb.findByCodePage(code, pageSize, (page - 1) * pageSize)
     : q        ? lawsDb.search(q, code, 60)
     :            Promise.resolve([]),
     lawsDb.getCodes(),
+    code && !q ? lawsDb.count({ code }) : Promise.resolve(0),
   ]);
-  res.render('laws/list', { q, code, articles, codes, total: articles.length });
+  const pages = code && !q ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  if (page > pages && code && !q) {
+    return res.redirect(302, `/statyi?code=${encodeURIComponent(code)}&page=${pages}`);
+  }
+  res.render('laws/list', {
+    q,
+    code,
+    articles,
+    codes,
+    total: code && !q ? total : articles.length,
+    page,
+    pages,
+  });
 }));
 
 // Individual article page
 app.get('/statya/:slug', asyncHandler(async (req, res) => {
   if (!lawsDb) return res.redirect('/statyi');
   const article = await lawsDb.findBySlug(req.params.slug);
-  if (!article) return res.status(404).sendFile(path.join(__dirname, 'public', '404.html')).catch(() => res.status(404).send('Статья не найдена'));
+  if (!article) return sendNotFound(res);
   const [adjacent, related, codes] = await Promise.all([
     lawsDb.adjacent(article.code, article.numInt),
     lawsDb.findByCode(article.code, 6).then(all =>
@@ -1380,7 +1533,7 @@ app.get('/statya/:slug', asyncHandler(async (req, res) => {
 }));
 
 // ===== BANKRUPTCY CHECK (tazalau.qoldau.kz) =====
-app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
+app.get('/api/bankruptcy-check', externalApiLimiter, asyncHandler(async (req, res) => {
   const iin = (req.query.iin || '').replace(/\D/g, '');
   if (iin.length !== 12) return res.status(400).json({ error: 'Укажите корректный ИИН (12 цифр)' });
 
@@ -1431,7 +1584,7 @@ app.get('/api/bankruptcy-check', asyncHandler(async (req, res) => {
 }));
 
 // ===== ERDR CHECK (service.prosecutor.kz) =====
-app.get('/api/erdr-check', asyncHandler(async (req, res) => {
+app.get('/api/erdr-check', externalApiLimiter, asyncHandler(async (req, res) => {
   const erdr = (req.query.erdr || '').trim();
   const iin  = (req.query.iin  || '').replace(/\D/g, '');
   if (!erdr && iin.length !== 12) {
@@ -1479,7 +1632,7 @@ app.get('/api/erdr-check', asyncHandler(async (req, res) => {
 // ===== EXECUTIVE INSCRIPTION CAPTCHA (enis.kz) =====
 const inscriptionSessions = new Map(); // sid → { cookie, captchaUrl }
 
-app.get('/api/inscription-session', asyncHandler(async (req, res) => {
+app.get('/api/inscription-session', externalApiLimiter, asyncHandler(async (req, res) => {
   const cheerio = require('cheerio');
   const PAGE_URL = 'https://enis.kz/CheckExecutiveInscription';
   try {
@@ -1508,7 +1661,7 @@ app.get('/api/inscription-session', asyncHandler(async (req, res) => {
   }
 }));
 
-app.get('/api/inscription-captcha', asyncHandler(async (req, res) => {
+app.get('/api/inscription-captcha', externalApiLimiter, asyncHandler(async (req, res) => {
   const { sid } = req.query;
   const sess = inscriptionSessions.get(sid);
   if (!sess || !sess.captchaUrl) return res.status(404).send('Сессия не найдена');
@@ -1526,7 +1679,7 @@ app.get('/api/inscription-captcha', asyncHandler(async (req, res) => {
   }
 }));
 
-app.post('/api/inscription-check', asyncHandler(async (req, res) => {
+app.post('/api/inscription-check', externalApiLimiter, asyncHandler(async (req, res) => {
   const { sid, iin, captcha } = req.body;
   const sess = sid ? inscriptionSessions.get(sid) : null;
   const formData = new URLSearchParams();
@@ -1971,14 +2124,18 @@ app.get('/sitemap-lombards.xml', (req, res) => {
   csvSitemap(res, lombards, 'lombards');
 });
 
-// COMPANY SITEMAPS — 50,000 URLs per file, suitable for a million-record registry.
-// Each chunk pulls 50,000 rows through SQLite + slugify synchronously, which can
-// block the event loop for seconds; cache the rendered XML per chunk so repeat
-// crawler requests (and concurrent site traffic) don't pay that cost every time.
+// COMPANY SITEMAPS — bounded LRU cache. Caching every company sitemap caused a
+// memory leak: 81 chunks × ~2.4 MB could retain roughly 190 MB in a 1 GB hosting
+// account. Two recent chunks are enough to absorb crawler retries.
 const _companiesSitemapCache = new Map();
+const COMPANIES_SITEMAP_CACHE_MAX = 2;
 function buildCompaniesSitemapChunk(chunk) {
   let xml = _companiesSitemapCache.get(chunk);
-  if (xml) return xml;
+  if (xml) {
+    _companiesSitemapCache.delete(chunk);
+    _companiesSitemapCache.set(chunk, xml);
+    return xml;
+  }
   const today = new Date().toISOString().substring(0, 10);
   const urls = companiesDb.sitemapChunk(chunk).map(company => `
   <url>
@@ -1991,6 +2148,9 @@ function buildCompaniesSitemapChunk(chunk) {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
 </urlset>`;
   _companiesSitemapCache.set(chunk, xml);
+  while (_companiesSitemapCache.size > COMPANIES_SITEMAP_CACHE_MAX) {
+    _companiesSitemapCache.delete(_companiesSitemapCache.keys().next().value);
+  }
   return xml;
 }
 app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
@@ -1999,6 +2159,7 @@ app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
   if (!chunk || chunk > totalChunks) return res.status(404).send('Sitemap chunk not found');
 
   res.set('Content-Type', 'application/xml');
+  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   res.send(buildCompaniesSitemapChunk(chunk));
 });
 
@@ -2159,7 +2320,7 @@ app.get('/news/cover/:slug', asyncHandler(async (req, res) => {
 app.get('/news/:slug', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
   const article = await newsDb.getBySlug(req.params.slug);
-  if (!article) return res.status(404).redirect('/news');
+  if (!article) return sendNotFound(res);
 
   const displayTitle = newsDisplayTitle(article);
   const displayExcerpt = newsDisplayExcerpt(article);
@@ -2224,17 +2385,45 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   });
 }));
 
+function secretsEqual(provided, expected) {
+  const expectedBuffer = Buffer.from(String(expected || ''));
+  const providedBuffer = Buffer.from(String(provided || ''));
+  return providedBuffer.length === expectedBuffer.length
+    && crypto.timingSafeEqual(providedBuffer, expectedBuffer);
+}
+
 // ADMIN KEY helper
 function checkAdminKey(req, res) {
   const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey) return true; // no key configured — open
-  const provided = req.headers['x-admin-key'] || req.query.key;
-  if (provided !== adminKey) {
-    res.status(403).json({ error: 'Forbidden — provide x-admin-key header or ?key= param' });
+  if (!adminKey || adminKey.length < 24) {
+    logger.error('[Security] ADMIN_KEY is missing or shorter than 24 characters; admin route denied');
+    res.status(503).json({ error: 'Admin API отключён: настройте ADMIN_KEY длиной не менее 24 символов' });
+    return false;
+  }
+  const provided = String(req.headers['x-admin-key'] || '');
+  if (!secretsEqual(provided, adminKey)) {
+    res.status(403).json({ error: 'Forbidden — provide a valid x-admin-key header' });
     return false;
   }
   return true;
 }
+
+const ADMIN_MUTATION_PATHS = [
+  '/api/notaries/import',
+  '/api/notaries/refresh',
+  '/api/bailiffs/import',
+  '/api/lawyers/import',
+  '/api/lawyers/refresh',
+  '/api/news/import',
+  '/api/news/clear',
+  '/api/news/reset',
+  '/api/news/fix-images',
+  '/api/telegram/setup',
+];
+app.get(ADMIN_MUTATION_PATHS, (req, res) => {
+  res.set('Allow', 'POST');
+  res.status(405).json({ error: 'Method Not Allowed — use POST with x-admin-key' });
+});
 
 // POST /api/news/import — manual trigger
 app.post('/api/news/import', asyncHandler(async (req, res) => {
@@ -2244,16 +2433,10 @@ app.post('/api/news/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
-// GET /api/news/import?key=... — browser-friendly manual trigger
-app.get('/api/news/import', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsImporter) return res.status(503).json({ error: 'News module not available' });
-  const count = await newsImporter.importAll();
-  res.json({ ok: true, imported: count });
-}));
-
-// GET /api/news/clear?key=... — wipe ALL news and re-import
-app.get('/api/news/clear', asyncHandler(async (req, res) => {
+// POST /api/news/clear — wipe ALL news. State-changing admin operations must
+// never be GET requests because crawlers, previews and browser prefetch can
+// invoke GET without the owner's intent.
+app.post('/api/news/clear', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
   await newsDb.clearAll();
@@ -2261,8 +2444,8 @@ app.get('/api/news/clear', asyncHandler(async (req, res) => {
   res.json({ ok: true, message: 'All news deleted. Run /api/news/import to reload.' });
 }));
 
-// GET /api/news/reset?key=... — wipe ALL news AND immediately re-import
-app.get('/api/news/reset', asyncHandler(async (req, res) => {
+// POST /api/news/reset — wipe ALL news AND immediately re-import
+app.post('/api/news/reset', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
   await newsDb.clearAll();
@@ -2277,8 +2460,8 @@ app.get('/api/news/reset', asyncHandler(async (req, res) => {
   }
 }));
 
-// GET /api/news/fix-images?key=... — fetch og:image for existing articles that have none
-app.get('/api/news/fix-images', asyncHandler(async (req, res) => {
+// POST /api/news/fix-images — fetch og:image for existing articles that have none
+app.post('/api/news/fix-images', asyncHandler(async (req, res) => {
   if (!checkAdminKey(req, res)) return;
   if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
   res.json({ ok: true, message: 'Image fetch started in background. Check logs.' });
@@ -2358,14 +2541,9 @@ app.get('/api/news/health', asyncHandler(async (_req, res) => {
 // when cron/Telegram polling are disabled in production.
 setTimeout(async () => {
   if (importNotaries) {
-    if (refreshNotariesRegistry) {
-      try {
-        const refreshed = await refreshNotariesRegistry();
-        logger.info(`[Notaries] ENIS refreshed: ${refreshed.total} records`);
-      } catch (e) {
-        logger.warn('[Notaries] ENIS refresh failed, using validated compressed snapshot: ' + e.message);
-      }
-    }
+    // Startup must be deterministic and fast. Network refresh belongs to the
+    // weekly cron/manual admin action; here we only import the validated local
+    // snapshot when its version is newer than the DB.
     try {
       const count = await importNotaries();
       if (count > 0) logger.info(`[Notaries] DB ready: ${count} notaries`);
@@ -2403,7 +2581,11 @@ cron.schedule('0 3 * * 0', async () => {
     catch (e) { logger.error('[Cron] Bailiff re-import failed: ' + e.message); }
   }
   if (importLawyers) {
-    try { const n = await importLawyers(); logger.info(`[Cron] Lawyers: ${n}`); }
+    try {
+      if (refreshLawyersRegistry) await refreshLawyersRegistry();
+      const n = await importLawyers();
+      logger.info(`[Cron] Lawyers: ${n}`);
+    }
     catch (e) { logger.error('[Cron] Lawyer re-import failed: ' + e.message); }
   }
 });
@@ -2446,7 +2628,7 @@ if (newsImporter) {
 }
 
 // ===== APPLICATION FORM =====
-app.post('/api/application', asyncHandler(async (req, res) => {
+app.post('/api/application', leadLimiter, asyncHandler(async (req, res) => {
   const { name, phone, bank, description } = req.body;
   if (!name || !phone) {
     return res.status(400).json({ error: 'Имя и телефон обязательны' });
@@ -2517,7 +2699,7 @@ app.post('/api/track-event', asyncHandler(async (req, res) => {
 let leadsDb = null;
 try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
 
-app.post('/api/lead', asyncHandler(async (req, res) => {
+app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
   const { name, phone, issue, question, page } = req.body || {};
   if (!phone) return res.status(400).json({ error: 'Телефон обязателен' });
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
@@ -2534,6 +2716,12 @@ try { chatDb = require('./modules/chat-db'); } catch (e) { logger.warn('chat-db 
 const chatSendLimiter = new Map(); // sessionId -> [timestamps]
 function chatRateLimited(sessionId) {
   const now = Date.now();
+  if (chatSendLimiter.size > 5000) {
+    for (const [key, timestamps] of chatSendLimiter) {
+      if (!timestamps.some(timestamp => now - timestamp < 60000)) chatSendLimiter.delete(key);
+      if (chatSendLimiter.size <= 5000) break;
+    }
+  }
   const hits = (chatSendLimiter.get(sessionId) || []).filter(t => now - t < 60000);
   hits.push(now);
   chatSendLimiter.set(sessionId, hits);
@@ -2565,7 +2753,8 @@ app.get('/api/chat/poll', asyncHandler(async (req, res) => {
 }));
 
 // ===== TELEGRAM SETUP: определить CHAT_ID =====
-app.get('/api/telegram/setup', asyncHandler(async (req, res) => {
+app.post('/api/telegram/setup', asyncHandler(async (req, res) => {
+  if (!checkAdminKey(req, res)) return;
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
     return res.json({ ok: false, error: 'TELEGRAM_BOT_TOKEN не задан в .env' });
@@ -2594,27 +2783,8 @@ app.get('/health', (req, res) => {
     });
 });
 
-// --- ДОБАВЛЕНО: Централизованный обработчик ошибок Express ---
-// Он будет ловить ошибки, переданные через next(err)
-app.use((err, req, res, next) => {
-  // Логируем ошибку с помощью Winston
-  logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, err);
-
-  // Отправляем общий ответ об ошибке клиенту, если заголовки еще не были отправлены
-  if (!res.headersSent) {
-    res.status(err.status || 500).json({
-      error: 'Внутренняя ошибка сервера',
-      details: process.env.NODE_ENV === 'production' ? 'Произошла непредвиденная ошибка.' : err.message // Скрываем детали в продакшене
-    });
-  } else {
-    // Если заголовки уже отправлены, просто делегируем стандартному обработчику Express
-    next(err);
-  }
-});
-// --- КОНЕЦ обработчика ошибок ---
-
 // ===== КОММЕНТАРИИ =====
-app.post('/comments', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
+app.post('/comments', commentLimiter, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   if (!commentsDb) return res.redirect(req.headers.referer || '/');
   const { type, slug, name, rating, text, backUrl } = req.body;
   if (!type || !slug || !text || text.trim().length < 3) {
@@ -2631,25 +2801,36 @@ app.post('/comments', express.urlencoded({ extended: true }), asyncHandler(async
   res.redirect((backUrl || req.headers.referer || '/') + '?comment=sent');
 }));
 
-app.get('/admin/comments', asyncHandler(async (req, res) => {
-  const pw = req.query.pw || '';
-  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
+function requireAdminPassword(req, res, next) {
+  const expected = process.env.ADMIN_PW || '';
+  const authorization = String(req.headers.authorization || '');
+  let provided = '';
+  if (authorization.startsWith('Basic ')) {
+    try {
+      const decoded = Buffer.from(authorization.slice(6), 'base64').toString('utf8');
+      provided = decoded.slice(decoded.indexOf(':') + 1);
+    } catch (_) {}
+  }
+  if (!expected || !secretsEqual(provided, expected)) {
+    res.set('WWW-Authenticate', 'Basic realm="ZakonExpert comments", charset="UTF-8"');
+    return res.status(401).send('Authentication required');
+  }
+  next();
+}
+
+app.get('/admin/comments', requireAdminPassword, asyncHandler(async (req, res) => {
   const all = commentsDb ? await commentsDb.getAll() : [];
-  res.render('admin/comments', { comments: all, pw });
+  res.render('admin/comments', { comments: all });
 }));
 
-app.post('/admin/comments/:id/approve', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-  const pw = req.body.pw || req.query.pw || '';
-  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
+app.post('/admin/comments/:id/approve', requireAdminPassword, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   if (commentsDb) await commentsDb.approve(req.params.id);
-  res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
+  res.redirect('/admin/comments');
 }));
 
-app.post('/admin/comments/:id/delete', express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-  const pw = req.body.pw || req.query.pw || '';
-  if (!process.env.ADMIN_PW || pw !== process.env.ADMIN_PW) return res.status(403).send('403 Forbidden');
+app.post('/admin/comments/:id/delete', requireAdminPassword, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   if (commentsDb) await commentsDb.remove(req.params.id);
-  res.redirect('/admin/comments?pw=' + encodeURIComponent(pw));
+  res.redirect('/admin/comments');
 }));
 
 // ===== BIN SEARCH =====
@@ -2678,6 +2859,24 @@ app.get('/bin-search', (req, res) => {
 // ===== КАЛЬКУЛЯТОР =====
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 
+// A real 404 response prevents crawlers from treating missing profiles as
+// indexable soft-404 redirects and gives visitors useful recovery links.
+app.use((req, res) => sendNotFound(res));
+
+// Централизованный обработчик должен находиться после всех маршрутов, иначе
+// ошибки из объявленных ниже него страниц попадут в стандартный HTML-ответ
+// Express и могут раскрыть лишние детали.
+app.use((err, req, res, next) => {
+  logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, err);
+  if (!res.headersSent) {
+    return res.status(err.status || 500).json({
+      error: 'Внутренняя ошибка сервера',
+      details: process.env.NODE_ENV === 'production' ? 'Произошла непредвиденная ошибка.' : err.message,
+    });
+  }
+  next(err);
+});
+
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
     logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
@@ -2688,16 +2887,5 @@ app.listen(PORT, '0.0.0.0', () => {
       logger.info('Telegram bot polling started ✓');
     } else {
       logger.info('Telegram bot polling disabled');
-    }
-    // Pre-warm the companies sitemap cache one chunk at a time, staggered so
-    // each blocking build (SQLite + slugify over 50k rows) doesn't queue up
-    // behind real traffic right after a restart.
-    if (companiesDb && companiesDb.available()) {
-      const totalChunks = companiesDb.sitemapChunkCount();
-      for (let i = 1; i <= totalChunks; i++) {
-        setTimeout(() => {
-          try { buildCompaniesSitemapChunk(i); } catch (e) { logger.warn(`Sitemap pre-warm chunk ${i} failed: ${e.message}`); }
-        }, i * 4000);
-      }
     }
 });

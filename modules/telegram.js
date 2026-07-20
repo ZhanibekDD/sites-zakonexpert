@@ -5,6 +5,7 @@ const axios = require('axios');
 // ── Dedup cache ─────────────────────────────────────────────────────────────
 const visitCache = new Map();
 const VISIT_COOLDOWN = 30 * 60 * 1000; // 30 min
+const VISIT_CACHE_MAX = 5000;
 
 // ── Bot detection ─────────────────────────────────────────────────────────────
 const BOT_UA_RE = /bot|crawl|spider|scraper|google-inspectiontool|google-structured-data|adsbot|mediapartners|yandex\.com\/bots|bingpreview|msnbot|slurp|duckduckbot|baiduspider|ia_archiver|archive\.org|facebookexternalhit|twitterbot|linkedinbot|slackbot|telegrambot|applebot|pinterestbot|semrushbot|ahrefsbot|majesticbot|mj12bot|dotbot|rogerbot|petalbot|dataforseo|seznambot|naver|sogou|uptimerobot|pingdom|newrelic|site24x7|statuscake|nagios|zabbix|datadog|curl\/|wget\/|python[-\/]|libwww-perl|okhttp\/|go-http-client\/|java\/[0-9]|nmap|masscan|zgrab|nuclei|nikto|sqlmap/i;
@@ -157,6 +158,13 @@ function notifyVisit(page, ip, ua, referer) {
   const lastSeen = visitCache.get(key);
   if (lastSeen && Date.now() - lastSeen < VISIT_COOLDOWN) return;
   visitCache.set(key, Date.now());
+  if (visitCache.size > VISIT_CACHE_MAX) {
+    const cutoff = Date.now() - VISIT_COOLDOWN;
+    for (const [cachedKey, timestamp] of visitCache) {
+      if (timestamp < cutoff || visitCache.size > VISIT_CACHE_MAX) visitCache.delete(cachedKey);
+      if (visitCache.size <= VISIT_CACHE_MAX) break;
+    }
+  }
 
   const src = refSource(referer);
   const lines = [
@@ -196,7 +204,7 @@ function notifyClick(type, target, page, ip, ua) {
 
 // ── IIN check notification ────────────────────────────────────────────────────
 function notifyIinCheck(ip, ua, isDebtor, count, iin) {
-  const maskedIin = iin ? String(iin).replace(/\D/g, '').substring(0, 6) + '******' : '—';
+  const maskedIin = iin ? String(iin).replace(/\D/g, '').substring(0, 4) + '********' : '—';
   const lines = [
     isDebtor ? `🚨 <b>Найдены аресты!</b>` : `🔍 <b>Проверка по ИИН</b>`,
     ``,

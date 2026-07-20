@@ -66,8 +66,15 @@ module.exports = {
     all.forEach(d => { if (d.region) counts[d.region] = (counts[d.region] || 0) + 1; });
     return Object.entries(counts).map(([region, count]) => ({ region, count })).sort((a, b) => b.count - a.count);
   },
-  findByRegion(region, limit = 200) {
+  countByRegion(region) {
     const safe = region.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return db.find({ region: new RegExp('^' + safe + '$', 'i') }, { name: 1, slug: 1, phones: 1, address: 1, _id: 0 }).limit(limit);
+    return db.count({ region: new RegExp('^' + safe + '$', 'i') });
+  },
+  findByRegion(region, limit = 60, skip = 0) {
+    const safe = region.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return db.find(
+      { region: new RegExp('^' + safe + '$', 'i') },
+      { name: 1, slug: 1, phones: 1, address: 1, licenseNo: 1, legalOrganization: 1, _id: 0 },
+    ).sort({ name: 1 }).skip(skip).limit(limit);
   },
 };

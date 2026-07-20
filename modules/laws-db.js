@@ -38,6 +38,13 @@ module.exports = {
     return db.find({ code }, { text: 0 }).sort({ numInt: 1 }).limit(limit);
   },
 
+  findByCodePage(code, limit = 30, skip = 0) {
+    return db.find({ code }, { text: 0 })
+      .sort({ numInt: 1 })
+      .skip(Math.max(0, skip))
+      .limit(Math.max(1, Math.min(100, limit)));
+  },
+
   count(query = {}) {
     return db.count(query);
   },

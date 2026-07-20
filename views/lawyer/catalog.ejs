@@ -2,15 +2,23 @@
 const region  = (selectedRegion || '').trim();
 const regions = allRegions  || [];
 const lawyers = regionItems || [];
+const paging = catalog || { page: 1, total: lawyers.length, totalPages: 1 };
+const pageSuffix = paging.page > 1 ? (' — страница ' + paging.page) : '';
+
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 const pageTitle = region
-  ? ('Адвокаты — ' + region + ' | ZakonExpert')
+  ? ('Адвокаты — ' + region + pageSuffix + ' | ZakonExpert')
   : 'Адвокаты Казахстана по регионам | ZakonExpert';
 const pageDesc = region
-  ? ('Список адвокатов региона ' + region + ' с контактами. Реестр ZakonExpert.')
-  : 'Реестр адвокатов Казахстана по регионам с адресами и телефонами.';
+  ? ('Официальный список адвокатов региона ' + region + ': лицензии, контакты и коллегии. Всего ' + paging.total + ' записей.')
+  : 'Официальный реестр адвокатов Казахстана: 20 регионов, лицензии, адреса, телефоны и электронная почта.';
 const canonical = region
-  ? ('https://zakonexpertt.kz/lawyers?region=' + encodeURIComponent(region))
+  ? ('https://zakonexpertt.kz/lawyers?region=' + encodeURIComponent(region) + (paging.page > 1 ? '&page=' + paging.page : ''))
   : 'https://zakonexpertt.kz/lawyers';
 
 function titleCase(s) {
@@ -26,7 +34,7 @@ function fmtPhone(raw) {
 var breadcrumb = '<nav class="npage-breadcrumb" aria-label="breadcrumb">'
   + '<a href="/">Главная</a><span class="npage-bc-sep">/</span>'
   + (region
-    ? '<a href="/lawyers">Адвокаты</a><span class="npage-bc-sep">/</span><span>' + region + '</span>'
+    ? '<a href="/lawyers">Адвокаты</a><span class="npage-bc-sep">/</span><span>' + esc(region) + '</span>'
     : '<span>Адвокаты</span>')
   + '</nav>';
 
@@ -40,35 +48,51 @@ var searchHtml = '<div class="catalog-search-block">'
 
 var heroHtml = '<div class="npage-hero"><div class="npage-badges"><span class="npage-badge npage-badge--lawyer">Реестр адвокатов</span></div>'
   + '<h1 class="npage-h1">'
-  + (region ? 'Адвокаты — ' + region : 'Адвокаты Казахстана')
+  + (region ? 'Адвокаты — ' + esc(region) : 'Адвокаты Казахстана')
   + '</h1>'
   + '<p style="color:#475569;margin-top:0.5rem;">'
-  + (region ? 'Найдено адвокатов в регионе: <strong>' + lawyers.length + '</strong>' : 'Реестр адвокатов по регионам Казахстана')
+  + (region ? 'Найдено адвокатов в регионе: <strong>' + paging.total + '</strong>' : 'Полный национальный реестр из официальной системы «Е‑Заң көмегі»')
   + '</p></div>';
 
 var contentHtml = '';
 
 if (region) {
   if (lawyers.length === 0) {
-    contentHtml = '<div class="registry-empty"><p>Адвокаты в регионе <strong>' + region + '</strong> не найдены.</p></div>';
+    contentHtml = '<div class="registry-empty"><p>Адвокаты в регионе <strong>' + esc(region) + '</strong> не найдены.</p></div>';
   } else {
     var items = '';
     for (var i = 0; i < lawyers.length; i++) {
       var l = lawyers[i];
-      var name = titleCase(l.name);
+      var name = esc(titleCase(l.name));
       items += '<li class="registry-item"><a href="/lawyer/' + l.slug + '" class="registry-item-link">'
         + '<span class="registry-item-name">' + name + '</span>'
-        + (l.phones && l.phones.length ? '<span class="registry-item-region">' + fmtPhone(l.phones[0]) + '</span>' : '')
+        + (l.licenseNo ? '<span class="registry-item-region">Лицензия № ' + esc(l.licenseNo) + '</span>' : '')
+        + (l.phones && l.phones.length ? '<span class="registry-item-region">' + esc(fmtPhone(l.phones[0])) + '</span>' : '')
         + '</a></li>';
     }
-    contentHtml = '<ul class="registry-list">' + items + '</ul>';
+    var pagination = '';
+    if (paging.totalPages > 1) {
+      var pageLinks = '';
+      var start = Math.max(1, paging.page - 2);
+      var end = Math.min(paging.totalPages, paging.page + 2);
+      for (var p = start; p <= end; p++) {
+        pageLinks += '<a class="catalog-page-link' + (p === paging.page ? ' is-current' : '') + '" href="/lawyers?region='
+          + encodeURIComponent(region) + (p > 1 ? '&amp;page=' + p : '') + '"' + (p === paging.page ? ' aria-current="page"' : '') + '>' + p + '</a>';
+      }
+      pagination = '<nav class="catalog-pagination" aria-label="Страницы каталога">'
+        + (paging.page > 1 ? '<a class="catalog-page-link" href="/lawyers?region=' + encodeURIComponent(region) + (paging.page > 2 ? '&amp;page=' + (paging.page - 1) : '') + '">←</a>' : '')
+        + pageLinks
+        + (paging.page < paging.totalPages ? '<a class="catalog-page-link" href="/lawyers?region=' + encodeURIComponent(region) + '&amp;page=' + (paging.page + 1) + '">→</a>' : '')
+        + '</nav>';
+    }
+    contentHtml = '<ul class="registry-list">' + items + '</ul>' + pagination;
   }
 } else {
   var regionCards = '';
   for (var j = 0; j < regions.length; j++) {
     var r = regions[j];
     regionCards += '<a href="/lawyers?region=' + encodeURIComponent(r.region) + '" class="catalog-region-card catalog-region-card--lawyer">'
-      + '<span class="catalog-region-name">' + r.region + '</span>'
+      + '<span class="catalog-region-name">' + esc(r.region) + '</span>'
       + '<span class="catalog-region-count">' + r.count + ' адвокатов</span>'
       + '</a>';
   }
@@ -85,12 +109,13 @@ var ctaHtml = '<div class="npage-cta" style="margin-top:2.5rem;"><div class="npa
 const sourceHtml = '<div style="margin-top:2rem;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;display:flex;align-items:flex-start;gap:12px;">'
   + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
   + '<div style="font-size:.82rem;color:#64748b;line-height:1.6;">'
-  + '<strong style="color:#374151;">Источник данных:</strong> Реестр адвокатов Республиканской коллегии адвокатов и Министерства юстиции Республики Казахстан (<a href="https://minjust.gov.kz" target="_blank" rel="noopener" style="color:#1a56db;">minjust.gov.kz</a>). '
+  + '<strong style="color:#374151;">Источник данных:</strong> официальный публичный реестр Министерства юстиции Республики Казахстан «Е‑Заң көмегі» (<a href="https://eup.adilet.gov.kz/#/lawyers/advocate" target="_blank" rel="noopener" style="color:#1a56db;">eup.adilet.gov.kz</a>). '
   + 'Сведения являются общедоступными в соответствии со <strong>ст. 26 Закона РК «Об адвокатской деятельности и юридической помощи»</strong>. '
-  + 'Данные носят справочный характер — актуальность рекомендуем уточнять на официальном сайте Министерства юстиции.'
+  + 'Данные носят справочный характер' + (lastUpdated ? ', обновлены ' + esc(new Date(lastUpdated).toLocaleDateString('ru-RU')) : '') + ' — актуальность рекомендуем уточнять в первоисточнике.'
   + '</div></div>';
 
-const body = '<div class="npage-wrap"><div class="landing-container">'
+const body = '<style>.catalog-pagination{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:28px 0 8px}.catalog-page-link{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:42px;padding:0 12px;border:1px solid #cbd5e1;border-radius:10px;color:#0b2d5c;text-decoration:none;background:#fff;font-weight:700}.catalog-page-link:hover,.catalog-page-link.is-current{background:#0b2d5c;color:#fff;border-color:#0b2d5c}</style>'
+  + '<div class="npage-wrap"><div class="landing-container">'
   + breadcrumb
   + heroHtml
   + searchHtml

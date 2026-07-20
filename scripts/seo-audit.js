@@ -7,7 +7,7 @@ const path = require('path');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const verificationFile = /^(?:google|yandex_).*\.html$/i;
 const files = fs.readdirSync(PUBLIC_DIR)
-  .filter(name => name.endsWith('.html') && !verificationFile.test(name));
+  .filter(name => name.endsWith('.html') && name !== '404.html' && !verificationFile.test(name));
 
 const issues = [];
 const canonicals = new Map();

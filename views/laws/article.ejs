@@ -1,55 +1,60 @@
-﻿<%
-const art     = locals.article;
-const adj     = locals.adjacent || {};
-const related = locals.related  || [];
+<%
+const art = locals.article;
+const adj = locals.adjacent || {};
+const related = locals.related || [];
+
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const codeFullNames = {
-  uk:   'Уголовный кодекс РК',
-  upk:  'Уголовно-процессуальный кодекс РК',
-  koap: 'Кодекс РК об административных правонарушениях',
-  gk:   'Гражданский кодекс РК',
-  sk:   'Кодекс РК о браке (супружестве) и семье',
-  tk:   'Трудовой кодекс РК',
+  uk: 'Уголовный кодекс Республики Казахстан',
+  upk: 'Уголовно-процессуальный кодекс Республики Казахстан',
+  koap: 'Кодекс Республики Казахстан об административных правонарушениях',
+  gk: 'Гражданский кодекс Республики Казахстан',
+  sk: 'Кодекс Республики Казахстан о браке (супружестве) и семье',
+  tk: 'Трудовой кодекс Республики Казахстан',
 };
-
 const codeConsult = {
-  uk:   'Адвокат Маулен Ержанов — уголовные дела',
-  upk:  'Адвокат Маулен Ержанов — защита на всех стадиях процесса',
-  koap: 'Обжалование административных постановлений',
-  gk:   'Гражданско-правовые споры — адвокат и ZakonExpert',
-  sk:   'Семейные дела — развод, алименты, раздел имущества',
-  tk:   'Трудовые споры — незаконное увольнение, задержка зарплаты',
+  uk: 'Защита по уголовным делам и участие на всех стадиях процесса.',
+  upk: 'Защита прав подозреваемого, обвиняемого, потерпевшего и свидетеля.',
+  koap: 'Обжалование административных постановлений и защита в суде.',
+  gk: 'Сопровождение гражданско-правовых споров и представительство в суде.',
+  sk: 'Развод, алименты, раздел имущества и семейные споры.',
+  tk: 'Трудовые споры, незаконное увольнение и взыскание заработной платы.',
 };
-
-const waText = {
-  uk:   `Здравствуйте. Вопрос по статье ${art.num} УК РК — ${art.title}. Нужна консультация адвоката.`,
-  upk:  `Здравствуйте. Вопрос по статье ${art.num} УПК РК. Нужна консультация.`,
-  koap: `Здравствуйте. Вопрос по статье ${art.num} КоАП РК. Нужна консультация.`,
-  gk:   `Здравствуйте. Вопрос по статье ${art.num} ГК РК. Нужна консультация.`,
-  sk:   `Здравствуйте. Вопрос по статье ${art.num} СК РК — семейный вопрос. Нужна консультация.`,
-  tk:   `Здравствуйте. Вопрос по статье ${art.num} ТК РК — трудовой спор. Нужна консультация.`,
-};
-
-const pageTitle       = `Статья ${art.num} ${art.codeName} — ${art.title} | ZakonExpert Казахстан`;
-const pageDescription = `Статья ${art.num} ${art.codeName} РК: ${art.title}. Что грозит, наказание, санкция. ${(art.text||'').slice(0,130).replace(/\n/g,' ')}… Консультация адвоката Казахстан.`;
-const canonical       = `https://zakonexpertt.kz/statya/${art.slug}`;
-
+const waMessage = `Здравствуйте. Вопрос по статье ${art.num} ${art.codeName}: ${art.title}. Нужна консультация адвоката.`;
+const pageTitle = `Статья ${art.num} ${art.codeName} — ${art.title} | ZakonExpert Казахстан`;
+const cleanDescription = String(art.text || '').replace(/\s+/g, ' ').trim().slice(0, 145);
+const pageDescription = `Статья ${art.num} ${art.codeName}: ${art.title}. ${cleanDescription}${cleanDescription ? '…' : ''} Консультация адвоката.`;
+const canonical = `https://zakonexpertt.kz/statya/${encodeURIComponent(art.slug)}`;
 const schema = {
   '@context': 'https://schema.org',
-  '@type': 'LegalDocument',
+  '@type': 'Legislation',
   name: `Статья ${art.num} ${art.codeName} — ${art.title}`,
+  headline: art.title,
   description: pageDescription,
   url: canonical,
-  text: (art.text||'').slice(0, 500),
-  legislationIdentifier: `Статья ${art.num}`,
-  inLanguage: 'ru',
+  text: String(art.text || '').slice(0, 1500),
+  legislationIdentifier: `Статья ${art.num} ${art.codeName}`,
+  legislationJurisdiction: 'Республика Казахстан',
+  inLanguage: 'ru-KZ',
   publisher: { '@type': 'GovernmentOrganization', name: 'Республика Казахстан' },
-  creator:   { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+  reviewedBy: {
+    '@type': 'Attorney',
+    name: 'Ержанов Маулен Ержанович',
+    telephone: '+77777457577',
+    url: 'https://zakonexpertt.kz/advocate',
+  },
 };
 
-// Bold only the most important punishment terms inline
-function boldPunishments(text) {
-  return text
+function highlightPunishments(value) {
+  return esc(value)
     .replace(/(пожизненным лишением свободы)/gi, '<strong>$1</strong>')
     .replace(/(лишением свободы)/gi, '<strong>$1</strong>')
     .replace(/(ограничением свободы)/gi, '<strong>$1</strong>')
@@ -59,221 +64,135 @@ function boldPunishments(text) {
     .replace(/(конфискацией имущества)/gi, '<strong>$1</strong>');
 }
 
-// Format article text — clean, readable
 function formatLawText(text) {
-  if (!text) return '<p style="color:#94a3b8;">Текст статьи не загружен. Запустите <code>npm run scrape-laws</code></p>';
-  const lines = text.split('\n').filter(l => l.trim());
+  if (!text) return '<p class="lp-text">Текст статьи временно недоступен. Проверьте актуальную редакцию на adilet.zan.kz.</p>';
+  const lines = String(text).split('\n').filter(line => line.trim());
   let html = '';
   let partOpen = false;
 
   for (const line of lines) {
-    const l = line.trim();
-
-    // Skip footnote/amendment lines
-    if (/^Сноска/i.test(l)) continue;
-
-    // Numbered main part: "1. Текст части..."
-    const partM = l.match(/^(\d+)\.\s+([\s\S]+)/);
-    if (partM) {
+    const value = line.trim();
+    if (/^Сноска/i.test(value)) continue;
+    const part = value.match(/^(\d+)\.\s+([\s\S]+)/);
+    if (part) {
       if (partOpen) html += '</div>';
-      html += `<div class="lp-block">`;
-      html += `<span class="lp-num">Часть ${partM[1]}</span>`;
-      const body = partM[2];
-      if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(body.trim())) {
-        html += `<p class="lp-sanction"><i class="bi bi-chevron-right"></i>${boldPunishments(body)}</p>`;
+      html += `<div class="lp-block"><span class="lp-num">Часть ${esc(part[1])}</span>`;
+      if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(part[2].trim())) {
+        html += `<p class="lp-sanction"><i class="bi bi-chevron-right" aria-hidden="true"></i>${highlightPunishments(part[2])}</p>`;
       } else {
-        html += `<p class="lp-text">${boldPunishments(body)}</p>`;
+        html += `<p class="lp-text">${highlightPunishments(part[2])}</p>`;
       }
       partOpen = true;
       continue;
     }
-
-    // Sub-items: "1) ..." or "а) ..."
-    if (/^\d+\)\s/.test(l) || /^[а-яёa-z]\)\s/i.test(l)) {
-      html += `<p class="lp-item">${boldPunishments(l)}</p>`;
+    if (/^\d+\)\s/.test(value) || /^[а-яёa-z]\)\s/i.test(value)) {
+      html += `<p class="lp-item">${highlightPunishments(value)}</p>`;
       continue;
     }
-
-    // Standalone sanction
-    if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(l)) {
-      html += `<p class="lp-sanction"><i class="bi bi-chevron-right"></i>${boldPunishments(l)}</p>`;
+    if (/^наказывается|^наказываются|^влечёт|^влечет/i.test(value)) {
+      html += `<p class="lp-sanction"><i class="bi bi-chevron-right" aria-hidden="true"></i>${highlightPunishments(value)}</p>`;
       continue;
     }
-
-    html += `<p class="lp-text">${boldPunishments(l)}</p>`;
+    html += `<p class="lp-text">${highlightPunishments(value)}</p>`;
   }
-
   if (partOpen) html += '</div>';
-  return html || '<p style="color:#94a3b8;">Нет текста.</p>';
+  return html || '<p class="lp-text">Текст статьи временно недоступен.</p>';
 }
 
 const textFormatted = formatLawText(art.text);
-
 const body = `
-<style>
-  /* Article text blocks */
-  .lp-block {
-    border: 1px solid #e8edf2;
-    border-radius: 12px;
-    margin: 16px 0;
-    overflow: hidden;
-  }
-  .lp-num {
-    display: block;
-    padding: 6px 16px;
-    font-size: 0.7rem;
-    font-weight: 900;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #1e293b;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e8edf2;
-  }
-  .lp-text {
-    margin: 0;
-    padding: 14px 16px;
-    font-size: 1rem;
-    line-height: 1.85;
-    color: #1e293b;
-  }
-  .lp-item {
-    margin: 0;
-    padding: 4px 16px 4px 36px;
-    font-size: 0.95rem;
-    line-height: 1.75;
-    color: #334155;
-    position: relative;
-  }
-  .lp-item::before { content: '–'; position: absolute; left: 18px; color: #94a3b8; }
-  .lp-sanction {
-    margin: 0;
-    padding: 12px 16px;
-    font-size: 0.97rem;
-    line-height: 1.75;
-    color: #1e293b;
-    background: #fffbeb;
-    border-top: 1px solid #fde68a;
-    font-weight: 500;
-  }
-  .lp-sanction .bi { color: #d7a742; margin-right: 6px; font-size: 0.8rem; }
-  .lp-sanction strong { color: #92400e; }
-  /* Standalone sanction (no part wrapper) */
-  .law-text > .lp-sanction {
-    border-radius: 8px;
-    border: 1px solid #fde68a;
-    border-top: 1px solid #fde68a;
-    margin: 12px 0;
-  }
-  /* Standalone text without part wrapper */
-  .law-text > .lp-text {
-    padding: 4px 0;
-  }
-  .law-text > .lp-item {
-    padding-left: 20px;
-  }
-</style>
-
+<div class="law-reading-progress" data-reading-progress aria-hidden="true"></div>
 <section class="law-hero">
   <div class="landing-container">
-    <div class="law-breadcrumb">
-      <a href="/">Главная</a> ›
-      <a href="/statyi">Законы</a> ›
-      <a href="/statyi?code=${art.code}">${art.codeName}</a> ›
-      Статья ${art.num}
-    </div>
-    <div class="law-art-num">Статья ${art.num} · ${art.codeName}</div>
-    <h1 class="law-art-title">${art.title}</h1>
-    <div class="law-art-meta">${codeFullNames[art.code] || art.codeName}</div>
+    <nav class="law-breadcrumb" aria-label="Хлебные крошки">
+      <a href="/">Главная</a><span>›</span>
+      <a href="/statyi">Законы</a><span>›</span>
+      <a href="/statyi?code=${encodeURIComponent(art.code)}">${esc(art.codeName)}</a><span>›</span>
+      <span>Статья ${esc(art.num)}</span>
+    </nav>
+    <div class="law-art-num"><i class="bi bi-book me-2" aria-hidden="true"></i>Статья ${esc(art.num)} · ${esc(art.codeName)}</div>
+    <h1 class="law-art-title">${esc(art.title)}</h1>
+    <div class="law-art-meta">${esc(codeFullNames[art.code] || art.codeName)} · удобный формат для чтения</div>
   </div>
 </section>
 
 <section class="law-body">
   <div class="landing-container">
-    <div class="row g-4">
-
-      <div class="col-lg-8">
-
-        <div class="law-text">
-          ${textFormatted}
-        </div>
-
-        <!-- Prev/Next -->
-        <div style="display:flex;gap:10px;margin-top:32px;flex-wrap:wrap;">
-          ${adj.prev ? `<a href="/statya/${adj.prev.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;">
-            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">← Предыдущая</div>
-            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.prev.num} · ${adj.prev.title.slice(0,40)}</div>
-          </a>` : ''}
-          ${adj.next ? `<a href="/statya/${adj.next.slug}" style="flex:1;min-width:160px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px 16px;text-decoration:none;color:#0f2044;text-align:right;">
-            <div style="font-size:0.73rem;color:#94a3b8;margin-bottom:3px;">Следующая →</div>
-            <div style="font-size:0.88rem;font-weight:700;">Ст. ${adj.next.num} · ${adj.next.title.slice(0,40)}</div>
-          </a>` : ''}
-        </div>
-
-        ${related.length > 0 ? `
-        <div style="margin-top:32px;">
-          <h2 style="font-size:1rem;font-weight:800;margin-bottom:12px;color:#0f2044;">Рядом в кодексе</h2>
-          <div class="law-results-grid">
-            ${related.map(r => `
-            <a href="/statya/${r.slug}" class="law-result-card">
-              <div class="law-result-num">Статья ${r.num} · ${r.codeName}</div>
-              <div class="law-result-title">${r.title}</div>
-              ${r.snippet ? `<div class="law-result-snippet">${r.snippet.slice(0,120)}…</div>` : ''}
-            </a>`).join('')}
+    <div class="law-reader-grid">
+      <div>
+        <article class="law-article-card" data-law-reader data-reader-size="normal">
+          <div class="law-reader-toolbar">
+            <div class="law-reader-tools" aria-label="Размер текста">
+              <span class="law-tool-label">Размер текста</span>
+              <button class="law-tool-btn active" type="button" data-reader-size="normal" aria-label="Обычный размер текста">А</button>
+              <button class="law-tool-btn" type="button" data-reader-size="large" aria-label="Крупный размер текста">А+</button>
+              <button class="law-tool-btn" type="button" data-reader-size="xlarge" aria-label="Очень крупный размер текста">А++</button>
+            </div>
+            <div class="law-reader-tools">
+              <button class="law-tool-btn" type="button" data-copy-law><i class="bi bi-link-45deg" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Ссылка</span></button>
+              <button class="law-tool-btn" type="button" data-print-law><i class="bi bi-printer" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Печать</span></button>
+            </div>
           </div>
-        </div>
-        ` : ''}
+          <div class="law-article-intro"><i class="bi bi-info-circle me-1" aria-hidden="true"></i> Текст разбит на части для удобного чтения. Выделенные блоки содержат санкции и возможные виды наказания.</div>
+          <div class="law-text">${textFormatted}</div>
+          <footer class="law-article-footer">
+            ${(adj.prev || adj.next) ? `<nav class="law-adjacent" aria-label="Соседние статьи">
+              ${adj.prev ? `<a href="/statya/${encodeURIComponent(adj.prev.slug)}" class="law-adjacent-link"><small>← Предыдущая статья</small><strong>Ст. ${esc(adj.prev.num)} · ${esc(adj.prev.title)}</strong></a>` : '<span></span>'}
+              ${adj.next ? `<a href="/statya/${encodeURIComponent(adj.next.slug)}" class="law-adjacent-link"><small>Следующая статья →</small><strong>Ст. ${esc(adj.next.num)} · ${esc(adj.next.title)}</strong></a>` : ''}
+            </nav>` : ''}
+            <div class="law-source-note"><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Источник: ${esc(codeFullNames[art.code] || art.codeName)}. Перед применением нормы проверьте действующую редакцию на <a href="https://adilet.zan.kz" target="_blank" rel="noopener">adilet.zan.kz</a>. Материал не заменяет индивидуальную юридическую консультацию.</div>
+          </footer>
+        </article>
 
-        <div style="margin-top:28px;padding:14px 18px;background:#f8fafc;border-radius:10px;font-size:0.8rem;color:#64748b;line-height:1.6;">
-          <i class="bi bi-info-circle me-2"></i>Источник: ${codeFullNames[art.code] || art.codeName}.
-          Актуальный текст — <a href="https://adilet.zan.kz" target="_blank" rel="noopener" style="color:#1a56db;">adilet.zan.kz</a>.
-          Для конкретной ситуации — проконсультируйтесь с адвокатом.
-        </div>
+        ${related.length ? `<section class="law-related" aria-labelledby="related-laws-title"><h2 class="law-related-title" id="related-laws-title">Другие статьи рядом в кодексе</h2><div class="law-results-grid">${related.map(item => `
+          <a href="/statya/${encodeURIComponent(item.slug)}" class="law-result-card">
+            <span class="law-result-badge">${esc(item.num)}</span>
+            <span><span class="law-result-num">Статья ${esc(item.num)} · ${esc(item.codeName)}</span><span class="law-result-title">${esc(item.title)}</span>${item.snippet ? `<span class="law-result-snippet">${esc(String(item.snippet).slice(0, 150))}</span>` : ''}</span>
+            <span class="law-result-arrow"><i class="bi bi-arrow-right" aria-hidden="true"></i></span>
+          </a>`).join('')}</div></section>` : ''}
       </div>
 
-      <!-- Sidebar -->
-      <div class="col-lg-4">
-        <div class="law-sidebar">
-          <div class="law-cta-card">
-            <div class="law-cta-title">Вопрос по статье ${art.num} ${art.codeName}?</div>
-            <div class="law-cta-sub">${codeConsult[art.code] || 'Получите консультацию по данной статье'}. Первичный разбор — бесплатно.</div>
-            <a href="https://wa.me/77752998738?text=${encodeURIComponent(waText[art.code] || `Здравствуйте. Вопрос по статье ${art.num} ${art.codeName}.`)}"
-               class="law-cta-btn" target="_blank" rel="noopener">
-              <i class="bi bi-whatsapp"></i> Написать в WhatsApp
-            </a>
-            <a href="tel:+77752998738" class="law-cta-btn" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);">
-              <i class="bi bi-telephone"></i> +7 (775) 299-87-38
-            </a>
+      <aside class="law-sidebar" aria-label="Консультация адвоката">
+        <div class="law-cta-card">
+          <div class="law-advocate-head">
+            <img class="law-advocate-photo" src="/img/advocate-maulen.jpeg" width="58" height="58" alt="Адвокат Маулен Ержанов" loading="lazy">
+            <div><div class="law-advocate-role">Адвокат</div><div class="law-advocate-name">Маулен Ержанов</div></div>
           </div>
-
-          <div class="law-nav-card">
-            <div class="law-nav-title">Поиск по кодексу</div>
-            <form action="/statyi" method="get" style="display:flex;gap:6px;margin-top:4px;">
-              <input type="hidden" name="code" value="${art.code}">
-              <input class="law-search-input" type="text" name="q" placeholder="Статья или ключевое слово" style="font-size:0.85rem;padding:8px 12px;">
-              <button class="law-search-btn" type="submit" style="padding:8px 12px;"><i class="bi bi-search"></i></button>
-            </form>
-          </div>
-
-          <div class="law-nav-card">
-            <div class="law-nav-title">Все статьи ${art.codeName}</div>
-            <a href="/statyi?code=${art.code}" class="law-nav-link" style="padding:10px 0;border:none;">
-              <i class="bi bi-list-ul me-2" style="color:#d7a742;"></i>
-              <span>Открыть весь список →</span>
-            </a>
-          </div>
+          <div class="law-cta-title">Вопрос по статье ${esc(art.num)} ${esc(art.codeName)}?</div>
+          <div class="law-cta-sub">${esc(codeConsult[art.code] || 'Получите консультацию по применению этой нормы.')}</div>
+          <a href="https://wa.me/77777457577?text=${encodeURIComponent(waMessage)}" class="law-cta-btn" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать адвокату</a>
+          <a href="tel:+77777457577" class="law-cta-btn law-cta-btn--phone"><i class="bi bi-telephone"></i> +7 (777) 745-75-77</a>
+          <a href="/advocate" class="law-advocate-profile-link">Лицензия, опыт и направления работы <i class="bi bi-arrow-right"></i></a>
         </div>
-      </div>
-
+        <div class="law-nav-card">
+          <div class="law-nav-title">Поиск по ${esc(art.codeName)}</div>
+          <form action="/statyi" method="get" class="law-search-bar mb-0">
+            <input type="hidden" name="code" value="${esc(art.code)}">
+            <label class="law-search-field"><span class="visually-hidden">Статья или ключевое слово</span><i class="bi bi-search" aria-hidden="true"></i><input class="law-search-input" type="search" name="q" placeholder="Номер или слово"></label>
+            <button class="law-search-btn" type="submit" aria-label="Искать"><i class="bi bi-search"></i></button>
+          </form>
+        </div>
+        <div class="law-nav-card">
+          <div class="law-nav-title">Навигация</div>
+          <a href="/statyi?code=${encodeURIComponent(art.code)}" class="law-nav-link"><i class="bi bi-list-ul"></i><span>Все статьи ${esc(art.codeName)}</span></a>
+          <a href="/statyi" class="law-nav-link"><i class="bi bi-journals"></i><span>Все кодексы РК</span></a>
+        </div>
+      </aside>
     </div>
   </div>
 </section>
-`;
+
+<div class="law-mobile-advocate" aria-label="Связаться с адвокатом">
+  <a href="https://wa.me/77777457577?text=${encodeURIComponent(waMessage)}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+  <a href="tel:+77777457577"><i class="bi bi-telephone"></i> Позвонить</a>
+</div>`;
 %>
 <%- include('layout', {
   title: pageTitle,
   description: pageDescription,
   canonical,
   schema,
+  ogType: 'article',
   activeNav: 'statyi',
   body
 }) %>
