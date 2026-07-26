@@ -1,4 +1,4 @@
-'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
@@ -6,10 +6,11 @@ const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
 const { readRegistrySource } = require('../modules/registry-source');
+const { applyNotaryOverride } = require('../modules/notary-overrides');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 4; // increment to force re-import on schema changes
+const DB_VERSION = 5; // increment to force re-import when verified overrides change
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -54,12 +55,17 @@ function buildNotaries(rows, sourceMtime) {
     // Columns: Область(0), №(1), ФИО(2), Лицензия(3), Дата(4), Адрес(5), Телефон(6), Email(7), Режим(8)
     const region   = (row[0] || '').trim();
     const num      = (row[1] || '').trim();
-    const name     = (row[2] || '').trim();
-    const license  = (row[3] || '').trim();
+    const corrected = applyNotaryOverride({
+      name: row[2],
+      license: row[3],
+      email: row[7],
+    });
+    const name     = (corrected.name || '').trim();
+    const license  = (corrected.license || '').trim();
     const licDate  = (row[4] || '').trim();
     const address  = (row[5] || '').trim();
     const phone    = (row[6] || '').replace(/[,;\s]+$/, '').trim();
-    const email    = validEmail(row[7]);
+    const email    = validEmail(corrected.email);
     const schedule = (row[8] || '').trim().replace(/\s+/g, ' ');
 
     if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
