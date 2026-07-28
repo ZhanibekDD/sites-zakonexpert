@@ -1,4 +1,4 @@
-'use strict';
+'use strict';
 
 // Corrections confirmed directly by registry members. Keep these separate from
 // the ENIS snapshot so a refresh cannot silently restore outdated contacts.

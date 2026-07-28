@@ -1,4 +1,4 @@
-{
+{
   "name": "zakonexpert-site",
   "version": "1.0.0",
   "description": "ZakonExpert — legal service website and IIN debtor checking service (Kazakhstan)",
@@ -10,6 +10,7 @@
     "check:html": "html-validate public/*.html",
     "check:css": "stylelint \"public/css/**/*.css\"",
     "test:smoke": "node scripts/smoke-test.js",
+    "test:source-integrity": "node scripts/test-source-integrity.js",
     "test:notaries": "node scripts/test-notaries.js",
     "test:bailiffs": "node scripts/test-bailiffs.js",
     "test:lawyers": "node scripts/test-lawyers.js",
@@ -22,7 +23,7 @@
     "test:news": "node scripts/test-news-quality.js",
     "seo:audit": "node scripts/seo-audit.js",
     "audit:live": "node scripts/live-audit.js",
-    "test": "npm run check:js && npm run check:html && npm run check:css && npm run seo:audit && npm run test:contact && npm run test:adsense && npm run test:yandex-ads && npm run test:news && npm run test:notaries && npm run test:bailiffs && npm run test:lawyers && npm run test:companies && npm run test:tools && npm run test:laws && npm run test:smoke",
+    "test": "npm run test:source-integrity && npm run check:js && npm run check:html && npm run check:css && npm run seo:audit && npm run test:contact && npm run test:adsense && npm run test:yandex-ads && npm run test:news && npm run test:notaries && npm run test:bailiffs && npm run test:lawyers && npm run test:companies && npm run test:tools && npm run test:laws && npm run test:smoke",
     "import-news": "node scripts/import_news.js",
     "import-notaries": "node scripts/import-notaries.js",
     "refresh-notaries": "node scripts/refresh-notaries-csv.js",
