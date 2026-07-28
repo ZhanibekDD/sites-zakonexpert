@@ -1,9 +1,10 @@
-'use strict';
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
 const { writeRegistrySource } = require('../modules/registry-source');
+const { applyNotaryOverride } = require('../modules/notary-overrides');
 
 const OUTPUT_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const STATUS_PATH = path.join(__dirname, '..', 'data', 'notaries-registry-status.json');
@@ -75,10 +76,13 @@ function parseNotaryPage(html, region) {
 }
 
 function toRegistryRows(rows) {
-  return rows.map(row => [
-    row.region, row.num, row.name, row.license, row.licenseDate,
-    row.address, row.phone, row.email, row.schedule,
-  ]);
+  return rows.map(row => {
+    const corrected = applyNotaryOverride(row);
+    return [
+      corrected.region, corrected.num, corrected.name, corrected.license, corrected.licenseDate,
+      corrected.address, corrected.phone, corrected.email, corrected.schedule,
+    ];
+  });
 }
 
 async function fetchChamber(id, region) {

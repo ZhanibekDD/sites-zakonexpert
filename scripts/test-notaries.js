@@ -1,9 +1,9 @@
-'use strict';
+'use strict';
 
 const assert = require('assert');
 const path = require('path');
 const { buildNotaries, validEmail } = require('./import-notaries');
-const { CHAMBERS, parseNotaryPage } = require('./refresh-notaries-csv');
+const { CHAMBERS, parseNotaryPage, toRegistryRows } = require('./refresh-notaries-csv');
 const { readRegistrySource } = require('../modules/registry-source');
 
 const sample = `
@@ -30,5 +30,23 @@ assert.strictEqual(slugs.size, notaries.length, 'notary slugs must be unique');
 assert.ok(notaries.filter(item => item.phone).length >= 5700, 'phone coverage unexpectedly dropped');
 assert.ok(notaries.filter(item => item.email).length >= 5700, 'email coverage unexpectedly dropped');
 assert.ok(notaries.every(item => !item.email || validEmail(item.email)), 'all stored emails must be valid');
+const aman = notaries.find(item => item.license === '22020237' && item.name === 'АМАН ЖАНЕРКЕ');
+assert.ok(aman, 'verified notary override target must exist');
+assert.strictEqual(aman.email, 'amanzhanerke87@gmail.com');
+assert.strictEqual(
+  toRegistryRows([{
+    region: 'Жамбылская область',
+    num: '30',
+    name: 'АМАН ЖАНЕРКЕ',
+    license: '22020237',
+    licenseDate: '01.11.2022',
+    address: 'г.Тараз',
+    phone: '87071408084',
+    email: 'aman_jan87@mail.ru',
+    schedule: 'с 9:00 до 18:00',
+  }])[0][7],
+  'amanzhanerke87@gmail.com',
+  'registry refresh must preserve the verified email',
+);
 
 console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
