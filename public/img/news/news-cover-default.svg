@@ -18,7 +18,7 @@
     <text x="70" y="95" font-family="Arial,Helvetica,sans-serif" font-size="54" font-weight="900"
           text-anchor="middle" fill="url(#gold)" letter-spacing="3">ZE</text>
   </g>
-  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">>2>AB8 8 @071>@K ZakonExpert</text>
-  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">$8=0=A>2>-?@02>2K5 A>1KB8O 070EAB0=0</text>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">Новости и разборы ZakonExpert</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">Финансово-правовые события Казахстана</text>
   <rect x="310" y="362" width="180" height="3" rx="2" fill="url(#gold)"/>
 </svg>

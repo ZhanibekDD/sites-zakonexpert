@@ -134,6 +134,7 @@ async function run() {
       '/collectors',
       '/companies',
       '/tools',
+      '/marshrut-dolzhnika',
       '/tools/payment-plan',
       '/tools/mrp',
       '/tools/state-duty',

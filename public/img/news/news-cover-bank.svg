@@ -22,7 +22,7 @@
     <rect x="20" y="185" width="200" height="10" rx="2" fill="url(#gold)"/>
     <line x1="0" y1="210" x2="240" y2="210" stroke="url(#gold)" stroke-width="2" opacity="0.6"/>
   </g>
-  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">0=:8 8 4>;6=8:8</text>
-  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">Банки и должники</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert — правовой разбор</text>
   <rect x="340" y="362" width="120" height="3" rx="2" fill="url(#gold)"/>
 </svg>
