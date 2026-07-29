@@ -2075,6 +2075,7 @@ function getCorePages() {
     { url: '/emergency',      priority: '0.6',  freq: 'monthly' },
     // Инструменты
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
+    { url: '/marshrut-dolzhnika', priority: '0.9', freq: 'monthly' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
     { url: '/gallery',        priority: '0.85', freq: 'monthly' },
     { url: '/press',          priority: '0.7',  freq: 'monthly' },
@@ -2896,6 +2897,7 @@ app.get('/bin-search', (req, res) => {
 
 // ===== КАЛЬКУЛЯТОР =====
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
+app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
 app.get('/tools', (req, res) => res.render('tools/index', { tools: TOOLS }));
 app.get('/tools/:slug', (req, res) => {
   const tool = findTool(req.params.slug);

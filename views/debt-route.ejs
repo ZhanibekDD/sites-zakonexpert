@@ -1,0 +1,186 @@
+<%
+const pageTitle = 'Что делать с долгом: маршрут должника в Казахстане | ZakonExpert';
+const pageDesc = 'Бесплатный навигатор по долгам: просрочка, коллекторы, исполнительная надпись, решение суда, ЧСИ, арест счёта, авто или запрет на выезд.';
+const canonical = 'https://zakonexpertt.kz/marshrut-dolzhnika';
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Маршрут должника ZakonExpert',
+    url: canonical,
+    applicationCategory: 'LegalApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KZT' },
+    description: pageDesc,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'С чего начать, если появилась просрочка по кредиту?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Соберите договор и историю платежей, запросите у кредитора полный расчёт задолженности и направьте письменное предложение об урегулировании. Не передавайте третьим лицам ЭЦП и коды подтверждения.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Что делать, если счёт уже арестовал ЧСИ?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Установите номер исполнительного производства, взыскателя и исполнительный документ. Дальнейший способ зависит от основания: исполнительной надписи, решения суда, штрафа, алиментов или другого документа.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Можно ли пользоваться навигатором вместо консультации?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Навигатор даёт общий порядок действий и список документов. Для оценки сроков и перспектив необходимо изучить конкретные документы.',
+        },
+      },
+    ],
+  },
+];
+
+const body = `
+<style>
+  .route-page{padding:34px 0 70px;background:linear-gradient(180deg,#f8fbff 0,#fff 36%)}
+  .route-hero{max-width:920px;margin:0 auto 28px;text-align:center}
+  .route-kicker{display:inline-flex;align-items:center;gap:7px;color:#9a6817;background:#fff7e6;border:1px solid #f1d59a;border-radius:999px;padding:6px 12px;font-size:.76rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+  .route-hero h1{font-family:Georgia,serif;color:#0d1f3c;font-size:clamp(2rem,5vw,3.7rem);line-height:1.04;margin:16px 0 12px}
+  .route-hero p{max-width:760px;margin:0 auto;color:#596a80;font-size:1.04rem;line-height:1.7}
+  .route-trust{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;margin-top:18px;color:#475569;font-size:.84rem}
+  .route-trust span{display:inline-flex;align-items:center;gap:6px}
+  .route-shell{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:22px;align-items:start;max-width:1120px;margin:0 auto}
+  .route-panel{background:#fff;border:1px solid #dbe4f0;border-radius:20px;box-shadow:0 18px 45px rgba(13,31,60,.08);overflow:hidden}
+  .route-panel__head{padding:22px 24px 14px;border-bottom:1px solid #eef2f7}
+  .route-step{font-size:.73rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b7791f}
+  .route-panel h2{font-size:1.25rem;color:#0d1f3c;font-weight:850;margin:5px 0 4px}
+  .route-panel__head p{margin:0;color:#64748b;font-size:.88rem}
+  .route-options{display:grid;gap:10px;padding:20px}
+  .route-option{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:12px;width:100%;padding:14px;text-align:left;background:#fff;border:1.5px solid #dce5ef;border-radius:14px;color:#14213d;cursor:pointer;transition:.16s}
+  .route-option:hover,.route-option:focus-visible{border-color:#2c67b1;box-shadow:0 6px 18px rgba(31,83,145,.1);outline:none;transform:translateY(-1px)}
+  .route-option.is-active{border-color:#1d5fa7;background:#f1f7ff;box-shadow:0 0 0 3px rgba(29,95,167,.1)}
+  .route-option__icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#edf4fd;color:#174d8c;font-size:1.2rem}
+  .route-option strong{display:block;font-size:.93rem}
+  .route-option small{display:block;color:#718096;font-size:.78rem;margin-top:2px}
+  .route-option i:last-child{color:#94a3b8}
+  .route-result{min-height:420px}
+  .route-result__empty{padding:52px 28px;text-align:center;color:#64748b}
+  .route-result__empty i{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:#edf4fd;color:#1d5fa7;font-size:1.8rem}
+  .route-result__content{padding:24px}
+  .route-result__badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:#effaf3;color:#157347;font-size:.74rem;font-weight:800}
+  .route-result h2{margin:12px 0 8px;font-size:1.35rem}
+  .route-result__lead{color:#526278;line-height:1.65}
+  .route-result h3{font-size:.94rem;color:#0d1f3c;font-weight:850;margin:20px 0 9px}
+  .route-checklist{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .route-checklist li{display:flex;gap:9px;color:#34445a;font-size:.88rem;line-height:1.5}
+  .route-checklist i{color:#1f9d55;margin-top:3px;flex:0 0 auto}
+  .route-warning{margin-top:18px;padding:13px 14px;border-radius:12px;background:#fff8e7;border:1px solid #f1d89e;color:#694f1d;font-size:.83rem;line-height:1.55}
+  .route-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .route-primary,.route-secondary{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:11px;padding:11px 16px;text-decoration:none;font-size:.88rem;font-weight:800}
+  .route-primary{background:#25d366;color:#fff}.route-primary:hover{background:#1ebe5a;color:#fff}
+  .route-secondary{background:#eef5ff;color:#164f91;border:1px solid #cfe0f6}.route-secondary:hover{background:#e0edff;color:#123f73}
+  .route-foot{max-width:1120px;margin:28px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .route-info{padding:19px;border:1px solid #e1e8f0;border-radius:16px;background:#fff}
+  .route-info h2{font-size:1rem;color:#0d1f3c;font-weight:850;margin:0 0 8px}
+  .route-info p,.route-info li{font-size:.84rem;color:#5a697c;line-height:1.55}
+  .route-info ul{margin:0;padding-left:18px}
+  .route-disclaimer{max-width:1120px;margin:16px auto 0;color:#718096;font-size:.76rem;line-height:1.5}
+  @media(max-width:860px){.route-shell{grid-template-columns:1fr}.route-result{min-height:0}.route-foot{grid-template-columns:1fr}}
+  @media(max-width:520px){.route-page{padding-top:22px}.route-panel__head{padding:18px}.route-options{padding:14px}.route-option{grid-template-columns:38px 1fr auto;padding:12px}.route-option__icon{width:38px;height:38px}.route-result__content{padding:19px}.route-actions a{width:100%}}
+</style>
+<div class="route-page">
+  <div class="landing-container">
+    <nav class="npage-breadcrumb" aria-label="breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Маршрут должника</span></nav>
+    <section class="route-hero">
+      <span class="route-kicker"><i class="bi bi-signpost-split"></i> Бесплатный правовой навигатор</span>
+      <h1>Что делать с долгом именно на вашей стадии</h1>
+      <p>Выберите, что уже произошло. Навигатор покажет первый шаг, необходимые документы и типичные ошибки — без регистрации и ввода ИИН.</p>
+      <div class="route-trust">
+        <span><i class="bi bi-shield-check"></i> Не собираем персональные данные</span>
+        <span><i class="bi bi-clock"></i> Результат за 30 секунд</span>
+        <span><i class="bi bi-geo-alt"></i> Для всего Казахстана</span>
+      </div>
+    </section>
+
+    <div class="route-shell" data-debt-route>
+      <section class="route-panel" aria-labelledby="route-question">
+        <div class="route-panel__head">
+          <div class="route-step">Шаг 1 из 1</div>
+          <h2 id="route-question">На какой стадии находится ситуация?</h2>
+          <p>Выберите наиболее близкий вариант.</p>
+        </div>
+        <div class="route-options" role="list">
+          <button class="route-option" type="button" data-route="overdue">
+            <span class="route-option__icon"><i class="bi bi-calendar-x"></i></span>
+            <span><strong>Только появилась просрочка</strong><small>Банк или МФО звонит, но суда и ЧСИ ещё нет</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="collectors">
+            <span class="route-option__icon"><i class="bi bi-telephone-x"></i></span>
+            <span><strong>Звонят коллекторы</strong><small>Требуют оплату, оказывают давление или пишут родственникам</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="notary">
+            <span class="route-option__icon"><i class="bi bi-file-earmark-text"></i></span>
+            <span><strong>Исполнительная надпись нотариуса</strong><small>Пришло уведомление или узнали о надписи после ареста</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="court">
+            <span class="route-option__icon"><i class="bi bi-bank"></i></span>
+            <span><strong>Есть решение суда</strong><small>Не участвовали в деле или не согласны с решением</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="bailiff">
+            <span class="route-option__icon"><i class="bi bi-lock"></i></span>
+            <span><strong>ЧСИ уже наложил арест</strong><small>Заблокирован счёт, идут удержания или открыто производство</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="restrictions">
+            <span class="route-option__icon"><i class="bi bi-car-front"></i></span>
+            <span><strong>Запрет на авто, имущество или выезд</strong><small>Нельзя переоформить объект или пересечь границу</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+          <button class="route-option" type="button" data-route="paid">
+            <span class="route-option__icon"><i class="bi bi-check2-circle"></i></span>
+            <span><strong>Долг уже оплачен</strong><small>Но аресты, запреты или производство остались</small></span>
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </section>
+
+      <aside class="route-panel route-result" aria-live="polite">
+        <div class="route-result__empty" data-route-empty>
+          <i class="bi bi-compass"></i>
+          <h2>Здесь появится ваш маршрут</h2>
+          <p>Мы покажем порядок действий и подготовим сообщение для специалиста без лишних вопросов.</p>
+        </div>
+        <div class="route-result__content" data-route-result hidden></div>
+      </aside>
+    </div>
+
+    <section class="route-foot" aria-label="Важная информация">
+      <article class="route-info">
+        <h2><i class="bi bi-folder2-open"></i> Что подготовить заранее</h2>
+        <ul><li>уведомления и постановления;</li><li>договор и расчёт задолженности;</li><li>подтверждения платежей;</li><li>дату, когда вы узнали о документе.</li></ul>
+      </article>
+      <article class="route-info">
+        <h2><i class="bi bi-exclamation-triangle"></i> Чего не делать</h2>
+        <ul><li>не передавать ЭЦП и SMS-коды неизвестным;</li><li>не платить без проверки основания и суммы;</li><li>не ограничиваться устной договорённостью;</li><li>не затягивать при процессуальном сроке.</li></ul>
+      </article>
+      <article class="route-info">
+        <h2><i class="bi bi-shield-check"></i> Что даёт ZakonExpert</h2>
+        <p>Проверяем документ-основание, сроки, расчёт задолженности и действия ЧСИ. После анализа объясняем реальные варианты и стоимость сопровождения.</p>
+      </article>
+    </section>
+    <p class="route-disclaimer">Навигатор носит справочный характер и не гарантирует отмену долга или ограничений. Правовой способ зависит от документов, сроков, вида обязательства и стадии производства.</p>
+  </div>
+</div>
+<script src="/js/debt-route.js?v=20260729-1" defer></script>
+`;
+%>
+<%- include('news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

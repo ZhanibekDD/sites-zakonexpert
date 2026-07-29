@@ -17,9 +17,9 @@
     <line x1="60" y1="70" x2="180" y2="70" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
     <line x1="60" y1="100" x2="180" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
     <line x1="60" y1="130" x2="140" y2="130" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-    <text x="120" y="185" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="url(#gold)" text-anchor="middle">�</text>
+    <text x="120" y="185" font-family="Arial,sans-serif" font-size="32" font-weight="900" fill="url(#gold)" text-anchor="middle">₸</text>
   </g>
-  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">(B@0DK 8 '!</text>
-  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">Штрафы и ЧСИ</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert — правовой разбор</text>
   <rect x="340" y="362" width="120" height="3" rx="2" fill="url(#gold)"/>
 </svg>

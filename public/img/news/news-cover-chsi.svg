@@ -18,7 +18,7 @@
     <line x1="90" y1="130" x2="150" y2="130" stroke="white" stroke-width="3" stroke-linecap="round"/>
     <line x1="120" y1="100" x2="120" y2="160" stroke="white" stroke-width="3" stroke-linecap="round"/>
   </g>
-  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">'! 8 8A?>;=8B5;L=>5 ?@>872>4AB2></text>
-  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert  ?@02>2>9 @071>@</text>
+  <text x="400" y="310" font-family="Arial,sans-serif" font-size="26" font-weight="700" fill="white" text-anchor="middle">ЧСИ и исполнительное производство</text>
+  <text x="400" y="345" font-family="Arial,sans-serif" font-size="16" fill="rgba(255,255,255,0.6)" text-anchor="middle">ZakonExpert — правовой разбор</text>
   <rect x="310" y="362" width="180" height="3" rx="2" fill="url(#gold)"/>
 </svg>
