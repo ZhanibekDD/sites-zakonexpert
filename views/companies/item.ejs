@@ -79,6 +79,32 @@ var rowsHtml = infoRows.map(function(row) {
     + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + value + '</div></div>';
 }).join('');
 
+var contactRows = [
+  ['bi-telephone', 'Телефон', company.phone, company.phone ? 'tel:' + company.phone.replace(/[^\d+]/g, '').split(',')[0] : null],
+  ['bi-phone', 'Мобильный телефон', company.mobile_phone, company.mobile_phone ? 'tel:' + company.mobile_phone.replace(/[^\d+]/g, '').split(',')[0] : null],
+  ['bi-whatsapp', 'WhatsApp', company.whatsapp, company.whatsapp ? 'https://wa.me/' + company.whatsapp.replace(/\D/g, '') : null],
+  ['bi-telegram', 'Telegram', company.telegram, null],
+  ['bi-envelope', 'Email', company.email, company.email ? 'mailto:' + company.email.split(',')[0].trim() : null],
+  ['bi-globe', 'Сайт', company.website, (company.website || '').split(',')[0].trim() || null],
+  ['bi-clock', 'Часы работы', company.work_hours, null],
+  ['bi-star', 'Рейтинг', company.rating ? company.rating + (company.review_count ? ' (' + company.review_count + ' отзывов)' : '') : null, null],
+].filter(function(row) { return row[2]; });
+
+var contactHtml = '';
+if (contactRows.length) {
+  var contactRowsHtml = contactRows.map(function(row) {
+    var value = row[3] ? '<a href="' + esc(row[3]) + '" target="_blank" rel="noopener" style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(row[2]) + '</a>' : esc(row[2]);
+    return '<div style="display:grid;grid-template-columns:26px minmax(170px,240px) 1fr;gap:12px;align-items:start;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
+      + '<i class="bi ' + row[0] + '" style="color:#94a3b8;font-size:1.05rem;margin-top:1px;" aria-hidden="true"></i>'
+      + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[1]) + '</div>'
+      + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + value + '</div></div>';
+  }).join('');
+  contactHtml = '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);margin-top:18px;">'
+    + '<div style="padding:15px 0 6px;font-weight:750;color:#0d1f3c;font-size:.92rem;">Контакты</div>'
+    + contactRowsHtml + '</div>'
+    + '<div style="margin-top:10px;color:#94a3b8;font-size:.78rem;line-height:1.5;">Контакты — из открытых бизнес-справочников, не из официального реестра Минюста РК. Обновлено: ' + esc(formatDate(company.contact_updated_at) || company.contact_updated_at || '—') + '. Если контакт устарел — сообщите об этом ниже.</div>';
+}
+
 var mapQuery = company.address_ru ? encodeURIComponent(mapSearchAddress(company.address_ru) + ', Казахстан') : '';
 var mapHtml = company.address_ru
   ? '<div style="overflow:hidden;margin-top:16px;border:1px solid #dbe4f0;border-radius:11px;background:#e8eef5;">'
@@ -113,7 +139,7 @@ var consultText = encodeURIComponent('Здравствуйте! Нужна ко�
 
 var body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
-  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Реестр юридических лиц</span>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + (company.bin ? 'Реестр юридических лиц' : 'Из бизнес-справочников') + '</span>'
   + (company.status_ru ? '<span class="npage-badge npage-badge-active">' + esc(company.status_ru) + '</span>' : '') + '</div>'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">БИН ' + esc(company.bin) + '</p>' : '') + '</section>'
@@ -121,9 +147,13 @@ var body = '<div class="npage-wrap"><div class="landing-container">'
   + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
   + '<div>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);">' + rowsHtml + '</div>'
+  + contactHtml
   + mapHtml
   + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px;">' + statCardsHtml + '</div>'
-  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(formatDate(sourceUpdatedAt) || sourceUpdatedAt || '—') + '. Часть сведений (контакты, учредители, филиалы) реестр не публикует — мы не подставляем непроверенные данные.</div>'
+  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">' + (company.bin
+    ? 'Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(formatDate(sourceUpdatedAt) || sourceUpdatedAt || '—') + '. Часть сведений (контакты, учредители, филиалы) реестр не публикует — мы не подставляем непроверенные данные.'
+    : 'Эта организация не найдена в официальном реестре Минюста РК (data.egov.kz) — все сведения на этой странице из открытых бизнес-справочников, БИН не подтверждён.'
+  ) + '</div>'
   + '</div>'
 
   + '<aside style="display:grid;gap:14px;">'

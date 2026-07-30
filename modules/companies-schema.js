@@ -34,6 +34,19 @@ function createSchema(db) {
   if (!hasQualityColumn) db.exec('ALTER TABLE companies ADD COLUMN quality_score INTEGER NOT NULL DEFAULT 0;');
   const hasIndexableColumn = db.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = 'is_indexable'").get();
   if (!hasIndexableColumn) db.exec('ALTER TABLE companies ADD COLUMN is_indexable INTEGER NOT NULL DEFAULT 0;');
+
+  const CONTACT_COLUMNS = [
+    ['phone', 'TEXT'], ['mobile_phone', 'TEXT'], ['email', 'TEXT'], ['website', 'TEXT'],
+    ['whatsapp', 'TEXT'], ['viber', 'TEXT'], ['telegram', 'TEXT'],
+    ['work_hours', 'TEXT'], ['rating', 'TEXT'], ['review_count', 'TEXT'],
+    ['lat', 'TEXT'], ['lon', 'TEXT'],
+    ['contact_source', 'TEXT'], ['contact_updated_at', 'TEXT'],
+  ];
+  for (const [name, type] of CONTACT_COLUMNS) {
+    const has = db.prepare("SELECT 1 FROM pragma_table_info('companies') WHERE name = ?").get(name);
+    if (!has) db.exec(`ALTER TABLE companies ADD COLUMN ${name} ${type};`);
+  }
+
   db.exec(`
     CREATE INDEX IF NOT EXISTS companies_region_idx ON companies(region_slug);
     CREATE INDEX IF NOT EXISTS companies_indexable_idx ON companies(is_indexable, id);
