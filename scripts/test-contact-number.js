@@ -6,9 +6,9 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SEARCH_ROOTS = ['public', 'views', 'modules', 'docs'];
 const TEXT_EXTENSIONS = new Set(['.css', '.ejs', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml']);
-const EXPECTED_RAW = '77479957635';
-const EXPECTED_DISPLAY = '+7 (747) 995-76-35';
-const OLD_NUMBER = /(?:\+?7[ ()-]*)?(?:775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38)/g;
+const EXPECTED_RAW = '77000300024';
+const EXPECTED_DISPLAY = '+7 (700) 030-00-24';
+const OLD_NUMBER = /(?:\+?7[ ()-]*)?(?:775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38|747[ ()-]*995[ ()-]*76[ ()-]*35|777[ ()-]*745[ ()-]*75[ ()-]*77|747[ ()-]*964[ ()-]*13[ ()-]*06)/g;
 
 function listTextFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

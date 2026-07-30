@@ -181,9 +181,9 @@ function notifyVisit(page, ip, ua, referer) {
 
 // ── Phone / WhatsApp click notification ──────────────────────────────────────
 const TARGET_LABELS = {
-  advocate: '⚖️ Адвокат Маулен +7 (777) 745-75-77',
-  mediator: '🕊 Медиатор Нурғиса +7 (747) 964-13-06',
-  main:     '📞 ZakonExpert +7 (747) 995-76-35',
+  advocate: '⚖️ Адвокат Маулен +7 (700) 030-00-24',
+  mediator: '🕊 Медиатор Нурғиса +7 (700) 030-00-24',
+  main:     '📞 ZakonExpert +7 (700) 030-00-24',
 };
 const TYPE_ICONS = { phone: '📞 Звонок', whatsapp: '💬 WhatsApp' };
 

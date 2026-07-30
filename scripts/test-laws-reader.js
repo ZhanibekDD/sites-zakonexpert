@@ -28,7 +28,7 @@ async function run() {
     pages: 3,
   });
   assert(!listHtml.includes('<img src=x onerror=alert(1)>'), 'Search query must be escaped');
-  assert(listHtml.includes('tel:+77777457577'), 'Advocate phone must be used in the consultation card');
+  assert(listHtml.includes('tel:+77000300024'), 'Advocate phone must be used in the consultation card');
   assert(listHtml.includes('/css/laws-reader.css'), 'Reader stylesheet must be loaded');
   assert(listHtml.includes('noindex,follow'), 'Search results must not be indexed');
 
@@ -50,7 +50,7 @@ async function run() {
   assert(!articleHtml.includes('<script>alert(2)</script>'), 'Article body must be escaped');
   assert(articleHtml.includes('data-reading-progress'), 'Reading progress must be present');
   assert(articleHtml.includes('data-reader-size="xlarge"'), 'Font controls must be present');
-  assert(articleHtml.includes('tel:+77777457577'), 'Article CTA must call the advocate directly');
+  assert(articleHtml.includes('tel:+77000300024'), 'Article CTA must call the advocate directly');
   assert(articleHtml.includes('/advocate'), 'Article must link to the advocate profile');
 
   const advocateHtml = fs.readFileSync(path.join(ROOT, 'public', 'advocate.html'), 'utf8');

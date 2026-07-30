@@ -409,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="ip-list-meta">
                             <span><b>${T.labels.creditor}:</b> ${creditor}</span>
                             <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
-                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Услуга ЧСИ</b> <a href="https://wa.me/77479957635?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">— убрать проценты ЧСИ →</a></span>` : ''}
+                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Услуга ЧСИ</b> <a href="https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">— убрать проценты ЧСИ →</a></span>` : ''}
                             <span><b>${T.labels.date}:</b> ${debtorDate}</span>
                             <span><b>${T.labels.organ}:</b> ${authority}</span>
                             ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${executor}</span>` : ''}
@@ -428,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Single WhatsApp button after all cards
-            const waAllUrl = `https://wa.me/77479957635?text=${encodeURIComponent(waAllText)}`;
+            const waAllUrl = `https://wa.me/77000300024?text=${encodeURIComponent(waAllText)}`;
             const waBlock = document.createElement('div');
             waBlock.className = 'wa-all-block';
             waBlock.innerHTML = `
@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // No arrests found
             debtorsSection.style.display = 'block';
-            const waNoArrestUrl = `https://wa.me/77479957635?text=${encodeURIComponent('Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.')}`;
+            const waNoArrestUrl = `https://wa.me/77000300024?text=${encodeURIComponent('Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.')}`;
             debtorsContainer.innerHTML = `
                 <div class="no-arrests-block">
                     <div class="no-arrests-icon">✅</div>
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function showErrorMessage(message) {
         const msg = message || T.genericErrorLong;
-        const waUrl = `https://wa.me/77479957635?text=${encodeURIComponent(T.waPrefix)}`;
+        const waUrl = `https://wa.me/77000300024?text=${encodeURIComponent(T.waPrefix)}`;
         errorMessage.innerHTML = `
             <i class="bi bi-exclamation-triangle me-2"></i>
             <strong>Ошибка:</strong> <span>${msg}</span>
