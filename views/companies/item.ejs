@@ -22,6 +22,13 @@ function mapSearchAddress(value) {
   // a place name and confuses map-provider search.
   return String(value == null ? '' : value).replace(/^[A-ZА-Я]\d{2}[A-ZА-Я]\d[A-ZА-Я]\d\s*,?\s*/i, '').trim();
 }
+function mapEmbedAddress(value) {
+  // The free-text embed geocoder struggles with long strings and abbreviated
+  // street tokens (e.g. "ст-е 167"). Region + city alone resolves reliably;
+  // the outbound 2GIS/Google Maps buttons still use the full address.
+  var parts = mapSearchAddress(value).split(',').map(function(p) { return p.trim(); }).filter(Boolean);
+  return parts.slice(0, 2).join(', ');
+}
 function registrationYear(value) {
   var raw = String(value == null ? '' : value).trim();
   var iso = raw.match(/^(\d{4})-/);
@@ -106,9 +113,10 @@ if (contactRows.length) {
 }
 
 var mapQuery = company.address_ru ? encodeURIComponent(mapSearchAddress(company.address_ru) + ', Казахстан') : '';
+var mapEmbedQuery = company.address_ru ? encodeURIComponent(mapEmbedAddress(company.address_ru) + ', Казахстан') : '';
 var mapHtml = company.address_ru
   ? '<div style="overflow:hidden;margin-top:16px;border:1px solid #dbe4f0;border-radius:11px;background:#e8eef5;">'
-    + '<iframe src="https://maps.google.com/maps?q=' + mapQuery + '&output=embed&hl=ru&z=15" loading="lazy" title="Карта расположения ' + esc(name) + '" style="width:100%;height:230px;display:block;border:0;" allowfullscreen></iframe>'
+    + '<iframe src="https://maps.google.com/maps?q=' + mapEmbedQuery + '&output=embed&hl=ru&z=12" loading="lazy" title="Карта расположения ' + esc(name) + '" style="width:100%;height:230px;display:block;border:0;" allowfullscreen></iframe>'
     + '</div>'
     + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">'
     + '<a href="https://2gis.kz/search/' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>'
