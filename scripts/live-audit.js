@@ -2,12 +2,19 @@
 
 const ORIGIN = String(process.env.AUDIT_ORIGIN || 'https://zakonexpertt.kz').replace(/\/$/, '');
 const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
+const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
+const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 
 const publicRoutes = [
-  '/', '/news', '/dokumenty', '/advocate', '/mediator', '/contact',
+  '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
   '/notaries', '/bailiffs', '/lawyers', '/banks', '/mfo', '/collectors',
-  '/lombards', '/companies', '/courts', '/chambers', '/statyi', '/tools',
+  '/lombards', '/companies', '/courts', '/chambers', '/zakony', '/statyi', '/tools',
+  '/marshrut-dolzhnika',
   '/tools/payment-plan', '/tools/mrp', '/tools/state-duty', '/tools/deadline',
+];
+const stabilityRoutes = [
+  '/health', '/notaries', '/bailiffs', '/lawyers',
+  '/zakony', '/statyi', '/tools', '/marshrut-dolzhnika',
 ];
 
 const failures = [];
@@ -90,7 +97,7 @@ async function auditSitemaps() {
 
 async function auditNewsDetail() {
   const list = await request('/news');
-  const href = list.body.match(/href=["'](\/news\/(?!category\/|cover\/)[^"'#?]+)["']/i)?.[1];
+  const href = list.body.match(/href=["'](\/news\/(?!(?:category\/|cover\/|feed\.xml(?:["']|$)))[^"'#?]+)["']/i)?.[1];
   if (!href) return record(warnings, 'No news detail link found');
   const detail = await request(href);
   for (const heading of ['Что произошло', 'Почему это важно', 'Юридический разбор', 'Что проверить']) {
@@ -99,12 +106,54 @@ async function auditNewsDetail() {
   if (!/NewsArticle/.test(detail.body)) record(failures, `${href} has no NewsArticle schema`);
 }
 
+async function auditTechnicalFiles() {
+  const checks = [
+    ['/robots.txt', /sitemap-index\.xml/i],
+    ['/ads.txt', /google\.com,\s*pub-/i],
+  ];
+  for (const [pathname, expected] of checks) {
+    try {
+      const { response, body, ms } = await request(pathname);
+      console.log(`${response.status} ${String(ms).padStart(5)}ms ${String(body.length).padStart(8)} chars ${pathname}`);
+      if (response.status !== 200) record(failures, `${pathname} returned ${response.status}`);
+      if (!expected.test(body)) record(failures, `${pathname} is missing expected content`);
+    } catch (error) {
+      record(failures, `${pathname} failed: ${error.message}`);
+    }
+  }
+}
+
+async function auditStability() {
+  console.log(`Stability: ${STABILITY_ROUNDS} rounds × ${stabilityRoutes.length} routes`);
+  for (let round = 1; round <= STABILITY_ROUNDS; round += 1) {
+    for (const pathname of stabilityRoutes) {
+      try {
+        const { response, body, ms } = await request(pathname);
+        console.log(`round ${round} ${response.status} ${String(ms).padStart(5)}ms ${String(body.length).padStart(8)} chars ${pathname}`);
+        if (response.status !== 200) record(failures, `${pathname} stability round ${round} returned ${response.status}`);
+        if (!body.trim()) record(failures, `${pathname} stability round ${round} returned an empty body`);
+        const type = response.headers.get('content-type') || '';
+        if (type.includes('text/html') && !/<\/html>\s*$/i.test(body)) {
+          record(failures, `${pathname} stability round ${round} returned incomplete HTML`);
+        }
+        if (ms > SLOW_RESPONSE_MS) {
+          record(warnings, `${pathname} stability round ${round} was slow (${ms} ms)`);
+        }
+      } catch (error) {
+        record(failures, `${pathname} stability round ${round} failed: ${error.message}`);
+      }
+    }
+  }
+}
+
 (async () => {
   console.log(`Auditing ${ORIGIN}`);
   for (const route of publicRoutes) await auditPublicRoute(route);
   await auditSecurity();
   await auditSitemaps();
   await auditNewsDetail();
+  await auditTechnicalFiles();
+  await auditStability();
   console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
   if (failures.length) process.exitCode = 1;
 })().catch(error => {

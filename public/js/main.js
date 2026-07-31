@@ -186,28 +186,30 @@ document.addEventListener('DOMContentLoaded', function() {
     /**
      * Обработка отправки формы
      */
-    searchForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const iin = iinInput.value.trim();
-        
-        // Проверка формата ИИН
-        if (!/^\d{12}$/.test(iin)) {
-            if (iinValidation) {
-                iinValidation.textContent = T.iinInvalid;
-                iinValidation.style.display = 'block';
-            }
-            return;
-        } else {
-            if (iinValidation) {
-                iinValidation.style.display = 'none';
-            }
-        }
+    if (searchForm && iinInput) {
+        searchForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        if (window.ZE_trackEvent) window.ZE_trackEvent('submit_iin', 'checker');
-        
-        await checkDebtor(iin);
-    });
+            const iin = iinInput.value.trim();
+
+            // Проверка формата ИИН
+            if (!/^\d{12}$/.test(iin)) {
+                if (iinValidation) {
+                    iinValidation.textContent = T.iinInvalid;
+                    iinValidation.style.display = 'block';
+                }
+                return;
+            } else {
+                if (iinValidation) {
+                    iinValidation.style.display = 'none';
+                }
+            }
+
+            if (window.ZE_trackEvent) window.ZE_trackEvent('submit_iin', 'checker');
+
+            await checkDebtor(iin);
+        });
+    }
 
     /**
      * Основная функция проверки должника
@@ -638,22 +640,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Добавляем обработчики событий
-    if (testDataButton) {
+    if (testDataButton && iinInput) {
         testDataButton.addEventListener('click', loadTestData);
     }
 
     // Валидация ввода ИИН (только цифры)
-    iinInput.addEventListener('input', function() {
-        this.value = this.value.replace(/[^\d]/g, '');
-        
-        if (this.value.length > 12) {
-            this.value = this.value.slice(0, 12);
-        }
-        
-        if (this.value.length === 12 && iinValidation) {
-            iinValidation.style.display = 'none';
-        }
-    });
+    if (iinInput) {
+        iinInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^\d]/g, '');
+
+            if (this.value.length > 12) {
+                this.value = this.value.slice(0, 12);
+            }
+
+            if (this.value.length === 12 && iinValidation) {
+                iinValidation.style.display = 'none';
+            }
+        });
+    }
 
     // ---- РАСКОММЕНТИРОВАН КОД МОДАЛЬНОГО ОКНА ----
     
