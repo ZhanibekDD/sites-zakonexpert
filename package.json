@@ -34,6 +34,7 @@
     "import-companies": "node scripts/import-companies-egov.js",
     "backfill-company-regions": "node scripts/backfill-company-regions.js",
     "import-directory-contacts": "node scripts/import-directory-contacts.js",
+    "build-directory-snapshot": "node scripts/build-directory-snapshot.js",
     "backfill-company-quality": "node scripts/backfill-company-quality.js",
     "submit-indexnow": "node scripts/submit-indexnow.js",
     "scrape-laws": "node scripts/scrape-laws.js",
@@ -50,7 +51,6 @@
     "storage:compact": "node scripts/compact-databases.js"
   },
   "dependencies": {
-    "adm-zip": "^0.6.0",
     "axios": "^1.9.0",
     "cheerio": "^1.2.0",
     "compression": "^1.8.0",
@@ -68,6 +68,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "adm-zip": "^0.6.0",
     "html-validate": "^10.3.0",
     "nodemon": "^3.0.2",
     "stylelint": "^16.23.1"
