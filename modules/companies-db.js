@@ -6,6 +6,9 @@ const { DatabaseSync } = require('node:sqlite');
 const { companySlug } = require('./company-slug');
 const { REGIONS, regionLabel } = require('./company-region');
 const { evaluateCompany, QUALITY_VERSION } = require('./company-quality');
+const { contactValues, normalizePhoneDigits } = require('./company-details-normalize');
+const { hydrateDetails: hydrateCompactDetails } = require('./company-details-store');
+const { transliterateCompanyName } = require('./company-transliterate');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
@@ -51,16 +54,28 @@ function hasColumn(database, column) {
   }
 }
 
+function hasTable(database, table) {
+  try {
+    return Boolean(database.prepare(
+      "SELECT 1 FROM sqlite_master WHERE type IN ('table', 'view') AND name = ?"
+    ).get(table));
+  } catch (_) {
+    return false;
+  }
+}
+
 function stats() {
   const database = open();
   if (!database) return {
     available: false, count: 0, updatedAt: null, source: null,
     qualityReady: false, indexableCount: 0, excludedCount: 0, qualityUpdatedAt: null,
+    officialCount: 0, directoryOnlyCount: 0, withContactsCount: 0,
   };
   const completedAt = getMeta(database, 'completed_at');
   if (!completedAt) return {
     available: false, count: 0, updatedAt: null, source: null,
     qualityReady: false, indexableCount: 0, excludedCount: 0, qualityUpdatedAt: null,
+    officialCount: 0, directoryOnlyCount: 0, withContactsCount: 0,
   };
   const qualityReady = hasColumn(database, 'is_indexable')
     && getMeta(database, 'quality_version') === QUALITY_VERSION;
@@ -81,6 +96,9 @@ function stats() {
     indexableCount,
     excludedCount: qualityReady ? Math.max(0, count - indexableCount) : count,
     qualityUpdatedAt: getMeta(database, 'quality_backfilled_at') || getMeta(database, 'source_updated_at'),
+    officialCount: Number.parseInt(getMeta(database, 'official_count'), 10) || indexableCount,
+    directoryOnlyCount: Number.parseInt(getMeta(database, 'directory_only_count'), 10) || 0,
+    withContactsCount: Number.parseInt(getMeta(database, 'with_contacts_count'), 10) || 0,
   };
 }
 
@@ -98,11 +116,10 @@ function normalizePage(value) {
 }
 
 function ftsQuery(query) {
-  return query
-    .trim()
-    .split(/\s+/)
-    .map(part => part.replace(/["'():*+\-^~{}[\]\\]/g, '').trim())
-    .filter(part => part.length >= 2)
+  const phone = normalizePhoneDigits(query);
+  const input = phone || String(query || '');
+  return (input.match(/[\p{L}\p{N}]+/gu) || [])
+    .filter(part => part.length >= 2 || /^\d+$/.test(part))
     .slice(0, 6)
     .map(part => `"${part}"*`)
     .join(' AND ');
@@ -131,7 +148,8 @@ function search(query, page = 1, limit = 30) {
     if (!match) return { items: [], page: safePage, hasMore: false };
     items = database.prepare(`
       SELECT c.id, c.bin, c.name_ru, c.name_kk, c.registration_date,
-             c.address_ru, c.activity_ru, c.leader, c.status_ru
+             c.address_ru, c.activity_ru, c.leader, c.status_ru,
+             c.primary_source_key
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
       WHERE companies_fts MATCH ?
@@ -146,12 +164,193 @@ function search(query, page = 1, limit = 30) {
   };
 }
 
+function browse(page = 1, limit = 30) {
+  const database = open();
+  if (!database || !getMeta(database, 'completed_at')) {
+    return { items: [], page: 1, hasMore: false };
+  }
+  const safePage = normalizePage(page);
+  const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
+  const offset = (safePage - 1) * safeLimit;
+  const items = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
+           activity_ru, leader, status_ru, primary_source_key
+    FROM companies
+    ORDER BY is_indexable DESC, id
+    LIMIT ? OFFSET ?
+  `).all(safeLimit + 1, offset);
+  return {
+    items: items.slice(0, safeLimit).map(addSlug),
+    page: safePage,
+    hasMore: items.length > safeLimit,
+  };
+}
+
+function dedupeDetails(items, key) {
+  const result = new Map();
+  for (const item of items) {
+    const value = key(item);
+    if (!value) continue;
+    const previous = result.get(value);
+    if (!previous || Number(item.priority || 0) > Number(previous.priority || 0)) {
+      result.set(value, item);
+    }
+  }
+  return Array.from(result.values());
+}
+
+function legacyContacts(company) {
+  const rows = [];
+  const directorySource = company.contact_source === 'directory'
+    || company.contact_source === 'business_directory_kz_2026';
+  for (const type of ['phone', 'mobile_phone', 'email', 'website', 'whatsapp', 'viber', 'telegram']) {
+    for (const contact of contactValues(type, company[type])) {
+      rows.push({
+        type,
+        value: contact.value,
+        normalized: contact.normalized,
+        sourceKey: directorySource ? 'business_directory_kz_2026' : (company.contact_source || 'legacy'),
+        sourceLabel: directorySource
+          ? 'Пользовательская выгрузка бизнес-справочника Казахстана'
+          : 'Ранее импортированные данные',
+        priority: directorySource ? 40 : 20,
+        verifiedAt: company.contact_updated_at || null,
+      });
+    }
+  }
+  if (company.work_hours) {
+    company.attributes = [{
+      type: 'work_hours',
+      value: company.work_hours,
+      sourceKey: directorySource ? 'business_directory_kz_2026' : (company.contact_source || 'legacy'),
+      sourceLabel: directorySource
+        ? 'Пользовательская выгрузка бизнес-справочника Казахстана'
+        : 'Ранее импортированные данные',
+      priority: directorySource ? 40 : 20,
+    }];
+  }
+  return rows;
+}
+
+function hydrateDetails(database, rawCompany) {
+  if (!rawCompany) return null;
+  const company = { ...rawCompany };
+  let contacts = legacyContacts(company);
+  const companyHasOfficialBin = /^\d{12}$/.test(String(company.bin || '').trim());
+  let addresses = company.address_ru ? [{
+    value: company.address_ru,
+    rawValue: company.address_ru,
+    regionSlug: company.region_slug,
+    city: null,
+    postalCode: null,
+    latitude: companyHasOfficialBin ? null : Number.parseFloat(company.lat) || null,
+    longitude: companyHasOfficialBin ? null : Number.parseFloat(company.lon) || null,
+    sourceKey: companyHasOfficialBin ? 'egov_gbd_ul' : (company.primary_source_key || 'legacy'),
+    sourceLabel: companyHasOfficialBin
+      ? 'Министерство юстиции РК — data.egov.kz'
+      : 'Бизнес-справочник Казахстана',
+    priority: companyHasOfficialBin ? 90 : 40,
+    primary: true,
+  }] : [];
+  let names = [
+    company.name_ru ? {
+      locale: 'ru', value: company.name_ru, normalized: company.normalized_name,
+      sourceKey: 'egov_gbd_ul', priority: 90,
+    } : null,
+    company.name_kk ? {
+      locale: 'kk', value: company.name_kk, normalized: company.normalized_name,
+      sourceKey: 'egov_gbd_ul', priority: 90,
+    } : null,
+  ].filter(Boolean);
+  for (const officialName of [company.name_ru, company.name_kk]) {
+    const latin = transliterateCompanyName(officialName);
+    if (latin) {
+      names.push({
+        locale: 'Latn',
+        value: latin,
+        normalized: latin,
+        sourceKey: 'deterministic_transliteration',
+        sourceLabel: 'Вариант названия латиницей',
+        priority: 10,
+      });
+    }
+  }
+  let categories = [];
+  let attributes = company.attributes || [];
+  if (!companyHasOfficialBin && company.activity_ru) {
+    const [category, ...subcategory] = String(company.activity_ru).split(/\s+—\s+/);
+    categories.push({
+      category,
+      subcategory: subcategory.join(' — '),
+      slug: '',
+      sourceKey: company.primary_source_key || 'business_directory_kz_2026',
+    });
+  }
+
+  if (hasTable(database, 'organization_details')) {
+    const compactRows = database.prepare(`
+      SELECT d.details_json AS detailsJson, d.source_key AS sourceKey,
+             os.display_name AS sourceLabel, os.trust_rank AS priority
+      FROM organization_details d
+      LEFT JOIN organization_sources os ON os.source_key = d.source_key
+      WHERE d.company_id = ?
+      ORDER BY os.trust_rank DESC, d.source_key
+    `).all(company.id);
+    for (const row of compactRows) {
+      const hydrated = hydrateCompactDetails(row.detailsJson, {
+        key: row.sourceKey,
+        label: row.sourceLabel,
+        priority: row.priority,
+      });
+      contacts = contacts.concat(hydrated.contacts);
+      addresses = addresses.concat(hydrated.addresses);
+      names = names.concat(hydrated.names);
+      categories = categories.concat(hydrated.categories);
+      attributes = attributes.concat(hydrated.attributes);
+    }
+  }
+  if (hasTable(database, 'organization_overrides')) {
+    const overrides = database.prepare(`
+      SELECT field_type AS type, field_key AS key, display_value AS value,
+             normalized_value AS normalized, verified_at AS verifiedAt
+      FROM organization_overrides WHERE company_id = ? AND active = 1
+      ORDER BY verified_at DESC
+    `).all(company.id);
+    for (const override of overrides) {
+      if (override.type === 'contact') {
+        contacts.unshift({
+          type: override.key,
+          value: override.value,
+          normalized: override.normalized,
+          sourceKey: 'verified_override',
+          sourceLabel: 'Подтверждённое исправление',
+          priority: 100,
+          primary: true,
+          verifiedAt: override.verifiedAt,
+        });
+      } else if (['name_ru', 'name_kk', 'address_ru', 'activity_ru', 'leader', 'status_ru'].includes(override.type)) {
+        company[override.type] = override.value;
+      }
+    }
+  }
+
+  company.contacts = dedupeDetails(contacts, item => `${item.type}:${item.normalized || item.value}`);
+  company.addresses = dedupeDetails(addresses, item => String(item.value || '').toLocaleLowerCase('ru-RU'));
+  company.names = dedupeDetails(names, item => `${item.locale}:${item.normalized || item.value}`);
+  company.categories = dedupeDetails(categories, item => `${item.category}:${item.subcategory}`);
+  company.attributes = dedupeDetails(attributes, item => `${item.type}:${item.value}`);
+  return company;
+}
+
 function findById(id) {
   const database = open();
   const numericId = Number.parseInt(id, 10);
   if (!database || !getMeta(database, 'completed_at')
       || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
-  return addSlug(database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId));
+  return addSlug(hydrateDetails(
+    database,
+    database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId)
+  ));
 }
 
 function regionStats() {
@@ -179,7 +378,7 @@ function byRegion(slug, page = 1, limit = 30) {
   const offset = (safePage - 1) * safeLimit;
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
-           activity_ru, leader, status_ru
+           activity_ru, leader, status_ru, primary_source_key
     FROM companies WHERE region_slug = ? ORDER BY id LIMIT ? OFFSET ?
   `).all(slug, safeLimit + 1, offset);
   return {
@@ -188,6 +387,18 @@ function byRegion(slug, page = 1, limit = 30) {
     hasMore: items.length > safeLimit,
     label,
   };
+}
+
+function redirectByOldSlug(oldSlug) {
+  const database = open();
+  if (!database || !hasTable(database, 'organization_redirects')) return null;
+  const row = database.prepare(`
+    SELECT c.id, c.name_ru, c.name_kk
+    FROM organization_redirects r
+    JOIN companies c ON c.id = r.company_id
+    WHERE r.old_slug = ?
+  `).get(String(oldSlug || ''));
+  return addSlug(row);
 }
 
 function sitemapChunkCount() {
@@ -213,10 +424,12 @@ module.exports = {
   DB_PATH,
   SITEMAP_LIMIT,
   available,
+  browse,
   byRegion,
   close,
   findById,
   quality,
+  redirectByOldSlug,
   regionStats,
   search,
   sitemapChunk,

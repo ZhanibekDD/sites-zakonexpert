@@ -5,189 +5,201 @@ function esc(value) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function formatDate(value) {
-  var raw = String(value == null ? '' : value).trim();
+  const raw = String(value == null ? '' : value).trim();
   if (!raw) return '';
-  var d = null;
-  var iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  var dmy = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
-  if (iso) d = new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])));
-  else if (dmy) d = new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1])));
-  if (d && !isNaN(d.getTime())) {
-    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const dmy = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+  const date = iso
+    ? new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])))
+    : (dmy ? new Date(Date.UTC(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]))) : null);
+  return date && !isNaN(date.getTime())
+    ? date.toLocaleDateString(locale.hreflang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    : raw;
+}
+function contactHref(contact) {
+  if (['phone', 'mobile_phone', 'fax'].includes(contact.type)) {
+    return 'tel:' + String(contact.normalized || contact.value).replace(/[^\d+]/g, '');
   }
-  return raw;
-}
-function mapSearchAddress(value) {
-  // Strip the leading KazPost alphanumeric code (e.g. "M28D3G3, ") — it isn't
-  // a place name and confuses map-provider search.
-  return String(value == null ? '' : value).replace(/^[A-ZА-Я]\d{2}[A-ZА-Я]\d[A-ZА-Я]\d\s*,?\s*/i, '').trim();
-}
-function registrationYear(value) {
-  var raw = String(value == null ? '' : value).trim();
-  var iso = raw.match(/^(\d{4})-/);
-  var dmy = raw.match(/(\d{4})$/);
-  var year = iso ? Number(iso[1]) : (dmy ? Number(dmy[1]) : null);
-  return year && year >= 1990 && year <= new Date().getFullYear() ? year : null;
+  if (contact.type === 'whatsapp') {
+    return 'https://wa.me/' + String(contact.normalized || contact.value).replace(/\D/g, '');
+  }
+  if (contact.type === 'email') return 'mailto:' + contact.value;
+  if ([
+    'website', 'telegram', 'vkontakte', 'odnoklassniki',
+    'youtube', 'rutube', 'yandex_zen',
+  ].includes(contact.type) && /^https?:\/\//i.test(contact.value)) return contact.value;
+  return null;
 }
 
-var name = company.name_ru || company.name_kk;
-var quality = (typeof companyQuality !== 'undefined' && companyQuality)
-  ? companyQuality
-  : { score: 0, minScore: 7, indexable: false };
-var canonical = 'https://zakonexpertt.kz/company/' + company.slug;
-var pageTitle = name + (company.bin ? ' — БИН ' + company.bin : '') + ' | ZakonExpert';
-var pageDesc = name + ': регистрационные данные' + (company.bin ? ', БИН ' + company.bin : '') + (company.address_ru ? ', адрес ' + company.address_ru : '') + '. Источник data.egov.kz.';
-var schema = {
-  '@context': 'https://schema.org', '@type': 'Organization', name: name, url: canonical,
-  identifier: company.bin || String(company.id),
+const name = locale.code === 'kk'
+  ? (company.name_kk || company.name_ru)
+  : (company.name_ru || company.name_kk);
+const official = /^\d{12}$/.test(String(company.bin || '').trim());
+const quality = companyQuality || { score: 0, minScore: 7, indexable: false };
+const canonical = 'https://zakonexpertt.kz/company/' + company.slug;
+const pageTitle = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '');
+const pageDesc = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '')
+  + (company.address_ru ? '. ' + copy.legalAddress + ': ' + company.address_ru : '')
+  + '. ' + (official ? copy.officialNotice : copy.directoryNotice);
+
+const aliases = (company.names || [])
+  .map(item => item.value)
+  .concat([company.name_ru, company.name_kk])
+  .filter(function(value, index, values) {
+    return value && value !== name && values.indexOf(value) === index;
+  });
+const addresses = company.addresses || [];
+const additionalAddresses = addresses.filter(function(address) {
+  return address.value && address.value !== company.address_ru;
+});
+const contacts = company.contacts || [];
+const publicAttributes = company.attributes || [];
+
+const schemaAddresses = addresses.slice(0, 10).map(function(address) {
+  return {
+    '@type': 'PostalAddress',
+    streetAddress: address.value,
+    addressLocality: address.city || undefined,
+    postalCode: address.postalCode || undefined,
+    addressRegion: address.regionSlug || undefined,
+    addressCountry: 'KZ',
+  };
+});
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name,
+  alternateName: aliases.length ? aliases.slice(0, 20) : undefined,
+  mainEntityOfPage: canonical,
+  identifier: official ? {
+    '@type': 'PropertyValue',
+    propertyID: 'KZ BIN',
+    value: company.bin,
+  } : undefined,
   foundingDate: company.registration_date || undefined,
-  address: company.address_ru ? { '@type': 'PostalAddress', streetAddress: company.address_ru, addressCountry: 'KZ' } : undefined,
+  address: schemaAddresses.length ? schemaAddresses : undefined,
+  telephone: contacts
+    .filter(contact => ['phone', 'mobile_phone'].includes(contact.type))
+    .map(contact => contact.normalized || contact.value)
+    .slice(0, 10),
+  email: contacts.filter(contact => contact.type === 'email').map(contact => contact.value).slice(0, 10),
+  sameAs: contacts
+    .filter(contact => [
+      'website', 'telegram', 'vkontakte', 'odnoklassniki',
+      'youtube', 'rutube', 'yandex_zen',
+    ].includes(contact.type) && /^https?:\/\//i.test(contact.value))
+    .map(contact => contact.value)
+    .slice(0, 10),
 };
 
-var statusRaw = String(company.status_ru || '');
-var statusState = /ликвид/i.test(statusRaw) ? 'liquidated' : (statusRaw ? 'active' : 'unknown');
-var statusColors = {
-  active: { fg: '#166534', bg: '#f0fdf4', border: '#bbf7d0', icon: 'bi-check-circle-fill' },
-  liquidated: { fg: '#991b1b', bg: '#fef2f2', border: '#fecaca', icon: 'bi-x-circle-fill' },
-  unknown: { fg: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', icon: 'bi-question-circle-fill' },
-};
-var statusColor = statusColors[statusState];
-var statusNote = statusState === 'active'
-  ? 'Компания числится действующей в официальном реестре.'
-  : (statusState === 'liquidated'
-    ? 'Компания числится ликвидированной в официальном реестре.'
-    : 'Статус не опубликован в официальном реестре.');
+const infoRows = [
+  ['bi-building', copy.bin, company.bin],
+  ['bi-calendar3', copy.registrationDate, formatDate(company.registration_date)],
+  ['bi-briefcase', copy.activity, company.activity_ru],
+  ['bi-person-badge', copy.leader, company.leader],
+  ['bi-geo-alt', copy.legalAddress, company.address_ru],
+  ['bi-translate', copy.kazakhName, company.name_kk && company.name_kk !== name ? company.name_kk : null],
+  ['bi-map', copy.region, regionName],
+].filter(row => row[2]);
 
-var regYear = registrationYear(company.registration_date);
-var yearsOnMarket = regYear ? (new Date().getFullYear() - regYear) : null;
-
-var infoRows = [
-  ['bi-building', 'БИН', company.bin],
-  ['bi-calendar3', 'Дата регистрации', formatDate(company.registration_date)],
-  ['bi-briefcase', 'Основной вид деятельности', company.activity_ru],
-  ['bi-person-badge', 'Руководитель', company.leader],
-  ['bi-geo-alt', 'Юридический адрес', company.address_ru],
-  ['bi-translate', 'Наименование на казахском языке', company.name_kk],
-  ['bi-map', 'Регион', typeof regionName !== 'undefined' ? regionName : null, typeof regionName !== 'undefined' && regionName ? '/companies/region/' + company.region_slug : null],
-].filter(function(row) { return row[2]; });
-
-var rowsHtml = infoRows.map(function(row) {
-  var value = row[3] ? '<a href="' + esc(row[3]) + '" style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(row[2]) + '</a>' : esc(row[2]);
-  return '<div style="display:grid;grid-template-columns:26px minmax(170px,240px) 1fr;gap:12px;align-items:start;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
-    + '<i class="bi ' + row[0] + '" style="color:#94a3b8;font-size:1.05rem;margin-top:1px;" aria-hidden="true"></i>'
-    + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[1]) + '</div>'
-    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + value + '</div></div>';
+const infoHtml = infoRows.map(function(row) {
+  return '<div style="display:grid;grid-template-columns:26px minmax(150px,230px) 1fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid #e2e8f0;">'
+    + '<i class="bi ' + row[0] + '" style="color:#94a3b8;" aria-hidden="true"></i>'
+    + '<div style="color:#64748b;font-size:.86rem;">' + esc(row[1]) + '</div>'
+    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[2]) + '</div></div>';
 }).join('');
 
-var contactRows = [
-  ['bi-telephone', 'Телефон', company.phone, company.phone ? 'tel:' + company.phone.replace(/[^\d+]/g, '').split(',')[0] : null],
-  ['bi-phone', 'Мобильный телефон', company.mobile_phone, company.mobile_phone ? 'tel:' + company.mobile_phone.replace(/[^\d+]/g, '').split(',')[0] : null],
-  ['bi-whatsapp', 'WhatsApp', company.whatsapp, company.whatsapp ? 'https://wa.me/' + company.whatsapp.replace(/\D/g, '') : null],
-  ['bi-telegram', 'Telegram', company.telegram, null],
-  ['bi-envelope', 'Email', company.email, company.email ? 'mailto:' + company.email.split(',')[0].trim() : null],
-  ['bi-globe', 'Сайт', company.website, (company.website || '').split(',')[0].trim() || null],
-  ['bi-clock', 'Часы работы', company.work_hours, null],
-  ['bi-star', 'Рейтинг', company.rating ? company.rating + (company.review_count ? ' (' + company.review_count + ' отзывов)' : '') : null, null],
-].filter(function(row) { return row[2]; });
-
-var contactHtml = '';
-if (contactRows.length) {
-  var contactRowsHtml = contactRows.map(function(row) {
-    var value = row[3] ? '<a href="' + esc(row[3]) + '" target="_blank" rel="noopener" style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(row[2]) + '</a>' : esc(row[2]);
-    return '<div style="display:grid;grid-template-columns:26px minmax(170px,240px) 1fr;gap:12px;align-items:start;padding:15px 0;border-bottom:1px solid #e2e8f0;">'
-      + '<i class="bi ' + row[0] + '" style="color:#94a3b8;font-size:1.05rem;margin-top:1px;" aria-hidden="true"></i>'
-      + '<div style="color:#64748b;font-size:.88rem;">' + esc(row[1]) + '</div>'
-      + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + value + '</div></div>';
-  }).join('');
-  contactHtml = '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);margin-top:18px;">'
-    + '<div style="padding:15px 0 6px;font-weight:750;color:#0d1f3c;font-size:.92rem;">Контакты</div>'
-    + contactRowsHtml + '</div>'
-    + '<div style="margin-top:10px;color:#94a3b8;font-size:.78rem;line-height:1.5;">Контакты — из открытых бизнес-справочников, не из официального реестра Минюста РК. Обновлено: ' + esc(formatDate(company.contact_updated_at) || company.contact_updated_at || '—') + '. Если контакт устарел — сообщите об этом ниже.</div>';
-}
-
-var mapQuery = company.address_ru ? encodeURIComponent(mapSearchAddress(company.address_ru) + ', Казахстан') : '';
-var mapHtml = company.address_ru
-  ? '<div style="overflow:hidden;margin-top:16px;border:1px solid #dbe4f0;border-radius:11px;background:#e8eef5;">'
-    + '<iframe src="https://maps.google.com/maps?q=' + mapQuery + '&output=embed&hl=ru&z=15" loading="lazy" title="Карта расположения ' + esc(name) + '" style="width:100%;height:230px;display:block;border:0;" allowfullscreen></iframe>'
-    + '</div>'
-    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">'
-    + '<a href="https://2gis.kz/search/' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-geo-alt-fill"></i> Открыть в 2ГИС</a>'
-    + '<a href="https://maps.google.com/?q=' + mapQuery + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid #dbe4f0;border-radius:9px;color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:650;"><i class="bi bi-map"></i> Google Maps</a>'
-    + '</div>'
+const contactHtml = contacts.length || publicAttributes.length
+  ? '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 8px;">' + esc(copy.contacts) + '</h2>'
+    + contacts.map(function(contact) {
+      const href = contactHref(contact);
+      const value = href
+        ? '<a href="' + esc(href) + '"' + (/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '') + ' style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(contact.value) + '</a>'
+        : esc(contact.value);
+      return '<div style="display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7;">'
+        + '<div style="color:#64748b;font-size:.84rem;">' + esc(copy[contact.type] || contact.type) + '</div>'
+        + '<div style="overflow-wrap:anywhere;">' + value
+        + (contact.sourceLabel ? '<div style="font-size:.7rem;color:#94a3b8;margin-top:3px;">' + esc(copy.source) + ': ' + esc(contact.sourceLabel) + '</div>' : '')
+        + '</div></div>';
+    }).join('')
+    + publicAttributes.map(function(attribute) {
+      return '<div style="display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7;">'
+        + '<div style="color:#64748b;font-size:.84rem;">' + esc(copy[attribute.type] || attribute.type) + '</div>'
+        + '<div>' + esc(attribute.value) + '</div></div>';
+    }).join('')
+    + '</section>'
   : '';
 
-var statCards = [];
-if (yearsOnMarket !== null) {
-  statCards.push(['bi-graph-up-arrow', yearsOnMarket + (yearsOnMarket % 10 === 1 && yearsOnMarket % 100 !== 11 ? ' год' : (yearsOnMarket % 10 >= 2 && yearsOnMarket % 10 <= 4 && (yearsOnMarket % 100 < 10 || yearsOnMarket % 100 >= 20) ? ' года' : ' лет')), 'На рынке', 'С ' + regYear + ' года']);
-}
-statCards.push(['bi-patch-check-fill', 'Официальные данные', 'Источник', 'Реестр Минюста РК']);
-if (sourceUpdatedAt) {
-  statCards.push(['bi-clock-history', 'Актуальность', 'Обновлено', formatDate(sourceUpdatedAt) || sourceUpdatedAt]);
-}
-var statCardsHtml = statCards.map(function(card) {
-  return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;display:flex;gap:12px;align-items:flex-start;">'
-    + '<i class="bi ' + card[0] + '" style="color:#1a56db;font-size:1.3rem;margin-top:2px;" aria-hidden="true"></i>'
-    + '<div><div style="font-weight:750;color:#0d1f3c;font-size:.95rem;">' + esc(card[1]) + '</div>'
-    + '<div style="color:#94a3b8;font-size:.74rem;margin-top:2px;">' + esc(card[2]) + '</div>'
-    + '<div style="color:#475569;font-size:.82rem;margin-top:1px;">' + esc(card[3]) + '</div></div></div>';
-}).join('');
+const aliasesHtml = aliases.length
+  ? '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;">' + esc(copy.aliases) + '</h2><ul style="margin:10px 0 0;padding-left:20px;color:#475569;">'
+    + aliases.slice(0, 20).map(alias => '<li>' + esc(alias) + '</li>').join('') + '</ul></section>'
+  : '';
 
-var shareUrl = encodeURIComponent(canonical);
-var shareText = encodeURIComponent(name + ' — БИН ' + (company.bin || '') + ' | ZakonExpert');
-var reportText = encodeURIComponent('Здравствуйте! Хочу сообщить об ошибке в данных компании "' + name + '" (БИН ' + (company.bin || '—') + ', ' + canonical + ').');
-var consultText = encodeURIComponent('Здравствуйте! Нужна консультация по компании ' + name + '.');
+const categoriesHtml = company.categories && company.categories.length
+  ? '<section style="margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;">' + esc(copy.categories) + '</h2><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;">'
+    + company.categories.slice(0, 30).map(function(category) {
+      return '<span style="background:#eef5ff;color:#164a8a;border-radius:999px;padding:7px 11px;font-size:.78rem;">'
+        + esc(category.category + (category.subcategory ? ' — ' + category.subcategory : '')) + '</span>';
+    }).join('') + '</div></section>'
+  : '';
 
-var body = '<div class="npage-wrap"><div class="landing-container">'
-  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/companies">Компании</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
-  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + (company.bin ? 'Реестр юридических лиц' : 'Из бизнес-справочников') + '</span>'
-  + (company.status_ru ? '<span class="npage-badge npage-badge-active">' + esc(company.status_ru) + '</span>' : '') + '</div>'
+const addressesHtml = additionalAddresses.length
+  ? '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;">' + esc(copy.additionalAddresses) + '</h2>'
+    + additionalAddresses.slice(0, 20).map(function(address) {
+      return '<div style="padding:11px 0;border-bottom:1px solid #edf2f7;color:#475569;"><i class="bi bi-geo-alt" aria-hidden="true"></i> ' + esc(address.value)
+        + (address.sourceLabel ? '<div style="font-size:.7rem;color:#94a3b8;margin:3px 0 0 22px;">' + esc(copy.source) + ': ' + esc(address.sourceLabel) + '</div>' : '') + '</div>';
+    }).join('') + '</section>'
+  : '';
+
+const statusRaw = official ? String(company.status_ru || '') : '';
+const statusState = /ликвид/i.test(statusRaw) ? 'liquidated' : (statusRaw ? 'active' : 'unknown');
+const statusStyle = statusState === 'active'
+  ? { bg: '#f0fdf4', border: '#bbf7d0', fg: '#166534', icon: 'bi-check-circle-fill' }
+  : (statusState === 'liquidated'
+    ? { bg: '#fef2f2', border: '#fecaca', fg: '#991b1b', icon: 'bi-x-circle-fill' }
+    : { bg: '#f1f5f9', border: '#e2e8f0', fg: '#64748b', icon: 'bi-question-circle-fill' });
+
+const reportText = encodeURIComponent(copy.report + ': "' + name + '" (' + copy.bin + ' ' + (company.bin || '—') + ', ' + canonical + ').');
+const consultationText = encodeURIComponent(copy.consultation + ': ' + name + '.');
+const sourceNotice = official ? copy.officialNotice : copy.directoryNotice;
+const languageLinks = languages.map(function(language) {
+  return { ...language, href: language.companyHref };
+});
+
+const body = '<div class="npage-wrap"><div class="landing-container">'
+  + '<nav class="npage-breadcrumb"><a href="/">' + esc(copy.home) + '</a><span class="npage-bc-sep">/</span><a href="' + companyCatalogPath + '">' + esc(copy.companies) + '</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(official ? copy.officialBadge : copy.directoryBadge) + '</span></div>'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
-  + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">БИН ' + esc(company.bin) + '</p>' : '') + '</section>'
-
+  + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
   + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
-  + '<div>'
-  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;box-shadow:0 8px 28px rgba(13,31,60,.06);">' + rowsHtml + '</div>'
-  + contactHtml
-  + mapHtml
-  + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:18px;">' + statCardsHtml + '</div>'
-  + '<div style="margin-top:18px;color:#64748b;font-size:.82rem;line-height:1.55;">' + (company.bin
-    ? 'Источник: официальный набор «Регистрационные данные юридических лиц, филиалов, представительств Казахстана» Министерства юстиции РК на data.egov.kz. Дата загрузки: ' + esc(formatDate(sourceUpdatedAt) || sourceUpdatedAt || '—') + '. Часть сведений (контакты, учредители, филиалы) реестр не публикует — мы не подставляем непроверенные данные.'
-    : 'Эта организация не найдена в официальном реестре Минюста РК (data.egov.kz) — все сведения на этой странице из открытых бизнес-справочников, БИН не подтверждён.'
-  ) + '</div>'
-  + '</div>'
-
+  + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;">' + infoHtml + '</div>'
+  + contactHtml + addressesHtml + aliasesHtml + categoriesHtml
+  + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
+  + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'
   + '<aside style="display:grid;gap:14px;">'
-  + '<div style="background:' + statusColor.bg + ';border:1px solid ' + statusColor.border + ';border-radius:14px;padding:18px;">'
-  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:10px;">Статус компании</div>'
-  + '<div style="display:flex;align-items:center;gap:9px;color:' + statusColor.fg + ';font-weight:750;font-size:.92rem;"><i class="bi ' + statusColor.icon + '"></i>' + esc(statusRaw || 'Не опубликован') + '</div>'
-  + '<p style="margin:8px 0 0;color:#475569;font-size:.8rem;line-height:1.5;">' + esc(statusNote) + '</p>'
-  + '</div>'
-
-  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;">'
-  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:12px;">Быстрые действия</div>'
-  + '<div style="display:grid;gap:9px;">'
-  + '<a href="/companies" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-search" style="color:#1a56db;"></i> Проверить другую компанию</a>'
-  + '<a href="https://wa.me/77479957635?text=' + consultText + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> Получить консультацию юриста</a>'
-  + '<a href="https://wa.me/77479957635?text=' + reportText + '" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:9px;color:#0d1f3c;text-decoration:none;font-size:.85rem;font-weight:600;"><i class="bi bi-flag" style="color:#1a56db;"></i> Сообщить об ошибке в данных</a>'
-  + '</div></div>'
-
-  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;">'
-  + '<div style="font-weight:750;color:#0d1f3c;font-size:.95rem;margin-bottom:12px;">Поделиться</div>'
-  + '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
-  + '<a href="https://www.facebook.com/sharer/sharer.php?u=' + shareUrl + '" target="_blank" rel="noopener" aria-label="Поделиться в Facebook" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#1a56db;text-decoration:none;"><i class="bi bi-facebook"></i></a>'
-  + '<a href="https://t.me/share/url?url=' + shareUrl + '&text=' + shareText + '" target="_blank" rel="noopener" aria-label="Поделиться в Telegram" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#1a56db;text-decoration:none;"><i class="bi bi-telegram"></i></a>'
-  + '<a href="https://wa.me/?text=' + shareText + '%20' + shareUrl + '" target="_blank" rel="noopener" aria-label="Поделиться в WhatsApp" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#25a862;text-decoration:none;"><i class="bi bi-whatsapp"></i></a>'
-  + '<button type="button" class="company-copy-link" data-url="' + esc(canonical) + '" aria-label="Скопировать ссылку" style="width:38px;height:38px;border-radius:9px;background:#f1f5f9;border:0;display:flex;align-items:center;justify-content:center;color:#475569;cursor:pointer;"><i class="bi bi-link-45deg"></i></button>'
-  + '</div></div>'
-  + '</aside>'
-  + '</div>'
-
-  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
-  + '<h2 class="npage-cta-title">Эта организация требует оплату?</h2><p class="npage-cta-sub">Проверим законность требований, документы и основания взыскания.</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77479957635?text=' + consultText + '" target="_blank" rel="noopener">Получить консультацию</a></div>'
-
-  + '<script>document.addEventListener("click",function(e){var b=e.target.closest(".company-copy-link");if(!b)return;navigator.clipboard.writeText(b.dataset.url).then(function(){var i=b.querySelector("i");i.className="bi bi-check-lg";setTimeout(function(){i.className="bi bi-link-45deg";},1500);});});</script>'
-
+  + '<div style="background:' + statusStyle.bg + ';border:1px solid ' + statusStyle.border + ';border-radius:14px;padding:18px;"><h2 style="font-size:.96rem;color:#0d1f3c;">' + esc(copy.status) + '</h2>'
+  + '<div style="display:flex;gap:9px;color:' + statusStyle.fg + ';font-weight:750;"><i class="bi ' + statusStyle.icon + '"></i>' + esc(statusRaw || copy.notPublished) + '</div>'
+  + '<p style="margin:8px 0 0;color:#475569;font-size:.79rem;line-height:1.5;">' + esc(official ? copy.officialStatusNote : copy.directoryStatusNote) + '</p></div>'
+  + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;display:grid;gap:10px;">'
+  + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a>'
+  + '<a href="https://wa.me/77479957635?text=' + consultationText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> ' + esc(copy.consultation) + '</a>'
+  + '<a href="https://wa.me/77479957635?text=' + reportText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-flag" style="color:#1a56db;"></i> ' + esc(copy.report) + '</a></div>'
+  + '</aside></div>'
+  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
+  + '<h2 class="npage-cta-title">' + esc(copy.itemHelpTitle) + '</h2><p class="npage-cta-sub">' + esc(copy.itemHelpText) + '</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77479957635?text=' + consultationText + '" target="_blank" rel="noopener">' + esc(copy.consultation) + '</a></div>'
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !name || !quality.indexable, body }) %>
+<%- include('./layout', {
+  title: pageTitle,
+  description: pageDesc,
+  canonical,
+  noindex: localized || !name || !quality.indexable,
+  schema,
+  alternates: [],
+  locale,
+  copy,
+  languages: languageLinks,
+  companyCatalogPath,
+  body
+}) %>

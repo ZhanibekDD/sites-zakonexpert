@@ -4,25 +4,46 @@ function esc(value) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function number(value) { return new Intl.NumberFormat('ru-RU').format(value || 0); }
+function number(value) { return new Intl.NumberFormat(locale.hreflang).format(value || 0); }
 
-const pageTitle = 'Компании Казахстана — поиск по БИН и названию | ZakonExpert';
-const pageDesc = 'Официальные регистрационные данные юридических лиц, филиалов и представительств Казахстана. Поиск компании по БИН или названию.';
-const canonical = 'https://zakonexpertt.kz/companies';
+const currentPage = results.page || 1;
+const canonicalPath = companyCatalogPath + (!query && currentPage > 1 ? '?page=' + currentPage : '');
+const canonical = 'https://zakonexpertt.kz' + canonicalPath;
+const pageTitle = copy.title;
+const pageDesc = copy.description;
 const schema = {
-  '@context': 'https://schema.org', '@type': 'CollectionPage',
-  name: 'Компании Казахстана', url: canonical, description: pageDesc,
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: copy.h1,
+  url: canonical,
+  description: pageDesc,
+  inLanguage: locale.hreflang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'ZakonExpert',
+    url: 'https://zakonexpertt.kz/',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://zakonexpertt.kz' + companyCatalogPath + '?q={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  },
 };
 
 let resultsHtml = '';
 if (query && results.items.length === 0) {
-  resultsHtml = '<div class="npage-card" style="padding:24px;text-align:center;color:#64748b;">По запросу <strong>' + esc(query) + '</strong> ничего не найдено.</div>';
+  resultsHtml = '<div class="npage-card" style="padding:24px;text-align:center;color:#64748b;">'
+    + esc(copy.noResults) + ': <strong>' + esc(query) + '</strong>.</div>';
 } else if (results.items.length) {
   resultsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;">'
     + results.items.map(function(company) {
-      return '<a href="/company/' + esc(company.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
+      const official = Boolean(company.bin);
+      return '<a href="' + companyItemPrefix + esc(company.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
+        + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">'
         + '<div style="font-weight:750;font-size:1rem;line-height:1.35;">' + esc(company.name_ru || company.name_kk) + '</div>'
-        + (company.bin ? '<div style="margin-top:8px;color:#1a56db;font-size:.88rem;">БИН ' + esc(company.bin) + '</div>' : '')
+        + '<span style="flex:0 0 auto;font-size:.68rem;border-radius:999px;padding:4px 8px;background:' + (official ? '#e8f7ee' : '#f1f5f9') + ';color:' + (official ? '#166534' : '#475569') + ';">'
+        + esc(official ? copy.officialBadge : copy.directoryBadge) + '</span></div>'
+        + (company.bin ? '<div style="margin-top:8px;color:#1a56db;font-size:.88rem;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</div>' : '')
         + (company.status_ru ? '<div style="margin-top:7px;color:#64748b;font-size:.82rem;">' + esc(company.status_ru) + '</div>' : '')
         + (company.address_ru ? '<div style="margin-top:7px;color:#475569;font-size:.84rem;line-height:1.45;">📍 ' + esc(company.address_ru) + '</div>' : '')
         + '</a>';
@@ -30,40 +51,56 @@ if (query && results.items.length === 0) {
 }
 
 let paginationHtml = '';
-if (query && (results.page > 1 || results.hasMore)) {
-  paginationHtml = '<div style="display:flex;gap:10px;justify-content:center;margin-top:22px;">'
-    + (results.page > 1 ? '<a class="btn btn-outline-primary" href="/companies?q=' + encodeURIComponent(query) + '&page=' + (results.page - 1) + '">← Назад</a>' : '')
-    + (results.hasMore ? '<a class="btn btn-primary" href="/companies?q=' + encodeURIComponent(query) + '&page=' + (results.page + 1) + '">Дальше →</a>' : '')
-    + '</div>';
+if (results.page > 1 || results.hasMore) {
+  const queryPart = query ? '?q=' + encodeURIComponent(query) + '&page=' : '?page=';
+  paginationHtml = '<nav aria-label="Pagination" style="display:flex;gap:10px;justify-content:center;margin-top:22px;">'
+    + (results.page > 1 ? '<a class="btn btn-outline-primary" href="' + companyCatalogPath + queryPart + (results.page - 1) + '">' + esc(copy.previous) + '</a>' : '')
+    + (results.hasMore ? '<a class="btn btn-primary" href="' + companyCatalogPath + queryPart + (results.page + 1) + '">' + esc(copy.next) + '</a>' : '')
+    + '</nav>';
 }
 
-const catalogLinks = [
-  ['/banks', '🏦', 'Банки'], ['/mfo', '💳', 'МФО'], ['/collectors', '⚖️', 'Коллекторы'],
-  ['/lombards', '🏪', 'Ломбарды'], ['/insurance', '🛡️', 'Страховые компании'],
-];
-const linksHtml = catalogLinks.map(function(item) {
-  return '<a href="' + item[0] + '" style="background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:15px;text-decoration:none;color:#0d1f3c;font-weight:650;">'
-    + '<span style="font-size:1.25rem;margin-right:8px;">' + item[1] + '</span>' + item[2] + '</a>';
-}).join('');
+const statsHtml = stats.available
+  ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px;">'
+    + [
+      [stats.count, copy.totalCount],
+      [stats.officialCount, copy.officialCount],
+      [stats.directoryOnlyCount, copy.directoryCount],
+      [stats.withContactsCount, copy.contactsCount],
+    ].map(function(stat) {
+      return '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:13px 15px;">'
+        + '<strong style="display:block;color:#0d1f3c;font-size:1.12rem;">' + number(stat[0]) + '</strong>'
+        + '<span style="color:#64748b;font-size:.78rem;">' + esc(stat[1]) + '</span></div>';
+    }).join('') + '</div>'
+  : '';
 
-const countText = stats.available ? number(stats.count) + ' организаций' : 'База подготавливается';
 const body = '<div class="npage-wrap"><div class="landing-container">'
-  + '<nav class="npage-breadcrumb"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Компании Казахстана</span></nav>'
-  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">Официальные открытые данные</span></div>'
-  + '<h1 class="npage-h1">Компании Казахстана</h1>'
-  + '<p style="color:#475569;max-width:760px;">Поиск юридических лиц, филиалов и представительств по названию или БИН. Источник — Министерство юстиции РК через data.egov.kz.</p>'
-  + '<div style="margin-top:16px;color:#0d1f3c;font-weight:700;">' + countText + '</div></section>'
-  + '<form action="/companies" method="get" style="display:flex;gap:10px;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin:22px 0;box-shadow:0 8px 24px rgba(13,31,60,.06);">'
-  + '<label class="visually-hidden" for="company-q">Название или БИН</label>'
-  + '<input id="company-q" name="q" value="' + esc(query) + '" minlength="2" placeholder="Введите название или БИН компании" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:1rem;">'
-  + '<button type="submit" class="btn btn-primary" style="padding:0 24px;">Найти</button></form>'
-  + (!query ? '<a href="/companies/regions" style="display:inline-flex;align-items:center;gap:8px;color:#1a56db;font-weight:650;font-size:.88rem;text-decoration:none;margin-bottom:18px;">🗺️ Смотреть компании по регионам</a>' : '')
-  + resultsHtml + paginationHtml
-  + '<section style="margin-top:34px;"><h2 style="color:#0d1f3c;font-size:1.35rem;">Отдельные финансовые реестры</h2>'
-  + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:14px;">' + linksHtml + '</div></section>'
-  + '<div class="npage-cta" style="margin-top:34px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
-  + '<h2 class="npage-cta-title">Компания требует оплату или арестовала счёт?</h2><p class="npage-cta-sub">Проверим основания взыскания и поможем защитить ваши права.</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77479957635?text=Здравствуйте!+Нужна+проверка+компании+и+юридическая+помощь." target="_blank" rel="noopener">Написать в WhatsApp</a></div>'
+  + '<nav class="npage-breadcrumb"><a href="/">' + esc(copy.home) + '</a><span class="npage-bc-sep">/</span><span>' + esc(copy.companies) + '</span></nav>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(copy.eyebrow) + '</span></div>'
+  + '<h1 class="npage-h1">' + esc(copy.h1) + '</h1>'
+  + '<p style="color:#475569;max-width:850px;">' + esc(copy.intro) + '</p>' + statsHtml + '</section>'
+  + '<form action="' + companyCatalogPath + '" method="get" style="display:flex;gap:10px;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin:22px 0;box-shadow:0 8px 24px rgba(13,31,60,.06);">'
+  + '<label class="visually-hidden" for="company-q">' + esc(copy.searchLabel) + '</label>'
+  + '<input id="company-q" name="q" value="' + esc(query) + '" minlength="2" autocomplete="off" placeholder="' + esc(copy.placeholder) + '" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:1rem;">'
+  + '<button type="submit" class="btn btn-primary" style="padding:0 24px;">' + esc(copy.find) + '</button></form>'
+  + (!query && locale.code === 'ru' ? '<a href="/companies/regions" style="display:inline-flex;align-items:center;gap:8px;color:#1a56db;font-weight:650;font-size:.88rem;text-decoration:none;margin-bottom:18px;">🗺️ ' + esc(copy.regions) + '</a>' : '')
+  + '<section aria-labelledby="company-results-title"><h2 id="company-results-title" style="font-size:1.28rem;color:#0d1f3c;margin:6px 0 16px;">' + esc(query ? copy.find : copy.browse) + '</h2>'
+  + resultsHtml + paginationHtml + '</section>'
+  + '<div style="margin-top:28px;padding:16px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.84rem;line-height:1.55;"><i class="bi bi-shield-check" aria-hidden="true"></i> ' + esc(copy.sourcePolicy) + '</div>'
+  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
+  + '<h2 class="npage-cta-title">' + esc(copy.helpTitle) + '</h2><p class="npage-cta-sub">' + esc(copy.helpText) + '</p></div>'
+  + '<a class="npage-wa-btn" href="https://wa.me/77479957635" target="_blank" rel="noopener">' + esc(copy.whatsapp) + '</a></div>'
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: !stats.available || Boolean(query), body }) %>
+<%- include('./layout', {
+  title: pageTitle,
+  description: pageDesc,
+  canonical,
+  noindex: Boolean(query) || currentPage > 1 || !stats.available,
+  schema,
+  alternates: (!query && currentPage === 1) ? alternates : [],
+  locale,
+  copy,
+  languages,
+  companyCatalogPath,
+  body
+}) %>

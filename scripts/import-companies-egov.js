@@ -4,10 +4,16 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { DatabaseSync } = require('node:sqlite');
-const { createSchema, rebuildSearch } = require('../modules/companies-schema');
+const {
+  backfillDerivedCompanyFields,
+  createSchema,
+  rebuildSearch,
+} = require('../modules/companies-schema');
 const { evaluateCompany, minScore, QUALITY_VERSION } = require('../modules/company-quality');
 const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
+const { normalizeCompanyName } = require('../modules/company-name-normalize');
+const { buildSearchAliases } = require('../modules/company-transliterate');
 
 const ROOT = path.join(__dirname, '..');
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
@@ -155,15 +161,19 @@ function insertRows(db, rows, importedAt) {
     INSERT INTO companies(
       id, bin, name_ru, name_kk, registration_date, address_ru,
       activity_ru, leader, status_ru, imported_at, region_slug,
-      quality_score, is_indexable
-    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      quality_score, is_indexable, normalized_name, search_aliases,
+      contact_search, primary_source_key
+    ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       bin=excluded.bin, name_ru=excluded.name_ru, name_kk=excluded.name_kk,
       registration_date=excluded.registration_date, address_ru=excluded.address_ru,
       activity_ru=excluded.activity_ru, leader=excluded.leader,
       status_ru=excluded.status_ru, imported_at=excluded.imported_at,
       region_slug=excluded.region_slug, quality_score=excluded.quality_score,
-      is_indexable=excluded.is_indexable
+      is_indexable=excluded.is_indexable,
+      normalized_name=excluded.normalized_name,
+      search_aliases=excluded.search_aliases,
+      primary_source_key='egov_gbd_ul'
   `);
 
   let inserted = 0;
@@ -178,7 +188,11 @@ function insertRows(db, rows, importedAt) {
         company.id, company.bin, company.nameRu, company.nameKk,
         company.registrationDate, company.addressRu, company.activityRu,
         company.leader, company.statusRu, importedAt, withRegionSlug.regionSlug,
-        quality.score, quality.indexable ? 1 : 0
+        quality.score, quality.indexable ? 1 : 0,
+        normalizeCompanyName(company.nameRu || company.nameKk),
+        buildSearchAliases(company.nameRu, company.nameKk),
+        '',
+        'egov_gbd_ul'
       );
       inserted += 1;
     }
@@ -212,6 +226,14 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
 
   const database = new DatabaseSync(FINAL_DB);
   createSchema(database);
+  backfillDerivedCompanyFields(database, {
+    batchSize: 5000,
+    onProgress: progress => {
+      if (progress.updated % 50000 === 0) {
+        console.log(`[Companies] Prepared ${progress.updated} existing organization match keys`);
+      }
+    },
+  });
   const apiKey = clean(process.env.EGOV_API_KEY);
   const publicClient = apiKey ? null : await withRetry(createPublicClient, 'dataset session');
   const startPage = Number.parseInt(getMeta(database, 'next_page', '1'), 10) || 1;
@@ -271,12 +293,47 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
       database.close();
       throw new Error(`Completeness check failed: ${stored} records (minimum ${MIN_FULL_RECORDS})`);
     }
-    database.prepare('DELETE FROM companies WHERE imported_at != ?').run(importedAt);
+    database.prepare(`
+      DELETE FROM companies
+      WHERE imported_at != ?
+        AND COALESCE(NULLIF(primary_source_key, ''), 'egov_gbd_ul') = 'egov_gbd_ul'
+        AND NOT EXISTS (
+          SELECT 1 FROM organization_source_links sl WHERE sl.company_id = companies.id
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM organization_overrides ov
+          WHERE ov.company_id = companies.id AND ov.active = 1
+        )
+    `).run(importedAt);
     console.log('[Companies] Building full-text search index...');
     rebuildSearch(database);
     setMeta(database, 'completed_at', new Date().toISOString());
     setMeta(database, 'source_updated_at', new Date().toISOString());
-    setMeta(database, 'record_count', stored);
+    const totalStored = Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+    const officialCount = Number(database.prepare(`
+      SELECT COUNT(*) AS count FROM companies
+      WHERE length(trim(COALESCE(bin, ''))) = 12
+        AND trim(bin) NOT GLOB '*[^0-9]*'
+    `).get().count || 0);
+    const directoryOnlyCount = Number(database.prepare(`
+      SELECT COUNT(*) AS count FROM companies
+      WHERE primary_source_key = 'business_directory_kz_2026'
+        AND (bin IS NULL OR bin = '')
+    `).get().count || 0);
+    const withContactsCount = Number(database.prepare(`
+      SELECT COUNT(*) AS count FROM companies c
+      WHERE EXISTS (
+        SELECT 1 FROM organization_details d
+        WHERE d.company_id = c.id AND d.search_text != ''
+      ) OR COALESCE(
+        c.phone, c.mobile_phone, c.email, c.website,
+        c.whatsapp, c.viber, c.telegram, ''
+      ) != ''
+    `).get().count || 0);
+    setMeta(database, 'record_count', totalStored);
+    setMeta(database, 'official_count', officialCount);
+    setMeta(database, 'directory_only_count', directoryOnlyCount);
+    setMeta(database, 'with_contacts_count', withContactsCount);
     setMeta(database, 'quality_version', QUALITY_VERSION);
     setMeta(database, 'quality_min_score', minScore());
     const indexableCount = Number(database.prepare(
@@ -290,7 +347,7 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
     setMeta(database, 'import_run_id', '');
     database.exec('PRAGMA optimize;');
     database.close();
-    console.log(`[Companies] Activated ${stored} records in one compact database. Restart Node.js.`);
+    console.log(`[Companies] Activated ${stored} official records (${totalStored} total organizations). Restart Node.js.`);
   } else {
     database.close();
     console.log(`[Companies] Checkpoint saved: ${stored} records. Run again to continue.`);

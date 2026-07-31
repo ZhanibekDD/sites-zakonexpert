@@ -61,6 +61,13 @@ const logger = winston.createLogger({
 const telegram = require('./modules/telegram');
 const { lowContentBoost } = require('./modules/seo-blocks');
 const { TOOLS, findTool } = require('./modules/tools-catalog');
+const {
+  INDEXABLE_LOCALES: COMPANY_LOCALES,
+  catalogAlternates,
+  catalogPath: companyCatalogPathFor,
+  companyPath: companyPathFor,
+  getLocale: getCompanyLocale,
+} = require('./modules/company-i18n');
 
 // Initialize DB and news importer
 let newsDb = null;
@@ -1115,16 +1122,78 @@ app.get('/courts', (req, res) => {
   res.render('courts/catalog', { courts: catalog.items, catalog });
 });
 app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
-app.get('/companies', (req, res) => {
+function companyLanguageLinks(companySlug = null) {
+  return COMPANY_LOCALES.map(code => {
+    const language = getCompanyLocale(code);
+    return {
+      code,
+      nativeName: language.nativeName,
+      href: companyCatalogPathFor(code),
+      companyHref: companySlug
+        ? companyPathFor(code, companySlug)
+        : companyCatalogPathFor(code),
+    };
+  });
+}
+
+function renderCompaniesCatalog(req, res, localeCode = 'ru') {
+  const locale = getCompanyLocale(localeCode);
   const query = String(req.query.q || '').trim().slice(0, 120);
   const page = Number.parseInt(req.query.page, 10) || 1;
   const stats = companiesDb
     ? companiesDb.stats()
-    : { available: false, count: 0, updatedAt: null, source: null };
+    : {
+      available: false, count: 0, updatedAt: null, source: null,
+      officialCount: 0, directoryOnlyCount: 0, withContactsCount: 0,
+    };
   const results = companiesDb
-    ? companiesDb.search(query, page, 30)
+    ? (query ? companiesDb.search(query, page, 30) : companiesDb.browse(page, 30))
     : { items: [], page: 1, hasMore: false };
-  res.render('companies/catalog', { query, results, stats });
+  res.render('companies/catalog', {
+    query,
+    results,
+    stats,
+    locale,
+    copy: locale,
+    alternates: catalogAlternates(),
+    languages: companyLanguageLinks(),
+    companyCatalogPath: companyCatalogPathFor(locale.code),
+    companyItemPrefix: locale.code === 'ru' ? '/company/' : `/${locale.code}/company/`,
+  });
+}
+
+function renderCompanyItem(req, res, localeCode = 'ru') {
+  if (!companiesDb || !companiesDb.available()) return sendNotFound(res);
+  const locale = getCompanyLocale(localeCode);
+  const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
+  let company = id ? companiesDb.findById(id) : null;
+  if (!company) {
+    const redirect = companiesDb.redirectByOldSlug(req.params.slug);
+    if (redirect) return res.redirect(301, companyPathFor(locale.code, redirect.slug));
+    return sendNotFound(res);
+  }
+  if (company.slug !== req.params.slug) {
+    return res.redirect(301, companyPathFor(locale.code, company.slug));
+  }
+  const sourceUpdatedAt = companiesDb.stats().updatedAt;
+  const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
+  const companyQuality = companiesDb.quality(company);
+  return res.render('companies/item', {
+    company,
+    sourceUpdatedAt,
+    regionName,
+    companyQuality,
+    localized: locale.code !== 'ru',
+    locale,
+    copy: locale,
+    languages: companyLanguageLinks(company.slug),
+    companyCatalogPath: companyCatalogPathFor(locale.code),
+  });
+}
+
+app.get('/companies', (req, res) => renderCompaniesCatalog(req, res, 'ru'));
+app.get('/:locale(kk|en|zh|tr)/companies', (req, res) => {
+  renderCompaniesCatalog(req, res, req.params.locale);
 });
 
 app.get('/companies/regions', (req, res) => {
@@ -1142,17 +1211,10 @@ app.get('/companies/region/:slug', (req, res) => {
   res.render('companies/region', { slug: req.params.slug, results });
 });
 
-app.get('/company/:slug', (req, res) => {
-  if (!companiesDb || !companiesDb.available()) return sendNotFound(res);
-  const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
-  const company = id ? companiesDb.findById(id) : null;
-  if (!company) return sendNotFound(res);
-  if (company.slug !== req.params.slug) return res.redirect(301, `/company/${company.slug}`);
-  const sourceUpdatedAt = companiesDb.stats().updatedAt;
-  const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
-  const companyQuality = companiesDb.quality(company);
-  res.render('companies/item', { company, sourceUpdatedAt, regionName, companyQuality });
+app.get('/:locale(kk|en|zh|tr)/company/:slug', (req, res) => {
+  renderCompanyItem(req, res, req.params.locale);
 });
+app.get('/company/:slug', (req, res) => renderCompanyItem(req, res, 'ru'));
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
 app.get('/gsi/:slug',     (req, res) => {
   const item = getGsiData().find(g => g.slug === req.params.slug);
@@ -2067,6 +2129,10 @@ function getCorePages() {
     { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
     { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
     { url: '/companies',      priority: '0.9',  freq: 'weekly' },
+    { url: '/kk/companies',   priority: '0.75', freq: 'weekly' },
+    { url: '/en/companies',   priority: '0.75', freq: 'weekly' },
+    { url: '/zh/companies',   priority: '0.7',  freq: 'weekly' },
+    { url: '/tr/companies',   priority: '0.7',  freq: 'weekly' },
     { url: '/companies/regions', priority: '0.8', freq: 'weekly' },
     { url: '/gsi',            priority: '0.8',  freq: 'weekly' },
     { url: '/insurance',      priority: '0.75', freq: 'weekly' },

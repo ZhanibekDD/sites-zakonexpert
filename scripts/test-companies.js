@@ -13,6 +13,13 @@ process.env.COMPANIES_DB_PATH = dbPath;
 
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
 const { insertRows, normalizeCompanyRow } = require('./import-companies-egov');
+const {
+  INDEXABLE_LOCALES,
+  catalogAlternates,
+  catalogPath,
+  companyPath,
+  getLocale,
+} = require('../modules/company-i18n');
 
 const sample = {
   id: 7137221,
@@ -67,27 +74,87 @@ const catalogData = {
   query: 'Альфа',
   results: companies.search('Альфа'),
   stats: companies.stats(),
+  locale: getLocale('ru'),
+  copy: getLocale('ru'),
+  alternates: catalogAlternates(),
+  languages: INDEXABLE_LOCALES.map(code => ({
+    code,
+    nativeName: getLocale(code).nativeName,
+    href: catalogPath(code),
+    companyHref: companyPath(code, company.slug),
+  })),
+  companyCatalogPath: '/companies',
+  companyItemPrefix: '/company/',
 };
+const localizedCatalogPromises = INDEXABLE_LOCALES.map(code => ejs.renderFile(
+  path.join(__dirname, '..', 'views', 'companies', 'catalog.ejs'),
+  {
+    ...catalogData,
+    query: '',
+    results: companies.browse(),
+    locale: getLocale(code),
+    copy: getLocale(code),
+    companyCatalogPath: catalogPath(code),
+    companyItemPrefix: code === 'ru' ? '/company/' : `/${code}/company/`,
+  }
+));
 
 Promise.all([
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'catalog.ejs'), catalogData),
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
     company,
     sourceUpdatedAt: '2026-07-16',
+    regionName: null,
     companyQuality: companies.quality(company),
+    localized: false,
+    locale: getLocale('ru'),
+    copy: getLocale('ru'),
+    languages: catalogData.languages,
+    companyCatalogPath: '/companies',
   }),
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
     company: lowQualityCompany,
     sourceUpdatedAt: '2026-07-16',
+    regionName: null,
     companyQuality: companies.quality(lowQualityCompany),
+    localized: false,
+    locale: getLocale('ru'),
+    copy: getLocale('ru'),
+    languages: catalogData.languages,
+    companyCatalogPath: '/companies',
   }),
-]).then(([catalogHtml, itemHtml, lowQualityHtml]) => {
+  ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
+    company,
+    sourceUpdatedAt: '2026-07-16',
+    regionName: null,
+    companyQuality: companies.quality(company),
+    localized: true,
+    locale: getLocale('en'),
+    copy: getLocale('en'),
+    languages: catalogData.languages,
+    companyCatalogPath: '/en/companies',
+  }),
+  ...localizedCatalogPromises,
+]).then(([catalogHtml, itemHtml, lowQualityHtml, localizedItemHtml, ...localizedCatalogs]) => {
   assert(catalogHtml.includes('Альфа Право'));
   assert(catalogHtml.includes('noindex'));
   assert(itemHtml.includes('БИН 970540001234'));
   assert(itemHtml.includes('application/ld+json'));
+  assert(itemHtml.includes('alfa pravo'), 'Latin alias must be visible and present in schema');
+  assert(!itemHtml.includes('aggregateRating'), 'unattributed directory ratings must not be published');
   assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
   assert(lowQualityHtml.includes('noindex,follow'), 'thin company must be noindex');
+  assert(localizedItemHtml.includes('noindex,follow'),
+    'localized company UI must not multiply thin translated card URLs');
+  INDEXABLE_LOCALES.forEach((code, index) => {
+    const html = localizedCatalogs[index];
+    assert(html.includes(`lang="${getLocale(code).hreflang}"`));
+    assert(html.includes(`https://zakonexpertt.kz${catalogPath(code)}`));
+    assert(html.includes('hreflang="x-default"'));
+    for (const alternate of INDEXABLE_LOCALES) {
+      assert(html.includes(`hreflang="${getLocale(alternate).hreflang}"`));
+    }
+  });
   console.log('Company data OK: normalization, SQLite search, templates and sitemap chunks');
 }).finally(() => {
   companies.close();
