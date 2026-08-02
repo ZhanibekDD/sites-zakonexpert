@@ -28,6 +28,9 @@ Thumbs.db
 dist/
 build/
 tmp/
+!tmp/
+tmp/*
+!tmp/restart.txt
 screenshots/
 test_*_tmp.js
 

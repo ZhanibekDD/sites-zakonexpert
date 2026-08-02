@@ -4,17 +4,20 @@ const ORIGIN = String(process.env.AUDIT_ORIGIN || 'https://zakonexpertt.kz').rep
 const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
+const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
+  || '2026-08-02-companies-catalog-compat';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
   '/notaries', '/bailiffs', '/lawyers', '/banks', '/mfo', '/collectors',
   '/lombards', '/companies', '/courts', '/chambers', '/zakony', '/statyi', '/tools',
+  '/kk/companies', '/en/companies', '/zh/companies', '/tr/companies',
   '/marshrut-dolzhnika',
   '/tools/payment-plan', '/tools/mrp', '/tools/state-duty', '/tools/deadline',
 ];
 const stabilityRoutes = [
   '/health', '/notaries', '/bailiffs', '/lawyers',
-  '/zakony', '/statyi', '/tools', '/marshrut-dolzhnika',
+  '/companies', '/en/companies', '/zakony', '/statyi', '/tools', '/marshrut-dolzhnika',
 ];
 
 const failures = [];
@@ -123,6 +126,22 @@ async function auditTechnicalFiles() {
   }
 }
 
+async function auditRelease() {
+  try {
+    const { response, body } = await request('/health');
+    if (response.status !== 200) return record(failures, `/health returned ${response.status}`);
+    const health = JSON.parse(body);
+    if (health.release !== EXPECTED_RELEASE) {
+      record(
+        failures,
+        `Passenger is serving stale code: expected ${EXPECTED_RELEASE}, received ${health.release || 'no release id'}`
+      );
+    }
+  } catch (error) {
+    record(failures, `/health release check failed: ${error.message}`);
+  }
+}
+
 async function auditStability() {
   console.log(`Stability: ${STABILITY_ROUNDS} rounds × ${stabilityRoutes.length} routes`);
   for (let round = 1; round <= STABILITY_ROUNDS; round += 1) {
@@ -153,6 +172,7 @@ async function auditStability() {
   await auditSitemaps();
   await auditNewsDetail();
   await auditTechnicalFiles();
+  await auditRelease();
   await auditStability();
   console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
   if (failures.length) process.exitCode = 1;
