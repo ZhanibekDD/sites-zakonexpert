@@ -54,6 +54,34 @@ function hasColumn(database, column) {
   }
 }
 
+// Production can briefly run the new application code against the previous
+// companies.sqlite schema while an offline organization import is pending.
+// Keep all read paths compatible with that database instead of turning a
+// normal code deployment into an HTTP 500 for the whole catalog.
+function sourceProjection(database, qualifier = '') {
+  const prefix = qualifier ? `${qualifier}.` : '';
+  if (hasColumn(database, 'primary_source_key')) {
+    return `${prefix}primary_source_key`;
+  }
+  if (hasColumn(database, 'contact_source')) {
+    return `CASE
+      WHEN ${prefix}contact_source IN ('directory', 'business_directory_kz_2026')
+      THEN 'business_directory_kz_2026'
+      ELSE NULL
+    END AS primary_source_key`;
+  }
+  return 'NULL AS primary_source_key';
+}
+
+function browseOrder(database) {
+  return hasColumn(database, 'is_indexable') ? 'is_indexable DESC, id' : 'id';
+}
+
+function optionalMetaCount(database, key) {
+  const value = Number.parseInt(getMeta(database, key), 10);
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
 function hasTable(database, table) {
   try {
     return Boolean(database.prepare(
@@ -96,9 +124,12 @@ function stats() {
     indexableCount,
     excludedCount: qualityReady ? Math.max(0, count - indexableCount) : count,
     qualityUpdatedAt: getMeta(database, 'quality_backfilled_at') || getMeta(database, 'source_updated_at'),
-    officialCount: Number.parseInt(getMeta(database, 'official_count'), 10) || indexableCount,
-    directoryOnlyCount: Number.parseInt(getMeta(database, 'directory_only_count'), 10) || 0,
-    withContactsCount: Number.parseInt(getMeta(database, 'with_contacts_count'), 10) || 0,
+    // The legacy database has no trustworthy split counters. Returning null
+    // lets the template hide those cards until the offline import writes the
+    // exact values; displaying a made-up zero would mislead visitors.
+    officialCount: optionalMetaCount(database, 'official_count'),
+    directoryOnlyCount: optionalMetaCount(database, 'directory_only_count'),
+    withContactsCount: optionalMetaCount(database, 'with_contacts_count'),
   };
 }
 
@@ -146,10 +177,11 @@ function search(query, page = 1, limit = 30) {
   } else {
     const match = ftsQuery(q);
     if (!match) return { items: [], page: safePage, hasMore: false };
+    const primarySource = sourceProjection(database, 'c');
     items = database.prepare(`
       SELECT c.id, c.bin, c.name_ru, c.name_kk, c.registration_date,
              c.address_ru, c.activity_ru, c.leader, c.status_ru,
-             c.primary_source_key
+             ${primarySource}
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
       WHERE companies_fts MATCH ?
@@ -172,11 +204,13 @@ function browse(page = 1, limit = 30) {
   const safePage = normalizePage(page);
   const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
   const offset = (safePage - 1) * safeLimit;
+  const primarySource = sourceProjection(database);
+  const order = browseOrder(database);
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
-           activity_ru, leader, status_ru, primary_source_key
+           activity_ru, leader, status_ru, ${primarySource}
     FROM companies
-    ORDER BY is_indexable DESC, id
+    ORDER BY ${order}
     LIMIT ? OFFSET ?
   `).all(safeLimit + 1, offset);
   return {
@@ -376,9 +410,10 @@ function byRegion(slug, page = 1, limit = 30) {
   const safePage = normalizePage(page);
   const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
   const offset = (safePage - 1) * safeLimit;
+  const primarySource = sourceProjection(database);
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
-           activity_ru, leader, status_ru, primary_source_key
+           activity_ru, leader, status_ru, ${primarySource}
     FROM companies WHERE region_slug = ? ORDER BY id LIMIT ? OFFSET ?
   `).all(slug, safeLimit + 1, offset);
   return {

@@ -66,7 +66,9 @@ const statsHtml = stats.available
       [stats.officialCount, copy.officialCount],
       [stats.directoryOnlyCount, copy.directoryCount],
       [stats.withContactsCount, copy.contactsCount],
-    ].map(function(stat) {
+    ].filter(function(stat) {
+      return stat[0] !== null && stat[0] !== undefined;
+    }).map(function(stat) {
       return '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:13px 15px;">'
         + '<strong style="display:block;color:#0d1f3c;font-size:1.12rem;">' + number(stat[0]) + '</strong>'
         + '<span style="color:#64748b;font-size:.78rem;">' + esc(stat[1]) + '</span></div>';
