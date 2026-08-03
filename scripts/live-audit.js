@@ -5,7 +5,7 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-03-targeted-company-quality-fix';
+  || '2026-08-04-company-sitemap-row-repair';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -155,6 +155,17 @@ async function auditRelease() {
       return false;
     }
     console.log(`Release: ${health.release}`);
+    if (health.companies) {
+      console.log(
+        `Companies: ${health.companies.count} records; `
+        + `${health.companies.indexableCount} indexable; qualityReady=${health.companies.qualityReady}`
+      );
+      if (health.companies.available && !health.companies.qualityReady) {
+        record(failures, 'Company quality version is not activated');
+      } else if (health.companies.count > 0 && health.companies.indexableCount < 1) {
+        record(failures, 'Company quality rows are stale; run backfill-company-quality offline');
+      }
+    }
     return true;
   } catch (error) {
     record(failures, `/health release check failed: ${error.message}`);

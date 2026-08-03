@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-03-targeted-company-quality-fix';
+const RELEASE_ID = '2026-08-04-company-sitemap-row-repair';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -2902,11 +2902,18 @@ app.post('/api/telegram/setup', asyncHandler(async (req, res) => {
 
 // Health-check для мониторинга сервиса
 app.get('/health', (req, res) => {
+    const companyStats = companiesDb ? companiesDb.stats() : null;
     res.json({
         status: 'ok',
         service: 'ZakonExpert',
         release: RELEASE_ID,
         egovKey: EGOV_API_KEY ? 'configured' : 'missing',
+        companies: companyStats ? {
+            available: companyStats.available,
+            count: companyStats.count,
+            qualityReady: companyStats.qualityReady,
+            indexableCount: companyStats.indexableCount
+        } : null,
         time: new Date().toISOString()
     });
 });

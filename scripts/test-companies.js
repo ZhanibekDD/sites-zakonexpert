@@ -62,7 +62,12 @@ database.prepare('UPDATE companies SET quality_score = 0, is_indexable = 0').run
 database.close();
 
 process.argv.push('--confirm-offline');
-const { backfill, backfillDatabase } = require('./backfill-company-quality');
+const {
+  backfill,
+  backfillDatabase,
+  currentRowsCanBeReconciled,
+  qualityRowsNeedBackfill,
+} = require('./backfill-company-quality');
 backfill();
 process.argv.pop();
 
@@ -70,15 +75,11 @@ process.argv.pop();
 // When the formula version is unchanged, repairing its aggregate counters
 // must not rewrite every company row (the production database has 1.2M rows).
 const metadataDb = new DatabaseSync(dbPath);
-metadataDb.prepare('UPDATE companies SET quality_score = 99 WHERE id = ?').run(7137497);
 metadataDb.prepare("UPDATE company_meta SET value = '1' WHERE key = 'record_count'").run();
 metadataDb.prepare("DELETE FROM company_meta WHERE key = 'completed_at'").run();
+assert.strictEqual(currentRowsCanBeReconciled(metadataDb), true,
+  'healthy quality rows must allow metadata-only reconciliation');
 backfillDatabase(metadataDb);
-assert.strictEqual(
-  Number(metadataDb.prepare('SELECT quality_score FROM companies WHERE id = ?').get(7137497).quality_score),
-  99,
-  'metadata-only reconciliation must not rewrite company rows'
-);
 assert.strictEqual(
   metadataDb.prepare("SELECT value FROM company_meta WHERE key = 'record_count'").get().value,
   '2',
@@ -89,6 +90,30 @@ assert(
   'metadata reconciliation must restore catalog activation from completed import evidence'
 );
 metadataDb.close();
+
+// A previous monolithic backfill could be killed after metadata was marked as
+// current but before persisted quality rows were repaired. Detect row drift
+// even when quality_version and aggregate counters look valid, then resume in
+// bounded batches instead of trusting the stale marker.
+const driftDb = new DatabaseSync(dbPath);
+driftDb.prepare(
+  'UPDATE companies SET quality_score = 0, is_indexable = 0 WHERE id = ?'
+).run(7137221);
+driftDb.prepare("UPDATE company_meta SET value = '0' WHERE key = 'indexable_count'").run();
+driftDb.prepare("UPDATE company_meta SET value = '2' WHERE key = 'excluded_count'").run();
+assert.strictEqual(qualityRowsNeedBackfill(driftDb), true,
+  'persisted row drift must be detected independently of metadata version');
+assert.strictEqual(currentRowsCanBeReconciled(driftDb), false,
+  'corrupt quality rows must never take the metadata-only shortcut');
+backfillDatabase(driftDb, { batchSize: 1000 });
+assert.strictEqual(qualityRowsNeedBackfill(driftDb), false,
+  'resumable backfill must repair persisted quality rows');
+assert.strictEqual(
+  Number(driftDb.prepare('SELECT is_indexable FROM companies WHERE id = ?').get(7137221).is_indexable),
+  1,
+  'a rich official company must return to the sitemap after row repair'
+);
+driftDb.close();
 
 const companies = require('../modules/companies-db');
 assert.strictEqual(companies.stats().count, 2);
