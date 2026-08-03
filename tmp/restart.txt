@@ -1,1 +1,1 @@
-ZakonExpert release 2026-08-03-company-import-audit-fix
+ZakonExpert release 2026-08-03-company-import-api-key-fix

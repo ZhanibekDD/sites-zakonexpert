@@ -17,6 +17,12 @@ const { buildSearchAliases } = require('../modules/company-transliterate');
 const { backfillDatabase, qualityNeedsBackfill } = require('./backfill-company-quality');
 
 const ROOT = path.join(__dirname, '..');
+// Plesk starts npm scripts in a separate process. Unlike server.js, this
+// importer previously never loaded the project's .env file, so a configured
+// EGOV_API_KEY was invisible here and targeted refreshes unnecessarily fell
+// back to the less reliable browser-session endpoint.
+require('dotenv').config({ path: path.join(ROOT, '.env'), quiet: true });
+
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
 const DATASET_URL = 'https://data.egov.kz/datasets/view?index=gbd_ul';
 const PUBLIC_DATA_URL = 'https://data.egov.kz/datasets/getdata';
@@ -157,6 +163,34 @@ async function fetchApiPage(apiKey, searchAfter, pageSize) {
   return { rows, totalCount: 0, totalPages: 0, lastId: last?.id || null };
 }
 
+function buildApiIdSource(targetId) {
+  return {
+    size: 100,
+    query: {
+      bool: {
+        must: [{ match: { id: String(targetId) } }],
+      },
+    },
+  };
+}
+
+async function fetchApiCompanyById(apiKey, targetId) {
+  const response = await axios.get(API_URL, {
+    timeout: 45000,
+    params: {
+      apiKey,
+      source: JSON.stringify(buildApiIdSource(targetId)),
+    },
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'ZakonExpert registry importer/1.2',
+    },
+  });
+  const rows = Array.isArray(response.data) ? response.data : response.data?.data;
+  if (!Array.isArray(rows)) throw new Error('Unexpected data.egov.kz API response');
+  return rows.find(row => normalizeCompanyRow(row)?.id === targetId) || null;
+}
+
 function setMeta(db, key, value) {
   db.prepare(`
     INSERT INTO company_meta(key, value) VALUES(?, ?)
@@ -241,7 +275,7 @@ function searchIdentity(company) {
   ]);
 }
 
-async function refreshCompanyById(database, targetId) {
+async function refreshCompanyById(database, targetId, options = {}) {
   const existing = database.prepare(`
     SELECT id, bin, name_ru, name_kk, search_aliases
     FROM companies WHERE id = ?
@@ -250,12 +284,28 @@ async function refreshCompanyById(database, targetId) {
     throw new Error(`Company ${targetId} is not in the active database; use a reviewed full import.`);
   }
 
-  const client = await withRetry(createPublicClient, 'dataset session');
-  const data = await withRetry(
-    () => fetchPublicPage(client, 1, 100, { text: String(targetId), column: 'id' }),
-    `company ${targetId}`
-  );
-  const sourceRow = data.rows.find(row => normalizeCompanyRow(row)?.id === targetId);
+  const apiKey = clean(options.apiKey === undefined ? process.env.EGOV_API_KEY : options.apiKey);
+  let sourceRow = null;
+  if (apiKey) {
+    console.log('[Companies] Source: API v4 (targeted refresh)');
+    sourceRow = await withRetry(
+      () => (options.fetchApiCompanyById || fetchApiCompanyById)(apiKey, targetId),
+      `API company ${targetId}`
+    );
+  } else {
+    console.warn('[Companies] EGOV_API_KEY is not configured; using the public dataset session.');
+    const client = await withRetry(
+      options.createPublicClient || createPublicClient,
+      'dataset session'
+    );
+    const data = await withRetry(
+      () => (options.fetchPublicPage || fetchPublicPage)(
+        client, 1, 100, { text: String(targetId), column: 'id' }
+      ),
+      `company ${targetId}`
+    );
+    sourceRow = data.rows.find(row => normalizeCompanyRow(row)?.id === targetId);
+  }
   if (!sourceRow) throw new Error(`Company ${targetId} was not returned by the official dataset.`);
 
   const refreshedAt = new Date().toISOString();
@@ -296,7 +346,9 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
   createSchema(database);
   if (options.targetId) {
     try {
-      const company = await refreshCompanyById(database, options.targetId);
+      const company = await refreshCompanyById(database, options.targetId, {
+        apiKey: process.env.EGOV_API_KEY,
+      });
       if (qualityNeedsBackfill(database)) {
         console.log('[Companies] Company quality metadata is missing or stale; repairing sitemap eligibility...');
         backfillDatabase(database);
@@ -456,7 +508,9 @@ module.exports = {
   DATASET_JSON_ACCEPT,
   DATASET_VIEW_ACCEPT,
   MIN_FULL_RECORDS,
+  buildApiIdSource,
   createPublicClient,
+  fetchApiCompanyById,
   fetchPublicPage,
   importCompanies,
   insertRows,

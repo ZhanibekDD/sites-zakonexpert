@@ -5,7 +5,7 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-03-company-import-audit-fix';
+  || '2026-08-03-company-import-api-key-fix';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -129,16 +129,23 @@ async function auditTechnicalFiles() {
 async function auditRelease() {
   try {
     const { response, body } = await request('/health');
-    if (response.status !== 200) return record(failures, `/health returned ${response.status}`);
+    if (response.status !== 200) {
+      record(failures, `/health returned ${response.status}`);
+      return false;
+    }
     const health = JSON.parse(body);
     if (health.release !== EXPECTED_RELEASE) {
       record(
         failures,
         `Passenger is serving stale code: expected ${EXPECTED_RELEASE}, received ${health.release || 'no release id'}`
       );
+      return false;
     }
+    console.log(`Release: ${health.release}`);
+    return true;
   } catch (error) {
     record(failures, `/health release check failed: ${error.message}`);
+    return false;
   }
 }
 
@@ -167,12 +174,16 @@ async function auditStability() {
 
 (async () => {
   console.log(`Auditing ${ORIGIN}`);
+  if (!await auditRelease()) {
+    console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
+    process.exitCode = 1;
+    return;
+  }
   for (const route of publicRoutes) await auditPublicRoute(route);
   await auditSecurity();
   await auditSitemaps();
   await auditNewsDetail();
   await auditTechnicalFiles();
-  await auditRelease();
   await auditStability();
   console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
   if (failures.length) process.exitCode = 1;
