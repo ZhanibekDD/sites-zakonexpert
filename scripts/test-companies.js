@@ -62,8 +62,28 @@ database.prepare('UPDATE companies SET quality_score = 0, is_indexable = 0').run
 database.close();
 
 process.argv.push('--confirm-offline');
-require('./backfill-company-quality').backfill();
+const { backfill, backfillDatabase } = require('./backfill-company-quality');
+backfill();
 process.argv.pop();
+
+// Directory enrichment adds non-indexable rows after the official import.
+// When the formula version is unchanged, repairing its aggregate counters
+// must not rewrite every company row (the production database has 1.2M rows).
+const metadataDb = new DatabaseSync(dbPath);
+metadataDb.prepare('UPDATE companies SET quality_score = 99 WHERE id = ?').run(7137497);
+metadataDb.prepare("UPDATE company_meta SET value = '1' WHERE key = 'record_count'").run();
+backfillDatabase(metadataDb);
+assert.strictEqual(
+  Number(metadataDb.prepare('SELECT quality_score FROM companies WHERE id = ?').get(7137497).quality_score),
+  99,
+  'metadata-only reconciliation must not rewrite company rows'
+);
+assert.strictEqual(
+  metadataDb.prepare("SELECT value FROM company_meta WHERE key = 'record_count'").get().value,
+  '2',
+  'metadata-only reconciliation must repair the aggregate record count'
+);
+metadataDb.close();
 
 const companies = require('../modules/companies-db');
 assert.strictEqual(companies.stats().count, 2);

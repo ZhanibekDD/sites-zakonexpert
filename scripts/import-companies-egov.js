@@ -14,7 +14,11 @@ const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
 const { normalizeCompanyName } = require('../modules/company-name-normalize');
 const { buildSearchAliases } = require('../modules/company-transliterate');
-const { backfillDatabase, qualityNeedsBackfill } = require('./backfill-company-quality');
+const {
+  currentRowsCanBeReconciled,
+  qualityNeedsBackfill,
+  reconcileQualityMetadata,
+} = require('./backfill-company-quality');
 
 const ROOT = path.join(__dirname, '..');
 // Plesk starts npm scripts in a separate process. Unlike server.js, this
@@ -349,18 +353,14 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
       const company = await refreshCompanyById(database, options.targetId, {
         apiKey: process.env.EGOV_API_KEY,
       });
-      if (qualityNeedsBackfill(database)) {
-        console.log('[Companies] Company quality metadata is missing or stale; repairing sitemap eligibility...');
-        backfillDatabase(database);
-      } else {
-        const total = Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
-        const indexable = Number(database.prepare(
-          'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
-        ).get().count || 0);
-        setMeta(database, 'record_count', total);
-        setMeta(database, 'indexable_count', indexable);
-        setMeta(database, 'excluded_count', Math.max(0, total - indexable));
-        setMeta(database, 'quality_backfilled_at', new Date().toISOString());
+      if (currentRowsCanBeReconciled(database)) {
+        console.log('[Companies] Reconciling sitemap counters without rewriting company rows...');
+        reconcileQualityMetadata(database);
+      } else if (qualityNeedsBackfill(database)) {
+        console.warn(
+          '[Companies] Company quality formula changed; targeted refresh completed without a global backfill. '
+          + 'Run backfill-company-quality -- --confirm-offline separately.'
+        );
       }
       console.log(`[Companies] Refreshed official company ${options.targetId}. Restart Node.js.`);
       return { targeted: true, id: options.targetId, company };
