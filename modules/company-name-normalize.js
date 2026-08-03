@@ -29,6 +29,42 @@ const LEGAL_FORM_SUFFIX = new RegExp(
   'iu'
 );
 
+const GENERIC_LEGAL_FORM_NAMES = new Set([
+  'акционерное общество',
+  'акционерное общество закрытого типа',
+  'акционерное общество открытого типа',
+  'товарищество с ограниченной ответственностью',
+  'производственный кооператив',
+  'крестьянское хозяйство',
+  'индивидуальный предприниматель',
+  'акционерлік қоғам',
+  'ашық акционерлік қоғам',
+  'жабық акционерлік қоғам',
+  'жауапкершілігі шектеулі серіктестік',
+  'жауапкершілігі шектеулі серіктестігі',
+  'өндірістік кооператив',
+  'өндірістік кооперативі',
+  'шаруа қожалығы',
+  'жеке кәсіпкер',
+]);
+
+function displayKey(raw) {
+  return String(raw || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('ru-RU')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Some old registry rows contain only a legal form in the Kazakh name field,
+// for example "Жабық акционерлік қоғам", while the Russian field also has the
+// organization's unique name. Such a value is provenance, not a usable name:
+// displaying it as an alias makes the card look corrupted and pollutes JSON-LD.
+function isGenericLegalFormName(raw) {
+  return GENERIC_LEGAL_FORM_NAMES.has(displayKey(raw));
+}
+
 // Shared normalizer for matching a company name across sources that format
 // the legal-form prefix differently (ТОО vs spelled out, quote styles, etc.).
 // Strips wrapping punctuation/legal-form words and lowercases, so
@@ -53,7 +89,9 @@ function normalizeCompanyName(raw) {
 }
 
 module.exports = {
+  GENERIC_LEGAL_FORM_NAMES,
   LEGAL_FORM_PREFIX,
   LEGAL_FORM_SUFFIX,
+  isGenericLegalFormName,
   normalizeCompanyName,
 };

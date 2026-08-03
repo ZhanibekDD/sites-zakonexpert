@@ -12,7 +12,7 @@ const dbPath = path.join(tempDir, 'companies.sqlite');
 process.env.COMPANIES_DB_PATH = dbPath;
 
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
-const { insertRows, normalizeCompanyRow } = require('./import-companies-egov');
+const { insertRows, normalizeCompanyRow, parseArgs } = require('./import-companies-egov');
 const {
   INDEXABLE_LOCALES,
   catalogAlternates,
@@ -33,8 +33,12 @@ const sample = {
   statusru: 'Зарегистрирован',
 };
 const lowQualitySample = {
-  id: 7137222,
-  nameru: 'ТОО «Без данных»',
+  id: 7137497,
+  nameru: 'Акционерное общество закрытого типа "Туран"',
+  namekz: 'Жабық акционерлік қоғам',
+  datereg: '1997-04-20',
+  director: 'АБИШЕВ ИСЛАМ АЛМАХАНОВИЧ',
+  statusru: 'Зарегистрирован',
   bin: '',
 };
 
@@ -43,6 +47,9 @@ assert(normalized, 'row must normalize');
 assert.strictEqual(normalized.id, 7137221);
 assert.strictEqual(normalized.bin, '970540001234');
 assert(normalized.slug.startsWith('7137221-'));
+assert.strictEqual(normalizeCompanyRow(lowQualitySample).registrationDate, '1997-04-20',
+  'the live eGov datereg field must map to registration_date');
+assert.strictEqual(parseArgs(['--id=7137497', '--confirm-offline']).targetId, 7137497);
 
 const database = new DatabaseSync(dbPath);
 createSchema(database);
@@ -69,7 +76,12 @@ assert.strictEqual(companies.sitemapChunkCount(), 1);
 assert.strictEqual(companies.sitemapChunk(1).length, 1);
 
 const company = companies.findById(7137221);
-const lowQualityCompany = companies.findById(7137222);
+const lowQualityCompany = companies.findById(7137497);
+assert.strictEqual(lowQualityCompany.is_official_source, true,
+  'an official registry row without BIN must not be mislabeled as a directory record');
+assert.strictEqual(lowQualityCompany.has_verified_bin, false);
+assert.strictEqual(lowQualityCompany.display_name_kk, null,
+  'a generic legal form must not be shown as the organization name');
 const catalogData = {
   query: 'Альфа',
   results: companies.search('Альфа'),
@@ -144,6 +156,14 @@ Promise.all([
   assert(!itemHtml.includes('aggregateRating'), 'unattributed directory ratings must not be published');
   assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
   assert(lowQualityHtml.includes('noindex,follow'), 'thin company must be noindex');
+  assert(lowQualityHtml.includes('Официальные регистрационные сведения'));
+  assert(lowQualityHtml.includes('Зарегистрирован'),
+    'official status must remain visible even when BIN is absent');
+  assert(lowQualityHtml.includes('В официальном источнике отсутствуют'));
+  assert(!lowQualityHtml.includes('Жабық акционерлік қоғам'),
+    'generic Kazakh legal form must not leak into aliases or JSON-LD');
+  assert(!lowQualityHtml.includes('Бизнес-справочник'),
+    'official source rows without BIN must not receive the directory badge');
   assert(localizedItemHtml.includes('noindex,follow'),
     'localized company UI must not multiply thin translated card URLs');
   INDEXABLE_LOCALES.forEach((code, index) => {

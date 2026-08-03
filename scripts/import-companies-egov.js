@@ -14,14 +14,23 @@ const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
 const { normalizeCompanyName } = require('../modules/company-name-normalize');
 const { buildSearchAliases } = require('../modules/company-transliterate');
+const { backfillDatabase, qualityNeedsBackfill } = require('./backfill-company-quality');
 
 const ROOT = path.join(__dirname, '..');
+// Plesk starts npm scripts in a separate process. Unlike server.js, this
+// importer previously never loaded the project's .env file, so a configured
+// EGOV_API_KEY was invisible here and targeted refreshes unnecessarily fell
+// back to the less reliable browser-session endpoint.
+require('dotenv').config({ path: path.join(ROOT, '.env'), quiet: true });
+
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
 const DATASET_URL = 'https://data.egov.kz/datasets/view?index=gbd_ul';
 const PUBLIC_DATA_URL = 'https://data.egov.kz/datasets/getdata';
 const API_URL = 'https://data.egov.kz/api/v4/gbd_ul/v1';
 const DEFAULT_PAGE_SIZE = 100;
 const MIN_FULL_RECORDS = 900000;
+const DATASET_VIEW_ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+const DATASET_JSON_ACCEPT = 'application/json, text/javascript, */*; q=0.01';
 
 function clean(value) {
   if (value === null || value === undefined) return '';
@@ -62,7 +71,9 @@ function normalizeCompanyRow(row) {
     bin: pick(values, ['bin', 'businessidentificationnumber', 'businessid']),
     nameRu,
     nameKk,
-    registrationDate: pick(values, ['registerdate', 'registrationdate', 'regdate', 'dateregistration']),
+    registrationDate: pick(values, [
+      'registerdate', 'registrationdate', 'regdate', 'datereg', 'dateregistration',
+    ]),
     addressRu: pick(values, ['addressru', 'addressrus', 'rusaddress', 'address']),
     activityRu: pick(values, ['okedru', 'activityru', 'mainactivityru', 'okednameru', 'activity']),
     leader: pick(values, ['fio', 'leader', 'head', 'director', 'headfio', 'fiohead']),
@@ -97,13 +108,21 @@ async function withRetry(fn, label, attempts = 5) {
 async function createPublicClient() {
   const response = await axios.get(DATASET_URL, {
     timeout: 30000,
-    headers: { 'User-Agent': 'ZakonExpert registry importer/1.0' },
+    // data.egov.kz uses HTTP content negotiation here. Axios' default Accept
+    // header makes the endpoint look for a non-existent `view.txt` template
+    // and return 500, while a browser-compatible HTML Accept returns the
+    // dataset page and session cookies normally.
+    headers: {
+      Accept: DATASET_VIEW_ACCEPT,
+      'User-Agent': 'ZakonExpert registry importer/1.1',
+    },
   });
   const cookies = (response.headers['set-cookie'] || []).map(v => v.split(';')[0]).join('; ');
   return axios.create({
     timeout: 45000,
     headers: {
-      'User-Agent': 'ZakonExpert registry importer/1.0',
+      Accept: DATASET_JSON_ACCEPT,
+      'User-Agent': 'ZakonExpert registry importer/1.1',
       'X-Requested-With': 'XMLHttpRequest',
       Referer: DATASET_URL,
       ...(cookies ? { Cookie: cookies } : {}),
@@ -111,11 +130,11 @@ async function createPublicClient() {
   });
 }
 
-async function fetchPublicPage(client, page, pageSize) {
+async function fetchPublicPage(client, page, pageSize, filter = {}) {
   const response = await client.get(PUBLIC_DATA_URL, {
     params: {
       index: 'gbd_ul', version: 'v1', page, count: pageSize,
-      text: '', column: '', order: '',
+      text: filter.text || '', column: filter.column || '', order: filter.order || '',
     },
   });
   const body = response.data || {};
@@ -142,6 +161,34 @@ async function fetchApiPage(apiKey, searchAfter, pageSize) {
   if (!Array.isArray(rows)) throw new Error('Unexpected data.egov.kz API response');
   const last = rows.length ? normalizeCompanyRow(rows[rows.length - 1]) : null;
   return { rows, totalCount: 0, totalPages: 0, lastId: last?.id || null };
+}
+
+function buildApiIdSource(targetId) {
+  return {
+    size: 100,
+    query: {
+      bool: {
+        must: [{ match: { id: String(targetId) } }],
+      },
+    },
+  };
+}
+
+async function fetchApiCompanyById(apiKey, targetId) {
+  const response = await axios.get(API_URL, {
+    timeout: 45000,
+    params: {
+      apiKey,
+      source: JSON.stringify(buildApiIdSource(targetId)),
+    },
+    headers: {
+      Accept: 'application/json',
+      'User-Agent': 'ZakonExpert registry importer/1.2',
+    },
+  });
+  const rows = Array.isArray(response.data) ? response.data : response.data?.data;
+  if (!Array.isArray(rows)) throw new Error('Unexpected data.egov.kz API response');
+  return rows.find(row => normalizeCompanyRow(row)?.id === targetId) || null;
 }
 
 function setMeta(db, key, value) {
@@ -207,18 +254,89 @@ function insertRows(db, rows, importedAt) {
 function parseArgs(argv) {
   const args = new Set(argv);
   const value = prefix => argv.find(arg => arg.startsWith(prefix))?.slice(prefix.length);
+  const targetRaw = value('--id=');
+  const targetId = targetRaw === undefined ? null : Number.parseInt(targetRaw, 10);
   return {
     all: args.has('--all'),
     confirmOffline: args.has('--confirm-offline'),
     fresh: args.has('--fresh'),
     pages: Number.parseInt(value('--pages=') || '', 10) || 1,
     pageSize: Math.min(Number.parseInt(value('--page-size=') || '', 10) || DEFAULT_PAGE_SIZE, 100),
+    targetId,
+    targetRaw,
   };
 }
 
+function searchIdentity(company) {
+  if (!company) return '';
+  return JSON.stringify([
+    company.bin || '', company.name_ru || '', company.name_kk || '',
+    company.search_aliases || '',
+  ]);
+}
+
+async function refreshCompanyById(database, targetId, options = {}) {
+  const existing = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, search_aliases
+    FROM companies WHERE id = ?
+  `).get(targetId);
+  if (!existing) {
+    throw new Error(`Company ${targetId} is not in the active database; use a reviewed full import.`);
+  }
+
+  const apiKey = clean(options.apiKey === undefined ? process.env.EGOV_API_KEY : options.apiKey);
+  let sourceRow = null;
+  if (apiKey) {
+    console.log('[Companies] Source: API v4 (targeted refresh)');
+    sourceRow = await withRetry(
+      () => (options.fetchApiCompanyById || fetchApiCompanyById)(apiKey, targetId),
+      `API company ${targetId}`
+    );
+  } else {
+    console.warn('[Companies] EGOV_API_KEY is not configured; using the public dataset session.');
+    const client = await withRetry(
+      options.createPublicClient || createPublicClient,
+      'dataset session'
+    );
+    const data = await withRetry(
+      () => (options.fetchPublicPage || fetchPublicPage)(
+        client, 1, 100, { text: String(targetId), column: 'id' }
+      ),
+      `company ${targetId}`
+    );
+    sourceRow = data.rows.find(row => normalizeCompanyRow(row)?.id === targetId);
+  }
+  if (!sourceRow) throw new Error(`Company ${targetId} was not returned by the official dataset.`);
+
+  const refreshedAt = new Date().toISOString();
+  insertRows(database, [sourceRow], refreshedAt);
+  const updated = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, search_aliases,
+           registration_date, address_ru, activity_ru, leader, status_ru
+    FROM companies WHERE id = ?
+  `).get(targetId);
+  if (searchIdentity(existing) !== searchIdentity(updated)) {
+    console.log('[Companies] Search identity changed; rebuilding the company search index...');
+    rebuildSearch(database);
+  }
+  setMeta(database, 'last_targeted_refresh_at', refreshedAt);
+  setMeta(database, 'last_targeted_refresh_id', targetId);
+  return updated;
+}
+
 async function importCompanies(options = parseArgs(process.argv.slice(2))) {
+  if (options.targetRaw !== undefined
+      && (!Number.isSafeInteger(options.targetId) || options.targetId <= 0)) {
+    throw new Error('--id must be a positive integer');
+  }
+  if (options.targetId && options.all) {
+    throw new Error('Use either --id for one record or --all for the full import, not both');
+  }
   if (options.all && !options.confirmOffline) {
     throw new Error('Full activation requires --confirm-offline (stop Node.js before running)');
+  }
+  if (options.targetId && !options.confirmOffline) {
+    throw new Error('Targeted refresh requires --confirm-offline (stop Node.js before running)');
   }
 
   fs.mkdirSync(path.dirname(FINAL_DB), { recursive: true });
@@ -226,6 +344,30 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
 
   const database = new DatabaseSync(FINAL_DB);
   createSchema(database);
+  if (options.targetId) {
+    try {
+      const company = await refreshCompanyById(database, options.targetId, {
+        apiKey: process.env.EGOV_API_KEY,
+      });
+      if (qualityNeedsBackfill(database)) {
+        console.log('[Companies] Company quality metadata is missing or stale; repairing sitemap eligibility...');
+        backfillDatabase(database);
+      } else {
+        const total = Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+        const indexable = Number(database.prepare(
+          'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
+        ).get().count || 0);
+        setMeta(database, 'record_count', total);
+        setMeta(database, 'indexable_count', indexable);
+        setMeta(database, 'excluded_count', Math.max(0, total - indexable));
+        setMeta(database, 'quality_backfilled_at', new Date().toISOString());
+      }
+      console.log(`[Companies] Refreshed official company ${options.targetId}. Restart Node.js.`);
+      return { targeted: true, id: options.targetId, company };
+    } finally {
+      database.close();
+    }
+  }
   backfillDerivedCompanyFields(database, {
     batchSize: 5000,
     onProgress: progress => {
@@ -363,9 +505,16 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DATASET_JSON_ACCEPT,
+  DATASET_VIEW_ACCEPT,
   MIN_FULL_RECORDS,
+  buildApiIdSource,
+  createPublicClient,
+  fetchApiCompanyById,
+  fetchPublicPage,
   importCompanies,
   insertRows,
   normalizeCompanyRow,
   parseArgs,
+  refreshCompanyById,
 };

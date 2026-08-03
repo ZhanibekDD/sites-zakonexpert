@@ -6,6 +6,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { companySlug } = require('./company-slug');
 const { REGIONS, regionLabel } = require('./company-region');
 const { evaluateCompany, QUALITY_VERSION } = require('./company-quality');
+const { isGenericLegalFormName } = require('./company-name-normalize');
 const { contactValues, normalizePhoneDigits } = require('./company-details-normalize');
 const { hydrateDetails: hydrateCompactDetails } = require('./company-details-store');
 const { transliterateCompanyName } = require('./company-transliterate');
@@ -67,10 +68,10 @@ function sourceProjection(database, qualifier = '') {
     return `CASE
       WHEN ${prefix}contact_source IN ('directory', 'business_directory_kz_2026')
       THEN 'business_directory_kz_2026'
-      ELSE NULL
+      ELSE 'egov_gbd_ul'
     END AS primary_source_key`;
   }
-  return 'NULL AS primary_source_key';
+  return "'egov_gbd_ul' AS primary_source_key";
 }
 
 function browseOrder(database) {
@@ -133,7 +134,41 @@ function stats() {
   };
 }
 
-function addSlug(company) {
+function sourceMetadata(company) {
+  const directorySource = company?.primary_source_key === 'business_directory_kz_2026'
+    || company?.contact_source === 'directory'
+    || company?.contact_source === 'business_directory_kz_2026';
+  const sourceKey = directorySource
+    ? 'business_directory_kz_2026'
+    : (company?.primary_source_key || 'egov_gbd_ul');
+  const official = sourceKey === 'egov_gbd_ul';
+  return {
+    key: sourceKey,
+    label: official
+      ? 'Министерство юстиции РК — data.egov.kz'
+      : (directorySource
+        ? 'Пользовательская выгрузка бизнес-справочника Казахстана'
+        : 'Ранее импортированные данные'),
+    priority: official ? 90 : (directorySource ? 40 : 20),
+    official,
+  };
+}
+
+function decorateCompany(company) {
+  if (!company) return null;
+  const source = sourceMetadata(company);
+  return {
+    ...company,
+    primary_source_key: source.key,
+    source_label: source.label,
+    is_official_source: source.official,
+    has_verified_bin: /^\d{12}$/.test(String(company.bin || '').trim()),
+    display_name_kk: isGenericLegalFormName(company.name_kk) ? null : company.name_kk,
+  };
+}
+
+function addSlug(rawCompany) {
+  const company = decorateCompany(rawCompany);
   if (!company) return null;
   return {
     ...company,
@@ -169,9 +204,10 @@ function search(query, page = 1, limit = 30) {
   let items = [];
 
   if (/^\d{12}$/.test(q)) {
+    const primarySource = sourceProjection(database);
     items = database.prepare(`
       SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
-             activity_ru, leader, status_ru
+             activity_ru, leader, status_ru, ${primarySource}
       FROM companies WHERE bin = ? ORDER BY id LIMIT ? OFFSET ?
     `).all(q, safeLimit + 1, offset);
   } else {
@@ -185,7 +221,8 @@ function search(query, page = 1, limit = 30) {
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
       WHERE companies_fts MATCH ?
-      ORDER BY rank LIMIT ? OFFSET ?
+      ORDER BY rank, c.is_indexable DESC, c.quality_score DESC, c.id
+      LIMIT ? OFFSET ?
     `).all(match, safeLimit + 1, offset);
   }
 
@@ -268,36 +305,34 @@ function legacyContacts(company) {
 
 function hydrateDetails(database, rawCompany) {
   if (!rawCompany) return null;
-  const company = { ...rawCompany };
+  const company = decorateCompany(rawCompany);
+  const source = sourceMetadata(company);
   let contacts = legacyContacts(company);
-  const companyHasOfficialBin = /^\d{12}$/.test(String(company.bin || '').trim());
   let addresses = company.address_ru ? [{
     value: company.address_ru,
     rawValue: company.address_ru,
     regionSlug: company.region_slug,
     city: null,
     postalCode: null,
-    latitude: companyHasOfficialBin ? null : Number.parseFloat(company.lat) || null,
-    longitude: companyHasOfficialBin ? null : Number.parseFloat(company.lon) || null,
-    sourceKey: companyHasOfficialBin ? 'egov_gbd_ul' : (company.primary_source_key || 'legacy'),
-    sourceLabel: companyHasOfficialBin
-      ? 'Министерство юстиции РК — data.egov.kz'
-      : 'Бизнес-справочник Казахстана',
-    priority: companyHasOfficialBin ? 90 : 40,
+    latitude: source.official ? null : Number.parseFloat(company.lat) || null,
+    longitude: source.official ? null : Number.parseFloat(company.lon) || null,
+    sourceKey: source.key,
+    sourceLabel: source.label,
+    priority: source.priority,
     primary: true,
   }] : [];
   let names = [
     company.name_ru ? {
       locale: 'ru', value: company.name_ru, normalized: company.normalized_name,
-      sourceKey: 'egov_gbd_ul', priority: 90,
+      sourceKey: source.key, sourceLabel: source.label, priority: source.priority,
     } : null,
-    company.name_kk ? {
-      locale: 'kk', value: company.name_kk, normalized: company.normalized_name,
-      sourceKey: 'egov_gbd_ul', priority: 90,
+    company.display_name_kk ? {
+      locale: 'kk', value: company.display_name_kk, normalized: company.normalized_name,
+      sourceKey: source.key, sourceLabel: source.label, priority: source.priority,
     } : null,
   ].filter(Boolean);
-  for (const officialName of [company.name_ru, company.name_kk]) {
-    const latin = transliterateCompanyName(officialName);
+  for (const displayName of [company.name_ru, company.display_name_kk]) {
+    const latin = transliterateCompanyName(displayName);
     if (latin) {
       names.push({
         locale: 'Latn',
@@ -311,13 +346,14 @@ function hydrateDetails(database, rawCompany) {
   }
   let categories = [];
   let attributes = company.attributes || [];
-  if (!companyHasOfficialBin && company.activity_ru) {
+  if (!source.official && company.activity_ru) {
     const [category, ...subcategory] = String(company.activity_ru).split(/\s+—\s+/);
     categories.push({
       category,
       subcategory: subcategory.join(' — '),
       slug: '',
-      sourceKey: company.primary_source_key || 'business_directory_kz_2026',
+      sourceKey: source.key,
+      sourceLabel: source.label,
     });
   }
 

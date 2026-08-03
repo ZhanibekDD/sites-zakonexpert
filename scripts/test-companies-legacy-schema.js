@@ -98,7 +98,9 @@ try {
 
   const browse = companies.browse();
   assert.strictEqual(browse.items.length, 2);
+  assert.strictEqual(browse.items[0].is_official_source, true);
   assert.strictEqual(browse.items[1].primary_source_key, 'business_directory_kz_2026');
+  assert.strictEqual(browse.items[1].is_official_source, false);
 
   assert.strictEqual(companies.search('Альфа').items.length, 1);
   assert.strictEqual(

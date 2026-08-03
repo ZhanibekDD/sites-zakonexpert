@@ -50,6 +50,7 @@ const {
   bytesLabel,
   DEFAULT_MAX_DB_BYTES,
 } = require('../modules/organization-storage-plan');
+const { backfillDatabase, qualityNeedsBackfill } = require('./backfill-company-quality');
 
 const ROOT = path.join(__dirname, '..');
 const DB_PATH = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
@@ -58,6 +59,13 @@ const DEFAULT_MANIFEST = path.join(ROOT, 'registry', 'companies-directory-contac
 const SOURCE_KEY = 'business_directory_kz_2026';
 const DEFAULT_BATCH_SIZE = 1000;
 const DIRECTORY_ID_BASE = 8_000_000_000_000_000;
+
+function ensureCompanyQuality(db) {
+  if (!qualityNeedsBackfill(db)) return false;
+  console.log('[Directory] Company quality metadata is missing or stale; repairing sitemap eligibility...');
+  backfillDatabase(db);
+  return true;
+}
 
 function parseArgs(argv) {
   const args = new Set(argv);
@@ -570,6 +578,7 @@ async function run(options = parseArgs(process.argv.slice(2))) {
         ORDER BY completed_at DESC LIMIT 1
       `).get(SOURCE_KEY, snapshotInfo.checksum);
       if (completed) {
+        ensureCompanyQuality(db);
         console.log(`[Directory] Snapshot already imported by ${completed.run_id}; nothing to change.`);
         return {
           runId: completed.run_id,
@@ -609,6 +618,7 @@ async function run(options = parseArgs(process.argv.slice(2))) {
     const now = new Date().toISOString();
     runRow = findOrCreateRun(db, options, snapshotInfo.checksum, now);
     if (runRow.alreadyCompleted) {
+      ensureCompanyQuality(db);
       console.log(`[Directory] Snapshot already imported by ${runRow.run_id}; nothing to change.`);
       return {
         runId: runRow.run_id,
@@ -714,6 +724,7 @@ async function run(options = parseArgs(process.argv.slice(2))) {
       setMeta(db, 'with_contacts_count', withContactsCount);
       setMeta(db, 'directory_import_completed_at', completedAt);
       setMeta(db, 'directory_import_checksum', snapshotInfo.checksum);
+      ensureCompanyQuality(db);
       updateRun(statements, runRow.run_id, 'completed', lastRow, counters, completedAt);
       // Matching is an offline import concern. Dropping this large index after
       // completion saves space; createSchema recreates it before a future run.
@@ -778,6 +789,7 @@ module.exports = {
   SOURCE_KEY,
   chooseCandidate,
   dryRun,
+  ensureCompanyQuality,
   parseArgs,
   readSnapshotRows,
   run,

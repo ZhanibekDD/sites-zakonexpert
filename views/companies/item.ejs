@@ -31,10 +31,12 @@ function contactHref(contact) {
   return null;
 }
 
+const displayNameKk = company.display_name_kk || null;
 const name = locale.code === 'kk'
-  ? (company.name_kk || company.name_ru)
-  : (company.name_ru || company.name_kk);
-const official = /^\d{12}$/.test(String(company.bin || '').trim());
+  ? (displayNameKk || company.name_ru)
+  : (company.name_ru || displayNameKk);
+const official = Boolean(company.is_official_source);
+const hasVerifiedBin = /^\d{12}$/.test(String(company.bin || '').trim());
 const quality = companyQuality || { score: 0, minScore: 7, indexable: false };
 const canonical = 'https://zakonexpertt.kz/company/' + company.slug;
 const pageTitle = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '');
@@ -44,7 +46,7 @@ const pageDesc = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : 
 
 const aliases = (company.names || [])
   .map(item => item.value)
-  .concat([company.name_ru, company.name_kk])
+  .concat([company.name_ru, displayNameKk])
   .filter(function(value, index, values) {
     return value && value !== name && values.indexOf(value) === index;
   });
@@ -71,7 +73,7 @@ const schema = {
   name,
   alternateName: aliases.length ? aliases.slice(0, 20) : undefined,
   mainEntityOfPage: canonical,
-  identifier: official ? {
+  identifier: hasVerifiedBin ? {
     '@type': 'PropertyValue',
     propertyID: 'KZ BIN',
     value: company.bin,
@@ -92,22 +94,38 @@ const schema = {
     .slice(0, 10),
 };
 
-const infoRows = [
-  ['bi-building', copy.bin, company.bin],
-  ['bi-calendar3', copy.registrationDate, formatDate(company.registration_date)],
-  ['bi-briefcase', copy.activity, company.activity_ru],
-  ['bi-person-badge', copy.leader, company.leader],
-  ['bi-geo-alt', copy.legalAddress, company.address_ru],
-  ['bi-translate', copy.kazakhName, company.name_kk && company.name_kk !== name ? company.name_kk : null],
-  ['bi-map', copy.region, regionName],
-].filter(row => row[2]);
+const infoRows = official
+  ? [
+    ['bi-building', copy.bin, company.bin],
+    ['bi-calendar3', copy.registrationDate, formatDate(company.registration_date)],
+    ['bi-briefcase', copy.activity, company.activity_ru],
+    ['bi-person-badge', copy.leader, company.leader],
+    ['bi-geo-alt', copy.legalAddress, company.address_ru],
+    ['bi-translate', copy.kazakhName, displayNameKk && displayNameKk !== name ? displayNameKk : null],
+    ['bi-map', copy.region, regionName],
+  ]
+  : [
+    ['bi-briefcase', copy.category, company.activity_ru],
+    ['bi-geo-alt', copy.directoryAddress, company.address_ru],
+    ['bi-map', copy.region, regionName],
+  ].filter(row => row[2]);
+
+const missingOfficialFields = official
+  ? infoRows.filter(row => !row[2]).map(row => row[1])
+  : [];
 
 const infoHtml = infoRows.map(function(row) {
   return '<div style="display:grid;grid-template-columns:26px minmax(150px,230px) 1fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid #e2e8f0;">'
     + '<i class="bi ' + row[0] + '" style="color:#94a3b8;" aria-hidden="true"></i>'
     + '<div style="color:#64748b;font-size:.86rem;">' + esc(row[1]) + '</div>'
-    + '<div style="color:#0d1f3c;font-weight:550;overflow-wrap:anywhere;">' + esc(row[2]) + '</div></div>';
+    + '<div style="color:' + (row[2] ? '#0d1f3c' : '#94a3b8') + ';font-weight:' + (row[2] ? '550' : '450') + ';overflow-wrap:anywhere;">'
+    + esc(row[2] || copy.notPublishedBySource) + '</div></div>';
 }).join('');
+
+const missingOfficialHtml = missingOfficialFields.length
+  ? '<div style="margin:12px 0 4px;padding:12px 14px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:.78rem;line-height:1.5;"><i class="bi bi-info-circle" aria-hidden="true"></i> '
+    + esc(copy.missingOfficialFields) + ': ' + esc(missingOfficialFields.join(', ')) + '.</div>'
+  : '';
 
 const contactHtml = contacts.length || publicAttributes.length
   ? '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 8px;">' + esc(copy.contacts) + '</h2>'
@@ -151,7 +169,7 @@ const addressesHtml = additionalAddresses.length
     }).join('') + '</section>'
   : '';
 
-const statusRaw = official ? String(company.status_ru || '') : '';
+const statusRaw = String(company.status_ru || '');
 const statusState = /ликвид/i.test(statusRaw) ? 'liquidated' : (statusRaw ? 'active' : 'unknown');
 const statusStyle = statusState === 'active'
   ? { bg: '#f0fdf4', border: '#bbf7d0', fg: '#166534', icon: 'bi-check-circle-fill' }
@@ -172,7 +190,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
   + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
-  + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:8px 24px 10px;">' + infoHtml + '</div>'
+  + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px 10px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 4px;">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
   + contactHtml + addressesHtml + aliasesHtml + categoriesHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
   + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'

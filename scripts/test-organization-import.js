@@ -14,7 +14,13 @@ process.env.COMPANIES_DB_PATH = dbPath;
 
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
 const { buildStoragePlan } = require('../modules/organization-storage-plan');
-const { insertRows } = require('./import-companies-egov');
+const {
+  DATASET_JSON_ACCEPT,
+  DATASET_VIEW_ACCEPT,
+  buildApiIdSource,
+  insertRows,
+  refreshCompanyById,
+} = require('./import-companies-egov');
 const { run: importDirectory } = require('./import-directory-contacts');
 const { run: rollbackImport } = require('./rollback-organization-import');
 
@@ -109,6 +115,15 @@ const sourceRows = [
 ];
 
 async function main() {
+  assert(DATASET_VIEW_ACCEPT.includes('text/html'),
+    'dataset session must request HTML instead of Axios text/plain fallback');
+  assert(DATASET_JSON_ACCEPT.includes('application/json'),
+    'dataset data request must explicitly accept JSON');
+  assert.deepStrictEqual(buildApiIdSource(7137497), {
+    size: 100,
+    query: { bool: { must: [{ match: { id: '7137497' } }] } },
+  }, 'targeted refresh must query the configured API key by exact company id');
+
   const database = new DatabaseSync(dbPath);
   createSchema(database);
   insertRows(database, officialRows, '2026-07-31T00:00:00.000Z');
@@ -122,6 +137,26 @@ async function main() {
              'Owner-confirmed test override', '2026-07-31T00:00:00.000Z', 1)
   `).run();
   rebuildSearch(database);
+  let apiCalls = 0;
+  const refreshed = await refreshCompanyById(database, 101, {
+    apiKey: 'test-api-key',
+    fetchApiCompanyById: async (apiKey, companyId) => {
+      apiCalls += 1;
+      assert.strictEqual(apiKey, 'test-api-key');
+      assert.strictEqual(companyId, 101);
+      return {
+        ...officialRows[0],
+        datereg: '2024-01-15',
+        director: 'ТЕСТОВЫЙ РУКОВОДИТЕЛЬ',
+      };
+    },
+    createPublicClient: async () => {
+      throw new Error('public dataset session must not be used when API key exists');
+    },
+  });
+  assert.strictEqual(apiCalls, 1, 'targeted refresh must call API v4 exactly once');
+  assert.strictEqual(refreshed.registration_date, '2024-01-15');
+  assert.strictEqual(refreshed.leader, 'ТЕСТОВЫЙ РУКОВОДИТЕЛЬ');
   const blockedPlan = buildStoragePlan({
     db: database,
     dbPath,
@@ -170,10 +205,17 @@ async function main() {
     SELECT COUNT(*) AS c FROM companies
     WHERE contact_search LIKE '%77775554433%'
   `).get().c), 1, 'phone embedded in an address must become a normalized contact');
+  assert.strictEqual(
+    verify.prepare("SELECT value FROM company_meta WHERE key = 'quality_version'").get()?.value,
+    '1',
+    'a completed directory import must activate company sitemap quality metadata'
+  );
   verify.close();
 
   const companies = require('../modules/companies-db');
   const alpha = companies.findById(101);
+  assert.strictEqual(alpha.is_official_source, true,
+    'an official company stays official when directory contacts are attached');
   assert(alpha.contacts.some(contact => contact.value === 'verified@alpha.kz'),
     'verified override must be returned');
   assert(alpha.contacts.some(contact => contact.normalized === 'info@alpha.kz'),
@@ -190,6 +232,13 @@ async function main() {
     'normalized email search must find an organization');
   assert(companies.search('77775554433').items.length === 1,
     'normalized phone search must find an organization');
+  assert.strictEqual(companies.stats().qualityReady, true,
+    'company quality must be ready immediately after the directory import');
+  assert.strictEqual(companies.sitemapChunkCount(), 1,
+    'at least one complete official organization must be exposed in the sitemap');
+  const coffee = companies.search('Coffee Point').items[0];
+  assert.strictEqual(coffee.is_official_source, false,
+    'a directory-only branch must remain clearly labeled as directory data');
   companies.close();
 
   const repeated = await importDirectory({ ...baseOptions, limitRows: Infinity });

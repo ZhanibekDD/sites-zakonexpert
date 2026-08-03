@@ -5,7 +5,7 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-02-companies-catalog-compat';
+  || '2026-08-03-company-import-api-key-fix';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -63,9 +63,16 @@ async function auditPublicRoute(pathname) {
 }
 
 async function auditSecurity() {
-  const { response: home } = await request('/');
-  if (!home.headers.get('content-security-policy')) record(failures, 'Content-Security-Policy is missing');
-  if (home.headers.has('x-powered-by')) record(warnings, 'X-Powered-By exposes Express');
+  // Plesk/nginx serves physical files (including public/index.html) before a
+  // request reaches Passenger. Verify application-owned security headers on a
+  // dynamic route instead of falsely attributing the static nginx response to
+  // Express. Infrastructure headers are managed in Plesk, not by server.js.
+  const { response: appPage } = await request('/companies');
+  if (!appPage.headers.get('content-security-policy')) {
+    record(failures, 'Content-Security-Policy is missing on the dynamic application');
+  }
+  const poweredBy = appPage.headers.get('x-powered-by') || '';
+  if (/express/i.test(poweredBy)) record(warnings, 'X-Powered-By exposes Express');
 
   const { response: status } = await request('/api/news/status');
   if (![403, 503].includes(status.status)) record(failures, `/api/news/status is public (${status.status})`);
@@ -129,16 +136,23 @@ async function auditTechnicalFiles() {
 async function auditRelease() {
   try {
     const { response, body } = await request('/health');
-    if (response.status !== 200) return record(failures, `/health returned ${response.status}`);
+    if (response.status !== 200) {
+      record(failures, `/health returned ${response.status}`);
+      return false;
+    }
     const health = JSON.parse(body);
     if (health.release !== EXPECTED_RELEASE) {
       record(
         failures,
         `Passenger is serving stale code: expected ${EXPECTED_RELEASE}, received ${health.release || 'no release id'}`
       );
+      return false;
     }
+    console.log(`Release: ${health.release}`);
+    return true;
   } catch (error) {
     record(failures, `/health release check failed: ${error.message}`);
+    return false;
   }
 }
 
@@ -167,12 +181,16 @@ async function auditStability() {
 
 (async () => {
   console.log(`Auditing ${ORIGIN}`);
+  if (!await auditRelease()) {
+    console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
+    process.exitCode = 1;
+    return;
+  }
   for (const route of publicRoutes) await auditPublicRoute(route);
   await auditSecurity();
   await auditSitemaps();
   await auditNewsDetail();
   await auditTechnicalFiles();
-  await auditRelease();
   await auditStability();
   console.log(`\nResult: ${failures.length} errors, ${warnings.length} warnings`);
   if (failures.length) process.exitCode = 1;

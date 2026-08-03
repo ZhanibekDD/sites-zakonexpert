@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-02-companies-catalog-compat';
+const RELEASE_ID = '2026-08-03-company-import-api-key-fix';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -211,6 +211,27 @@ app.use(helmet({
       },
     },
 }));
+
+// Lock the two headers that are most often changed by Passenger/Express
+// response handling. The normal Helmet middleware sets the policy first;
+// this final writeHead guard restores it if a later middleware removes it and
+// strips the Express signature immediately before headers leave the app.
+app.use((req, res, next) => {
+  const contentSecurityPolicy = res.getHeader('Content-Security-Policy');
+  const originalWriteHead = res.writeHead;
+  const enforce = () => {
+    res.removeHeader('X-Powered-By');
+    if (contentSecurityPolicy) {
+      res.setHeader('Content-Security-Policy', contentSecurityPolicy);
+    }
+  };
+  res.writeHead = function lockedSecurityWriteHead(...args) {
+    enforce();
+    return originalWriteHead.apply(this, args);
+  };
+  enforce();
+  next();
+});
 app.use(compression());
 app.use(cors({
     origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpertt.kz
