@@ -97,17 +97,16 @@ try {
   assert.strictEqual(info.withContactsCount, null);
 
   const browse = companies.browse();
-  assert.strictEqual(browse.items.length, 2);
+  assert.strictEqual(browse.items.length, 1,
+    'legacy catalog browsing must hide persisted noindex rows once quality metadata is ready');
   assert.strictEqual(browse.items[0].is_official_source, true);
-  assert.strictEqual(browse.items[1].primary_source_key, 'business_directory_kz_2026');
-  assert.strictEqual(browse.items[1].is_official_source, false);
 
   assert.strictEqual(companies.search('Альфа').items.length, 1);
   assert.strictEqual(
     companies.search('Бета').items[0].primary_source_key,
     'business_directory_kz_2026'
   );
-  assert.strictEqual(companies.byRegion('almaty-city').items.length, 2);
+  assert.strictEqual(companies.byRegion('almaty-city').items.length, 1);
 
   const locale = getLocale('ru');
   const templatePath = path.join(__dirname, '..', 'views', 'companies', 'catalog.ejs');
@@ -127,7 +126,8 @@ try {
     companyCatalogPath: '/companies',
     companyItemPrefix: '/company/',
   }, { filename: templatePath });
-  assert(catalogHtml.includes('Бета Сервис'));
+  assert(!catalogHtml.includes('Бета Сервис'),
+    'thin legacy rows must remain searchable but stay out of crawlable listings');
   assert(!catalogHtml.includes('дополнительных организаций'),
     'unknown legacy counters must be hidden instead of displayed as zero');
 

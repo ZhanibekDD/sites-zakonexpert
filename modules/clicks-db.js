@@ -44,4 +44,21 @@ async function getStats(since) {
   return r;
 }
 
-module.exports = { recordClick, getStats };
+async function getEventStats(since) {
+  const query = since ? { ts: { $gte: since } } : {};
+  const clicks = await db.find(query);
+  const result = {
+    totalEvents: clicks.length,
+    companyCtaClicks: 0,
+    companyCtaByPosition: {},
+  };
+  for (const click of clicks) {
+    if (click.type !== 'click_cta_company') continue;
+    result.companyCtaClicks += 1;
+    const position = String(click.cta_position || 'unknown').slice(0, 50);
+    result.companyCtaByPosition[position] = (result.companyCtaByPosition[position] || 0) + 1;
+  }
+  return result;
+}
+
+module.exports = { recordClick, getEventStats, getStats };

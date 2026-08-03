@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-04-company-sitemap-row-repair';
+const RELEASE_ID = '2026-08-04-seo-growth-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -1158,7 +1158,24 @@ function companyLanguageLinks(companySlug = null) {
   });
 }
 
+function setCompanyCache(res, cacheable, maxAge = 300) {
+  if (!cacheable) {
+    res.set('Cache-Control', 'private, no-store');
+    return;
+  }
+  res.set(
+    'Cache-Control',
+    `public, max-age=${maxAge}, s-maxage=${Math.max(maxAge, 900)}, stale-while-revalidate=86400`
+  );
+}
+
+function setCompanyDbTiming(res, started) {
+  const durationMs = Number(process.hrtime.bigint() - started) / 1e6;
+  res.set('Server-Timing', `company-db;dur=${durationMs.toFixed(1)}`);
+}
+
 function renderCompaniesCatalog(req, res, localeCode = 'ru') {
+  const started = process.hrtime.bigint();
   const locale = getCompanyLocale(localeCode);
   const query = String(req.query.q || '').trim().slice(0, 120);
   const page = Number.parseInt(req.query.page, 10) || 1;
@@ -1171,6 +1188,8 @@ function renderCompaniesCatalog(req, res, localeCode = 'ru') {
   const results = companiesDb
     ? (query ? companiesDb.search(query, page, 30) : companiesDb.browse(page, 30))
     : { items: [], page: 1, hasMore: false };
+  setCompanyCache(res, !query, 120);
+  setCompanyDbTiming(res, started);
   res.render('companies/catalog', {
     query,
     results,
@@ -1185,6 +1204,7 @@ function renderCompaniesCatalog(req, res, localeCode = 'ru') {
 }
 
 function renderCompanyItem(req, res, localeCode = 'ru') {
+  const started = process.hrtime.bigint();
   if (!companiesDb || !companiesDb.available()) return sendNotFound(res);
   const locale = getCompanyLocale(localeCode);
   const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
@@ -1200,6 +1220,8 @@ function renderCompanyItem(req, res, localeCode = 'ru') {
   const sourceUpdatedAt = companiesDb.stats().updatedAt;
   const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
   const companyQuality = companiesDb.quality(company);
+  setCompanyCache(res, true, 300);
+  setCompanyDbTiming(res, started);
   return res.render('companies/item', {
     company,
     sourceUpdatedAt,
@@ -1220,16 +1242,22 @@ app.get('/:locale(kk|en|zh|tr)/companies', (req, res) => {
 
 app.get('/companies/regions', (req, res) => {
   if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
+  const started = process.hrtime.bigint();
   const regions = companiesDb.regionStats();
   const stats = companiesDb.stats();
+  setCompanyCache(res, true, 300);
+  setCompanyDbTiming(res, started);
   res.render('companies/regions', { regions, stats });
 });
 
 app.get('/companies/region/:slug', (req, res) => {
   if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
+  const started = process.hrtime.bigint();
   const page = Number.parseInt(req.query.page, 10) || 1;
   const results = companiesDb.byRegion(req.params.slug, page, 30);
   if (!results.label) return sendNotFound(res);
+  setCompanyCache(res, true, 300);
+  setCompanyDbTiming(res, started);
   res.render('companies/region', { slug: req.params.slug, results });
 });
 
@@ -2791,7 +2819,7 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
   'download_document', 'copy_link', 'external_campaign_visit',
   'click_cta_bailiff', 'click_cta_notary', 'send_document',
-  'click_document_review', 'click_whatsapp_after_download',
+  'click_document_review', 'click_whatsapp_after_download', 'click_cta_company',
 ]);
 // Best-effort page_type classifier so LEAD-TRACKING-PLAN reports can group
 // events without re-deriving it from the raw path every time.

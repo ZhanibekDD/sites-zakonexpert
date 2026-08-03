@@ -34,6 +34,7 @@
     'submit_iin', 'calculator_completed', 'bin_search_completed',
     'download_document', 'send_document', 'click_cta_bailiff',
     'click_cta_notary', 'click_document_review', 'click_whatsapp_after_download',
+    'click_cta_company',
   ]);
 
   function send(type, target, extra) {
@@ -55,6 +56,18 @@
   }
 
   window.ZE_trackEvent = send;
+
+  // Company-directory CTA clicks are a separate conversion channel. The
+  // current page path identifies the card; no company name, BIN or WhatsApp
+  // message is copied into analytics.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-company-whatsapp]');
+    if (!link) return;
+    send('click_cta_company', 'company-directory', {
+      cta: link.getAttribute('data-cta-position') || 'unknown',
+      source_entity_type: 'company',
+    });
+  });
 
   // ── copy_link: any element with [data-copy-link="<url>"] ──────────────────
   document.addEventListener('click', function (e) {

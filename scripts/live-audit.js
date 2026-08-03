@@ -4,8 +4,9 @@ const ORIGIN = String(process.env.AUDIT_ORIGIN || 'https://zakonexpertt.kz').rep
 const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
+const COMPANY_RESPONSE_MS = Math.max(200, Number(process.env.AUDIT_COMPANY_RESPONSE_MS || 800));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-04-company-sitemap-row-repair';
+  || '2026-08-04-seo-growth-v1';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -50,6 +51,16 @@ async function auditPublicRoute(pathname) {
     const type = response.headers.get('content-type') || '';
     console.log(`${response.status} ${String(ms).padStart(5)}ms ${String(body.length).padStart(8)} chars ${pathname}`);
     if (response.status !== 200) record(failures, `${pathname} returned ${response.status}`);
+    if (pathname === '/companies') {
+      const cache = response.headers.get('cache-control') || '';
+      if (!/s-maxage=\d+/.test(cache)) record(failures, '/companies is missing shared-cache headers');
+      if (!response.headers.get('server-timing')?.includes('company-db')) {
+        record(failures, '/companies is missing database timing telemetry');
+      }
+      if (ms > COMPANY_RESPONSE_MS) {
+        record(warnings, `/companies exceeded ${COMPANY_RESPONSE_MS} ms (${ms} ms)`);
+      }
+    }
     if (type.includes('text/html')) {
       if (!hasTag(body, /<h1\b/i)) record(failures, `${pathname} has no H1`);
       if (!hasTag(body, /<title>[^<]{8,}<\/title>/i)) record(failures, `${pathname} has no useful title`);
@@ -62,6 +73,33 @@ async function auditPublicRoute(pathname) {
     }
   } catch (error) {
     record(failures, `${pathname} failed: ${error.message}`);
+  }
+}
+
+async function auditCompanyGrowth() {
+  const catalog = await request('/companies');
+  const itemPath = catalog.body.match(/href=["'](\/company\/\d+-[^"'#?]+)["']/i)?.[1];
+  if (!itemPath) return record(failures, 'Company growth audit could not find an indexable card');
+
+  const item = await request(itemPath);
+  if (item.response.status !== 200) return record(failures, `${itemPath} returned ${item.response.status}`);
+  const cache = item.response.headers.get('cache-control') || '';
+  if (!/s-maxage=\d+/.test(cache)) record(failures, `${itemPath} is missing shared-cache headers`);
+  if (!item.response.headers.get('server-timing')?.includes('company-db')) {
+    record(failures, `${itemPath} is missing database timing telemetry`);
+  }
+  if (!/data-company-whatsapp/i.test(item.body) || !/wa\.me\/77479957635\?text=/i.test(item.body)) {
+    record(failures, `${itemPath} is missing the contextual WhatsApp CTA`);
+  }
+  for (const route of [
+    '/snyatie-ogranichenii-chsi',
+    '/otmena-ispolnitelnoi-nadpisi',
+    '/grafik-oplaty-zadolzhennosti',
+    '/marshrut-dolzhnika',
+  ]) {
+    if (!item.body.includes(`href="${route}"`)) {
+      record(failures, `${itemPath} is missing internal help link ${route}`);
+    }
   }
 }
 
@@ -204,6 +242,7 @@ async function auditStability() {
     return;
   }
   for (const route of publicRoutes) await auditPublicRoute(route);
+  await auditCompanyGrowth();
   await auditSecurity();
   await auditSitemaps();
   await auditNewsDetail();

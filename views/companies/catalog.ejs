@@ -11,6 +11,9 @@ const canonicalPath = companyCatalogPath + (!query && currentPage > 1 ? '?page='
 const canonical = 'https://zakonexpertt.kz' + canonicalPath;
 const pageTitle = copy.title;
 const pageDesc = copy.description;
+const catalogWhatsAppHref = 'https://wa.me/77479957635?text=' + encodeURIComponent(
+  copy.consultation + '. ' + copy.helpText + ' https://zakonexpertt.kz' + companyCatalogPath
+);
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -90,7 +93,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<div style="margin-top:28px;padding:16px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.84rem;line-height:1.55;"><i class="bi bi-shield-check" aria-hidden="true"></i> ' + esc(copy.sourcePolicy) + '</div>'
   + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
   + '<h2 class="npage-cta-title">' + esc(copy.helpTitle) + '</h2><p class="npage-cta-sub">' + esc(copy.helpText) + '</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77479957635" target="_blank" rel="noopener">' + esc(copy.whatsapp) + '</a></div>'
+  + '<a class="npage-wa-btn" href="' + catalogWhatsAppHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="catalog-bottom">' + esc(copy.whatsapp) + '</a></div>'
   + '</div></div>';
 %>
 <%- include('./layout', {
@@ -104,5 +107,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   copy,
   languages,
   companyCatalogPath,
+  whatsappHref: catalogWhatsAppHref,
+  companyCta: true,
   body
 }) %>
