@@ -5,7 +5,7 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-03-company-import-api-key-fix';
+  || '2026-08-03-targeted-company-quality-fix';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -56,6 +56,9 @@ async function auditPublicRoute(pathname) {
       if (!hasTag(body, /<link[^>]+rel=["']canonical["']/i)) record(failures, `${pathname} has no canonical`);
       if (!hasTag(body, /<meta[^>]+name=["']description["']/i)) record(warnings, `${pathname} has no meta description`);
       if (body.length > 450000) record(warnings, `${pathname} HTML is heavy (${Math.round(body.length / 1024)} KB)`);
+      if (pathname === '/companies' && !/href=["']\/company\/\d+-/i.test(body)) {
+        record(failures, '/companies has no organization cards; catalog activation is missing');
+      }
     }
   } catch (error) {
     record(failures, `${pathname} failed: ${error.message}`);
@@ -87,6 +90,9 @@ async function auditSitemaps() {
   const maps = [...body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1]);
   const companyMaps = maps.filter(url => /sitemap-companies-\d+\.xml$/.test(url));
   console.log(`Sitemaps: ${maps.length}; company chunks: ${companyMaps.length}`);
+  if (!companyMaps.length) {
+    record(failures, 'Company sitemap has no chunks; quality metadata is not activated');
+  }
   const sample = [
     '/sitemap-pages.xml', '/sitemap-news.xml', '/sitemap-laws.xml',
     companyMaps[0]?.replace(ORIGIN, ''),

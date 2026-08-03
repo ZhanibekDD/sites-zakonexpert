@@ -21,57 +21,166 @@ function numericMeta(db, key) {
   return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
-function qualityNeedsBackfill(db) {
+function textMeta(db, key) {
+  const value = db.prepare('SELECT value FROM company_meta WHERE key = ?').get(key)?.value;
+  return String(value || '').trim() || null;
+}
+
+function qualityState(db) {
   const total = Number(db.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
   const version = db.prepare('SELECT value FROM company_meta WHERE key = ?').get('quality_version')?.value;
   const recordCount = numericMeta(db, 'record_count');
   const indexableCount = numericMeta(db, 'indexable_count');
   const excludedCount = numericMeta(db, 'excluded_count');
-  return version !== QUALITY_VERSION
-    || recordCount !== total
-    || indexableCount === null
-    || excludedCount === null
-    || indexableCount + excludedCount !== total;
+  const storedMinScore = numericMeta(db, 'quality_min_score');
+  return {
+    total,
+    version,
+    recordCount,
+    indexableCount,
+    excludedCount,
+    storedMinScore,
+  };
 }
 
-function backfillDatabase(db) {
-  const threshold = minScore();
-  console.log(`[Companies] Recalculating quality for ${db.prepare('SELECT COUNT(*) count FROM companies').get().count} records...`);
-  let result;
+function qualityNeedsBackfill(db) {
+  const state = qualityState(db);
+  return state.version !== QUALITY_VERSION
+    || state.storedMinScore !== minScore()
+    || state.recordCount !== state.total
+    || state.indexableCount === null
+    || state.excludedCount === null
+    || state.indexableCount + state.excludedCount !== state.total;
+}
+
+function reconcileQualityMetadata(db) {
+  const total = Number(db.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+  const indexable = Number(db.prepare(
+    'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
+  ).get().count || 0);
+  const completedAt = textMeta(db, 'completed_at');
+  const completionEvidence = textMeta(db, 'directory_import_completed_at')
+    || db.prepare(`
+      SELECT completed_at FROM organization_import_runs
+      WHERE status = 'completed' AND completed_at IS NOT NULL
+      ORDER BY completed_at DESC LIMIT 1
+    `).get()?.completed_at
+    || textMeta(db, 'source_updated_at');
+  const activated = !completedAt && total > 0 && Boolean(completionEvidence);
+  const result = {
+    total,
+    indexable,
+    excluded: Math.max(0, total - indexable),
+    activated,
+  };
+
   db.exec('BEGIN IMMEDIATE');
   try {
-    db.exec('DROP INDEX IF EXISTS companies_indexable_idx;');
-    db.exec(`UPDATE companies SET quality_score = ${QUALITY_SCORE_SQL};`);
-    db.prepare(`
-      UPDATE companies SET is_indexable = CASE
-        WHEN length(trim(COALESCE(bin, ''))) = 12
-          AND trim(bin) NOT GLOB '*[^0-9]*'
-          AND length(trim(COALESCE(name_ru, name_kk, ''))) >= 3
-          AND quality_score >= ?
-        THEN 1 ELSE 0 END
-    `).run(threshold);
-    result = db.prepare(`
-      SELECT COUNT(*) total,
-        SUM(CASE WHEN is_indexable = 1 THEN 1 ELSE 0 END) indexable,
-        SUM(CASE WHEN is_indexable = 0 THEN 1 ELSE 0 END) excluded
-      FROM companies
-    `).get();
-    result.total = Number(result.total || 0);
-    result.indexable = Number(result.indexable || 0);
-    result.excluded = Number(result.excluded || 0);
     setMeta(db, 'quality_version', QUALITY_VERSION);
-    setMeta(db, 'quality_min_score', threshold);
+    setMeta(db, 'quality_min_score', minScore());
     setMeta(db, 'quality_backfilled_at', new Date().toISOString());
     setMeta(db, 'record_count', result.total);
     setMeta(db, 'indexable_count', result.indexable);
     setMeta(db, 'excluded_count', result.excluded);
-    db.exec('CREATE INDEX companies_indexable_idx ON companies(is_indexable, id);');
+    if (activated) setMeta(db, 'completed_at', completionEvidence);
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');
     throw error;
   }
-  db.exec('ANALYZE companies; PRAGMA optimize;');
+
+  console.log(`[Companies] Quality metadata ready: ${result.indexable}/${result.total} indexable; ${result.excluded} excluded.`);
+  if (activated) console.log('[Companies] Restored catalog activation from completed import metadata.');
+  return result;
+}
+
+function currentRowsCanBeReconciled(db) {
+  const state = qualityState(db);
+  return state.version === QUALITY_VERSION
+    && (state.storedMinScore === null || state.storedMinScore === minScore());
+}
+
+function checkpointNumber(db, key) {
+  return numericMeta(db, key) || 0;
+}
+
+function clearCheckpoint(db) {
+  db.prepare(`
+    DELETE FROM company_meta WHERE key IN (
+      'quality_backfill_checkpoint_version',
+      'quality_backfill_checkpoint_min_score',
+      'quality_backfill_last_id',
+      'quality_backfill_processed'
+    )
+  `).run();
+}
+
+function backfillDatabase(db, options = {}) {
+  const threshold = minScore();
+  const total = Number(db.prepare('SELECT COUNT(*) count FROM companies').get().count || 0);
+  if (currentRowsCanBeReconciled(db)) {
+    console.log(`[Companies] Quality rows already use version ${QUALITY_VERSION}; reconciling metadata only...`);
+    return reconcileQualityMetadata(db);
+  }
+
+  const batchSize = Math.max(1000, Math.min(Number(options.batchSize) || 10000, 50000));
+  const checkpointVersion = db.prepare(
+    'SELECT value FROM company_meta WHERE key = ?'
+  ).get('quality_backfill_checkpoint_version')?.value;
+  const checkpointMinScore = numericMeta(db, 'quality_backfill_checkpoint_min_score');
+  let lastId = checkpointVersion === QUALITY_VERSION && checkpointMinScore === threshold
+    ? checkpointNumber(db, 'quality_backfill_last_id')
+    : 0;
+  let processed = lastId
+    ? checkpointNumber(db, 'quality_backfill_processed')
+    : 0;
+
+  if (!lastId) {
+    clearCheckpoint(db);
+    setMeta(db, 'quality_backfill_checkpoint_version', QUALITY_VERSION);
+    setMeta(db, 'quality_backfill_checkpoint_min_score', threshold);
+  }
+
+  console.log(`[Companies] Recalculating quality for ${total} records in resumable batches of ${batchSize}...`);
+  if (processed) console.log(`[Companies] Resuming quality backfill after ${processed} committed records.`);
+
+  const nextIds = db.prepare('SELECT id FROM companies WHERE id > ? ORDER BY id LIMIT ?');
+  const updateBatch = db.prepare(`
+    UPDATE companies SET
+      quality_score = ${QUALITY_SCORE_SQL},
+      is_indexable = CASE
+        WHEN length(trim(COALESCE(bin, ''))) = 12
+          AND trim(bin) NOT GLOB '*[^0-9]*'
+          AND length(trim(COALESCE(name_ru, name_kk, ''))) >= 3
+          AND (${QUALITY_SCORE_SQL}) >= ?
+        THEN 1 ELSE 0 END
+    WHERE id > ? AND id <= ?
+  `);
+
+  while (true) {
+    const rows = nextIds.all(lastId, batchSize);
+    if (!rows.length) break;
+    const endId = Number(rows[rows.length - 1].id);
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      updateBatch.run(threshold, lastId, endId);
+      processed += rows.length;
+      lastId = endId;
+      setMeta(db, 'quality_backfill_last_id', lastId);
+      setMeta(db, 'quality_backfill_processed', processed);
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+    if (processed === rows.length || processed % 50000 < rows.length) {
+      console.log(`[Companies] Quality checkpoint: ${processed}/${total}`);
+    }
+  }
+
+  const result = reconcileQualityMetadata(db);
+  clearCheckpoint(db);
+  db.exec('PRAGMA optimize;');
   console.log(`[Companies] Quality ready: ${result.indexable}/${result.total} indexable; ${result.excluded} excluded.`);
   return result;
 }
@@ -101,4 +210,11 @@ if (require.main === module) {
   }
 }
 
-module.exports = { backfill, backfillDatabase, qualityNeedsBackfill };
+module.exports = {
+  backfill,
+  backfillDatabase,
+  currentRowsCanBeReconciled,
+  qualityNeedsBackfill,
+  qualityState,
+  reconcileQualityMetadata,
+};
