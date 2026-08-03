@@ -5,7 +5,7 @@ const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-03-company-data-provenance';
+  || '2026-08-03-company-import-audit-fix';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',

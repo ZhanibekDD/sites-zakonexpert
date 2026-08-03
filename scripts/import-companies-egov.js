@@ -14,6 +14,7 @@ const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
 const { normalizeCompanyName } = require('../modules/company-name-normalize');
 const { buildSearchAliases } = require('../modules/company-transliterate');
+const { backfillDatabase, qualityNeedsBackfill } = require('./backfill-company-quality');
 
 const ROOT = path.join(__dirname, '..');
 const FINAL_DB = process.env.COMPANIES_DB_PATH || path.join(ROOT, 'data', 'companies.sqlite');
@@ -22,6 +23,8 @@ const PUBLIC_DATA_URL = 'https://data.egov.kz/datasets/getdata';
 const API_URL = 'https://data.egov.kz/api/v4/gbd_ul/v1';
 const DEFAULT_PAGE_SIZE = 100;
 const MIN_FULL_RECORDS = 900000;
+const DATASET_VIEW_ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+const DATASET_JSON_ACCEPT = 'application/json, text/javascript, */*; q=0.01';
 
 function clean(value) {
   if (value === null || value === undefined) return '';
@@ -99,13 +102,21 @@ async function withRetry(fn, label, attempts = 5) {
 async function createPublicClient() {
   const response = await axios.get(DATASET_URL, {
     timeout: 30000,
-    headers: { 'User-Agent': 'ZakonExpert registry importer/1.0' },
+    // data.egov.kz uses HTTP content negotiation here. Axios' default Accept
+    // header makes the endpoint look for a non-existent `view.txt` template
+    // and return 500, while a browser-compatible HTML Accept returns the
+    // dataset page and session cookies normally.
+    headers: {
+      Accept: DATASET_VIEW_ACCEPT,
+      'User-Agent': 'ZakonExpert registry importer/1.1',
+    },
   });
   const cookies = (response.headers['set-cookie'] || []).map(v => v.split(';')[0]).join('; ');
   return axios.create({
     timeout: 45000,
     headers: {
-      'User-Agent': 'ZakonExpert registry importer/1.0',
+      Accept: DATASET_JSON_ACCEPT,
+      'User-Agent': 'ZakonExpert registry importer/1.1',
       'X-Requested-With': 'XMLHttpRequest',
       Referer: DATASET_URL,
       ...(cookies ? { Cookie: cookies } : {}),
@@ -286,6 +297,19 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
   if (options.targetId) {
     try {
       const company = await refreshCompanyById(database, options.targetId);
+      if (qualityNeedsBackfill(database)) {
+        console.log('[Companies] Company quality metadata is missing or stale; repairing sitemap eligibility...');
+        backfillDatabase(database);
+      } else {
+        const total = Number(database.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+        const indexable = Number(database.prepare(
+          'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
+        ).get().count || 0);
+        setMeta(database, 'record_count', total);
+        setMeta(database, 'indexable_count', indexable);
+        setMeta(database, 'excluded_count', Math.max(0, total - indexable));
+        setMeta(database, 'quality_backfilled_at', new Date().toISOString());
+      }
       console.log(`[Companies] Refreshed official company ${options.targetId}. Restart Node.js.`);
       return { targeted: true, id: options.targetId, company };
     } finally {
@@ -429,7 +453,11 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DATASET_JSON_ACCEPT,
+  DATASET_VIEW_ACCEPT,
   MIN_FULL_RECORDS,
+  createPublicClient,
+  fetchPublicPage,
   importCompanies,
   insertRows,
   normalizeCompanyRow,

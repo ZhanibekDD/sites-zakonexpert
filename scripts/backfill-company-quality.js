@@ -15,14 +15,26 @@ function setMeta(db, key, value) {
   `).run(key, String(value));
 }
 
-function backfill() {
-  if (!process.argv.includes('--confirm-offline')) {
-    throw new Error('Stop Node.js and run with --confirm-offline');
-  }
-  if (!fs.existsSync(DB_PATH)) throw new Error(`Company database not found: ${DB_PATH}`);
+function numericMeta(db, key) {
+  const row = db.prepare('SELECT value FROM company_meta WHERE key = ?').get(key);
+  const value = Number.parseInt(row?.value, 10);
+  return Number.isInteger(value) && value >= 0 ? value : null;
+}
 
-  const db = new DatabaseSync(DB_PATH);
-  createSchema(db);
+function qualityNeedsBackfill(db) {
+  const total = Number(db.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
+  const version = db.prepare('SELECT value FROM company_meta WHERE key = ?').get('quality_version')?.value;
+  const recordCount = numericMeta(db, 'record_count');
+  const indexableCount = numericMeta(db, 'indexable_count');
+  const excludedCount = numericMeta(db, 'excluded_count');
+  return version !== QUALITY_VERSION
+    || recordCount !== total
+    || indexableCount === null
+    || excludedCount === null
+    || indexableCount + excludedCount !== total;
+}
+
+function backfillDatabase(db) {
   const threshold = minScore();
   console.log(`[Companies] Recalculating quality for ${db.prepare('SELECT COUNT(*) count FROM companies').get().count} records...`);
   let result;
@@ -44,6 +56,9 @@ function backfill() {
         SUM(CASE WHEN is_indexable = 0 THEN 1 ELSE 0 END) excluded
       FROM companies
     `).get();
+    result.total = Number(result.total || 0);
+    result.indexable = Number(result.indexable || 0);
+    result.excluded = Number(result.excluded || 0);
     setMeta(db, 'quality_version', QUALITY_VERSION);
     setMeta(db, 'quality_min_score', threshold);
     setMeta(db, 'quality_backfilled_at', new Date().toISOString());
@@ -57,8 +72,25 @@ function backfill() {
     throw error;
   }
   db.exec('ANALYZE companies; PRAGMA optimize;');
-  db.close();
   console.log(`[Companies] Quality ready: ${result.indexable}/${result.total} indexable; ${result.excluded} excluded.`);
+  return result;
+}
+
+function backfill(options = {}) {
+  const argv = options.argv || process.argv;
+  if (!argv.includes('--confirm-offline')) {
+    throw new Error('Stop Node.js and run with --confirm-offline');
+  }
+  if (!fs.existsSync(DB_PATH)) throw new Error(`Company database not found: ${DB_PATH}`);
+
+  const db = new DatabaseSync(DB_PATH);
+  createSchema(db);
+  let result;
+  try {
+    result = backfillDatabase(db);
+  } finally {
+    db.close();
+  }
   return result;
 }
 
@@ -69,4 +101,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { backfill };
+module.exports = { backfill, backfillDatabase, qualityNeedsBackfill };

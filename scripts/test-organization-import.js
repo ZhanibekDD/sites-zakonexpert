@@ -14,7 +14,11 @@ process.env.COMPANIES_DB_PATH = dbPath;
 
 const { createSchema, rebuildSearch } = require('../modules/companies-schema');
 const { buildStoragePlan } = require('../modules/organization-storage-plan');
-const { insertRows } = require('./import-companies-egov');
+const {
+  DATASET_JSON_ACCEPT,
+  DATASET_VIEW_ACCEPT,
+  insertRows,
+} = require('./import-companies-egov');
 const { run: importDirectory } = require('./import-directory-contacts');
 const { run: rollbackImport } = require('./rollback-organization-import');
 
@@ -109,6 +113,11 @@ const sourceRows = [
 ];
 
 async function main() {
+  assert(DATASET_VIEW_ACCEPT.includes('text/html'),
+    'dataset session must request HTML instead of Axios text/plain fallback');
+  assert(DATASET_JSON_ACCEPT.includes('application/json'),
+    'dataset data request must explicitly accept JSON');
+
   const database = new DatabaseSync(dbPath);
   createSchema(database);
   insertRows(database, officialRows, '2026-07-31T00:00:00.000Z');
@@ -170,6 +179,11 @@ async function main() {
     SELECT COUNT(*) AS c FROM companies
     WHERE contact_search LIKE '%77775554433%'
   `).get().c), 1, 'phone embedded in an address must become a normalized contact');
+  assert.strictEqual(
+    verify.prepare("SELECT value FROM company_meta WHERE key = 'quality_version'").get()?.value,
+    '1',
+    'a completed directory import must activate company sitemap quality metadata'
+  );
   verify.close();
 
   const companies = require('../modules/companies-db');
@@ -192,6 +206,10 @@ async function main() {
     'normalized email search must find an organization');
   assert(companies.search('77775554433').items.length === 1,
     'normalized phone search must find an organization');
+  assert.strictEqual(companies.stats().qualityReady, true,
+    'company quality must be ready immediately after the directory import');
+  assert.strictEqual(companies.sitemapChunkCount(), 1,
+    'at least one complete official organization must be exposed in the sitemap');
   const coffee = companies.search('Coffee Point').items[0];
   assert.strictEqual(coffee.is_official_source, false,
     'a directory-only branch must remain clearly labeled as directory data');
