@@ -7,6 +7,7 @@ const { createSchema } = require('../modules/companies-schema');
 const { minScore, QUALITY_SCORE_SQL, QUALITY_VERSION } = require('../modules/company-quality');
 
 const DB_PATH = process.env.COMPANIES_DB_PATH || path.join(__dirname, '..', 'data', 'companies.sqlite');
+const QUALITY_REPAIR_RELEASE = '2026-08-04-company-sitemap-row-repair';
 
 function setMeta(db, key, value) {
   db.prepare(`
@@ -53,6 +54,22 @@ function qualityNeedsBackfill(db) {
     || state.indexableCount + state.excludedCount !== state.total;
 }
 
+function qualityRowsNeedBackfill(db) {
+  const threshold = minScore();
+  const mismatch = db.prepare(`
+    SELECT id FROM companies
+    WHERE COALESCE(quality_score, -1) != (${QUALITY_SCORE_SQL})
+      OR COALESCE(is_indexable, -1) != CASE
+        WHEN length(trim(COALESCE(bin, ''))) = 12
+          AND trim(bin) NOT GLOB '*[^0-9]*'
+          AND length(trim(COALESCE(name_ru, name_kk, ''))) >= 3
+          AND (${QUALITY_SCORE_SQL}) >= ?
+        THEN 1 ELSE 0 END
+    LIMIT 1
+  `).get(threshold);
+  return Boolean(mismatch);
+}
+
 function reconcileQualityMetadata(db) {
   const total = Number(db.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
   const indexable = Number(db.prepare(
@@ -97,7 +114,8 @@ function reconcileQualityMetadata(db) {
 function currentRowsCanBeReconciled(db) {
   const state = qualityState(db);
   return state.version === QUALITY_VERSION
-    && (state.storedMinScore === null || state.storedMinScore === minScore());
+    && (state.storedMinScore === null || state.storedMinScore === minScore())
+    && !qualityRowsNeedBackfill(db);
 }
 
 function checkpointNumber(db, key) {
@@ -196,7 +214,10 @@ function backfill(options = {}) {
   createSchema(db);
   let result;
   try {
-    result = backfillDatabase(db);
+    const batchArg = argv.find(argument => argument.startsWith('--batch-size='));
+    const batchSize = Number.parseInt(batchArg?.slice('--batch-size='.length) || '', 10);
+    console.log(`[Companies] Quality repair: ${QUALITY_REPAIR_RELEASE}`);
+    result = backfillDatabase(db, { batchSize });
   } finally {
     db.close();
   }
@@ -215,6 +236,7 @@ module.exports = {
   backfillDatabase,
   currentRowsCanBeReconciled,
   qualityNeedsBackfill,
+  qualityRowsNeedBackfill,
   qualityState,
   reconcileQualityMetadata,
 };

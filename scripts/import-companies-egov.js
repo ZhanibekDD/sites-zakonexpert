@@ -17,6 +17,7 @@ const { buildSearchAliases } = require('../modules/company-transliterate');
 const {
   currentRowsCanBeReconciled,
   qualityNeedsBackfill,
+  qualityRowsNeedBackfill,
   reconcileQualityMetadata,
 } = require('./backfill-company-quality');
 
@@ -35,6 +36,7 @@ const DEFAULT_PAGE_SIZE = 100;
 const MIN_FULL_RECORDS = 900000;
 const DATASET_VIEW_ACCEPT = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
 const DATASET_JSON_ACCEPT = 'application/json, text/javascript, */*; q=0.01';
+const IMPORTER_RELEASE = '2026-08-04-company-sitemap-row-repair';
 
 function clean(value) {
   if (value === null || value === undefined) return '';
@@ -350,12 +352,18 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
   createSchema(database);
   if (options.targetId) {
     try {
+      console.log(`[Companies] Importer: ${IMPORTER_RELEASE}`);
       const company = await refreshCompanyById(database, options.targetId, {
         apiKey: process.env.EGOV_API_KEY,
       });
       if (currentRowsCanBeReconciled(database)) {
         console.log('[Companies] Reconciling sitemap counters without rewriting company rows...');
         reconcileQualityMetadata(database);
+      } else if (qualityRowsNeedBackfill(database)) {
+        console.warn(
+          '[Companies] Stored quality rows do not match the current formula; sitemap remains disabled. '
+          + 'Run backfill-company-quality -- --confirm-offline and restart Node.js.'
+        );
       } else if (qualityNeedsBackfill(database)) {
         console.warn(
           '[Companies] Company quality formula changed; targeted refresh completed without a global backfill. '
