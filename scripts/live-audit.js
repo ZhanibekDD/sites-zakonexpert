@@ -63,9 +63,16 @@ async function auditPublicRoute(pathname) {
 }
 
 async function auditSecurity() {
-  const { response: home } = await request('/');
-  if (!home.headers.get('content-security-policy')) record(failures, 'Content-Security-Policy is missing');
-  if (home.headers.has('x-powered-by')) record(warnings, 'X-Powered-By exposes Express');
+  // Plesk/nginx serves physical files (including public/index.html) before a
+  // request reaches Passenger. Verify application-owned security headers on a
+  // dynamic route instead of falsely attributing the static nginx response to
+  // Express. Infrastructure headers are managed in Plesk, not by server.js.
+  const { response: appPage } = await request('/companies');
+  if (!appPage.headers.get('content-security-policy')) {
+    record(failures, 'Content-Security-Policy is missing on the dynamic application');
+  }
+  const poweredBy = appPage.headers.get('x-powered-by') || '';
+  if (/express/i.test(poweredBy)) record(warnings, 'X-Powered-By exposes Express');
 
   const { response: status } = await request('/api/news/status');
   if (![403, 503].includes(status.status)) record(failures, `/api/news/status is public (${status.status})`);
