@@ -108,12 +108,20 @@ assert.strictEqual(currentRowsCanBeReconciled(driftDb), false,
 backfillDatabase(driftDb, { batchSize: 1000 });
 assert.strictEqual(qualityRowsNeedBackfill(driftDb), false,
   'resumable backfill must repair persisted quality rows');
-assert.strictEqual(
-  Number(driftDb.prepare('SELECT is_indexable FROM companies WHERE id = ?').get(7137221).is_indexable),
+  assert.strictEqual(
+    Number(driftDb.prepare('SELECT is_indexable FROM companies WHERE id = ?').get(7137221).is_indexable),
   1,
-  'a rich official company must return to the sitemap after row repair'
-);
-driftDb.close();
+    'a rich official company must return to the sitemap after row repair'
+  );
+  const browsePlan = driftDb.prepare(`
+    EXPLAIN QUERY PLAN
+    SELECT id FROM companies WHERE is_indexable = 1 ORDER BY id LIMIT 31 OFFSET 0
+  `).all().map(row => String(row.detail || '')).join(' | ');
+  assert(browsePlan.includes('companies_indexable_idx'),
+    `public browsing must use companies_indexable_idx; received: ${browsePlan}`);
+  assert(!/TEMP B-TREE/i.test(browsePlan),
+    `public browsing must not sort the full registry; received: ${browsePlan}`);
+  driftDb.close();
 
 const companies = require('../modules/companies-db');
 assert.strictEqual(companies.stats().count, 2);
@@ -121,7 +129,9 @@ assert.strictEqual(companies.stats().indexableCount, 1);
 assert.strictEqual(companies.stats().excludedCount, 1);
 assert.strictEqual(companies.findById(7137221).bin, '970540001234');
 assert.strictEqual(companies.search('Альфа').items.length, 1);
-assert.strictEqual(companies.search('970540001234').items.length, 1);
+  assert.strictEqual(companies.search('970540001234').items.length, 1);
+  assert.deepStrictEqual(companies.browse().items.map(item => item.id), [7137221],
+    'public catalog browsing must exclude thin noindex rows');
 assert.strictEqual(companies.sitemapChunkCount(), 1);
 assert.strictEqual(companies.sitemapChunk(1).length, 1);
 
@@ -205,6 +215,19 @@ Promise.all([
   assert(itemHtml.includes('alfa pravo'), 'Latin alias must be visible and present in schema');
   assert(!itemHtml.includes('aggregateRating'), 'unattributed directory ratings must not be published');
   assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
+  assert(itemHtml.includes('data-company-whatsapp'), 'company card must expose tracked WhatsApp CTAs');
+  assert(itemHtml.includes('%2Fcompany%2F7137221-'),
+    'company WhatsApp message must carry the exact card URL');
+  assert(itemHtml.includes('%D0%91%D0%98%D0%9D%3A%20970540001234'),
+    'company WhatsApp message must carry the BIN');
+  for (const route of [
+    '/snyatie-ogranichenii-chsi',
+    '/otmena-ispolnitelnoi-nadpisi',
+    '/grafik-oplaty-zadolzhennosti',
+    '/marshrut-dolzhnika',
+  ]) {
+    assert(itemHtml.includes(`href="${route}"`), `company card must link to ${route}`);
+  }
   assert(lowQualityHtml.includes('noindex,follow'), 'thin company must be noindex');
   assert(lowQualityHtml.includes('Официальные регистрационные сведения'));
   assert(lowQualityHtml.includes('Зарегистрирован'),
@@ -225,6 +248,12 @@ Promise.all([
       assert(html.includes(`hreflang="${getLocale(alternate).hreflang}"`));
     }
   });
+  const analyticsSource = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'js', 'analytics-events.js'),
+    'utf8'
+  );
+  assert(analyticsSource.includes("send('click_cta_company'"),
+    'company WhatsApp clicks must be recorded as a dedicated conversion event');
   console.log('Company data OK: normalization, SQLite search, templates and sitemap chunks');
 }).finally(() => {
   companies.close();

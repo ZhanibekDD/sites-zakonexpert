@@ -74,8 +74,15 @@ function sourceProjection(database, qualifier = '') {
   return "'egov_gbd_ul' AS primary_source_key";
 }
 
-function browseOrder(database) {
-  return hasColumn(database, 'is_indexable') ? 'is_indexable DESC, id' : 'id';
+function qualityRowsAvailable(database) {
+  return hasColumn(database, 'is_indexable')
+    && getMeta(database, 'quality_version') === QUALITY_VERSION;
+}
+
+function publicBrowseFilter(database, qualifier = '') {
+  if (!qualityRowsAvailable(database)) return '';
+  const prefix = qualifier ? `${qualifier}.` : '';
+  return `WHERE ${prefix}is_indexable = 1`;
 }
 
 function optionalMetaCount(database, key) {
@@ -106,8 +113,7 @@ function stats() {
     qualityReady: false, indexableCount: 0, excludedCount: 0, qualityUpdatedAt: null,
     officialCount: 0, directoryOnlyCount: 0, withContactsCount: 0,
   };
-  const qualityReady = hasColumn(database, 'is_indexable')
-    && getMeta(database, 'quality_version') === QUALITY_VERSION;
+  const qualityReady = qualityRowsAvailable(database);
   const metaCount = Number.parseInt(getMeta(database, 'record_count'), 10);
   const count = Number.isInteger(metaCount) && metaCount >= 0
     ? metaCount
@@ -242,12 +248,16 @@ function browse(page = 1, limit = 30) {
   const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
   const offset = (safePage - 1) * safeLimit;
   const primarySource = sourceProjection(database);
-  const order = browseOrder(database);
+  // Once quality metadata is ready, use the (is_indexable, id) index as a
+  // range scan. The previous ORDER BY is_indexable DESC, id made SQLite sort
+  // all 1.2M rows before returning the first 31 cards on production.
+  const eligibility = publicBrowseFilter(database);
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
            activity_ru, leader, status_ru, ${primarySource}
     FROM companies
-    ORDER BY ${order}
+    ${eligibility}
+    ORDER BY id
     LIMIT ? OFFSET ?
   `).all(safeLimit + 1, offset);
   return {
@@ -426,9 +436,11 @@ function findById(id) {
 function regionStats() {
   const database = open();
   if (!database || !getMeta(database, 'completed_at')) return [];
+  const eligibility = publicBrowseFilter(database);
   const rows = database.prepare(`
     SELECT region_slug, COUNT(*) AS count FROM companies
-    WHERE region_slug IS NOT NULL GROUP BY region_slug
+    ${eligibility ? `${eligibility} AND` : 'WHERE'} region_slug IS NOT NULL
+    GROUP BY region_slug
   `).all();
   const counts = new Map(rows.map(r => [r.region_slug, Number(r.count)]));
   return REGIONS
@@ -447,10 +459,12 @@ function byRegion(slug, page = 1, limit = 30) {
   const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 30, 1), 100);
   const offset = (safePage - 1) * safeLimit;
   const primarySource = sourceProjection(database);
+  const qualityFilter = qualityRowsAvailable(database) ? 'AND is_indexable = 1' : '';
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
            activity_ru, leader, status_ru, ${primarySource}
-    FROM companies WHERE region_slug = ? ORDER BY id LIMIT ? OFFSET ?
+    FROM companies WHERE region_slug = ? ${qualityFilter}
+    ORDER BY id LIMIT ? OFFSET ?
   `).all(slug, safeLimit + 1, offset);
   return {
     items: items.slice(0, safeLimit).map(addSlug),

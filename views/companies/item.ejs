@@ -178,11 +178,24 @@ const statusStyle = statusState === 'active'
     : { bg: '#f1f5f9', border: '#e2e8f0', fg: '#64748b', icon: 'bi-question-circle-fill' });
 
 const reportText = encodeURIComponent(copy.report + ': "' + name + '" (' + copy.bin + ' ' + (company.bin || '—') + ', ' + canonical + ').');
-const consultationText = encodeURIComponent(copy.consultation + ': ' + name + '.');
+const consultationText = encodeURIComponent(
+  copy.consultation + ': «' + name + '». '
+  + copy.bin + ': ' + (company.bin || '—') + '. '
+  + canonical + '\n' + copy.itemHelpText
+);
+const consultationHref = 'https://wa.me/77479957635?text=' + consultationText;
 const sourceNotice = official ? copy.officialNotice : copy.directoryNotice;
 const languageLinks = languages.map(function(language) {
   return { ...language, href: language.companyHref };
 });
+const relatedHelpHtml = '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;">'
+  + '<h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 12px;">' + esc(copy.relatedHelp) + '</h2>'
+  + '<div style="display:grid;gap:9px;">'
+  + '<a href="/snyatie-ogranichenii-chsi" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpArrest) + ' →</a>'
+  + '<a href="/otmena-ispolnitelnoi-nadpisi" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpInscription) + ' →</a>'
+  + '<a href="/grafik-oplaty-zadolzhennosti" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpSchedule) + ' →</a>'
+  + '<a href="/marshrut-dolzhnika" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpRoute) + ' →</a>'
+  + '</div></section>';
 
 const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb"><a href="/">' + esc(copy.home) + '</a><span class="npage-bc-sep">/</span><a href="' + companyCatalogPath + '">' + esc(copy.companies) + '</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
@@ -191,7 +204,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
   + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
   + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px 10px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 4px;">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
-  + contactHtml + addressesHtml + aliasesHtml + categoriesHtml
+  + contactHtml + addressesHtml + aliasesHtml + categoriesHtml + relatedHelpHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
   + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'
   + '<aside style="display:grid;gap:14px;">'
@@ -200,12 +213,12 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<p style="margin:8px 0 0;color:#475569;font-size:.79rem;line-height:1.5;">' + esc(official ? copy.officialStatusNote : copy.directoryStatusNote) + '</p></div>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;display:grid;gap:10px;">'
   + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a>'
-  + '<a href="https://wa.me/77479957635?text=' + consultationText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> ' + esc(copy.consultation) + '</a>'
+  + '<a href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="sidebar" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> ' + esc(copy.consultation) + '</a>'
   + '<a href="https://wa.me/77479957635?text=' + reportText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-flag" style="color:#1a56db;"></i> ' + esc(copy.report) + '</a></div>'
   + '</aside></div>'
   + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
   + '<h2 class="npage-cta-title">' + esc(copy.itemHelpTitle) + '</h2><p class="npage-cta-sub">' + esc(copy.itemHelpText) + '</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77479957635?text=' + consultationText + '" target="_blank" rel="noopener">' + esc(copy.consultation) + '</a></div>'
+  + '<a class="npage-wa-btn" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="bottom">' + esc(copy.consultation) + '</a></div>'
   + '</div></div>';
 %>
 <%- include('./layout', {
@@ -219,5 +232,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   copy,
   languages: languageLinks,
   companyCatalogPath,
+  whatsappHref: consultationHref,
+  companyCta: true,
   body
 }) %>

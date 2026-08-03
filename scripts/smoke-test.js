@@ -172,6 +172,15 @@ async function run() {
     assert(imageResponse.headers.get('cache-control')?.includes('max-age=604800'),
       'Static image cache policy is missing');
 
+    const companyCatalog = await fetch(`${origin}/companies`);
+    assert(companyCatalog.headers.get('cache-control')?.includes('s-maxage='),
+      'Company catalog is missing shared-cache headers');
+    assert(companyCatalog.headers.get('server-timing')?.includes('company-db'),
+      'Company catalog is missing database timing telemetry');
+    const companySearch = await fetch(`${origin}/companies?q=test`);
+    assert(companySearch.headers.get('cache-control')?.includes('no-store'),
+      'Unbounded company search results must not enter the shared cache');
+
     const adminStatus = await fetch(`${origin}/api/news/status`);
     assert(adminStatus.status === 503,
       `/api/news/status without ADMIN_KEY: expected 503, received ${adminStatus.status}`);
