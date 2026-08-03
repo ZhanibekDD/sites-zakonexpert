@@ -1,1 +1,1 @@
-ZakonExpert release 2026-08-02-companies-catalog-compat
+ZakonExpert release 2026-08-03-company-data-provenance

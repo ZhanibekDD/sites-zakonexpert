@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-02-companies-catalog-compat';
+const RELEASE_ID = '2026-08-03-company-data-provenance';
 
 function fileLog(filename, level) {
   return new winston.transports.File({

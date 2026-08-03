@@ -37,7 +37,7 @@ if (query && results.items.length === 0) {
 } else if (results.items.length) {
   resultsHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;">'
     + results.items.map(function(company) {
-      const official = Boolean(company.bin);
+      const official = Boolean(company.is_official_source);
       return '<a href="' + companyItemPrefix + esc(company.slug) + '" style="display:block;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;text-decoration:none;color:#0d1f3c;">'
         + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">'
         + '<div style="font-weight:750;font-size:1rem;line-height:1.35;">' + esc(company.name_ru || company.name_kk) + '</div>'

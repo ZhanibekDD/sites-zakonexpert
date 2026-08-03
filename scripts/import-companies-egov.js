@@ -62,7 +62,9 @@ function normalizeCompanyRow(row) {
     bin: pick(values, ['bin', 'businessidentificationnumber', 'businessid']),
     nameRu,
     nameKk,
-    registrationDate: pick(values, ['registerdate', 'registrationdate', 'regdate', 'dateregistration']),
+    registrationDate: pick(values, [
+      'registerdate', 'registrationdate', 'regdate', 'datereg', 'dateregistration',
+    ]),
     addressRu: pick(values, ['addressru', 'addressrus', 'rusaddress', 'address']),
     activityRu: pick(values, ['okedru', 'activityru', 'mainactivityru', 'okednameru', 'activity']),
     leader: pick(values, ['fio', 'leader', 'head', 'director', 'headfio', 'fiohead']),
@@ -111,11 +113,11 @@ async function createPublicClient() {
   });
 }
 
-async function fetchPublicPage(client, page, pageSize) {
+async function fetchPublicPage(client, page, pageSize, filter = {}) {
   const response = await client.get(PUBLIC_DATA_URL, {
     params: {
       index: 'gbd_ul', version: 'v1', page, count: pageSize,
-      text: '', column: '', order: '',
+      text: filter.text || '', column: filter.column || '', order: filter.order || '',
     },
   });
   const body = response.data || {};
@@ -207,18 +209,73 @@ function insertRows(db, rows, importedAt) {
 function parseArgs(argv) {
   const args = new Set(argv);
   const value = prefix => argv.find(arg => arg.startsWith(prefix))?.slice(prefix.length);
+  const targetRaw = value('--id=');
+  const targetId = targetRaw === undefined ? null : Number.parseInt(targetRaw, 10);
   return {
     all: args.has('--all'),
     confirmOffline: args.has('--confirm-offline'),
     fresh: args.has('--fresh'),
     pages: Number.parseInt(value('--pages=') || '', 10) || 1,
     pageSize: Math.min(Number.parseInt(value('--page-size=') || '', 10) || DEFAULT_PAGE_SIZE, 100),
+    targetId,
+    targetRaw,
   };
 }
 
+function searchIdentity(company) {
+  if (!company) return '';
+  return JSON.stringify([
+    company.bin || '', company.name_ru || '', company.name_kk || '',
+    company.search_aliases || '',
+  ]);
+}
+
+async function refreshCompanyById(database, targetId) {
+  const existing = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, search_aliases
+    FROM companies WHERE id = ?
+  `).get(targetId);
+  if (!existing) {
+    throw new Error(`Company ${targetId} is not in the active database; use a reviewed full import.`);
+  }
+
+  const client = await withRetry(createPublicClient, 'dataset session');
+  const data = await withRetry(
+    () => fetchPublicPage(client, 1, 100, { text: String(targetId), column: 'id' }),
+    `company ${targetId}`
+  );
+  const sourceRow = data.rows.find(row => normalizeCompanyRow(row)?.id === targetId);
+  if (!sourceRow) throw new Error(`Company ${targetId} was not returned by the official dataset.`);
+
+  const refreshedAt = new Date().toISOString();
+  insertRows(database, [sourceRow], refreshedAt);
+  const updated = database.prepare(`
+    SELECT id, bin, name_ru, name_kk, search_aliases,
+           registration_date, address_ru, activity_ru, leader, status_ru
+    FROM companies WHERE id = ?
+  `).get(targetId);
+  if (searchIdentity(existing) !== searchIdentity(updated)) {
+    console.log('[Companies] Search identity changed; rebuilding the company search index...');
+    rebuildSearch(database);
+  }
+  setMeta(database, 'last_targeted_refresh_at', refreshedAt);
+  setMeta(database, 'last_targeted_refresh_id', targetId);
+  return updated;
+}
+
 async function importCompanies(options = parseArgs(process.argv.slice(2))) {
+  if (options.targetRaw !== undefined
+      && (!Number.isSafeInteger(options.targetId) || options.targetId <= 0)) {
+    throw new Error('--id must be a positive integer');
+  }
+  if (options.targetId && options.all) {
+    throw new Error('Use either --id for one record or --all for the full import, not both');
+  }
   if (options.all && !options.confirmOffline) {
     throw new Error('Full activation requires --confirm-offline (stop Node.js before running)');
+  }
+  if (options.targetId && !options.confirmOffline) {
+    throw new Error('Targeted refresh requires --confirm-offline (stop Node.js before running)');
   }
 
   fs.mkdirSync(path.dirname(FINAL_DB), { recursive: true });
@@ -226,6 +283,15 @@ async function importCompanies(options = parseArgs(process.argv.slice(2))) {
 
   const database = new DatabaseSync(FINAL_DB);
   createSchema(database);
+  if (options.targetId) {
+    try {
+      const company = await refreshCompanyById(database, options.targetId);
+      console.log(`[Companies] Refreshed official company ${options.targetId}. Restart Node.js.`);
+      return { targeted: true, id: options.targetId, company };
+    } finally {
+      database.close();
+    }
+  }
   backfillDerivedCompanyFields(database, {
     batchSize: 5000,
     onProgress: progress => {
@@ -368,4 +434,5 @@ module.exports = {
   insertRows,
   normalizeCompanyRow,
   parseArgs,
+  refreshCompanyById,
 };

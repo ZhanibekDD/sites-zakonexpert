@@ -174,6 +174,8 @@ async function main() {
 
   const companies = require('../modules/companies-db');
   const alpha = companies.findById(101);
+  assert.strictEqual(alpha.is_official_source, true,
+    'an official company stays official when directory contacts are attached');
   assert(alpha.contacts.some(contact => contact.value === 'verified@alpha.kz'),
     'verified override must be returned');
   assert(alpha.contacts.some(contact => contact.normalized === 'info@alpha.kz'),
@@ -190,6 +192,9 @@ async function main() {
     'normalized email search must find an organization');
   assert(companies.search('77775554433').items.length === 1,
     'normalized phone search must find an organization');
+  const coffee = companies.search('Coffee Point').items[0];
+  assert.strictEqual(coffee.is_official_source, false,
+    'a directory-only branch must remain clearly labeled as directory data');
   companies.close();
 
   const repeated = await importDirectory({ ...baseOptions, limitRows: Infinity });
