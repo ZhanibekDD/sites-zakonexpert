@@ -21,6 +21,11 @@ function numericMeta(db, key) {
   return Number.isInteger(value) && value >= 0 ? value : null;
 }
 
+function textMeta(db, key) {
+  const value = db.prepare('SELECT value FROM company_meta WHERE key = ?').get(key)?.value;
+  return String(value || '').trim() || null;
+}
+
 function qualityState(db) {
   const total = Number(db.prepare('SELECT COUNT(*) AS count FROM companies').get().count || 0);
   const version = db.prepare('SELECT value FROM company_meta WHERE key = ?').get('quality_version')?.value;
@@ -53,7 +58,21 @@ function reconcileQualityMetadata(db) {
   const indexable = Number(db.prepare(
     'SELECT COUNT(*) AS count FROM companies WHERE is_indexable = 1'
   ).get().count || 0);
-  const result = { total, indexable, excluded: Math.max(0, total - indexable) };
+  const completedAt = textMeta(db, 'completed_at');
+  const completionEvidence = textMeta(db, 'directory_import_completed_at')
+    || db.prepare(`
+      SELECT completed_at FROM organization_import_runs
+      WHERE status = 'completed' AND completed_at IS NOT NULL
+      ORDER BY completed_at DESC LIMIT 1
+    `).get()?.completed_at
+    || textMeta(db, 'source_updated_at');
+  const activated = !completedAt && total > 0 && Boolean(completionEvidence);
+  const result = {
+    total,
+    indexable,
+    excluded: Math.max(0, total - indexable),
+    activated,
+  };
 
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -63,6 +82,7 @@ function reconcileQualityMetadata(db) {
     setMeta(db, 'record_count', result.total);
     setMeta(db, 'indexable_count', result.indexable);
     setMeta(db, 'excluded_count', result.excluded);
+    if (activated) setMeta(db, 'completed_at', completionEvidence);
     db.exec('COMMIT');
   } catch (error) {
     db.exec('ROLLBACK');
@@ -70,6 +90,7 @@ function reconcileQualityMetadata(db) {
   }
 
   console.log(`[Companies] Quality metadata ready: ${result.indexable}/${result.total} indexable; ${result.excluded} excluded.`);
+  if (activated) console.log('[Companies] Restored catalog activation from completed import metadata.');
   return result;
 }
 

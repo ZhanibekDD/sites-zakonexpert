@@ -72,6 +72,7 @@ process.argv.pop();
 const metadataDb = new DatabaseSync(dbPath);
 metadataDb.prepare('UPDATE companies SET quality_score = 99 WHERE id = ?').run(7137497);
 metadataDb.prepare("UPDATE company_meta SET value = '1' WHERE key = 'record_count'").run();
+metadataDb.prepare("DELETE FROM company_meta WHERE key = 'completed_at'").run();
 backfillDatabase(metadataDb);
 assert.strictEqual(
   Number(metadataDb.prepare('SELECT quality_score FROM companies WHERE id = ?').get(7137497).quality_score),
@@ -82,6 +83,10 @@ assert.strictEqual(
   metadataDb.prepare("SELECT value FROM company_meta WHERE key = 'record_count'").get().value,
   '2',
   'metadata-only reconciliation must repair the aggregate record count'
+);
+assert(
+  metadataDb.prepare("SELECT value FROM company_meta WHERE key = 'completed_at'").get()?.value,
+  'metadata reconciliation must restore catalog activation from completed import evidence'
 );
 metadataDb.close();
 

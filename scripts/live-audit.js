@@ -56,6 +56,9 @@ async function auditPublicRoute(pathname) {
       if (!hasTag(body, /<link[^>]+rel=["']canonical["']/i)) record(failures, `${pathname} has no canonical`);
       if (!hasTag(body, /<meta[^>]+name=["']description["']/i)) record(warnings, `${pathname} has no meta description`);
       if (body.length > 450000) record(warnings, `${pathname} HTML is heavy (${Math.round(body.length / 1024)} KB)`);
+      if (pathname === '/companies' && !/href=["']\/company\/\d+-/i.test(body)) {
+        record(failures, '/companies has no organization cards; catalog activation is missing');
+      }
     }
   } catch (error) {
     record(failures, `${pathname} failed: ${error.message}`);
