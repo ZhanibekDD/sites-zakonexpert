@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const path = require('path');
+const ejs = require('ejs');
 const { buildNotaries, validEmail } = require('./import-notaries');
 const { CHAMBERS, parseNotaryPage, toRegistryRows } = require('./refresh-notaries-csv');
 const { readRegistrySource } = require('../modules/registry-source');
@@ -49,4 +50,25 @@ assert.strictEqual(
   'registry refresh must preserve the verified email',
 );
 
-console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
+(async () => {
+  const profile = notaries.find(item => item.address && item.phone && item.email && item.schedule);
+  assert.ok(profile, 'notary profile fixture with public contacts is missing');
+  const profileHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'page.ejs'),
+    { notary: profile, comments: [], commentStats: null, commentSent: false },
+  );
+  assert.match(profileHtml, /Официальный реестр ЕНИС/);
+  assert.ok(
+    profileHtml.includes(encodeURIComponent(`${profile.address}, ${profile.region}, Казахстан`)),
+    'notary map lookup must include the region so district-only addresses resolve correctly',
+  );
+  assert.doesNotMatch(profileHtml, /pagead2\.googlesyndication\.com/,
+    'AdSense autoplacement must stay disabled on notary profiles');
+  assert.doesNotMatch(profileHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/,
+    'Yandex autoplacement must stay disabled on notary profiles');
+
+  console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

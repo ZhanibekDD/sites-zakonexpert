@@ -5,6 +5,13 @@ const resolvedOgImage = (typeof ogImage !== 'undefined' && ogImage)
 const safeSchemaJson = (typeof schema !== 'undefined' && schema)
   ? JSON.stringify(schema).replace(/</g, '\\u003c')
   : '';
+// This layout is shared by news, catalogues, registry profiles and tools.
+// Autoplacement is safe only inside editorial articles: on structured registry
+// cards it can inject creatives between data rows and make official details
+// look corrupted. Callers may still override the default explicitly.
+const autoAdsEnabled = typeof enableAutoAds !== 'undefined'
+  ? Boolean(enableAutoAds)
+  : (typeof ogType !== 'undefined' && ogType === 'article');
 %><!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -35,11 +42,13 @@ const safeSchemaJson = (typeof schema !== 'undefined' && schema)
   <link rel="stylesheet" href="/css/legal.css?v=20260504-2">
   <link rel="stylesheet" href="/css/news.css?v=20260720-1">
   <link rel="alternate" type="application/rss+xml" title="ZakonExpert — Новости" href="/news/feed.xml">
+  <% if (autoAdsEnabled) { %>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8638191147118359"
        crossorigin="anonymous"></script>
   <!-- Yandex Autoplacement 19621793 -->
   <script src="https://yandex.ru/ads/system/context.js" async></script>
   <script data-page-id="19621793" src="https://yandex.ru/ads/system/ap-loader.js" async></script>
+  <% } %>
 </head>
 <body>
 <%- include('../partials/yandex-metrika') %>

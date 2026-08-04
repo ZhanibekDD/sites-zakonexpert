@@ -21,8 +21,9 @@ function rowHtml(row) {
     + '</div>';
 }
 
-var mapQuery = encodeURIComponent((detail.address || '') + ', Казахстан');
-var mapSearch = encodeURIComponent(detail.address || '');
+var mapLocation = detail.mapLocation || detail.address || '';
+var mapQuery = encodeURIComponent(mapLocation + ', Казахстан');
+var mapSearch = encodeURIComponent(mapLocation);
 var whatsAppText = encodeURIComponent(detail.help.whatsappText || detail.help.title || 'Нужна консультация');
 %>
 <div class="collector-detail-page">

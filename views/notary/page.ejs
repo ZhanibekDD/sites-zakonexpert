@@ -58,6 +58,7 @@ var detail = {
     { icon: 'bi-database-check', label: 'Источник', value: 'Официальный реестр ЕНИС' + (verifiedDate ? ' · проверено ' + verifiedDate : ''), href: 'https://enis.kz/NotarySearch', external: true },
   ],
   address: notary.address,
+  mapLocation: [notary.address, notary.region].filter(Boolean).join(', '),
   help: {
     icon: 'bi-shield-check',
     title: 'Нотариус выдал исполнительную надпись?',

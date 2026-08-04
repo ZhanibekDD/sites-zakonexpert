@@ -91,6 +91,8 @@ const fixture = {
   assert.match(listHtml, /Банк изменил порядок работы/);
   assert.match(listHtml, /Лента обновляется автоматически/);
   assert.doesNotMatch(listHtml, /broken\.example/);
+  assert.doesNotMatch(listHtml, /pagead2\.googlesyndication\.com/);
+  assert.doesNotMatch(listHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/);
 
   const listWithSourceImages = await ejs.renderFile(path.join(views, 'list.ejs'), {
     title: 'Новости | ZakonExpert',
@@ -119,6 +121,8 @@ const fixture = {
   assert.match(detailHtml, /Когда нужна помощь специалиста/);
   assert.match(detailHtml, /\/news\/cover\/test-news\.svg/);
   assert.match(detailHtml, /rel="nofollow noopener noreferrer"/);
+  assert.match(detailHtml, /pagead2\.googlesyndication\.com/);
+  assert.match(detailHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/);
 
   const fallbackSvg = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'news', 'news-cover-fallback-v2.svg'), 'utf8');
   assert.match(fallbackSvg, /^<svg[\s\S]+<\/svg>\s*$/);
