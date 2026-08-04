@@ -16,7 +16,7 @@ async function getOrCreate(sessionId, page) {
   if (!session) {
     const chatNumber = (await db.count({})) + 1;
     session = await db.insert({
-      sessionId, page, chatNumber, createdAt: Date.now(), messages: [], botMsgIds: [],
+      sessionId, page, chatNumber, createdAt: Date.now(), updatedAt: Date.now(), messages: [], botMsgIds: [],
     });
   }
   return session;
@@ -24,7 +24,8 @@ async function getOrCreate(sessionId, page) {
 
 async function addClientMessage(sessionId, text, page) {
   const session = await getOrCreate(sessionId, page);
-  await db.update({ sessionId }, { $push: { messages: { from: 'client', text, ts: Date.now() } } });
+  const now = Date.now();
+  await db.update({ sessionId }, { $push: { messages: { from: 'client', text, ts: now } }, $set: { updatedAt: now } });
   return session.chatNumber;
 }
 
@@ -37,7 +38,8 @@ async function pushBotMsgId(sessionId, msgId) {
 async function addAdminMessageByBotMsgId(botMsgId, text) {
   const session = await db.findOne({ botMsgIds: botMsgId });
   if (!session) return null;
-  await db.update({ sessionId: session.sessionId }, { $push: { messages: { from: 'admin', text, ts: Date.now() } } });
+  const now = Date.now();
+  await db.update({ sessionId: session.sessionId }, { $push: { messages: { from: 'admin', text, ts: now } }, $set: { updatedAt: now } });
   return { sessionId: session.sessionId, chatNumber: session.chatNumber };
 }
 
@@ -47,4 +49,15 @@ async function getMessagesSince(sessionId, sinceTs) {
   return session.messages.filter(m => m.ts > (sinceTs || 0));
 }
 
-module.exports = { getOrCreate, addClientMessage, pushBotMsgId, addAdminMessageByBotMsgId, getMessagesSince };
+async function purgeOlderThan(cutoff) {
+  const sessions = await db.find({});
+  const expired = sessions.filter(session => {
+    const messages = Array.isArray(session.messages) ? session.messages : [];
+    const lastMessageAt = messages.reduce((latest, message) => Math.max(latest, Number(message.ts) || 0), 0);
+    return Math.max(Number(session.updatedAt) || 0, lastMessageAt, Number(session.createdAt) || 0) < cutoff;
+  });
+  await Promise.all(expired.map(session => db.remove({ _id: session._id })));
+  return expired.length;
+}
+
+module.exports = { getOrCreate, addClientMessage, pushBotMsgId, addAdminMessageByBotMsgId, getMessagesSince, purgeOlderThan };

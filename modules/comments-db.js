@@ -40,4 +40,11 @@ module.exports = {
     const avg = docs.reduce((s, c) => s + (c.rating || 5), 0) / docs.length;
     return { count: docs.length, avg: Math.round(avg * 10) / 10 };
   },
+  purgeModeratorIps(cutoff) {
+    return db.update(
+      { createdAt: { $lt: new Date(cutoff) }, ip: { $exists: true } },
+      { $unset: { ip: true } },
+      { multi: true },
+    );
+  },
 };

@@ -22,6 +22,7 @@
     }
     // Чужой номер (нотариус, ЧСИ) — не трекаем
     if (!target) return;
+    if (!window.ZEPrivacy || !window.ZEPrivacy.analyticsAllowed()) return;
     const type = href.startsWith('tel:') ? 'phone' : 'whatsapp';
     const payload = JSON.stringify({ type, target, page: location.pathname });
     if (navigator.sendBeacon) {
@@ -66,6 +67,7 @@
   @media(max-width:600px){#zke-chat-btn{right:12px;bottom:14px;width:48px;height:48px}#zke-chat-box{right:10px;bottom:72px;max-width:calc(100vw - 20px)}}
   .zke-success strong{display:block;font-size:16px;margin-bottom:6px;}
   .zke-success span{font-size:13px;color:#64748b;}
+  .zke-consent{display:flex;align-items:flex-start;gap:7px;font-size:11px;line-height:1.35;color:#64748b;padding:0 2px;text-align:left;}.zke-consent input{margin-top:2px;flex:0 0 auto}.zke-consent a{color:#1a56db;}
   .zke-typing{display:flex;gap:4px;padding:10px 13px;background:#f1f5f9;border-radius:14px;align-self:flex-start;width:48px;}
   .zke-typing span{width:7px;height:7px;background:#94a3b8;border-radius:50%;animation:zke-dot .8s infinite;}
   .zke-typing span:nth-child(2){animation-delay:.15s;}
@@ -129,6 +131,7 @@
         <input class="zke-input" id="zke-live-input" type="text" placeholder="Напишите сообщение…" maxlength="1000" aria-label="Сообщение">
         <button class="zke-send" id="zke-live-send" aria-label="Отправить сообщение">→</button>
       </div>
+      <label class="zke-consent" style="padding:0 14px 12px;"><input id="zke-live-consent" type="checkbox"><span>Согласен(на) на обработку сообщения согласно <a href="/privacy">политике</a>.</span></label>
     `;
     document.body.appendChild(box);
 
@@ -169,12 +172,14 @@
     const input = document.getElementById('zke-live-input');
     const text = (input.value || '').trim();
     if (!text) return;
+    const consent = document.getElementById('zke-live-consent');
+    if (!consent?.checked) { consent?.focus(); return; }
     addMsg(text, 'user');
     input.value = '';
     fetch('/api/chat/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: getSessionId(), text, page: location.pathname }),
+      body: JSON.stringify({ sessionId: getSessionId(), text, page: location.pathname, consent: true }),
     }).catch(() => {});
   }
 
@@ -233,7 +238,8 @@
       <div class="zke-input-row" style="width:100%;padding:0;">
         <input class="zke-input" id="zke-phone" type="tel" placeholder="+7 (___) ___-__-__" maxlength="18" aria-label="Номер телефона">
         <button class="zke-send" id="zke-send-btn" aria-label="Отправить номер телефона">→</button>
-      </div>`;
+      </div>
+      <label class="zke-consent"><input id="zke-phone-consent" type="checkbox"><span>Согласен(на) на обработку телефона согласно <a href="/privacy">политике</a>.</span></label>`;
     const inp = document.getElementById('zke-phone');
     inp.focus();
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitPhone(); });
@@ -271,12 +277,14 @@
       document.getElementById('zke-phone').style.borderColor = '#ef4444';
       return;
     }
+    const consent = document.getElementById('zke-phone-consent');
+    if (!consent?.checked) { consent?.focus(); return; }
     addMsg(phone, 'user');
     clearBtns();
     fetch('/api/lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, issue: state.issue, page: location.pathname }),
+      body: JSON.stringify({ phone, issue: state.issue, page: location.pathname, consent: true }),
     }).catch(() => {});
     showTyping(() => {
       const msgs = document.getElementById('zke-messages');

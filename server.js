@@ -518,6 +518,9 @@ async function checkDebtorViaApi(iin) {
 // Маршрут для проверки ИИН
 app.post('/check', externalApiLimiter, asyncHandler(async (req, res) => {
     const iin = String(req.body?.iin || '').replace(/\D/g, '');
+    if (req.body?.consent !== true) {
+        return res.status(400).json({ error: 'Необходимо согласие на разовую обработку ИИН' });
+    }
     // ИЗМЕНЕНО: logger.info
     logger.info(`Получен запрос на проверку ИИН: ${iin ? iin.substring(0, 4) + '********' : 'пустой'}`); // Маскируем ИИН в логах
 
@@ -2902,7 +2905,8 @@ let leadsDb = null;
 try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
 
 app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
-  const { name, phone, issue, question, page } = req.body || {};
+  const { name, phone, issue, question, page, consent } = req.body || {};
+  if (consent !== true) return res.status(400).json({ error: 'Необходимо согласие на обработку данных' });
   if (!phone) return res.status(400).json({ error: 'Телефон обязателен' });
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
@@ -2914,6 +2918,16 @@ app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
 // ===== LIVE CHAT (widget → Telegram, owner replies via Telegram Reply) =====
 let chatDb = null;
 try { chatDb = require('./modules/chat-db'); } catch (e) { logger.warn('chat-db not loaded: ' + e.message); }
+
+// Enforce the public retention policy for site-only lead, chat and analytics
+// records. Contract/accounting documents are stored in separate workflows.
+setTimeout(() => {
+  const day = 24 * 60 * 60 * 1000;
+  clicksDb?.purgeOlderThan(Date.now() - 395 * day).catch(error => logger.warn('[Privacy] Click cleanup failed: ' + error.message));
+  leadsDb?.purgeOlderThan(Date.now() - 730 * day).catch(error => logger.warn('[Privacy] Lead cleanup failed: ' + error.message));
+  chatDb?.purgeOlderThan(Date.now() - 365 * day).catch(error => logger.warn('[Privacy] Chat cleanup failed: ' + error.message));
+  commentsDb?.purgeModeratorIps(Date.now() - 90 * day).catch(error => logger.warn('[Privacy] Comment IP cleanup failed: ' + error.message));
+}, 15000);
 
 const chatSendLimiter = new Map(); // sessionId -> [timestamps]
 function chatRateLimited(sessionId) {
@@ -2934,6 +2948,7 @@ app.post('/api/chat/send', asyncHandler(async (req, res) => {
   const sessionId = String(req.body?.sessionId || '').slice(0, 64);
   const text = String(req.body?.text || '').trim().slice(0, 1000);
   const page = String(req.body?.page || '').slice(0, 200);
+  if (req.body?.consent !== true) return res.status(400).json({ error: 'Необходимо согласие на обработку сообщения' });
   if (!chatDb) return res.status(503).json({ error: 'Чат временно недоступен' });
   if (!sessionId || !text) return res.status(400).json({ error: 'Пустое сообщение' });
   if (chatRateLimited(sessionId)) return res.status(429).json({ error: 'Слишком много сообщений, подождите немного' });
@@ -2996,8 +3011,8 @@ app.get('/health', (req, res) => {
 // ===== КОММЕНТАРИИ =====
 app.post('/comments', commentLimiter, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
   if (!commentsDb) return res.redirect(req.headers.referer || '/');
-  const { type, slug, name, rating, text, backUrl } = req.body;
-  if (!type || !slug || !text || text.trim().length < 3) {
+  const { type, slug, name, rating, text, backUrl, privacyConsent } = req.body;
+  if (!privacyConsent || !type || !slug || !text || text.trim().length < 3) {
     return res.redirect(backUrl || req.headers.referer || '/');
   }
   await commentsDb.add({

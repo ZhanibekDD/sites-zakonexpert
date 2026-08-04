@@ -1,13 +1,13 @@
 ﻿document.documentElement.classList.add('js-enabled');
 
-// ── Announcement bar — "Сначала снимаем, потом оплата" ──
+// ── Announcement bar — transparent contract terms ──
 (function() {
   var bar = document.createElement('div');
   bar.id = 'announce-bar';
   bar.innerHTML = '<div class="announce-inner">'
     + '<span class="announce-badge">✓ Условия</span>'
-    + '<span class="announce-text">Сначала снимаем арест&nbsp;— потом оплата. Официальный договор.</span>'
-    + '<a href="https://wa.me/77479957635?text=%D0%A1%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D0%B0+%D1%81%D0%BD%D0%B8%D0%BC%D0%B8%D1%82%D0%B5+%D0%B0%D1%80%D0%B5%D1%81%D1%82%2C+%D0%BF%D0%BE%D1%82%D0%BE%D0%BC+%D0%BE%D0%BF%D0%BB%D0%B0%D1%82%D0%B0.+%D0%A5%D0%BE%D1%87%D1%83+%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C+%D0%BF%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5." class="announce-cta" target="_blank" rel="noopener">Узнать условия →</a>'
+    + '<span class="announce-text">Бесплатный первичный разбор. Этапы и порядок оплаты фиксируются в договоре.</span>'
+    + '<a href="https://wa.me/77479957635?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.+%D0%A5%D0%BE%D1%87%D1%83+%D0%BF%D0%BE%D0%BB%D1%83%D1%87%D0%B8%D1%82%D1%8C+%D0%BF%D0%B5%D1%80%D0%B2%D0%B8%D1%87%D0%BD%D1%8B%D0%B9+%D1%80%D0%B0%D0%B7%D0%B1%D0%BE%D1%80+%D0%B8+%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C+%D1%83%D1%81%D0%BB%D0%BE%D0%B2%D0%B8%D1%8F+%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B." class="announce-cta" target="_blank" rel="noopener">Узнать условия →</a>'
     + '</div>';
   var style = document.createElement('style');
   style.textContent = '#announce-bar{background:linear-gradient(90deg,#052e16,#065f46,#052e16);color:#fff;padding:8px 0;text-align:center;font-size:0.82rem;line-height:1.4;}'
@@ -27,7 +27,7 @@
 (function() {
   var BADGE_HTML = '<div class="guarantee-pill">'
     + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-    + '<span>Сначала снимаем — потом оплата</span>'
+    + '<span>Условия и оплата — в договоре</span>'
     + '</div>';
   var style = document.createElement('style');
   style.textContent = '.guarantee-pill{display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:100px;padding:5px 14px;font-size:0.78rem;font-weight:700;color:#15803d;margin-top:12px;margin-bottom:4px;}'
@@ -47,7 +47,7 @@
     ctas.forEach(function(el) {
       var note = document.createElement('p');
       note.className = 'article-cta-guarantee';
-      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Платите только после снятия ареста — официальный договор';
+      note.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Стоимость, этапы и порядок оплаты фиксируются в договоре';
       el.appendChild(note);
     });
 
@@ -56,7 +56,7 @@
     if (footerBottom) {
       var guarantee = document.createElement('span');
       guarantee.style.cssText = 'color:#4ade80;font-size:0.75rem;font-weight:700;';
-      guarantee.textContent = '✅ Сначала снимаем — потом оплата';
+      guarantee.textContent = '✅ Работаем по официальному договору';
       footerBottom.appendChild(guarantee);
     }
 
@@ -65,7 +65,7 @@
     if (stickyWa) {
       var badge = document.createElement('span');
       badge.style.cssText = 'position:absolute;top:-8px;left:-8px;background:#4ade80;color:#052e16;font-size:0.6rem;font-weight:800;padding:2px 6px;border-radius:100px;white-space:nowrap;line-height:1.4;';
-      badge.textContent = 'Без предоплаты';
+      badge.textContent = 'Разбор бесплатно';
       stickyWa.style.position = 'relative';
       stickyWa.appendChild(badge);
     }
@@ -143,6 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
     node.textContent = String(new Date().getFullYear());
   });
 
+  // Keep the legal entity visible on every page that uses the shared script.
+  const footerBottom = document.querySelector('.footer-bottom');
+  if (footerBottom && !footerBottom.querySelector('.ze-legal-entity')) {
+    const legalEntity = document.createElement('span');
+    legalEntity.className = 'ze-legal-entity';
+    legalEntity.textContent = 'ТОО «ZakonExpert» · БИН 260740044168';
+    footerBottom.appendChild(legalEntity);
+  }
+
   const contactForm = document.getElementById('contact-form');
   if (contactForm) {
     const lang = document.documentElement.lang && document.documentElement.lang.startsWith('kk') ? 'kk' : 'ru';
@@ -151,6 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     contactForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      if (!contactForm.checkValidity()) {
+        contactForm.reportValidity();
+        return;
+      }
       const formData = new FormData(contactForm);
       const name = (formData.get('name') || '').toString().trim();
       const phone = (formData.get('phone') || '').toString().trim();

@@ -104,7 +104,7 @@ const analyticsContext = {
   navigator: {},
   sessionStorage: { getItem() { return null; }, setItem() {} },
   URLSearchParams,
-  window: {},
+  window: { ZEPrivacy: { analyticsAllowed() { return true; } } },
   setTimeout,
 };
 vm.runInNewContext(analyticsSource, analyticsContext, { filename: 'public/js/analytics-events.js' });

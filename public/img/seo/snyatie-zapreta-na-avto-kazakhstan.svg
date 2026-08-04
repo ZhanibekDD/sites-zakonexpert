@@ -31,7 +31,7 @@
   <text x="30" y="300" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">✅  Снятие запрета от суда (СПО)</text>
   <text x="30" y="332" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">✅  Разрешение на продажу / переоформление</text>
   <text x="30" y="364" font-family="Arial,sans-serif" font-size="17" fill="#ffffff">✅  Открытие выезда за рубеж</text>
-  <text x="30" y="396" font-family="Arial,sans-serif" font-size="17" fill="#22c55e" font-weight="700">✅  Срок: 3–14 дней · Без предоплаты</text>
+  <text x="30" y="396" font-family="Arial,sans-serif" font-size="17" fill="#22c55e" font-weight="700">✅  Первичный разбор бесплатно · По договору</text>
 
   <!-- Phone -->
   <rect x="30" y="422" width="380" height="54" rx="10" fill="#1a56db"/>

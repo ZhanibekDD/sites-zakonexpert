@@ -26,6 +26,7 @@
       <label>Ваше имя <input name="name" type="text" maxlength="50" placeholder="Аноним"></label>
       <fieldset><legend>Оценка</legend><div class="professional-reviews__ratings"><% [5, 4, 3, 2, 1].forEach(function(rating) { %><label><input type="radio" name="rating" value="<%= rating %>"<%= rating === 5 ? ' checked' : '' %>> <%= rating %> ★</label><% }); %></div></fieldset>
       <label>Комментарий <textarea name="text" required minlength="3" maxlength="600" rows="4" placeholder="Поделитесь опытом работы с <%= subjectLabel %>"></textarea></label>
+      <label style="display:flex;align-items:flex-start;gap:8px;font-size:.8rem;"><input name="privacyConsent" type="checkbox" required style="width:auto;margin-top:3px;"> <span>Согласен(на) на обработку и публикацию отзыва согласно <a href="/privacy">политике</a>.</span></label>
       <button type="submit">Отправить отзыв</button>
       <small>Отзыв появится после модерации.</small>
     </form>

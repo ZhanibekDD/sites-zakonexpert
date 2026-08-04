@@ -272,8 +272,8 @@ async function run() {
       'News sitemap is missing the Google News namespace');
 
     await expectCheck({}, 400);
-    await expectCheck({ iin: '123' }, 400);
-    await expectCheck({ iin: '000000000000' }, 503);
+    await expectCheck({ iin: '123', consent: true }, 400);
+    await expectCheck({ iin: '000000000000', consent: true }, 503);
 
     assert(logs.includes('Background jobs disabled by DISABLE_BACKGROUND_JOBS'),
       'Smoke mode did not disable background jobs');

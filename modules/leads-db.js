@@ -22,4 +22,8 @@ async function getCount(since) {
   return db.count(q);
 }
 
-module.exports = { recordLead, getRecent, getCount };
+async function purgeOlderThan(cutoff) {
+  return db.remove({ ts: { $lt: cutoff } }, { multi: true });
+}
+
+module.exports = { recordLead, getRecent, getCount, purgeOlderThan };

@@ -17,6 +17,7 @@
   ];
   function sendYandexGoal(goalName, params) {
     try {
+      if (!window.ZEPrivacy || !window.ZEPrivacy.analyticsAllowed()) return;
       if (typeof window.ym !== 'function') return;
       var safeParams = {};
       if (params) {
@@ -48,6 +49,7 @@
   }
 
   function send(type, target, extra) {
+    if (!window.ZEPrivacy || !window.ZEPrivacy.analyticsAllowed()) return;
     var pagePath = analyticsPagePath(type);
     var payload = JSON.stringify(Object.assign({
       type: type,

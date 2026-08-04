@@ -90,7 +90,7 @@ function normalizeSourceRow(row, index) {
   };
 }
 
-function buildLawyers(rows, sourceMtime) {
+function buildLawyers(rows, sourceMtime, sourceFingerprint = '') {
   const lawyers  = [];
   const slugUsed = {};
   let skipped    = 0;
@@ -133,6 +133,7 @@ function buildLawyers(rows, sourceMtime) {
       sourceUpdatedAt: row.sourceUpdatedAt,
       slug,
       sourceMtime,
+      sourceFingerprint,
       dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
@@ -149,15 +150,17 @@ async function importLawyers() {
 
   const source = readRegistrySource(SOURCE_PATH, 'lawyers');
   const sourceMtime = source.sourceMtime;
+  const sourceFingerprint = source.sourceFingerprint;
 
   const db = Datastore.create({ filename: DB_PATH, autoload: true });
   await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
   await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
   await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
 
-  const existing = await db.findOne({}, { sourceMtime: 1, dbVersion: 1 });
-  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
-    const count = await db.count({});
+  const existing = await db.findOne({}, { sourceMtime: 1, sourceFingerprint: 1, sourceRecordCount: 1, dbVersion: 1 });
+  const count = await db.count({});
+  if (existing && existing.sourceFingerprint === sourceFingerprint
+      && existing.dbVersion === DB_VERSION && existing.sourceRecordCount === count) {
     console.log(`[Lawyers] DB up to date (${count} records). Skipping.`);
     return count;
   }
@@ -165,7 +168,8 @@ async function importLawyers() {
   console.log('[Lawyers] Reading compressed registry source...');
   const rows = source.records;
   console.log(`[Lawyers] Parsed ${rows.length} rows`);
-  const { lawyers, skipped } = buildLawyers(rows, sourceMtime);
+  const { lawyers, skipped } = buildLawyers(rows, sourceMtime, sourceFingerprint);
+  lawyers.forEach(lawyer => { lawyer.sourceRecordCount = lawyers.length; });
 
   const usesOfficialRecords = rows.some(row => row && !Array.isArray(row));
   const minimum = usesOfficialRecords ? 3500 : 100;
@@ -175,6 +179,10 @@ async function importLawyers() {
 
   await db.remove({}, { multi: true });
   await db.insert(lawyers);
+  const importedCount = await db.count({});
+  if (importedCount !== lawyers.length) {
+    throw new Error(`[Lawyers] Import verification failed: expected=${lawyers.length}, stored=${importedCount}`);
+  }
   await compactDatastore(db);
   console.log(`[Lawyers] Imported ${lawyers.length} lawyers (${skipped} rows skipped)`);
   return lawyers.length;

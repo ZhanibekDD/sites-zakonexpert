@@ -1,0 +1,70 @@
+'use strict';
+
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.join(__dirname, '..');
+const PUBLIC = path.join(ROOT, 'public');
+const FORBIDDEN_PAYMENT_PROMISES = [
+  /без\s+предоплат/iu,
+  /оплат\w*\s+после\s+результат/iu,
+  /плат\w*\s+только\s+после\s+результат/iu,
+  /сначала\s+(?:снима\w*|результат)[\s\S]{0,80}потом\s+(?:вы\s+)?плат/iu,
+];
+
+const userFacingFiles = [];
+function collect(directory) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isDirectory() && ['node_modules', 'data', 'docs', '.git'].includes(entry.name)) continue;
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) collect(absolute);
+    else if (/\.(?:html|ejs|js|svg)$/i.test(entry.name)) userFacingFiles.push(absolute);
+  }
+}
+collect(PUBLIC);
+collect(path.join(ROOT, 'views'));
+
+const stale = [];
+for (const filename of userFacingFiles) {
+  const source = fs.readFileSync(filename, 'utf8');
+  if (FORBIDDEN_PAYMENT_PROMISES.some(pattern => pattern.test(source))) {
+    stale.push(path.relative(ROOT, filename));
+  }
+}
+assert.deepStrictEqual(stale, [], `stale payment promises remain in: ${stale.join(', ')}`);
+
+const privacy = fs.readFileSync(path.join(PUBLIC, 'privacy.html'), 'utf8');
+for (const required of [
+  'ТОО «ZakonExpert»', '260740044168', 'Кияшев Жанибек Даулетович',
+  'Яндекс.Метрика', 'Webvisor', 'Telegram', '24 месяцев', '13 месяцев',
+]) assert.ok(privacy.includes(required), `privacy policy is missing: ${required}`);
+
+const consentScript = fs.readFileSync(path.join(PUBLIC, 'js', 'privacy-consent.js'), 'utf8');
+assert.match(consentScript, /analyticsAllowed/);
+assert.match(consentScript, /data-ze-consent="ads"/);
+assert.match(consentScript, /Только необходимое/);
+
+const publicPages = fs.readdirSync(PUBLIC)
+  .filter(name => name.endsWith('.html'))
+  .filter(name => name !== '404.html')
+  .filter(name => !/^(?:yandex_|google)[a-z0-9]+\.html$/i.test(name));
+for (const name of publicPages) {
+  const source = fs.readFileSync(path.join(PUBLIC, name), 'utf8');
+  assert.match(source, /privacy-consent\.js/, `${name} must expose the privacy choice before optional processing`);
+  assert.doesNotMatch(source, /<script(?=[^>]*\ssrc="https:\/\/(?:mc\.yandex\.ru|pagead2\.googlesyndication\.com|yandex\.ru\/ads\/system))[^>]*>/i,
+    `${name} loads optional analytics or ads without consent`);
+}
+
+const home = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
+const contact = fs.readFileSync(path.join(PUBLIC, 'contact.html'), 'utf8');
+const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+assert.match(home, /id="iin-consent"[^>]*required/);
+assert.match(contact, /name="privacyConsent"[^>]*required/);
+assert.match(server, /Необходимо согласие на разовую обработку ИИН/);
+assert.match(server, /purgeOlderThan/);
+
+const lock = require(path.join(ROOT, 'package-lock.json'));
+assert.strictEqual(lock.packages['node_modules/undici']?.version, '7.29.0', 'undici security override is not locked');
+
+console.log(`Trust/legal/security OK: ${userFacingFiles.length} user-facing assets and ${publicPages.length} pages checked.`);

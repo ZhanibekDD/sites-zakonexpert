@@ -144,10 +144,15 @@ async function getCompanyFunnelStats(since) {
   return summarizeCompanyFunnel(await db.find(query));
 }
 
+async function purgeOlderThan(cutoff) {
+  return db.remove({ ts: { $lt: cutoff } }, { multi: true });
+}
+
 module.exports = {
   getCompanyFunnelStats,
   getEventStats,
   getStats,
   recordClick,
+  purgeOlderThan,
   summarizeCompanyFunnel,
 };
