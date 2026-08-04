@@ -5,6 +5,75 @@
   align-items: start;
 }
 
+.company-info-card,
+.company-detail-card {
+  padding: 20px 24px 10px;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.company-detail-card {
+  margin-top: 18px;
+  padding-bottom: 20px;
+}
+
+.company-info-card__title,
+.company-detail-card__title {
+  margin: 0 0 4px;
+  color: #0d1f3c;
+  font-size: 1.08rem;
+}
+
+.company-detail-card__title {
+  margin-bottom: 8px;
+}
+
+.company-info-row {
+  display: grid;
+  grid-template-columns: 26px minmax(150px, 230px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.company-info-row__icon {
+  color: #94a3b8;
+}
+
+.company-info-row__label,
+.company-contact-row__label {
+  color: #64748b;
+  font-size: .86rem;
+}
+
+.company-info-row__value,
+.company-contact-row__value {
+  min-width: 0;
+  color: #0d1f3c;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.company-info-row__value--missing {
+  color: #94a3b8;
+  font-weight: 450;
+}
+
+.company-contact-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 190px) minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.company-contact-row__label {
+  font-size: .84rem;
+}
+
 .company-conversion-card {
   display: grid;
   gap: 12px;
@@ -139,6 +208,55 @@
   .company-mobile-cta:focus-visible {
     color: #fff;
     background: #14532d;
+  }
+
+  .company-info-card,
+  .company-detail-card {
+    padding: 18px 16px 8px;
+    border-radius: 14px;
+  }
+
+  .company-detail-card {
+    padding-bottom: 16px;
+  }
+
+  .company-info-card__title,
+  .company-detail-card__title {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  .company-info-row {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 5px 9px;
+    padding: 13px 0;
+  }
+
+  .company-info-row__icon {
+    grid-row: 1 / span 2;
+    padding-top: 2px;
+  }
+
+  .company-info-row__label {
+    grid-column: 2;
+    font-size: .78rem;
+  }
+
+  .company-info-row__value {
+    grid-column: 2;
+    font-size: .93rem;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  .company-contact-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .company-contact-row__value {
+    font-size: .92rem;
+    line-height: 1.5;
   }
 }
 

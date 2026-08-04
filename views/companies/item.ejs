@@ -115,10 +115,10 @@ const missingOfficialFields = official
   : [];
 
 const infoHtml = infoRows.map(function(row) {
-  return '<div style="display:grid;grid-template-columns:26px minmax(150px,230px) 1fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid #e2e8f0;">'
-    + '<i class="bi ' + row[0] + '" style="color:#94a3b8;" aria-hidden="true"></i>'
-    + '<div style="color:#64748b;font-size:.86rem;">' + esc(row[1]) + '</div>'
-    + '<div style="color:' + (row[2] ? '#0d1f3c' : '#94a3b8') + ';font-weight:' + (row[2] ? '550' : '450') + ';overflow-wrap:anywhere;">'
+  return '<div class="company-info-row">'
+    + '<i class="bi ' + row[0] + ' company-info-row__icon" aria-hidden="true"></i>'
+    + '<div class="company-info-row__label">' + esc(row[1]) + '</div>'
+    + '<div class="company-info-row__value' + (row[2] ? '' : ' company-info-row__value--missing') + '">'
     + esc(row[2] || copy.notPublishedBySource) + '</div></div>';
 }).join('');
 
@@ -128,22 +128,22 @@ const missingOfficialHtml = missingOfficialFields.length
   : '';
 
 const contactHtml = contacts.length || publicAttributes.length
-  ? '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 8px;">' + esc(copy.contacts) + '</h2>'
+  ? '<section class="company-detail-card"><h2 class="company-detail-card__title">' + esc(copy.contacts) + '</h2>'
     + contacts.map(function(contact) {
       const href = contactHref(contact);
       const value = href
         ? '<a href="' + esc(href) + '"' + (/^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '') + ' style="color:#1a56db;font-weight:650;text-decoration:none;">' + esc(contact.value) + '</a>'
         : esc(contact.value);
-      return '<div style="display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7;">'
-        + '<div style="color:#64748b;font-size:.84rem;">' + esc(copy[contact.type] || contact.type) + '</div>'
-        + '<div style="overflow-wrap:anywhere;">' + value
+      return '<div class="company-contact-row">'
+        + '<div class="company-contact-row__label">' + esc(copy[contact.type] || contact.type) + '</div>'
+        + '<div class="company-contact-row__value">' + value
         + (contact.sourceLabel ? '<div style="font-size:.7rem;color:#94a3b8;margin-top:3px;">' + esc(copy.source) + ': ' + esc(contact.sourceLabel) + '</div>' : '')
         + '</div></div>';
     }).join('')
     + publicAttributes.map(function(attribute) {
-      return '<div style="display:grid;grid-template-columns:minmax(130px,190px) 1fr;gap:12px;padding:12px 0;border-bottom:1px solid #edf2f7;">'
-        + '<div style="color:#64748b;font-size:.84rem;">' + esc(copy[attribute.type] || attribute.type) + '</div>'
-        + '<div>' + esc(attribute.value) + '</div></div>';
+      return '<div class="company-contact-row">'
+        + '<div class="company-contact-row__label">' + esc(copy[attribute.type] || attribute.type) + '</div>'
+        + '<div class="company-contact-row__value">' + esc(attribute.value) + '</div></div>';
     }).join('')
     + '</section>'
   : '';
@@ -203,7 +203,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
   + '<div class="company-item-grid">'
-  + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px 10px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 4px;">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
+  + '<div><div class="company-info-card"><h2 class="company-info-card__title">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
   + contactHtml + addressesHtml + aliasesHtml + categoriesHtml + relatedHelpHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
   + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'
