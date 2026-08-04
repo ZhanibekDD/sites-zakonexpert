@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-04-conversion-growth-v2';
+const RELEASE_ID = '2026-08-04-company-mobile-trust-fix';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -190,6 +190,7 @@ app.use(helmet({
         imgSrc: ["'self'", 'data:', 'https:'],
         connectSrc: [
           "'self'",
+          'https://cdn.jsdelivr.net',
           'https://mc.yandex.ru',
           'https://yandex.ru',
           'https://an.yandex.ru',

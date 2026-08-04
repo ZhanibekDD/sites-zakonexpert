@@ -223,6 +223,12 @@ Promise.all([
   assert(itemHtml.includes('data-offer-b='), 'company card must render both A/B offer variants');
   assert(itemHtml.includes('/js/company-conversion.js'),
     'company card must load the conversion funnel controller');
+  assert(itemHtml.includes('class="company-info-row"'),
+    'company facts must use the responsive mobile row layout');
+  assert(!itemHtml.includes('pagead2.googlesyndication.com'),
+    'company pages must not load intrusive Google auto-placement ads');
+  assert(!itemHtml.includes('yandex.ru/ads/system'),
+    'company pages must not load intrusive Yandex auto-placement ads');
   assert(itemHtml.includes('%2Fcompany%2F7137221-'),
     'company WhatsApp message must carry the exact card URL');
   assert(itemHtml.includes('%D0%91%D0%98%D0%9D%3A%20970540001234'),

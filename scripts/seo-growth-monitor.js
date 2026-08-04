@@ -10,7 +10,7 @@ async function main() {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      AUDIT_EXPECTED_RELEASE: process.env.AUDIT_EXPECTED_RELEASE || '2026-08-04-conversion-growth-v2',
+      AUDIT_EXPECTED_RELEASE: process.env.AUDIT_EXPECTED_RELEASE || '2026-08-04-company-mobile-trust-fix',
       AUDIT_COMPANY_RESPONSE_MS: process.env.AUDIT_COMPANY_RESPONSE_MS || '800',
     },
     encoding: 'utf8',
