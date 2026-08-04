@@ -202,7 +202,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(official ? copy.officialBadge : copy.directoryBadge) + '</span></div>'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
-  + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;">'
+  + '<div class="company-item-grid">'
   + '<div><div style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px 10px;"><h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 4px;">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
   + contactHtml + addressesHtml + aliasesHtml + categoriesHtml + relatedHelpHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
@@ -211,14 +211,19 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<div style="background:' + statusStyle.bg + ';border:1px solid ' + statusStyle.border + ';border-radius:14px;padding:18px;"><h2 style="font-size:.96rem;color:#0d1f3c;">' + esc(copy.status) + '</h2>'
   + '<div style="display:flex;gap:9px;color:' + statusStyle.fg + ';font-weight:750;"><i class="bi ' + statusStyle.icon + '"></i>' + esc(statusRaw || copy.notPublished) + '</div>'
   + '<p style="margin:8px 0 0;color:#475569;font-size:.79rem;line-height:1.5;">' + esc(official ? copy.officialStatusNote : copy.directoryStatusNote) + '</p></div>'
+  + '<section class="company-conversion-card" aria-label="' + esc(copy.legalHelp) + '">'
+  + '<p class="company-conversion-card__eyebrow"><i class="bi bi-shield-check" aria-hidden="true"></i> ' + esc(copy.legalHelp) + '</p>'
+  + '<h2 class="company-conversion-card__title" data-company-offer data-offer-a="' + esc(copy.offerTitleA) + '" data-offer-b="' + esc(copy.offerTitleB) + '">' + esc(copy.offerTitleA) + '</h2>'
+  + '<p class="company-conversion-card__text" data-company-offer data-offer-a="' + esc(copy.offerTextA) + '" data-offer-b="' + esc(copy.offerTextB) + '">' + esc(copy.offerTextA) + '</p>'
+  + '<a class="company-conversion-card__button" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="sidebar"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a>'
+  + '<p class="company-conversion-card__trust"><i class="bi bi-lock" aria-hidden="true"></i> ' + esc(copy.offerTrust) + '</p></section>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;display:grid;gap:10px;">'
   + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a>'
-  + '<a href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="sidebar" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-whatsapp" style="color:#1a56db;"></i> ' + esc(copy.consultation) + '</a>'
   + '<a href="https://wa.me/77479957635?text=' + reportText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-flag" style="color:#1a56db;"></i> ' + esc(copy.report) + '</a></div>'
   + '</aside></div>'
   + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
-  + '<h2 class="npage-cta-title">' + esc(copy.itemHelpTitle) + '</h2><p class="npage-cta-sub">' + esc(copy.itemHelpText) + '</p></div>'
-  + '<a class="npage-wa-btn" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="bottom">' + esc(copy.consultation) + '</a></div>'
+  + '<h2 class="npage-cta-title" data-company-offer data-offer-a="' + esc(copy.offerTitleA) + '" data-offer-b="' + esc(copy.offerTitleB) + '">' + esc(copy.offerTitleA) + '</h2><p class="npage-cta-sub" data-company-offer data-offer-a="' + esc(copy.offerTextA) + '" data-offer-b="' + esc(copy.offerTextB) + '">' + esc(copy.offerTextA) + '</p></div>'
+  + '<a class="npage-wa-btn" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="bottom"><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a></div>'
   + '</div></div>';
 %>
 <%- include('./layout', {
@@ -234,5 +239,6 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   companyCatalogPath,
   whatsappHref: consultationHref,
   companyCta: true,
+  companyPageType: 'company_card',
   body
 }) %>

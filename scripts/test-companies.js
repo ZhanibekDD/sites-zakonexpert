@@ -216,6 +216,13 @@ Promise.all([
   assert(!itemHtml.includes('aggregateRating'), 'unattributed directory ratings must not be published');
   assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
   assert(itemHtml.includes('data-company-whatsapp'), 'company card must expose tracked WhatsApp CTAs');
+  assert(itemHtml.includes('data-company-page-type="company_card"'),
+    'company card must identify its funnel page type');
+  assert(itemHtml.includes('data-cta-position="mobile-sticky"'),
+    'company card must expose the mobile conversion bar');
+  assert(itemHtml.includes('data-offer-b='), 'company card must render both A/B offer variants');
+  assert(itemHtml.includes('/js/company-conversion.js'),
+    'company card must load the conversion funnel controller');
   assert(itemHtml.includes('%2Fcompany%2F7137221-'),
     'company WhatsApp message must carry the exact card URL');
   assert(itemHtml.includes('%D0%91%D0%98%D0%9D%3A%20970540001234'),
@@ -254,6 +261,14 @@ Promise.all([
   );
   assert(analyticsSource.includes("send('click_cta_company'"),
     'company WhatsApp clicks must be recorded as a dedicated conversion event');
+  const conversionSource = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'js', 'company-conversion.js'),
+    'utf8'
+  );
+  assert(conversionSource.includes("track('view_company_page'"),
+    'company page views must provide the conversion denominator');
+  assert(conversionSource.includes("track('view_company_cta'"),
+    'visible CTA impressions must be tracked by position');
   console.log('Company data OK: normalization, SQLite search, templates and sitemap chunks');
 }).finally(() => {
   companies.close();

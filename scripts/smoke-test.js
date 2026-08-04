@@ -1,9 +1,13 @@
 'use strict';
 
 const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 const port = 3199;
 const origin = `http://127.0.0.1:${port}`;
+const clicksDbPath = path.join(os.tmpdir(), `zakonexpert-smoke-clicks-${process.pid}.db`);
 const server = spawn(process.execPath, ['server.js'], {
   cwd: process.cwd(),
   env: {
@@ -16,6 +20,7 @@ const server = spawn(process.execPath, ['server.js'], {
     ADMIN_PW: '',
     TELEGRAM_BOT_TOKEN: '',
     TELEGRAM_CHAT_ID: '',
+    CLICKS_DB_PATH: clicksDbPath,
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 });
@@ -41,6 +46,21 @@ async function waitForServer() {
     await new Promise(resolve => setTimeout(resolve, 200));
   }
   throw new Error(`Server did not become ready.\n${logs}`);
+}
+
+async function waitForStoredFunnel() {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      const rows = fs.readFileSync(clicksDbPath, 'utf8')
+        .split('\n').filter(Boolean).map(line => JSON.parse(line));
+      const stored = rows.find(row => row.funnel_version === 'v2');
+      if (stored) return stored;
+    } catch (_) {
+      // NeDB may still be creating or atomically replacing the data file.
+    }
+    await new Promise(resolve => setTimeout(resolve, 40));
+  }
+  return null;
 }
 
 async function expectGet(path) {
@@ -181,6 +201,47 @@ async function run() {
     assert(companySearch.headers.get('cache-control')?.includes('no-store'),
       'Unbounded company search results must not enter the shared cache');
 
+    const funnelEvent = await fetch(`${origin}/api/track-event`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': 'Mozilla/5.0 (iPhone; Mobile)',
+        'x-forwarded-for': '203.0.113.10',
+      },
+      body: JSON.stringify({
+        type: 'click_cta_company',
+        target: 'must-not-be-stored',
+        page: '/en/company/7137221-alfa-pravo?bin=970540001234',
+        cta: 'sidebar',
+        offer_variant: 'b',
+        company_name: 'must-not-be-stored',
+      }),
+    });
+    assert((await funnelEvent.json()).ok === true, 'Company funnel event was rejected');
+    const storedFunnel = await waitForStoredFunnel();
+    assert(storedFunnel, 'Company funnel event was not persisted');
+    assert(storedFunnel.page === '/en/company/7137221',
+      `Company funnel path was not anonymized: ${storedFunnel.page}`);
+    assert(storedFunnel.target === 'company-directory', 'Untrusted funnel target was persisted');
+    assert(storedFunnel.page_type === 'company_card' && storedFunnel.page_locale === 'en',
+      'Localized company page classification is incorrect');
+    assert(storedFunnel.device_type === 'mobile' && storedFunnel.offer_variant === 'b',
+      'Device or offer segmentation is incorrect');
+    assert(!Object.hasOwn(storedFunnel, 'ip') && !Object.hasOwn(storedFunnel, 'ua'),
+      'Privacy-safe funnel must not persist IP or raw user-agent');
+    assert(!JSON.stringify(storedFunnel).includes('alfa-pravo')
+      && !JSON.stringify(storedFunnel).includes('970540001234')
+      && !JSON.stringify(storedFunnel).includes('must-not-be-stored'),
+    'Company name, BIN or untrusted fields leaked into funnel analytics');
+
+    const invalidFunnelEvent = await fetch(`${origin}/api/track-event`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'view_company_page', page: '/contact' }),
+    });
+    assert((await invalidFunnelEvent.json()).ok === false,
+      'Company funnel event from a non-company page must be rejected');
+
     const adminStatus = await fetch(`${origin}/api/news/status`);
     assert(adminStatus.status === 503,
       `/api/news/status without ADMIN_KEY: expected 503, received ${adminStatus.status}`);
@@ -222,6 +283,7 @@ async function run() {
     console.log(`Smoke test passed: ${routes.length} routes, security headers, admin protection and 3 IIN error cases.`);
   } finally {
     server.kill('SIGTERM');
+    try { fs.unlinkSync(clicksDbPath); } catch (_) { /* already absent */ }
   }
 }
 

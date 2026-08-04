@@ -4,11 +4,12 @@ const safeSchemaJson = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') 
 const resolvedWhatsAppHref = typeof whatsappHref === 'string' && whatsappHref
   ? whatsappHref
   : 'https://wa.me/77479957635';
-const companyCtaAttributes = typeof companyCta !== 'undefined' && companyCta
-  ? ' data-company-whatsapp data-cta-position="layout"'
-  : '';
+const conversionEnabled = typeof companyCta !== 'undefined' && companyCta;
+const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPageType
+  ? companyPageType
+  : 'company_catalog';
 %><!DOCTYPE html>
-<html lang="<%= locale.hreflang %>" dir="<%= locale.dir %>">
+<html lang="<%= locale.hreflang %>" dir="<%= locale.dir %>"<% if (conversionEnabled) { %> data-company-page-type="<%= resolvedCompanyPageType %>" data-company-locale="<%= locale.code %>"<% } %>>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +36,7 @@ const companyCtaAttributes = typeof companyCta !== 'undefined' && companyCta
   <link rel="stylesheet" href="/css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="/css/style.css?v=20260619-1">
   <link rel="stylesheet" href="/css/news.css?v=20260720-1">
+  <% if (conversionEnabled) { %><link rel="stylesheet" href="/css/company-conversion.css?v=20260804-2"><% } %>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8638191147118359" crossorigin="anonymous"></script>
   <script src="https://yandex.ru/ads/system/context.js" async></script>
   <script data-page-id="19621793" src="https://yandex.ru/ads/system/ap-loader.js" async></script>
@@ -76,14 +78,20 @@ const companyCtaAttributes = typeof companyCta !== 'undefined' && companyCta
     </div>
     <div class="footer-cols">
       <div class="footer-col"><h3 class="footer-col-title"><%= copy.directory %></h3><div class="footer-links"><a href="<%= companyCatalogPath %>"><%= copy.companies %></a><a href="/companies/regions"><%= copy.regions %></a></div></div>
-      <div class="footer-col"><h3 class="footer-col-title"><%= copy.legalHelp %></h3><div class="footer-contacts"><a href="tel:+77479957635">+7 (747) 995-76-35</a><a href="<%= resolvedWhatsAppHref %>" target="_blank" rel="noopener"<%- companyCtaAttributes %>>WhatsApp</a></div></div>
+      <div class="footer-col"><h3 class="footer-col-title"><%= copy.legalHelp %></h3><div class="footer-contacts"><a href="tel:+77479957635">+7 (747) 995-76-35</a><a href="<%= resolvedWhatsAppHref %>" target="_blank" rel="noopener"<% if (conversionEnabled) { %> data-company-whatsapp data-cta-position="footer" data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"<% } %>><%= conversionEnabled ? copy.offerButtonA : 'WhatsApp' %></a></div></div>
     </div>
   </div>
   <div class="landing-container footer-bottom"><span>© <span class="current-year"></span> ZakonExpert</span><span>Kazakhstan</span></div>
 </footer>
-<a href="<%= resolvedWhatsAppHref %>" class="sticky-wa" target="_blank" rel="noopener" aria-label="WhatsApp"<%- companyCtaAttributes %>><i class="bi bi-whatsapp"></i></a>
+<% if (conversionEnabled) { %>
+<a href="<%= resolvedWhatsAppHref %>" class="company-desktop-cta" target="_blank" rel="noopener" aria-label="WhatsApp" data-company-whatsapp data-cta-position="desktop-floating"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
+<a href="<%= resolvedWhatsAppHref %>" class="company-mobile-cta" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="mobile-sticky"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"><%= copy.offerButtonA %></span></a>
+<% } else { %>
+<a href="<%= resolvedWhatsAppHref %>" class="sticky-wa" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+<% } %>
 <script src="/js/site.js?v=20260619-1"></script>
 <script src="/js/analytics-events.js"></script>
+<% if (conversionEnabled) { %><script src="/js/company-conversion.js?v=20260804-2"></script><% } %>
 <script>
 document.querySelector('[data-language-switch]')?.addEventListener('change', function () {
   window.location.href = this.value;

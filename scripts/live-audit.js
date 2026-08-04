@@ -6,7 +6,7 @@ const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS |
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const COMPANY_RESPONSE_MS = Math.max(200, Number(process.env.AUDIT_COMPANY_RESPONSE_MS || 800));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-04-seo-growth-v1';
+  || '2026-08-04-conversion-growth-v2';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
@@ -90,6 +90,14 @@ async function auditCompanyGrowth() {
   }
   if (!/data-company-whatsapp/i.test(item.body) || !/wa\.me\/77479957635\?text=/i.test(item.body)) {
     record(failures, `${itemPath} is missing the contextual WhatsApp CTA`);
+  }
+  if (!/data-company-page-type=["']company_card["']/i.test(item.body)
+      || !/company-conversion\.js/i.test(item.body)) {
+    record(failures, `${itemPath} is missing Conversion Growth v2 instrumentation`);
+  }
+  if (!/data-cta-position=["']mobile-sticky["']/i.test(item.body)
+      || !/data-offer-b=/i.test(item.body)) {
+    record(failures, `${itemPath} is missing the mobile CTA or A/B offer`);
   }
   for (const route of [
     '/snyatie-ogranichenii-chsi',

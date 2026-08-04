@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-04-seo-growth-v1';
+const RELEASE_ID = '2026-08-04-conversion-growth-v2';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -2819,7 +2819,15 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
   'download_document', 'copy_link', 'external_campaign_visit',
   'click_cta_bailiff', 'click_cta_notary', 'send_document',
-  'click_document_review', 'click_whatsapp_after_download', 'click_cta_company',
+  'click_document_review', 'click_whatsapp_after_download',
+  'view_company_page', 'view_company_cta', 'click_cta_company',
+]);
+const COMPANY_FUNNEL_EVENT_TYPES = new Set([
+  'view_company_page', 'view_company_cta', 'click_cta_company',
+]);
+const COMPANY_CTA_POSITIONS = new Set([
+  'sidebar', 'bottom', 'catalog-bottom', 'footer',
+  'desktop-floating', 'mobile-sticky', 'unknown',
 ]);
 // Best-effort page_type classifier so LEAD-TRACKING-PLAN reports can group
 // events without re-deriving it from the raw path every time.
@@ -2828,24 +2836,62 @@ function classifyPageType(page) {
   if (page === '/' ) return 'home';
   if (/^\/bailiff\//.test(page)) return 'bailiff_card';
   if (/^\/notary\//.test(page)) return 'notary_card';
-  if (/^\/company\//.test(page)) return 'company_card';
-  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi|companies)$/.test(page)) return 'catalog';
+  if (/^\/(?:(?:kk|en|zh|tr)\/)?company\//.test(page)) return 'company_card';
+  if (/^\/(?:(?:kk|en|zh|tr)\/)?companies$/.test(page)) return 'company_catalog';
+  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi)$/.test(page)) return 'catalog';
   if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
   if (page === '/dokumenty') return 'documents';
   if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
   if (page === '/bin-search') return 'bin_search';
   return 'other';
 }
+function normalizeAnalyticsPage(page) {
+  const clean = String(page || '/').split(/[?#]/, 1)[0].slice(0, 300);
+  if (!clean.startsWith('/')) return '/';
+  return clean.replace(
+    /^\/((?:kk|en|zh|tr)\/)?company\/(\d+)(?:-[^/]*)?\/?$/,
+    '/$1company/$2'
+  );
+}
+function classifyPageLocale(page) {
+  return String(page || '').match(/^\/(kk|en|zh|tr)(?:\/|$)/)?.[1] || 'ru';
+}
+function classifyDevice(userAgent) {
+  const ua = String(userAgent || '');
+  if (/bot|crawler|spider|slurp|headless/i.test(ua)) return 'bot';
+  if (/ipad|tablet|kindle|silk|android(?!.*mobile)/i.test(ua)) return 'tablet';
+  if (/mobi|iphone|ipod|android/i.test(ua)) return 'mobile';
+  return 'desktop';
+}
 app.post('/api/track-event', asyncHandler(async (req, res) => {
-  const { type, target, page, utm, cta } = req.body || {};
+  const { type, target, page, utm, cta, offer_variant: offerVariant } = req.body || {};
   if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const safePage = normalizeAnalyticsPage(page);
   const ua = req.headers['user-agent'] || '';
+  const companyFunnelEvent = COMPANY_FUNNEL_EVENT_TYPES.has(type);
+  const pageType = classifyPageType(safePage);
+  if (companyFunnelEvent && !['company_card', 'company_catalog'].includes(pageType)) {
+    return res.json({ ok: false });
+  }
   if (clicksDb) {
-    clicksDb.recordClick({
-      type, target: target || utm || '-', page: page || '/', ip, ua,
-      page_type: classifyPageType(page), cta_position: cta || '', utm: utm || '',
-    }).catch(() => {});
+    const event = {
+      type,
+      target: companyFunnelEvent ? 'company-directory' : (target || utm || '-'),
+      page: safePage,
+      page_type: pageType,
+      cta_position: companyFunnelEvent
+        ? (COMPANY_CTA_POSITIONS.has(cta) ? cta : '')
+        : String(cta || '').slice(0, 50),
+      offer_variant: offerVariant === 'b' ? 'b' : 'a',
+      page_locale: classifyPageLocale(safePage),
+      device_type: classifyDevice(ua),
+      ...(companyFunnelEvent ? { funnel_version: 'v2' } : {
+        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
+        ua,
+        utm: utm || '',
+      }),
+    };
+    clicksDb.recordClick(event).catch(() => {});
   }
   res.json({ ok: true });
 }));
