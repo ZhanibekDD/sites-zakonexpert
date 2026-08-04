@@ -11,7 +11,8 @@
   var YM_COUNTER_ID = 110748931;
   var YM_ALLOWED_PARAMS = [
     'page_path', 'page_type', 'cta_position', 'source_entity_type',
-    'source_page', 'service_type', 'document_type',
+    'source_page', 'service_type', 'document_type', 'offer_variant',
+    'page_locale', 'device_type',
     'utm_source', 'utm_medium', 'utm_campaign',
   ];
   function sendYandexGoal(goalName, params) {
@@ -37,11 +38,21 @@
     'click_cta_company',
   ]);
 
+  function analyticsPagePath(type) {
+    var path = location.pathname;
+    if (!/^(?:view_company_page|view_company_cta|click_cta_company)$/.test(type)) return path;
+    return path.replace(
+      /^\/((?:kk|en|zh|tr)\/)?company\/(\d+)(?:-[^/]*)?\/?$/,
+      '/$1company/$2'
+    );
+  }
+
   function send(type, target, extra) {
+    var pagePath = analyticsPagePath(type);
     var payload = JSON.stringify(Object.assign({
       type: type,
       target: target || '-',
-      page: location.pathname,
+      page: pagePath,
     }, extra || {}));
     if (navigator.sendBeacon) {
       navigator.sendBeacon('/api/track-event', new Blob([payload], { type: 'application/json' }));
@@ -49,7 +60,7 @@
       fetch('/api/track-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function () {});
     }
     if (YM_GOAL_EVENT_TYPES.has(type)) {
-      var goalParams = Object.assign({ page_path: location.pathname }, extra || {});
+      var goalParams = Object.assign({ page_path: pagePath }, extra || {});
       if (extra && extra.cta) goalParams.cta_position = extra.cta;
       sendYandexGoal(type, goalParams);
     }
@@ -65,6 +76,9 @@
     if (!link) return;
     send('click_cta_company', 'company-directory', {
       cta: link.getAttribute('data-cta-position') || 'unknown',
+      offer_variant: document.documentElement.getAttribute('data-company-offer-variant') || 'a',
+      page_locale: document.documentElement.getAttribute('data-company-locale') || 'ru',
+      page_type: document.documentElement.getAttribute('data-company-page-type') || 'company_catalog',
       source_entity_type: 'company',
     });
   });
