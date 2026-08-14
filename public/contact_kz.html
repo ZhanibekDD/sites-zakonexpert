@@ -25,48 +25,9 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8638191147118359"
-       crossorigin="anonymous"></script>
-  <!-- Yandex Autoplacement 19621793 -->
-  <script src="https://yandex.ru/ads/system/context.js" async></script>
-  <script data-page-id="19621793" src="https://yandex.ru/ads/system/ap-loader.js" async></script>
 </head>
 <body>
-<!-- Yandex.Metrika counter (110748931) -->
-<script type="text/javascript">
-    (function(m,e,t,r,i,k,a){
-        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();
-        for (var j = 0; j < document.scripts.length; j++) {
-            if (document.scripts[j].src === r) { return; }
-        }
-        k=e.createElement(t),
-        a=e.getElementsByTagName(t)[0],
-        k.async=1,
-        k.src=r,
-        a.parentNode.insertBefore(k,a)
-    })(window, document, 'script',
-       'https://mc.yandex.ru/metrika/tag.js?id=110748931', 'ym');
-
-    ym(110748931, 'init', {
-        ssr:true,
-        webvisor:true,
-        clickmap:true,
-        ecommerce:"dataLayer",
-        referrer:document.referrer,
-        url:location.href,
-        accurateTrackBounce:true,
-        trackLinks:true
-    });
-</script>
-<noscript>
-    <div>
-        <img src="https://mc.yandex.ru/watch/110748931"
-             style="position:absolute; left:-9999px;"
-             alt="">
-    </div>
-</noscript>
-<!-- /Yandex.Metrika counter -->
+<script src="/js/privacy-consent.js?v=20260805-1"></script>
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/index_kz">
@@ -180,6 +141,10 @@
                 <label class="field-label" for="message">Жағдай туралы қысқаша</label>
                 <textarea class="form-control" id="message" name="message" placeholder="Жағдайды сипаттаңыз: не болды, қандай орган шектеу салды, құжаттар бар ма"></textarea>
               </div>
+              <label style="display:flex;align-items:flex-start;gap:9px;font-size:.86rem;line-height:1.5;color:#475569;">
+                <input name="privacyConsent" type="checkbox" required style="margin-top:4px;flex:0 0 auto;">
+                <span>Көрсетілген деректерді өңдеуге және дайын хабарламаны WhatsApp-қа жіберуге <a href="/privacy">саясатқа</a> сәйкес келісемін.</span>
+              </label>
               <button type="submit"><i class="bi bi-send me-2"></i>Жағдайымды талдап алу</button>
               <p class="contact-result-note"></p>
             </form>
@@ -258,7 +223,6 @@
 <script src="/js/chatbot.js" defer></script>
 </body>
 </html>
-
 
 
 

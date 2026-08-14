@@ -10,7 +10,7 @@ const { applyNotaryOverride } = require('../modules/notary-overrides');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 5; // increment to force re-import when verified overrides change
+const DB_VERSION = 6; // content-fingerprint import; forces one complete production rebuild
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -46,7 +46,7 @@ function validEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
-function buildNotaries(rows, sourceMtime) {
+function buildNotaries(rows, sourceMtime, sourceFingerprint = '') {
   const notaries = [];
   const slugUsed = {};
   let skipped = 0;
@@ -95,6 +95,7 @@ function buildNotaries(rows, sourceMtime) {
       schedule,
       slug,
       sourceMtime,
+      sourceFingerprint,
       dbVersion: DB_VERSION,
       source: 'ЕНІС',
       sourceUrl: 'https://enis.kz/NotarySearch',
@@ -112,6 +113,7 @@ async function importNotaries() {
 
   const source = readRegistrySource(SOURCE_PATH, 'notaries');
   const sourceMtime = source.sourceMtime;
+  const sourceFingerprint = source.sourceFingerprint;
 
   // Check if DB is already up to date
   const db = Datastore.create({ filename: DB_PATH, autoload: true });
@@ -119,9 +121,10 @@ async function importNotaries() {
   await db.ensureIndex({ fieldName: 'name'  }).catch(() => {});
   await db.ensureIndex({ fieldName: 'active' }).catch(() => {});
 
-  const existing = await db.findOne({}, { updatedAt: 1, sourceMtime: 1, dbVersion: 1 });
-  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
-    const count = await db.count({});
+  const existing = await db.findOne({}, { updatedAt: 1, sourceMtime: 1, sourceFingerprint: 1, sourceRecordCount: 1, dbVersion: 1 });
+  const count = await db.count({});
+  if (existing && existing.sourceFingerprint === sourceFingerprint
+      && existing.dbVersion === DB_VERSION && existing.sourceRecordCount === count) {
     console.log(`[Notaries] DB is up to date (${count} records). Skipping import.`);
     return count;
   }
@@ -130,7 +133,8 @@ async function importNotaries() {
   const rows = source.records;
   console.log(`[Notaries] Parsed ${rows.length} rows`);
 
-  const { notaries, skipped } = buildNotaries(rows, sourceMtime);
+  const { notaries, skipped } = buildNotaries(rows, sourceMtime, sourceFingerprint);
+  notaries.forEach(notary => { notary.sourceRecordCount = notaries.length; });
 
   const regionCount = new Set(notaries.map(notary => notary.region)).size;
   const phoneCount = notaries.filter(notary => notary.phone).length;
@@ -143,6 +147,10 @@ async function importNotaries() {
   // no longer wipe the live database.
   await db.remove({}, { multi: true });
   await db.insert(notaries);
+  const importedCount = await db.count({});
+  if (importedCount !== notaries.length) {
+    throw new Error(`[Notaries] Import verification failed: expected=${notaries.length}, stored=${importedCount}`);
+  }
   await compactDatastore(db);
   console.log(`[Notaries] Imported ${notaries.length} notaries (${skipped} rows skipped, phones=${phoneCount}, emails=${emailCount})`);
   return notaries.length;

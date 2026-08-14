@@ -23,6 +23,7 @@ assert.strictEqual(validEmail('10.00-18.00'), null);
 
 const source = readRegistrySource(path.join(__dirname, '..', 'registry', 'notaries.json.gz'), 'notaries');
 const { notaries } = buildNotaries(source.records, source.sourceMtime);
+assert.match(source.sourceFingerprint, /^[a-f0-9]{64}$/, 'registry source must expose a stable SHA-256 fingerprint');
 const regions = new Set(notaries.map(item => item.region));
 const slugs = new Set(notaries.map(item => item.slug));
 assert.ok(notaries.length >= 6000, 'fallback snapshot is unexpectedly incomplete');
@@ -31,6 +32,8 @@ assert.strictEqual(slugs.size, notaries.length, 'notary slugs must be unique');
 assert.ok(notaries.filter(item => item.phone).length >= 5700, 'phone coverage unexpectedly dropped');
 assert.ok(notaries.filter(item => item.email).length >= 5700, 'email coverage unexpectedly dropped');
 assert.ok(notaries.every(item => !item.email || validEmail(item.email)), 'all stored emails must be valid');
+const balabaev = notaries.find(item => item.slug === 'balabaev-bekzat-bolysbekuly');
+assert.ok(balabaev, 'complete registry must include Balabaev Bekzat and preserve his public slug');
 const aman = notaries.find(item => item.license === '22020237' && item.name === 'АМАН ЖАНЕРКЕ');
 assert.ok(aman, 'verified notary override target must exist');
 assert.strictEqual(aman.email, 'amanzhanerke87@gmail.com');

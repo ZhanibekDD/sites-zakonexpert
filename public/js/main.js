@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM элементы
     const searchForm = document.getElementById('search-form');
     const iinInput = document.getElementById('iin');
+    const iinConsent = document.getElementById('iin-consent');
     const iinValidation = document.getElementById('iin-validation');
     const searchButton = document.getElementById('search-button');
     const loadingContainer = document.getElementById('loading-container');
@@ -192,6 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const iin = iinInput.value.trim();
 
+            if (iinConsent && !iinConsent.checked) {
+                iinConsent.reportValidity();
+                return;
+            }
+
             // Проверка формата ИИН
             if (!/^\d{12}$/.test(iin)) {
                 if (iinValidation) {
@@ -248,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ iin })
+                body: JSON.stringify({ iin, consent: Boolean(iinConsent && iinConsent.checked) })
             });
 
             // Важно: сначала проверяем response.ok

@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const crypto = require('crypto');
 
 const FORMAT = 'zakonexpert.registry.v1';
 
@@ -26,6 +27,9 @@ function readRegistrySource(filename, expectedEntity) {
   return {
     ...validateDocument(document, expectedEntity),
     sourceMtime: stat.mtimeMs,
+    // File mtimes are not stable across Git/Plesk deployments. A content
+    // fingerprint makes import decisions deterministic.
+    sourceFingerprint: crypto.createHash('sha256').update(compressed).digest('hex'),
   };
 }
 

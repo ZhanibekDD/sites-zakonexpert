@@ -59,7 +59,7 @@ function parseCombinedField(raw) {
   return { address, phones, license, licenseDate };
 }
 
-function buildBailiffs(rows, sourceMtime) {
+function buildBailiffs(rows, sourceMtime, sourceFingerprint = '') {
   const bailiffs  = [];
   const slugUsed  = {};
   let skipped     = 0;
@@ -96,6 +96,7 @@ function buildBailiffs(rows, sourceMtime) {
       phones,
       slug,
       sourceMtime,
+      sourceFingerprint,
       dbVersion: DB_VERSION,
       updatedAt: new Date(),
     });
@@ -112,15 +113,17 @@ async function importBailiffs() {
 
   const source = readRegistrySource(SOURCE_PATH, 'bailiffs');
   const sourceMtime = source.sourceMtime;
+  const sourceFingerprint = source.sourceFingerprint;
   const db = Datastore.create({ filename: DB_PATH, autoload: true });
 
   await db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
   await db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
   await db.ensureIndex({ fieldName: 'region' }).catch(() => {});
 
-  const existing = await db.findOne({}, { sourceMtime: 1, dbVersion: 1 });
-  if (existing && existing.sourceMtime >= sourceMtime && existing.dbVersion === DB_VERSION) {
-    const count = await db.count({});
+  const existing = await db.findOne({}, { sourceMtime: 1, sourceFingerprint: 1, sourceRecordCount: 1, dbVersion: 1 });
+  const count = await db.count({});
+  if (existing && existing.sourceFingerprint === sourceFingerprint
+      && existing.dbVersion === DB_VERSION && existing.sourceRecordCount === count) {
     console.log(`[Bailiffs] DB is up to date (${count} records). Skipping import.`);
     return count;
   }
@@ -128,7 +131,8 @@ async function importBailiffs() {
   console.log('[Bailiffs] Reading compressed registry source...');
   const rows = source.records;
   console.log(`[Bailiffs] Parsed ${rows.length} rows`);
-  const { bailiffs, skipped } = buildBailiffs(rows, sourceMtime);
+  const { bailiffs, skipped } = buildBailiffs(rows, sourceMtime, sourceFingerprint);
+  bailiffs.forEach(bailiff => { bailiff.sourceRecordCount = bailiffs.length; });
 
   if (bailiffs.length < 2000 || bailiffs.some(item => !item.license || !item.licenseDate)) {
     throw new Error(`[Bailiffs] Completeness check failed: total=${bailiffs.length}`);
@@ -136,6 +140,10 @@ async function importBailiffs() {
 
   await db.remove({}, { multi: true });
   await db.insert(bailiffs);
+  const importedCount = await db.count({});
+  if (importedCount !== bailiffs.length) {
+    throw new Error(`[Bailiffs] Import verification failed: expected=${bailiffs.length}, stored=${importedCount}`);
+  }
   await compactDatastore(db);
   console.log(`[Bailiffs] Imported ${bailiffs.length} bailiffs (${skipped} skipped)`);
   return bailiffs.length;

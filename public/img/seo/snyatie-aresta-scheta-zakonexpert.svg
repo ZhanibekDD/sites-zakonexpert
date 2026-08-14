@@ -40,7 +40,7 @@
 
   <rect x="30" y="382" width="24" height="24" rx="4" fill="#22c55e"/>
   <text x="42" y="399" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#fff">✓</text>
-  <text x="66" y="400" font-family="Arial,sans-serif" font-size="17" fill="#22c55e" font-weight="700">Работаем по всему Казахстану · Без предоплаты</text>
+  <text x="66" y="400" font-family="Arial,sans-serif" font-size="17" fill="#22c55e" font-weight="700">Работаем по Казахстану · Условия в договоре</text>
 
   <!-- Phone CTA -->
   <rect x="30" y="428" width="340" height="54" rx="10" fill="#1a56db"/>
