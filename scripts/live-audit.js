@@ -171,7 +171,7 @@ async function auditNewsDetail() {
 async function auditTechnicalFiles() {
   const checks = [
     ['/robots.txt', /sitemap-index\.xml/i],
-    ['/ads.txt', /google\.com,\s*pub-/i],
+    ['/ads.txt', /Advertising is disabled/i],
   ];
   for (const [pathname, expected] of checks) {
     try {

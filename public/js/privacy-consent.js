@@ -1,4 +1,4 @@
-/* ZakonExpert privacy choices: necessary storage by default, analytics/ads by consent. */
+/* ZakonExpert privacy choices: necessary storage by default, analytics by consent. */
 (function () {
   'use strict';
 
@@ -54,24 +54,8 @@
     });
   }
 
-  function activateDeferredScripts() {
-    if (!analyticsAllowed()) return;
-    document.querySelectorAll('script[type="text/plain"][data-ze-consent="ads"][data-src]').forEach(function (placeholder) {
-      if (placeholder.dataset.activated === 'true') return;
-      placeholder.dataset.activated = 'true';
-      var attrs = {};
-      Array.prototype.forEach.call(placeholder.attributes, function (attr) {
-        if (!['type', 'data-src', 'data-ze-consent', 'data-activated'].includes(attr.name)) attrs[attr.name] = attr.value;
-      });
-      loadScriptOnce(placeholder.getAttribute('data-src'), attrs);
-    });
-  }
-
   function applyChoice() {
-    if (analyticsAllowed()) {
-      loadMetrika();
-      activateDeferredScripts();
-    }
+    if (analyticsAllowed()) loadMetrika();
     window.dispatchEvent(new CustomEvent('ze:privacy-consent', { detail: { choice: currentChoice } }));
   }
 
@@ -101,13 +85,13 @@
     var lang = String(document.documentElement.lang || 'ru').toLowerCase();
     if (lang.startsWith('kk')) return {
       title: 'Құпиялылық баптаулары',
-      text: 'Сайттың жұмысына қажетті сақтау қолданылады. Аналитика мен жарнама тек сіздің келісіміңізден кейін қосылады.',
-      accept: 'Барлығына келісемін', necessary: 'Тек қажеттісі', policy: 'Саясатты оқу', settings: 'Құпиялылық',
+      text: 'Сайттың жұмысына қажетті сақтау қолданылады. Аналитика тек сіздің келісіміңізден кейін қосылады.',
+      accept: 'Аналитикаға келісемін', necessary: 'Тек қажеттісі', policy: 'Саясатты оқу', settings: 'Құпиялылық',
     };
     return {
       title: 'Настройки конфиденциальности',
-      text: 'Для работы сайта используется только необходимое хранение. Аналитика и реклама включаются после вашего согласия.',
-      accept: 'Разрешить аналитику и рекламу', necessary: 'Только необходимое', policy: 'Политика', settings: 'Конфиденциальность',
+      text: 'Для работы сайта используется только необходимое хранение. Аналитика включается после вашего согласия.',
+      accept: 'Разрешить аналитику', necessary: 'Только необходимое', policy: 'Политика', settings: 'Конфиденциальность',
     };
   }
 

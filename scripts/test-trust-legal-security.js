@@ -42,7 +42,8 @@ for (const required of [
 
 const consentScript = fs.readFileSync(path.join(PUBLIC, 'js', 'privacy-consent.js'), 'utf8');
 assert.match(consentScript, /analyticsAllowed/);
-assert.match(consentScript, /data-ze-consent="ads"/);
+assert.doesNotMatch(consentScript, /data-ze-consent="ads"/);
+assert.doesNotMatch(consentScript, /реклам/iu);
 assert.match(consentScript, /Только необходимое/);
 
 const publicPages = fs.readdirSync(PUBLIC)
@@ -52,8 +53,8 @@ const publicPages = fs.readdirSync(PUBLIC)
 for (const name of publicPages) {
   const source = fs.readFileSync(path.join(PUBLIC, name), 'utf8');
   assert.match(source, /privacy-consent\.js/, `${name} must expose the privacy choice before optional processing`);
-  assert.doesNotMatch(source, /<script(?=[^>]*\ssrc="https:\/\/(?:mc\.yandex\.ru|pagead2\.googlesyndication\.com|yandex\.ru\/ads\/system))[^>]*>/i,
-    `${name} loads optional analytics or ads without consent`);
+  assert.doesNotMatch(source, /<script(?=[^>]*\ssrc="https:\/\/mc\.yandex\.ru)[^>]*>/i,
+    `${name} loads optional analytics without consent`);
 }
 
 const home = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');

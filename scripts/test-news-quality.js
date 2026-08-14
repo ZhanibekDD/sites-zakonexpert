@@ -121,8 +121,8 @@ const fixture = {
   assert.match(detailHtml, /Когда нужна помощь специалиста/);
   assert.match(detailHtml, /\/news\/cover\/test-news\.svg/);
   assert.match(detailHtml, /rel="nofollow noopener noreferrer"/);
-  assert.match(detailHtml, /pagead2\.googlesyndication\.com/);
-  assert.match(detailHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/);
+  assert.doesNotMatch(detailHtml, /pagead2\.googlesyndication\.com/);
+  assert.doesNotMatch(detailHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/);
 
   const fallbackSvg = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'news', 'news-cover-fallback-v2.svg'), 'utf8');
   assert.match(fallbackSvg, /^<svg[\s\S]+<\/svg>\s*$/);
