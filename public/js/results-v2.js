@@ -49,22 +49,141 @@
     select(options.find((option) => option.classList.contains('is-active')) || options[0]);
   });
 
+  const archive = Array.isArray(window.ZAKONEXPERT_RESULTS_ARCHIVE)
+    ? window.ZAKONEXPERT_RESULTS_ARCHIVE
+    : [];
+  const gallery = document.querySelector('[data-results-gallery]');
   const filterButtons = Array.from(document.querySelectorAll('[data-results-filter]'));
-  const resultCards = Array.from(document.querySelectorAll('[data-result-category]'));
+  const searchInput = document.querySelector('[data-results-search]');
+  const resultCount = document.querySelector('[data-results-count]');
+  const emptyState = document.querySelector('[data-results-empty]');
+  const loadMore = document.querySelector('[data-results-load-more]');
+  let activeFilter = 'all';
+  let query = '';
+  let visibleLimit = 12;
+
+  function pageLabel(pages) {
+    if (pages === 1) return '1 страница';
+    if (pages > 1 && pages < 5) return `${pages} страницы`;
+    return `${pages} страниц`;
+  }
+
+  function matchesQuery(item) {
+    if (!query) return true;
+    const normalizedQuery = query.toLocaleLowerCase('ru-RU').trim();
+    const queryDigits = normalizedQuery.replace(/\D/g, '');
+    const itemDigits = item.amountLabel.replace(/\D/g, '');
+    if (queryDigits && itemDigits.includes(queryDigits)) return true;
+    return `${item.amountLabel} ${item.badge} ${item.title}`.toLocaleLowerCase('ru-RU').includes(normalizedQuery);
+  }
+
+  function createArchiveCard(item, index) {
+    const article = document.createElement('article');
+    article.className = 'rez-v2-card rez-v2-card--archive';
+    article.dataset.resultCategory = item.category;
+
+    const opener = document.createElement('button');
+    opener.className = 'rez-v2-card__media';
+    opener.type = 'button';
+    opener.dataset.resultOpen = '';
+    opener.dataset.lbSrc = item.src;
+    opener.dataset.lbAlt = `Безопасное превью документа на сумму ${item.amountLabel}`;
+    opener.dataset.lbCaption = `${item.title} — ${item.amountLabel}. Персональные данные скрыты.`;
+
+    const image = document.createElement('img');
+    image.src = item.src;
+    image.width = 1080;
+    image.height = 1516;
+    image.loading = index < 4 ? 'eager' : 'lazy';
+    image.decoding = 'async';
+    image.alt = opener.dataset.lbAlt;
+
+    const ordinal = document.createElement('span');
+    ordinal.className = 'rez-v2-card__number';
+    ordinal.textContent = `№ ${item.id}`;
+
+    const zoom = document.createElement('span');
+    zoom.className = 'rez-v2-card__zoom';
+    zoom.innerHTML = '<i class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span>Открыть</span>';
+
+    opener.append(image, ordinal, zoom);
+
+    const body = document.createElement('div');
+    body.className = 'rez-v2-card__body';
+
+    const top = document.createElement('div');
+    top.className = 'rez-v2-card__top';
+
+    const badge = document.createElement('span');
+    badge.className = `rez-v2-badge${item.category === 'enforcement' ? ' rez-v2-badge--blue' : item.category === 'other' ? ' rez-v2-badge--slate' : ''}`;
+    badge.textContent = item.badge;
+
+    const pages = document.createElement('span');
+    pages.className = 'rez-v2-card__pages';
+    pages.textContent = pageLabel(item.pages);
+    top.append(badge, pages);
+
+    const value = document.createElement('strong');
+    value.className = 'rez-v2-card__amount';
+    value.textContent = item.amountLabel;
+
+    const title = document.createElement('h3');
+    title.textContent = item.title;
+
+    const note = document.createElement('p');
+    note.innerHTML = '<i class="bi bi-shield-lock" aria-hidden="true"></i> Безопасное обезличенное превью';
+
+    body.append(top, value, title, note);
+    article.append(opener, body);
+    return article;
+  }
+
+  function getFilteredArchive() {
+    return archive.filter((item) => {
+      const categoryMatches = activeFilter === 'all' || item.category === activeFilter;
+      return categoryMatches && matchesQuery(item);
+    });
+  }
+
+  function renderArchive() {
+    if (!gallery) return;
+    const filtered = getFilteredArchive();
+    const visible = filtered.slice(0, visibleLimit);
+    gallery.replaceChildren(...visible.map(createArchiveCard));
+    if (resultCount) resultCount.textContent = String(filtered.length);
+    if (emptyState) emptyState.hidden = filtered.length !== 0;
+    if (loadMore) {
+      loadMore.hidden = visible.length >= filtered.length;
+      const rest = filtered.length - visible.length;
+      loadMore.innerHTML = `<i class="bi bi-plus-lg" aria-hidden="true"></i> Показать ещё${rest > 0 ? ` (${rest})` : ''}`;
+    }
+  }
 
   filterButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const filter = button.dataset.resultsFilter;
+      activeFilter = button.dataset.resultsFilter || 'all';
+      visibleLimit = 12;
       filterButtons.forEach((item) => {
         const active = item === button;
         item.classList.toggle('is-active', active);
         item.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
-      resultCards.forEach((card) => {
-        card.hidden = filter !== 'all' && card.dataset.resultCategory !== filter;
-      });
+      renderArchive();
     });
   });
+
+  searchInput?.addEventListener('input', () => {
+    query = searchInput.value;
+    visibleLimit = 12;
+    renderArchive();
+  });
+
+  loadMore?.addEventListener('click', () => {
+    visibleLimit += 12;
+    renderArchive();
+  });
+
+  renderArchive();
 
   const lightbox = document.getElementById('rez-lb');
   const lightboxImage = document.getElementById('rez-lb-img');
@@ -72,26 +191,29 @@
   const lightboxClose = lightbox?.querySelector('[data-lb-close]');
   const lightboxPrev = lightbox?.querySelector('[data-lb-prev]');
   const lightboxNext = lightbox?.querySelector('[data-lb-next]');
-  const openers = Array.from(document.querySelectorAll('[data-result-open]'));
   let currentIndex = -1;
   let lastFocused = null;
 
-  if (!lightbox || !lightboxImage || !openers.length) return;
+  if (!lightbox || !lightboxImage) return;
+
+  function currentOpeners() {
+    return Array.from(document.querySelectorAll('[data-result-open]'));
+  }
 
   function renderLightbox(index) {
+    const openers = currentOpeners();
+    if (!openers.length) return;
     currentIndex = (index + openers.length) % openers.length;
     const opener = openers[currentIndex];
     const nestedImage = opener.querySelector('img');
     lightboxImage.src = opener.dataset.lbSrc || nestedImage?.src || '';
     lightboxImage.alt = opener.dataset.lbAlt || nestedImage?.alt || '';
-    if (lightboxCaption) {
-      lightboxCaption.textContent = opener.dataset.lbCaption || lightboxImage.alt;
-    }
+    if (lightboxCaption) lightboxCaption.textContent = opener.dataset.lbCaption || lightboxImage.alt;
   }
 
   function openLightbox(opener) {
     lastFocused = document.activeElement;
-    renderLightbox(openers.indexOf(opener));
+    renderLightbox(currentOpeners().indexOf(opener));
     lightbox.classList.add('is-open');
     lightbox.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -105,7 +227,10 @@
     if (lastFocused instanceof HTMLElement) lastFocused.focus();
   }
 
-  openers.forEach((opener) => opener.addEventListener('click', () => openLightbox(opener)));
+  document.addEventListener('click', (event) => {
+    const opener = event.target.closest('[data-result-open]');
+    if (opener) openLightbox(opener);
+  });
   lightboxClose?.addEventListener('click', closeLightbox);
   lightboxPrev?.addEventListener('click', () => renderLightbox(currentIndex - 1));
   lightboxNext?.addEventListener('click', () => renderLightbox(currentIndex + 1));
