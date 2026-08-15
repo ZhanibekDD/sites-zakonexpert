@@ -133,11 +133,11 @@
     opener.type = 'button';
     opener.dataset.resultOpen = '';
     opener.dataset.lbSrc = item.src;
-    opener.dataset.lbAlt = `Безопасное превью документа на сумму ${item.amountLabel}`;
+    opener.dataset.lbAlt = `Читаемая первая страница документа на сумму ${item.amountLabel}`;
     opener.dataset.lbCaption = `${item.title} — ${item.amountLabel}. Персональные данные скрыты.`;
 
     const image = document.createElement('img');
-    image.src = item.src;
+    image.src = item.thumbSrc || item.src;
     image.width = 1080;
     image.height = 1516;
     image.loading = index < 4 ? 'eager' : 'lazy';
@@ -150,7 +150,7 @@
 
     const zoom = document.createElement('span');
     zoom.className = 'rez-v2-card__zoom';
-    zoom.innerHTML = '<i class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span>Открыть</span>';
+    zoom.innerHTML = '<i class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span>Читать документ</span>';
 
     opener.append(image, ordinal, zoom);
 
@@ -177,7 +177,7 @@
     title.textContent = item.title;
 
     const note = document.createElement('p');
-    note.innerHTML = '<i class="bi bi-shield-lock" aria-hidden="true"></i> Безопасное обезличенное превью';
+    note.innerHTML = '<i class="bi bi-shield-check" aria-hidden="true"></i> Документ читаемый, личные данные закрыты';
 
     body.append(top, value, title, note);
     article.append(opener, body);
@@ -234,6 +234,7 @@
   const lightbox = document.getElementById('rez-lb');
   const lightboxImage = document.getElementById('rez-lb-img');
   const lightboxCaption = document.getElementById('rez-lb-caption');
+  const lightboxOriginal = document.getElementById('rez-lb-original');
   const lightboxClose = lightbox?.querySelector('[data-lb-close]');
   const lightboxPrev = lightbox?.querySelector('[data-lb-prev]');
   const lightboxNext = lightbox?.querySelector('[data-lb-next]');
@@ -255,6 +256,7 @@
     lightboxImage.src = opener.dataset.lbSrc || nestedImage?.src || '';
     lightboxImage.alt = opener.dataset.lbAlt || nestedImage?.alt || '';
     if (lightboxCaption) lightboxCaption.textContent = opener.dataset.lbCaption || lightboxImage.alt;
+    if (lightboxOriginal) lightboxOriginal.href = lightboxImage.src;
   }
 
   function openLightbox(opener) {
