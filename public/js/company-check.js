@@ -6,6 +6,7 @@
   if (!form) return;
 
   var input = document.getElementById('company-check-bin');
+  var selectedCompany = document.getElementById('company-check-selection');
   var suggestions = document.getElementById('company-check-suggestions');
   var errorBox = document.getElementById('company-check-error');
   var loading = document.getElementById('company-check-loading');
@@ -59,6 +60,22 @@
   function clearError() {
     errorBox.textContent = '';
     setHidden(errorBox, true);
+  }
+
+  function clearSelectedCompany() {
+    if (!selectedCompany) return;
+    selectedCompany.innerHTML = '';
+    setHidden(selectedCompany, true);
+    input.removeAttribute('title');
+  }
+
+  function showSelectedCompany(item) {
+    if (!selectedCompany) return;
+    selectedCompany.innerHTML = '<span>Выбрана организация</span><strong>'
+      + escapeHtml(item.name || 'Наименование не опубликовано') + '</strong><small>БИН '
+      + escapeHtml(item.bin) + '</small>';
+    setHidden(selectedCompany, false);
+    input.title = item.name || '';
   }
 
   function hideSuggestions() {
@@ -266,15 +283,22 @@
       }).join('');
     }
 
-    var mappedAddress = addresses.find(function (address) {
-      return Number.isFinite(Number(address.latitude)) && Number.isFinite(Number(address.longitude));
-    }) || addresses[0];
+    function validKazakhstanCoordinates(address) {
+      if (!address || address.latitude === null || address.latitude === undefined || address.latitude === ''
+          || address.longitude === null || address.longitude === undefined || address.longitude === '') return false;
+      var latitude = Number(address.latitude);
+      var longitude = Number(address.longitude);
+      return Number.isFinite(latitude) && Number.isFinite(longitude)
+        && latitude >= 40 && latitude <= 56 && longitude >= 46 && longitude <= 88;
+    }
+
+    var mappedAddress = addresses.find(validKazakhstanCoordinates) || addresses[0];
     var mapHtml = '<div class="cc-map-card"><div class="cc-map-card__empty"><div><i class="bi bi-map"></i>Местонахождение не удалось определить по опубликованным данным.</div></div></div>';
     if (mappedAddress && mappedAddress.value) {
-      var hasCoordinates = Number.isFinite(Number(mappedAddress.latitude)) && Number.isFinite(Number(mappedAddress.longitude));
+      var hasCoordinates = validKazakhstanCoordinates(mappedAddress);
       var mapQuery = hasCoordinates
         ? Number(mappedAddress.latitude) + ',' + Number(mappedAddress.longitude)
-        : mappedAddress.value;
+        : mappedAddress.value + ', Казахстан';
       var encodedMapQuery = encodeURIComponent(mapQuery);
       var encodedAddress = encodeURIComponent(mappedAddress.value);
       mapHtml = '<div class="cc-map-card"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Карта расположения '
@@ -438,7 +462,8 @@
       return;
     }
     input.dataset.bin = item.bin;
-    input.value = item.bin + ' — ' + item.name;
+    input.value = item.bin;
+    showSelectedCompany(item);
     hideSuggestions();
     clearError();
     check(item.bin);
@@ -459,6 +484,7 @@
 
   input.addEventListener('input', function () {
     clearError();
+    clearSelectedCompany();
     delete input.dataset.bin;
     window.clearTimeout(suggestTimer);
     var query = input.value.trim();

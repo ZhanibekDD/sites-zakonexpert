@@ -36,6 +36,7 @@ const localCompany = {
   ],
   addresses: [
     { value: 'г. Алматы, ул. Тестовая, 1', latitude: 43.2389, longitude: 76.8897, sourceKey: 'business_directory_kz_2026' },
+    { value: 'г. Шымкент, мкр. Нурсат, 8', latitude: 0, longitude: 0, sourceKey: 'business_directory_kz_2026' },
   ],
   attributes: [
     { type: 'work_hours', value: 'Пн–Пт 09:00–18:00', sourceKey: 'business_directory_kz_2026' },
@@ -84,6 +85,8 @@ const kgd = {
   assert.strictEqual(report.company.oked, '07100');
   assert.strictEqual(report.company.contacts[0].value, '+7 (727) 123-45-67');
   assert.strictEqual(report.company.addresses[0].latitude, 43.2389);
+  assert.strictEqual(report.company.addresses[1].latitude, null, '0,0 must never be published as Kazakhstan coordinates');
+  assert.strictEqual(report.company.addresses[1].longitude, null, '0,0 must never be published as Kazakhstan coordinates');
   assert.strictEqual(report.company.attributes[0].type, 'work_hours');
   assert.strictEqual(report.coverage.contacts, true);
   assert.strictEqual(report.coverage.location, true);

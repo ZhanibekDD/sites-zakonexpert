@@ -5,6 +5,12 @@ const PUBLIC_CONTACT_TYPES = new Set([
   'phone', 'mobile_phone', 'email', 'website', 'whatsapp', 'viber', 'telegram',
 ]);
 
+function coordinatesInKazakhstan(latitude, longitude) {
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    && latitude >= 40 && latitude <= 56
+    && longitude >= 46 && longitude <= 88;
+}
+
 function publicSourceLabel(sourceKey, sourceLabel) {
   if (sourceKey === 'verified_override') return 'Подтверждённые сведения';
   if (sourceKey === 'business_directory_kz_2026' || sourceKey === 'directory') {
@@ -32,12 +38,13 @@ function publicCompanyDetails(company) {
     .map(address => {
       const latitude = Number.parseFloat(address.latitude);
       const longitude = Number.parseFloat(address.longitude);
+      const hasValidCoordinates = coordinatesInKazakhstan(latitude, longitude);
       return {
         value: String(address.value).trim(),
         city: String(address.city || '').trim() || null,
         postalCode: String(address.postalCode || '').trim() || null,
-        latitude: Number.isFinite(latitude) ? latitude : null,
-        longitude: Number.isFinite(longitude) ? longitude : null,
+        latitude: hasValidCoordinates ? latitude : null,
+        longitude: hasValidCoordinates ? longitude : null,
         primary: Boolean(address.primary),
         sourceKey: address.sourceKey || null,
         sourceLabel: publicSourceLabel(address.sourceKey, address.sourceLabel),
