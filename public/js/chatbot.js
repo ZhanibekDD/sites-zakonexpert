@@ -35,6 +35,10 @@
     }
   }, true);
 
+  // Keep link analytics, but do not render the floating chat bubble.
+  const ENABLE_CHAT_WIDGET = false;
+  if (!ENABLE_CHAT_WIDGET) return;
+
   // ── Chatbot widget ────────────────────────────────────────────────────────
   const CSS = `
   #zke-chat-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(13,31,60,.35);z-index:9998;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:22px;}

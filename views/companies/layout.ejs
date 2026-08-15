@@ -52,6 +52,7 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
       <ul class="nav-links" data-nav-links>
         <li><a class="nav-link" href="/"><%= copy.home %></a></li>
         <li><a class="nav-link active" href="<%= companyCatalogPath %>"><%= copy.directory %></a></li>
+        <li data-nav-kgd><a class="nav-link" href="/proverka-kontragenta" title="Проверка организации по БИН">КГД</a></li>
         <li><a class="nav-link" href="/contact"><%= copy.legalHelp %></a></li>
       </ul>
     </nav>
@@ -81,12 +82,9 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
   <div class="landing-container footer-bottom"><span>© <span class="current-year"></span> ZakonExpert</span><span class="ze-legal-entity">ТОО «ZakonExpert» · БИН 260740044168</span><span>Kazakhstan</span></div>
 </footer>
 <% if (conversionEnabled) { %>
-<a href="<%= resolvedWhatsAppHref %>" class="company-desktop-cta" target="_blank" rel="noopener" aria-label="WhatsApp" data-company-whatsapp data-cta-position="desktop-floating"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
 <a href="<%= resolvedWhatsAppHref %>" class="company-mobile-cta" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="mobile-sticky"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"><%= copy.offerButtonA %></span></a>
-<% } else { %>
-<a href="<%= resolvedWhatsAppHref %>" class="sticky-wa" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
 <% } %>
-<script src="/js/site.js?v=20260815-1"></script>
+<script src="/js/site.js?v=20260815-2"></script>
 <script src="/js/analytics-events.js"></script>
 <% if (conversionEnabled) { %><script src="/js/company-conversion.js?v=20260804-2"></script><% } %>
 <script>

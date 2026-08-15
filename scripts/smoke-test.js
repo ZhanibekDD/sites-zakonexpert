@@ -195,6 +195,10 @@ async function run() {
     assert(!homepageResponse.headers.has('x-powered-by'), 'Express signature is exposed');
     assert(homepageHtml.includes('class="ze-home-company-check" href="/proverka-kontragenta"'),
       'Homepage does not expose the company BIN checker above the fold');
+    assert(homepageHtml.includes('data-nav-kgd') && homepageHtml.includes('href="/proverka-kontragenta"'),
+      'Homepage navigation does not expose the KGD company check');
+    assert(!homepageHtml.includes('class="sticky-wa"'),
+      'Homepage still renders a floating round WhatsApp button');
 
     const imageResponse = await fetch(`${origin}/img/brand/zakonexpert-logo-transparent-hd.png`);
     assert(imageResponse.headers.get('cache-control')?.includes('max-age=604800'),
@@ -212,8 +216,11 @@ async function run() {
     const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
     assert(companyCheckPage.includes('/css/company-check.css?v=20260815-4')
-      && companyCheckPage.includes('/js/company-check.js?v=20260815-1'),
+      && companyCheckPage.includes('/js/company-check.js?v=20260815-1')
+      && companyCheckPage.includes('/js/site.js?v=20260815-2'),
     'Counterparty page assets are missing');
+    assert(companyCheckPage.includes('data-nav-kgd') && !companyCheckPage.includes('class="sticky-wa"'),
+      'Counterparty page navigation or floating button state is incorrect');
     const invalidCompanyCheck = await fetch(`${origin}/api/company-check`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

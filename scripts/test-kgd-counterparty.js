@@ -71,8 +71,11 @@ const client = createKgdCounterpartyClient({
   const html = await ejs.renderFile(path.join(__dirname, '..', 'views', 'company-check.ejs'));
   assert(html.includes('https://zakonexpertt.kz/proverka-kontragenta'), 'Canonical URL is missing');
   assert(html.includes('/css/company-check.css?v=20260815-4'), 'Page stylesheet is missing');
-  assert(html.includes('/js/site.js?v=20260815-1'), 'Shared site script cache key is stale');
+  assert(html.includes('/js/site.js?v=20260815-2'), 'Shared site script cache key is stale');
   assert(html.includes('/js/company-check.js?v=20260815-1'), 'Page script is missing');
+  assert(html.includes('data-nav-kgd') && html.includes('href="/proverka-kontragenta"'),
+    'KGD navigation item is missing');
+  assert(!html.includes('class="sticky-wa"'), 'Floating round WhatsApp button must be removed');
   assert(html.includes('FAQPage'), 'FAQ structured data is missing');
   assert(!html.includes('secret-token'), 'API token leaked into rendered HTML');
   console.log('KGD counterparty check OK: API isolation, normalization, risk indicators and rendered page');

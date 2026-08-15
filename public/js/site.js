@@ -1,5 +1,8 @@
 ﻿document.documentElement.classList.add('js-enabled');
 
+// Floating round WhatsApp buttons were removed in favor of clear header and inline actions.
+document.querySelectorAll('.sticky-wa, .company-desktop-cta').forEach(node => node.remove());
+
 // Анимация fade-in при скролле — работает на всех страницах
 (function() {
   if (!('IntersectionObserver' in window)) {
@@ -27,6 +30,26 @@
 document.addEventListener('DOMContentLoaded', () => {
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navLinks = document.querySelector('[data-nav-links]');
+
+  // Keep the KGD company check visible in legacy page headers as well.
+  if (navLinks && !navLinks.querySelector('[data-nav-kgd]')) {
+    const kgdItem = document.createElement('li');
+    const kgdLink = document.createElement('a');
+    kgdItem.dataset.navKgd = '';
+    kgdLink.className = 'nav-link';
+    kgdLink.href = '/proverka-kontragenta';
+    kgdLink.textContent = 'КГД';
+    kgdLink.title = 'Проверка организации по БИН';
+    if (window.location.pathname === '/proverka-kontragenta') kgdLink.classList.add('active');
+    kgdItem.appendChild(kgdLink);
+
+    const registryItem = Array.from(navLinks.children).find(item => {
+      const link = item.querySelector(':scope > .nav-link');
+      return link && link.textContent.trim().startsWith('Реестры');
+    });
+    if (registryItem) registryItem.insertAdjacentElement('afterend', kgdItem);
+    else navLinks.appendChild(kgdItem);
+  }
 
   if (navToggle && navLinks) {
     navToggle.addEventListener('click', () => {
