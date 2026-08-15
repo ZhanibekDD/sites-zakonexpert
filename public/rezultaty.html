@@ -65,12 +65,18 @@
       background: linear-gradient(135deg,#f8fafc 0%,#eef4fb 100%);
       box-shadow: 0 18px 42px rgba(13,31,60,.1);
     }
-    .rez-featured-media {
-      display: block; border: 0; border-radius: 14px; overflow: hidden;
+    .rez-featured-docs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .rez-featured-doc {
+      position: relative; display: block; border: 1px solid #dbe4f0; border-radius: 10px; overflow: hidden;
       background: #fff; padding: 0; cursor: zoom-in;
-      box-shadow: 0 8px 26px rgba(13,31,60,.16);
+      box-shadow: 0 8px 20px rgba(13,31,60,.12);
     }
-    .rez-featured-media img { display: block; width: 100%; height: 460px; object-fit: contain; background: #fff; }
+    .rez-featured-doc img { display: block; width: 100%; height: 220px; object-fit: cover; object-position: top; background: #fff; }
+    .rez-featured-doc span {
+      position: absolute; left: 7px; bottom: 7px; padding: 5px 8px; border-radius: 999px;
+      background: rgba(7,26,53,.92); color: #f4c34a; font-size: .7rem; font-weight: 800;
+      box-shadow: 0 4px 12px rgba(7,26,53,.2);
+    }
     .rez-featured-kicker {
       display: inline-flex; align-items: center; gap: 7px; margin-bottom: 12px;
       color: #9a6817; font-size: .75rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
@@ -180,7 +186,7 @@
       .rez-stat:nth-child(3), .rez-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,.08); }
       .rez-team-grid { grid-template-columns: 1fr; }
       .rez-featured { grid-template-columns: 1fr; gap: 22px; padding: 16px; }
-      .rez-featured-media img { height: 390px; }
+      .rez-featured-doc img { height: 210px; }
       .rez-social-grid { grid-template-columns: 1fr; }
       .rez-social-media { height: 390px; }
       .rez-gallery  { grid-template-columns: repeat(2,1fr); gap: 10px; }
@@ -295,24 +301,34 @@
     <div class="rez-section-sub">Нажмите на документ, чтобы увидеть его подробнее. Персональные данные клиентов скрыты.</div>
 
     <article class="rez-featured">
-      <button class="rez-featured-media" type="button" onclick="openLb(this)" aria-label="Открыть постановление крупнее">
-        <img src="/img/rezultaty/otmena-nadpisi-instagram-2025-09.webp" width="1086" height="1448" alt="Обезличенное постановление об отмене исполнительной надписи на сумму 79 300 тенге">
-      </button>
+      <div class="rez-featured-docs" aria-label="Четыре официальных постановления">
+        <button class="rez-featured-doc" type="button" onclick="openLb(this)" aria-label="Открыть постановление на 3 780 371,08 тенге крупнее">
+          <img src="/img/rezultaty/cancellation-3780371.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 3 780 371,08 тенге">
+          <span>3 780 371,08 ₸</span>
+        </button>
+        <button class="rez-featured-doc" type="button" onclick="openLb(this)" aria-label="Открыть постановление на 4 091 645 тенге крупнее">
+          <img src="/img/rezultaty/cancellation-4091645.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 4 091 645 тенге">
+          <span>4 091 645 ₸</span>
+        </button>
+        <button class="rez-featured-doc" type="button" onclick="openLb(this)" aria-label="Открыть постановление на 6 047 477,95 тенге крупнее">
+          <img src="/img/rezultaty/cancellation-6047478.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 6 047 477,95 тенге">
+          <span>6 047 477,95 ₸</span>
+        </button>
+        <button class="rez-featured-doc" type="button" onclick="openLb(this)" aria-label="Открыть постановление на 6 942 105,30 тенге крупнее">
+          <img src="/img/rezultaty/cancellation-6942105.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге">
+          <span>6 942 105,30 ₸</span>
+        </button>
+      </div>
       <div>
         <span class="rez-featured-kicker"><i class="bi bi-patch-check-fill"></i> Подтверждённый результат</span>
-        <h2>Отменена исполнительная надпись на 79 300 ₸</h2>
-        <p>Постановлением нотариуса от 8 апреля 2024 года исполнительная надпись отменена. Публикуем документ в обезличенном виде.</p>
+        <h2>4 исполнительные надписи отменены на 20,86 млн ₸</h2>
+        <p>Четыре официальных постановления нотариусов подтверждают отмену исполнительных надписей банков и финансовых компаний. Документы опубликованы в обезличенном виде.</p>
         <ul class="rez-featured-facts">
-          <li><i class="bi bi-check-circle-fill"></i><span>Тип результата: отмена исполнительной надписи</span></li>
-          <li><i class="bi bi-check-circle-fill"></i><span>Сумма по документу: 79 300 ₸</span></li>
-          <li><i class="bi bi-check-circle-fill"></i><span>Дата публикации результата: 22 сентября 2025 года</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>4 официальных постановления нотариусов</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span>Общая сумма: 20 861 599,33 ₸</span></li>
+          <li><i class="bi bi-shield-lock-fill"></i><span>Персональные данные, QR- и коды проверки скрыты</span></li>
         </ul>
-        <div class="rez-featured-links">
-          <a class="rez-source-link" href="https://www.instagram.com/p/DO7pE_GDJaq/" target="_blank" rel="noopener noreferrer">
-            <i class="bi bi-instagram"></i> Оригинальная публикация в Instagram
-          </a>
-        </div>
-        <p class="rez-privacy-note"><i class="bi bi-shield-lock"></i> Имя, дата рождения, ИИН и адрес клиента закрыты.</p>
+        <p class="rez-privacy-note"><i class="bi bi-info-circle"></i> Отмена исполнительной надписи прекращает взыскание по этому исполнительному документу; она не означает автоматического списания задолженности.</p>
       </div>
     </article>
 
