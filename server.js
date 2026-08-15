@@ -1259,12 +1259,20 @@ app.get('/api/company-suggest', companySuggestLimiter, (req, res) => {
   if (!companiesDb || !companiesDb.available() || query.length < 2) {
     return res.json({ items: [] });
   }
-  const items = companiesDb.search(query, 1, 8).items.map(company => ({
+  const cleanSummary = (value, limit = 180) => {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    return text ? text.slice(0, limit) : null;
+  };
+  const items = companiesDb.search(query, 1, 14).items.map(company => ({
     bin: company.bin,
     name: company.name_ru || company.name_kk,
-    activity: company.activity_ru || null,
-    status: company.status_ru || null,
-    leader: company.leader || null,
+    activity: cleanSummary(company.activity_ru),
+    status: cleanSummary(company.status_ru, 90),
+    leader: cleanSummary(company.leader, 140),
+    address: cleanSummary(company.address_ru, 220),
+    phone: cleanSummary(company.mobile_phone || company.phone, 90),
+    email: cleanSummary(company.email, 120),
+    website: cleanSummary(company.website, 160),
     url: `/company/${company.slug}`,
   }));
   return res.json({ items });

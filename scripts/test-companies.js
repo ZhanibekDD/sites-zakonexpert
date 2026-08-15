@@ -54,6 +54,8 @@ assert.strictEqual(parseArgs(['--id=7137497', '--confirm-offline']).targetId, 71
 const database = new DatabaseSync(dbPath);
 createSchema(database);
 assert.strictEqual(insertRows(database, [sample, lowQualitySample], '2026-07-16T00:00:00.000Z'), 2);
+database.prepare('UPDATE companies SET phone = ?, email = ? WHERE id = ?')
+  .run('+7 (727) 123-45-67', 'info@alpha.kz', sample.id);
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_updated_at', '2026-07-16');
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_url', 'https://data.egov.kz/datasets/view?index=gbd_ul');
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('completed_at', '2026-07-16');
@@ -130,6 +132,8 @@ assert.strictEqual(companies.stats().excludedCount, 1);
 assert.strictEqual(companies.findById(7137221).bin, '970540001234');
 assert.strictEqual(companies.findByBin('970540001234').leader, 'ИВАНОВ ИВАН ИВАНОВИЧ');
 assert.strictEqual(companies.search('Альфа').items.length, 1);
+assert.strictEqual(companies.search('Альфа').items[0].phone, '+7 (727) 123-45-67');
+assert.strictEqual(companies.search('Альфа').items[0].email, 'info@alpha.kz');
   assert.strictEqual(companies.search('970540001234').items.length, 1);
   assert.deepStrictEqual(companies.browse().items.map(item => item.id), [7137221],
     'public catalog browsing must exclude thin noindex rows');

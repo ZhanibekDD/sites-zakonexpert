@@ -22,7 +22,7 @@
       <div class="cc-search-card">
         <div class="cc-search-card__head">
           <span class="cc-search-card__icon"><i class="bi bi-building-check"></i></span>
-          <div><strong>Найдите организацию</strong><small>БИН, название или руководитель</small></div>
+          <div><strong>Найдите организацию</strong><small>Введите часть названия — например, «Казах»</small></div>
         </div>
         <form id="company-check-form" class="cc-form" novalidate>
           <label for="company-check-bin">БИН, название или руководитель</label>
@@ -30,11 +30,11 @@
             <input id="company-check-bin" name="bin" type="text" autocomplete="off" maxlength="160" placeholder="Например, 050140000656 или Казахмыс" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="company-check-suggestions" aria-describedby="company-check-hint company-check-error">
             <button type="submit"><span>Проверить</span><i class="bi bi-arrow-right"></i></button>
           </div>
-          <div id="company-check-suggestions" class="cc-suggestions" role="listbox" hidden></div>
+          <div id="company-check-suggestions" class="cc-suggestions" role="listbox" aria-label="Подходящие организации" hidden></div>
           <p id="company-check-hint" class="cc-input-hint"><i class="bi bi-lock"></i> Ключи государственных API защищены на сервере и не передаются в браузер.</p>
           <p id="company-check-error" class="cc-form-error" role="alert" hidden></p>
         </form>
-        <div class="cc-source-mini"><span>Источники</span><span>Минюст · КГД · Госзакуп</span></div>
+        <div class="cc-source-mini"><span>Источники</span><span>Минюст · КГД · Госзакуп · справочник</span></div>
       </div>
     </section>
 
@@ -75,19 +75,24 @@
           <dl id="cc-tax" class="cc-definition-list"></dl>
         </section>
 
+        <section class="cc-panel cc-panel--wide" aria-labelledby="cc-contacts-title">
+          <div class="cc-panel__head"><div><span class="cc-section-number">04</span><h3 id="cc-contacts-title">Контакты и местонахождение</h3></div><small>Телефоны, e-mail, адреса и карта</small></div>
+          <div id="cc-company-details" class="cc-company-details"></div>
+        </section>
+
         <section class="cc-panel cc-panel--wide" aria-labelledby="cc-procurement-title">
-          <div class="cc-panel__head"><div><span class="cc-section-number">04</span><h3 id="cc-procurement-title">Государственные закупки</h3></div><small>Официальный портал госзакупок</small></div>
+          <div class="cc-panel__head"><div><span class="cc-section-number">05</span><h3 id="cc-procurement-title">Государственные закупки</h3></div><small>Официальный портал госзакупок</small></div>
           <div id="cc-procurement" class="cc-procurement"></div>
         </section>
 
         <section class="cc-panel cc-panel--wide" aria-labelledby="cc-stats-title">
-          <div class="cc-panel__head"><div><span class="cc-section-number">05</span><h3 id="cc-stats-title">Динамика по годам</h3></div><small>Если опубликована КГД</small></div>
+          <div class="cc-panel__head"><div><span class="cc-section-number">06</span><h3 id="cc-stats-title">Динамика по годам</h3></div><small>Если опубликована КГД</small></div>
           <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Год</th><th>Работники</th><th>Налоги</th><th>НДС</th><th>КНН</th><th>Средний КНН</th></tr></thead><tbody id="cc-statistics"></tbody></table></div>
           <p id="cc-no-statistics" class="cc-empty" hidden>КГД не опубликовал статистику по годам для этого БИН.</p>
         </section>
 
         <section class="cc-panel cc-panel--wide" aria-labelledby="cc-sources-title">
-          <div class="cc-panel__head"><div><span class="cc-section-number">06</span><h3 id="cc-sources-title">Источники и актуальность</h3></div><small>Статус каждого запроса</small></div>
+          <div class="cc-panel__head"><div><span class="cc-section-number">07</span><h3 id="cc-sources-title">Источники и актуальность</h3></div><small>Статус каждого запроса</small></div>
           <div id="cc-sources" class="cc-sources"></div>
         </section>
       </div>
@@ -100,12 +105,12 @@
     </section>
 
     <section class="cc-coverage" aria-labelledby="cc-coverage-title">
-      <div class="cc-section-intro"><span>Что внутри отчёта</span><h2 id="cc-coverage-title">Главное о контрагенте — на одном экране</h2><p>Мы переводим служебные поля официального API на понятный язык и ничего не скрываем за регистрацией.</p></div>
+      <div class="cc-section-intro"><span>Что внутри отчёта</span><h2 id="cc-coverage-title">Главное о контрагенте — на одном экране</h2><p>Регистрационные сведения, контакты, адреса, карта, налоги, риски и закупки — бесплатно и без регистрации.</p></div>
       <div class="cc-coverage-grid">
-        <article class="cc-coverage-card cc-coverage-card--registration"><i class="bi bi-building"></i><h3>Регистрация и ОКЭД</h3><p>Наименование, дата регистрации, резидентство, код и вид деятельности.</p></article>
-        <article class="cc-coverage-card cc-coverage-card--taxes"><i class="bi bi-receipt"></i><h3>Налоги и НДС</h3><p>Режим налогообложения, сведения по НДС и опубликованная задолженность.</p></article>
-        <article class="cc-coverage-card cc-coverage-card--risks"><i class="bi bi-exclamation-triangle"></i><h3>Неблагоприятные признаки</h3><p>Бездействие, банкротство, отсутствие по адресу, ограничения ЭСФ и другие отметки.</p></article>
-        <article class="cc-coverage-card cc-coverage-card--dynamics"><i class="bi bi-briefcase"></i><h3>Государственные закупки</h3><p>Участие, количество договоров как поставщика и заказчика, проверка реестра недобросовестных.</p></article>
+        <article class="cc-coverage-card cc-coverage-card--registration"><img class="cc-coverage-card__image" src="/img/company-check/registration.webp?v=20260815-3" width="960" height="640" loading="lazy" alt="Регистрационные документы организации"><span class="cc-coverage-card__shade" aria-hidden="true"></span><div class="cc-coverage-card__content"><i class="bi bi-building"></i><h3>Регистрация и ОКЭД</h3><p>Наименование, дата регистрации, резидентство, код и вид деятельности.</p></div></article>
+        <article class="cc-coverage-card cc-coverage-card--taxes"><img class="cc-coverage-card__image" src="/img/company-check/taxes.webp?v=20260815-3" width="960" height="640" loading="lazy" alt="Анализ налогов и финансовых показателей"><span class="cc-coverage-card__shade" aria-hidden="true"></span><div class="cc-coverage-card__content"><i class="bi bi-receipt"></i><h3>Налоги и НДС</h3><p>Режим налогообложения, сведения по НДС и опубликованная задолженность.</p></div></article>
+        <article class="cc-coverage-card cc-coverage-card--risks"><img class="cc-coverage-card__image" src="/img/company-check/risks.webp?v=20260815-3" width="960" height="640" loading="lazy" alt="Проверка неблагоприятных признаков компании"><span class="cc-coverage-card__shade" aria-hidden="true"></span><div class="cc-coverage-card__content"><i class="bi bi-exclamation-triangle"></i><h3>Неблагоприятные признаки</h3><p>Бездействие, банкротство, отсутствие по адресу, ограничения ЭСФ и другие отметки.</p></div></article>
+        <article class="cc-coverage-card cc-coverage-card--dynamics"><img class="cc-coverage-card__image" src="/img/company-check/dynamics.webp?v=20260815-3" width="960" height="640" loading="lazy" alt="Документы государственных закупок"><span class="cc-coverage-card__shade" aria-hidden="true"></span><div class="cc-coverage-card__content"><i class="bi bi-briefcase"></i><h3>Государственные закупки</h3><p>Участие, количество договоров как поставщика и заказчика, проверка реестра недобросовестных.</p></div></article>
       </div>
     </section>
 

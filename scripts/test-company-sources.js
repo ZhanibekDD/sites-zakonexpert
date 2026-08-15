@@ -29,6 +29,17 @@ const localCompany = {
   leader: 'ТЕСТОВЫЙ РУКОВОДИТЕЛЬ',
   status_ru: 'Зарегистрирован',
   slug: '1-test',
+  contact_updated_at: '2026-08-12',
+  contacts: [
+    { type: 'phone', value: '+7 (727) 123-45-67', normalized: '+77271234567', sourceKey: 'business_directory_kz_2026' },
+    { type: 'email', value: 'info@test.kz', normalized: 'info@test.kz', sourceKey: 'business_directory_kz_2026' },
+  ],
+  addresses: [
+    { value: 'г. Алматы, ул. Тестовая, 1', latitude: 43.2389, longitude: 76.8897, sourceKey: 'business_directory_kz_2026' },
+  ],
+  attributes: [
+    { type: 'work_hours', value: 'Пн–Пт 09:00–18:00', sourceKey: 'business_directory_kz_2026' },
+  ],
 };
 
 const companiesDb = {
@@ -71,6 +82,12 @@ const kgd = {
   assert.strictEqual(report.coverage.complete, true);
   assert.strictEqual(report.company.leader, 'ТЕСТОВЫЙ РУКОВОДИТЕЛЬ');
   assert.strictEqual(report.company.oked, '07100');
+  assert.strictEqual(report.company.contacts[0].value, '+7 (727) 123-45-67');
+  assert.strictEqual(report.company.addresses[0].latitude, 43.2389);
+  assert.strictEqual(report.company.attributes[0].type, 'work_hours');
+  assert.strictEqual(report.coverage.contacts, true);
+  assert.strictEqual(report.coverage.location, true);
+  assert.strictEqual(report.sources.find(source => source.key === 'directory').status, 'ok');
   assert.strictEqual(report.procurement.contracts.asSupplier.count, 115);
   assert(report.sources.filter(source => ['egov', 'kgd', 'goszakup'].includes(source.key))
     .every(source => source.status === 'ok'));

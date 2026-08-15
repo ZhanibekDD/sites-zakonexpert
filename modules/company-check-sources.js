@@ -1,6 +1,59 @@
 'use strict';
 
 const EMPTY_VALUE = 'Нет данных';
+const PUBLIC_CONTACT_TYPES = new Set([
+  'phone', 'mobile_phone', 'email', 'website', 'whatsapp', 'viber', 'telegram',
+]);
+
+function publicSourceLabel(sourceKey, sourceLabel) {
+  if (sourceKey === 'verified_override') return 'Подтверждённые сведения';
+  if (sourceKey === 'business_directory_kz_2026' || sourceKey === 'directory') {
+    return 'Бизнес-справочник организаций Казахстана';
+  }
+  if (sourceKey === 'egov_gbd_ul') return 'ГБД ЮЛ — data.egov.kz';
+  return String(sourceLabel || 'Открытый источник').trim();
+}
+
+function publicCompanyDetails(company) {
+  const contacts = (company?.contacts || [])
+    .filter(contact => PUBLIC_CONTACT_TYPES.has(contact.type) && String(contact.value || '').trim())
+    .slice(0, 30)
+    .map(contact => ({
+      type: contact.type,
+      value: String(contact.value).trim(),
+      normalized: String(contact.normalized || '').trim() || null,
+      sourceKey: contact.sourceKey || null,
+      sourceLabel: publicSourceLabel(contact.sourceKey, contact.sourceLabel),
+      verifiedAt: contact.verifiedAt || null,
+    }));
+  const addresses = (company?.addresses || [])
+    .filter(address => String(address.value || '').trim())
+    .slice(0, 20)
+    .map(address => {
+      const latitude = Number.parseFloat(address.latitude);
+      const longitude = Number.parseFloat(address.longitude);
+      return {
+        value: String(address.value).trim(),
+        city: String(address.city || '').trim() || null,
+        postalCode: String(address.postalCode || '').trim() || null,
+        latitude: Number.isFinite(latitude) ? latitude : null,
+        longitude: Number.isFinite(longitude) ? longitude : null,
+        primary: Boolean(address.primary),
+        sourceKey: address.sourceKey || null,
+        sourceLabel: publicSourceLabel(address.sourceKey, address.sourceLabel),
+      };
+    });
+  const attributes = (company?.attributes || [])
+    .filter(attribute => attribute.type === 'work_hours' && String(attribute.value || '').trim())
+    .slice(0, 5)
+    .map(attribute => ({
+      type: attribute.type,
+      value: String(attribute.value).trim(),
+      sourceKey: attribute.sourceKey || null,
+      sourceLabel: publicSourceLabel(attribute.sourceKey, attribute.sourceLabel),
+    }));
+  return { contacts, addresses, attributes };
+}
 
 function sourceState(key, label, url, status, detail, actuality = null) {
   return { key, label, url, status, detail, actuality };
@@ -8,6 +61,7 @@ function sourceState(key, label, url, status, detail, actuality = null) {
 
 function localCompanyProfile(company, requestedBin) {
   if (!company) return null;
+  const details = publicCompanyDetails(company);
   return {
     bin: String(company.bin || requestedBin),
     nameRu: String(company.name_ru || company.name_kk || '').trim() || 'Наименование не опубликовано',
@@ -21,6 +75,9 @@ function localCompanyProfile(company, requestedBin) {
     leader: String(company.leader || '').trim() || EMPTY_VALUE,
     address: String(company.address_ru || '').trim() || EMPTY_VALUE,
     cardUrl: company.slug ? `/company/${company.slug}` : null,
+    contacts: details.contacts,
+    addresses: details.addresses,
+    attributes: details.attributes,
   };
 }
 
@@ -58,6 +115,9 @@ function mergeCompany(local, kgd, requestedBin) {
     leader: fallback.leader || EMPTY_VALUE,
     address: fallback.address || EMPTY_VALUE,
     cardUrl: fallback.cardUrl || null,
+    contacts: fallback.contacts || [],
+    addresses: fallback.addresses || [],
+    attributes: fallback.attributes || [],
   };
 }
 
@@ -141,6 +201,9 @@ function createCompanyCheckService({ companiesDb, kgdClient, goszakupClient, now
 
       const checkedAt = now().toISOString();
       const assessment = addProcurementRisk(kgd?.assessment || emptyAssessment(), procurement);
+      const hasContacts = Boolean(local?.contacts?.length);
+      const hasAddresses = Boolean(local?.addresses?.length || (local?.address && local.address !== EMPTY_VALUE));
+      const contactActuality = localRaw?.contact_updated_at || localStats?.updatedAt || null;
       const sources = [
         sourceState(
           'egov',
@@ -167,6 +230,16 @@ function createCompanyCheckService({ companiesDb, kgdClient, goszakupClient, now
             ? (procurement.coverage?.complete ? 'Реестры закупок проверены' : 'Часть реестров закупок временно не ответила')
             : 'Реестры закупок не проверены',
           procurement?.participant?.indexedAt || null
+        ),
+        sourceState(
+          'directory',
+          'Контакты и адреса организаций Казахстана',
+          local?.cardUrl || '/companies',
+          hasContacts || hasAddresses ? 'ok' : 'not_found',
+          hasContacts || hasAddresses
+            ? 'Адреса, телефоны, e-mail и координаты показаны при наличии в справочнике'
+            : 'Контактные сведения для этой организации не опубликованы',
+          contactActuality
         ),
         sourceState(
           'elicense',
@@ -196,6 +269,8 @@ function createCompanyCheckService({ companiesDb, kgdClient, goszakupClient, now
           profile: Boolean(local || kgd),
           tax: Boolean(kgd),
           procurement: Boolean(procurement),
+          contacts: hasContacts,
+          location: hasAddresses,
           complete: Boolean(local && kgd && procurement && procurement.coverage?.complete),
         },
         sources,
@@ -210,4 +285,5 @@ module.exports = {
   emptyAssessment,
   localCompanyProfile,
   mergeCompany,
+  publicCompanyDetails,
 };
