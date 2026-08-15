@@ -109,10 +109,27 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-4/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-5/,
   'homepage company-check entry styles must use the current cache key');
 assert.doesNotMatch(home, /ze-home-specialist-card|Специалист по снятию арестов/,
   'homepage must not render the removed specialist badge');
+const resultsPage = fs.readFileSync(path.join(PUBLIC, 'rezultaty.html'), 'utf8');
+for (const source of [home, resultsPage]) {
+  assert(source.includes('20 861 599,33 ₸'), 'featured results must show the verified combined amount');
+  assert(!source.includes('79 300 ₸'), 'the old low-value featured result must be removed');
+}
+for (const filename of [
+  'cancellation-3780371.webp',
+  'cancellation-4091645.webp',
+  'cancellation-6047478.webp',
+  'cancellation-6942105.webp',
+]) {
+  assert(home.includes(`/img/rezultaty/${filename}`), `${filename} is not used on the homepage`);
+  assert(resultsPage.includes(`/img/rezultaty/${filename}`), `${filename} is not used on the results page`);
+  const imagePath = path.join(PUBLIC, 'img', 'rezultaty', filename);
+  assert(fs.existsSync(imagePath), `${filename} is missing`);
+  assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large`);
+}
 const bankruptcyPage = fs.readFileSync(path.join(ROOT, 'views', 'partials', 'bankruptcy-check-body.ejs'), 'utf8');
 assert.match(bankruptcyPage, /id="bc-consent"[^>]*privacyConsent[^>]*required/,
   'bankruptcy checker must require consent before processing IIN');
