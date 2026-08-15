@@ -116,7 +116,8 @@ assert.doesNotMatch(home, /ze-home-specialist-card|Специалист по с�
   'homepage must not render the removed specialist badge');
 const resultsPage = fs.readFileSync(path.join(PUBLIC, 'rezultaty.html'), 'utf8');
 for (const source of [home, resultsPage]) {
-  assert(source.includes('20 861 599,33 ₸'), 'featured results must show the verified combined amount');
+  assert(source.includes('43 408 585,56 ₸'), 'results must show the combined amount across all cancellations');
+  assert(source.includes('79'), 'results must show the full cancellation count');
   assert(!source.includes('79 300 ₸'), 'the old low-value featured result must be removed');
 }
 for (const filename of [
@@ -131,11 +132,11 @@ for (const filename of [
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large`);
 }
-assert.match(resultsPage, /results-v2\.css\?v=20260816-2/,
+assert.match(resultsPage, /results-v2\.css\?v=20260816-3/,
   'results page must use the redesigned results stylesheet');
 assert.match(resultsPage, /results-archive-data\.js\?v=20260816-1/,
   'results page must load the additional rulings archive');
-assert.match(resultsPage, /results-v2\.js\?v=20260816-2/,
+assert.match(resultsPage, /results-v2\.js\?v=20260816-3/,
   'results page must load the interactive document viewer');
 const resultsArchiveSource = fs.readFileSync(path.join(PUBLIC, 'js', 'results-archive-data.js'), 'utf8');
 const resultsArchiveSandbox = { window: {} };
@@ -145,6 +146,13 @@ assert.strictEqual(resultsArchive.length, 101,
   'results archive must expose 101 unique additional documents');
 assert.strictEqual(new Set(resultsArchive.map(item => item.id)).size, resultsArchive.length,
   'results archive document IDs must be unique');
+const cancellationArchive = resultsArchive.filter(item => item.category === 'cancellation');
+assert.strictEqual(cancellationArchive.length + 4, 79,
+  'results archive plus four featured rulings must expose 79 cancellations');
+const amountToCents = label => Math.round(Number(label.replace(/₸/g, '').replace(/\s/g, '').replace(',', '.')) * 100);
+const archiveCancellationCents = cancellationArchive.reduce((total, item) => total + amountToCents(item.amountLabel), 0);
+assert.strictEqual(archiveCancellationCents + 2086159933, 4340858556,
+  'all published cancellations must total 43 408 585,56 tenge');
 for (const item of resultsArchive) {
   assert.match(item.src, /^\/img\/rezultaty\/archive\/[a-z0-9-]+\.webp$/,
     `invalid archive preview path: ${item.src}`);

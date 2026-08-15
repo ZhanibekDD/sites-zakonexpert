@@ -52,6 +52,52 @@
   const archive = Array.isArray(window.ZAKONEXPERT_RESULTS_ARCHIVE)
     ? window.ZAKONEXPERT_RESULTS_ARCHIVE
     : [];
+  const featuredOptions = Array.from(document.querySelectorAll('[data-result-option]'));
+
+  function amountToCents(label) {
+    const normalized = String(label || '')
+      .replace(/₸/g, '')
+      .replace(/\s/g, '')
+      .replace(',', '.');
+    const amount = Number(normalized);
+    return Number.isFinite(amount) ? Math.round(amount * 100) : 0;
+  }
+
+  function formatTenge(cents) {
+    return `${new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(cents / 100)} ₸`;
+  }
+
+  function renderAggregateTotals() {
+    if (!archive.length) return;
+    const cancelledArchive = archive.filter((item) => item.category === 'cancellation');
+    const cancellationCount = featuredOptions.length + cancelledArchive.length;
+    const cancellationCents = featuredOptions.reduce((total, option) => (
+      total + amountToCents(option.dataset.amount)
+    ), 0) + cancelledArchive.reduce((total, item) => (
+      total + amountToCents(item.amountLabel)
+    ), 0);
+    const totalDocuments = featuredOptions.length + archive.length;
+
+    document.querySelectorAll('[data-cancellation-count]').forEach((element) => {
+      element.textContent = String(cancellationCount);
+    });
+    document.querySelectorAll('[data-cancellation-total-amount]').forEach((element) => {
+      element.textContent = formatTenge(cancellationCents);
+    });
+    document.querySelectorAll('[data-results-total-documents]').forEach((element) => {
+      element.textContent = String(totalDocuments);
+    });
+
+    const eyebrow = document.querySelector('[data-cancellation-summary-eyebrow]');
+    if (eyebrow) {
+      eyebrow.innerHTML = `<i class="bi bi-shield-check" aria-hidden="true"></i> Подтверждено ${cancellationCount} постановлениями об отмене`;
+    }
+  }
+
+  renderAggregateTotals();
   const gallery = document.querySelector('[data-results-gallery]');
   const filterButtons = Array.from(document.querySelectorAll('[data-results-filter]'));
   const searchInput = document.querySelector('[data-results-search]');

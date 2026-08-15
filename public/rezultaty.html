@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
   <link rel="stylesheet" href="css/landing.css?v=20260619-2">
   <link rel="stylesheet" href="css/style.css?v=20260619-2">
-  <link rel="stylesheet" href="/css/results-v2.css?v=20260816-2">
+  <link rel="stylesheet" href="/css/results-v2.css?v=20260816-3">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -82,11 +82,11 @@
         </div>
       </div>
       <aside class="rez-v2-summary" aria-label="Главные показатели подтверждённых результатов">
-        <div class="rez-v2-summary__eyebrow"><i class="bi bi-shield-check"></i> Подтверждено четырьмя постановлениями</div>
-        <strong>20 861 599,33 ₸</strong>
+        <div class="rez-v2-summary__eyebrow" data-cancellation-summary-eyebrow><i class="bi bi-shield-check"></i> Подтверждено 79 постановлениями об отмене</div>
+        <strong data-cancellation-total-amount>43 408 585,56 ₸</strong>
         <div class="rez-v2-summary__stats">
-          <div><b>4</b><span>отмены</span></div>
-          <div><b>4</b><span>документа</span></div>
+          <div><b data-cancellation-count>79</b><span>отмен</span></div>
+          <div><b data-results-total-documents>105</b><span>документов</span></div>
           <div><b>РК</b><span>вся страна</span></div>
         </div>
       </aside>
@@ -194,6 +194,21 @@
         <p>В архиве 105 уникальных документов: четыре главных результата показаны крупно выше, ещё 101 обезличенное превью доступно ниже.</p>
       </header>
 
+      <div class="rez-v2-totals" aria-label="Общие итоги опубликованных постановлений">
+        <article>
+          <i class="bi bi-file-earmark-check" aria-hidden="true"></i>
+          <div><span>Отменено исполнительных надписей</span><strong data-cancellation-count>79</strong></div>
+        </article>
+        <article>
+          <i class="bi bi-cash-stack" aria-hidden="true"></i>
+          <div><span>Общая сумма отменённых надписей</span><strong data-cancellation-total-amount>43 408 585,56 ₸</strong></div>
+        </article>
+        <article>
+          <i class="bi bi-files" aria-hidden="true"></i>
+          <div><span>Уникальных документов всего</span><strong data-results-total-documents>105</strong></div>
+        </article>
+      </div>
+
       <div class="rez-v2-archive-tools">
         <label class="rez-v2-search">
           <i class="bi bi-search" aria-hidden="true"></i>
@@ -253,7 +268,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/main.js?v=20260619-2"></script>
 <script src="/js/results-archive-data.js?v=20260816-1"></script>
-<script src="/js/results-v2.js?v=20260816-2"></script>
+<script src="/js/results-v2.js?v=20260816-3"></script>
 <script src="/js/analytics-events.js"></script>
 <script src="/js/chatbot.js?v=20260815-1" defer></script>
 </body>
