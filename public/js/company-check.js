@@ -1,4 +1,4 @@
-/* ZakonExpert — counterparty check powered by the server-side KGD API proxy. */
+/* ZakonExpert — unified official-source counterparty check. */
 (function () {
   'use strict';
 
@@ -6,11 +6,14 @@
   if (!form) return;
 
   var input = document.getElementById('company-check-bin');
+  var suggestions = document.getElementById('company-check-suggestions');
   var errorBox = document.getElementById('company-check-error');
   var loading = document.getElementById('company-check-loading');
   var result = document.getElementById('company-check-result');
   var submit = form.querySelector('button[type="submit"]');
   var currentReport = null;
+  var suggestTimer = null;
+  var suggestRequest = null;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -21,8 +24,9 @@
   function digits(value) { return String(value || '').replace(/\D/g, '').slice(0, 12); }
 
   function money(value) {
+    if (value === null || value === undefined || value === '') return 'Нет данных';
     var amount = Number(value);
-    if (!Number.isFinite(amount)) amount = 0;
+    if (!Number.isFinite(amount)) return 'Нет данных';
     return Math.round(amount).toLocaleString('ru-RU') + ' ₸';
   }
 
@@ -55,6 +59,12 @@
     setHidden(errorBox, true);
   }
 
+  function hideSuggestions() {
+    suggestions.innerHTML = '';
+    setHidden(suggestions, true);
+    input.setAttribute('aria-expanded', 'false');
+  }
+
   function track(type) {
     if (typeof window.ZE_trackEvent === 'function') {
       window.ZE_trackEvent(type, 'company-check', { page_type: 'company_check' });
@@ -70,28 +80,41 @@
     return '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value || 'Нет данных') + '</dd></div>';
   }
 
+  function definitionLinkRow(label, value, href) {
+    if (!href) return definitionRow(label, value);
+    return '<div><dt>' + escapeHtml(label) + '</dt><dd><a class="cc-inline-link" href="'
+      + escapeHtml(href) + '">' + escapeHtml(value || 'Открыть') + '</a></dd></div>';
+  }
+
   function riskCopy(assessment) {
     if (assessment.riskLevel === 'high') return {
       badge: '<i class="bi bi-exclamation-octagon-fill"></i> Высокое внимание',
-      title: 'Обнаружены существенные индикаторы — не спешите с оплатой',
-      text: 'Запросите подтверждающие документы и проверьте договор, полномочия подписанта и исполнение обязательств до перечисления денег.',
+      title: 'Обнаружены существенные индикаторы',
+      text: 'Запросите подтверждающие документы и отдельно проверьте договор, полномочия подписанта и исполнение обязательств до оплаты.',
       className: 'cc-risk-badge--high',
     };
     if (assessment.riskLevel === 'attention') return {
       badge: '<i class="bi bi-exclamation-triangle-fill"></i> Требует внимания',
-      title: 'Есть сведения, которые стоит проверить дополнительно',
-      text: 'Отчёт не означает, что сделка опасна, но найденные отметки лучше разъяснить и подтвердить документами до оплаты.',
+      title: 'Есть сведения, которые нужно проверить дополнительно',
+      text: 'Найденные отметки не являются автоматическим выводом о ненадёжности, но требуют объяснений и документов.',
       className: 'cc-risk-badge--attention',
     };
-    return {
+    if (assessment.riskLevel === 'low') return {
       badge: '<i class="bi bi-check-circle-fill"></i> Явных рисков не найдено',
-      title: 'В открытых данных КГД явные неблагоприятные признаки не обнаружены',
-      text: 'Это хороший базовый сигнал, но перед крупной сделкой всё равно проверьте договор, судебные дела, лицензии и полномочия подписанта.',
+      title: 'В подключённых реестрах явные неблагоприятные признаки не обнаружены',
+      text: 'Проверка отражает только доступные официальные сведения и не гарантирует исполнение будущей сделки.',
       className: 'cc-risk-badge--low',
+    };
+    return {
+      badge: '<i class="bi bi-info-circle-fill"></i> Данных для оценки недостаточно',
+      title: 'Профиль найден, но не все источники сейчас доступны',
+      text: 'Не делайте вывод о надёжности по отсутствующим данным. Статус каждого источника указан ниже.',
+      className: 'cc-risk-badge--unknown',
     };
   }
 
   function renderIndicators(items) {
+    if (!items.length) return '<p class="cc-empty cc-empty--full">Индикаторы КГД пока не получены. Это не означает отсутствие рисков.</p>';
     return items.map(function (item) {
       var state = item.informational ? 'info' : (item.flagged ? 'flag' : 'ok');
       var icon = item.informational ? 'bi-info-circle-fill' : (item.flagged ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill');
@@ -118,12 +141,59 @@
     }).join('');
   }
 
+  function renderProcurement(procurement) {
+    var target = document.getElementById('cc-procurement');
+    if (!procurement) {
+      target.innerHTML = '<p class="cc-empty cc-empty--full">Источник госзакупок пока не подключён или временно недоступен. Отсутствие данных не означает отсутствие договоров.</p>';
+      return;
+    }
+    var supplier = procurement.contracts.asSupplier;
+    var customer = procurement.contracts.asCustomer;
+    var rnu = procurement.unreliableSupplier;
+    var latest = supplier.latest.concat(customer.latest)
+      .sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); })
+      .slice(0, 5);
+    target.innerHTML = '<div class="cc-procurement-stats">'
+      + summaryCard('Участник госзакупок', procurement.participant.registered ? 'Да' : 'Не найден', procurement.participant.indexedAt ? 'Индекс: ' + date(procurement.participant.indexedAt) : '')
+      + summaryCard('Договоры как поставщик', number(supplier.count), 'По данным официального реестра')
+      + summaryCard('Договоры как заказчик', number(customer.count), 'По данным официального реестра')
+      + summaryCard('Недобросовестный поставщик', rnu.found ? 'Найдено: ' + number(rnu.count) : 'Не обнаружено', rnu.found ? 'Требует проверки' : 'По ответу реестра')
+      + '</div>'
+      + (latest.length ? '<div class="cc-contracts"><strong>Последние опубликованные договоры</strong>'
+        + latest.map(function (item) {
+          return '<div><span>' + escapeHtml(item.number || 'Договор без номера') + '</span><small>'
+            + escapeHtml(date(item.createdAt)) + '</small><b>' + escapeHtml(money(item.amount)) + '</b></div>';
+        }).join('') + '</div>' : '');
+  }
+
+  function renderSources(sources) {
+    var labels = {
+      ok: ['Получено', 'ok'],
+      not_found: ['Не найдено', 'neutral'],
+      not_configured: ['Ожидается доступ', 'pending'],
+      access_denied: ['Нет доступа', 'error'],
+      unavailable: ['Недоступен', 'error'],
+      partial: ['Частично', 'pending'],
+      official_search: ['Официальный поиск', 'neutral'],
+    };
+    document.getElementById('cc-sources').innerHTML = sources.map(function (source) {
+      var state = labels[source.status] || ['Недоступен', 'error'];
+      return '<article class="cc-source cc-source--' + state[1] + '"><span class="cc-source__state"><i class="bi bi-circle-fill"></i>'
+        + escapeHtml(state[0]) + '</span><div><a href="' + escapeHtml(source.url) + '" target="_blank" rel="noopener">'
+        + escapeHtml(source.label) + ' <i class="bi bi-box-arrow-up-right"></i></a><small>'
+        + escapeHtml(source.detail) + (source.actuality ? ' · ' + escapeHtml(date(source.actuality)) : '')
+        + '</small></div></article>';
+    }).join('');
+  }
+
   function renderReport(report) {
     currentReport = report;
     var company = report.company;
     var tax = report.tax;
     var assessment = report.assessment;
+    var procurement = report.procurement;
     var risk = riskCopy(assessment);
+    var supplierCount = procurement ? procurement.contracts.asSupplier.count : null;
 
     document.getElementById('cc-company-name').textContent = company.nameRu;
     document.getElementById('cc-company-bin').textContent = 'БИН ' + company.bin;
@@ -134,20 +204,29 @@
     badge.innerHTML = risk.badge;
 
     document.getElementById('cc-summary').innerHTML = [
-      summaryCard('Экспресс-индикатор', assessment.score + ' из 100', assessment.flaggedCount + ' отметок внимания'),
-      summaryCard('Налоговая задолженность', money(tax.debt), tax.debt > 0 ? 'Опубликована КГД' : 'Не обнаружена'),
-      summaryCard('Сведения по НДС', tax.vatInfo, tax.vatDate ? 'С ' + date(tax.vatDate) : ''),
-      summaryCard('Налоговый режим', tax.taxMode, tax.taxModeDate ? 'С ' + date(tax.taxModeDate) : ''),
+      summaryCard('Экспресс-индикатор', assessment.score === null ? 'Не рассчитан' : assessment.score + ' из 100', assessment.flaggedCount === null ? 'Недостаточно данных' : assessment.flaggedCount + ' отметок внимания'),
+      summaryCard('Налоговая задолженность', money(tax.debt), tax.debt === null ? 'КГД не ответил' : (tax.debt > 0 ? 'Опубликована КГД' : 'Не обнаружена')),
+      summaryCard('НДС', tax.vatInfo, tax.vatDate ? 'С ' + date(tax.vatDate) : ''),
+      summaryCard('Договоры поставщика', supplierCount === null ? 'Нет данных' : number(supplierCount), procurement ? 'Портал госзакупок' : 'Источник не ответил'),
     ].join('');
 
-    document.getElementById('cc-indicators').innerHTML = renderIndicators(assessment.indicators);
+    var note = document.getElementById('cc-coverage-note');
+    note.className = 'cc-coverage-note ' + (report.coverage.complete ? 'cc-coverage-note--complete' : 'cc-coverage-note--partial');
+    note.innerHTML = report.coverage.complete
+      ? '<i class="bi bi-check-circle-fill"></i><span><strong>Все подключённые источники ответили.</strong> Ниже указана дата каждого набора данных.</span>'
+      : '<i class="bi bi-info-circle-fill"></i><span><strong>Отчёт частичный.</strong> Доступные сведения показаны, отсутствующие не заменены догадками.</span>';
+
+    document.getElementById('cc-indicators').innerHTML = renderIndicators(assessment.indicators || []);
     document.getElementById('cc-profile').innerHTML = [
       definitionRow('БИН', company.bin),
+      definitionRow('Статус', company.status),
       definitionRow('Дата регистрации', date(company.registrationDate)),
+      definitionRow('Руководитель', company.leader),
+      definitionRow('Юридический адрес', company.address),
       definitionRow('Резидентство', company.residency),
       definitionRow('ОКЭД', company.oked),
       definitionRow('Вид деятельности', company.okedName),
-      definitionRow('Дата ОКЭД', date(company.okedDate)),
+      definitionLinkRow('Карточка в каталоге', company.cardUrl ? 'Открыть полный профиль' : 'Нет данных', company.cardUrl),
     ].join('');
     document.getElementById('cc-tax').innerHTML = [
       definitionRow('Налоговый режим', tax.taxMode),
@@ -156,15 +235,11 @@
       definitionRow('Дата НДС', date(tax.vatDate)),
       definitionRow('Задолженность', money(tax.debt)),
     ].join('');
+    renderProcurement(procurement);
     renderStatistics(report.statistics || []);
+    renderSources(report.sources || []);
     document.getElementById('cc-conclusion-title').textContent = risk.title;
     document.getElementById('cc-conclusion-text').textContent = risk.text;
-
-    var message = 'Здравствуйте! Нужна расширенная проверка контрагента и договора.\n'
-      + company.nameRu + '\nБИН: ' + company.bin + '\n'
-      + 'Экспресс-индикатор: ' + assessment.score + '/100.\n'
-      + location.origin + '/proverka-kontragenta?bin=' + company.bin;
-    document.getElementById('cc-whatsapp').href = 'https://wa.me/77479957635?text=' + encodeURIComponent(message);
 
     var url = new URL(location.href);
     url.search = '';
@@ -178,8 +253,9 @@
 
   async function check(bin) {
     clearError();
+    hideSuggestions();
     if (!/^\d{12}$/.test(bin)) {
-      showError('БИН должен содержать ровно 12 цифр. Проверьте реквизиты организации.');
+      showError('Введите БИН из 12 цифр или выберите организацию из подсказок.');
       input.focus();
       return;
     }
@@ -197,12 +273,7 @@
         body: JSON.stringify({ bin: bin }),
       });
       var payload = await response.json().catch(function () { return {}; });
-      if (!response.ok) {
-        var message = payload.error || 'Не удалось получить данные КГД. Попробуйте позже.';
-        if (response.status === 404) message = 'КГД не вернул сведения по этому БИН. Проверьте номер или попробуйте позже.';
-        if (response.status === 503) message = 'Официальный источник временно недоступен. Попробуйте немного позже.';
-        throw new Error(message);
-      }
+      if (!response.ok) throw new Error(payload.error || 'Не удалось получить данные из официальных источников.');
       renderReport(payload);
     } catch (error) {
       setHidden(loading, true);
@@ -213,15 +284,68 @@
     }
   }
 
+  function renderSuggestions(items) {
+    if (!items.length) {
+      suggestions.innerHTML = '<p>Совпадений не найдено. Можно ввести точный БИН.</p>';
+    } else {
+      suggestions.innerHTML = items.map(function (item) {
+        var details = [item.activity, item.leader].filter(Boolean).join(' · ');
+        return '<button type="button" role="option" data-bin="' + escapeHtml(item.bin) + '" data-name="'
+          + escapeHtml(item.name) + '"><strong>' + escapeHtml(item.name) + '</strong><span>БИН '
+          + escapeHtml(item.bin) + (details ? ' · ' + escapeHtml(details) : '') + '</span></button>';
+      }).join('');
+    }
+    setHidden(suggestions, false);
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  async function loadSuggestions(query) {
+    if (suggestRequest) suggestRequest.abort();
+    suggestRequest = new AbortController();
+    try {
+      var response = await fetch('/api/company-suggest?q=' + encodeURIComponent(query), { signal: suggestRequest.signal });
+      if (!response.ok) return;
+      var payload = await response.json();
+      if (input.value.trim() === query) renderSuggestions(payload.items || []);
+    } catch (error) {
+      if (error.name !== 'AbortError') hideSuggestions();
+    }
+  }
+
   input.addEventListener('input', function () {
-    var clean = digits(input.value);
-    if (input.value !== clean) input.value = clean;
     clearError();
+    delete input.dataset.bin;
+    window.clearTimeout(suggestTimer);
+    var query = input.value.trim();
+    if (/^\d{12}$/.test(query)) {
+      input.dataset.bin = query;
+      hideSuggestions();
+      return;
+    }
+    if (query.length < 2) {
+      hideSuggestions();
+      return;
+    }
+    suggestTimer = window.setTimeout(function () { loadSuggestions(query); }, 220);
+  });
+
+  suggestions.addEventListener('click', function (event) {
+    var option = event.target.closest('button[data-bin]');
+    if (!option) return;
+    input.dataset.bin = option.dataset.bin;
+    input.value = option.dataset.bin + ' — ' + option.dataset.name;
+    hideSuggestions();
+    clearError();
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!form.contains(event.target)) hideSuggestions();
   });
 
   form.addEventListener('submit', function (event) {
     event.preventDefault();
-    check(digits(input.value));
+    var exact = /^\d{12}$/.test(input.value.trim()) ? input.value.trim() : '';
+    check(input.dataset.bin || exact);
   });
 
   document.querySelector('[data-cc-action="print"]').addEventListener('click', function () {
@@ -243,13 +367,10 @@
     else done();
   });
 
-  document.getElementById('cc-whatsapp').addEventListener('click', function () {
-    track('click_cta_company_check');
-  });
-
   var initialBin = digits(new URLSearchParams(location.search).get('bin'));
   if (initialBin.length === 12) {
     input.value = initialBin;
+    input.dataset.bin = initialBin;
     check(initialBin);
   }
 })();

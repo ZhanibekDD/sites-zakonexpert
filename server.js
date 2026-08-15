@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-15-kgd-nav-no-floating-chat';
+const RELEASE_ID = '2026-08-15-official-company-sources';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -63,6 +63,8 @@ const telegram = require('./modules/telegram');
 const { lowContentBoost } = require('./modules/seo-blocks');
 const { TOOLS, findTool } = require('./modules/tools-catalog');
 const { createKgdCounterpartyClient, validateBin } = require('./modules/kgd-counterparty');
+const { createGoszakupClient } = require('./modules/goszakup');
+const { createCompanyCheckService } = require('./modules/company-check-sources');
 const {
   INDEXABLE_LOCALES: COMPANY_LOCALES,
   catalogAlternates,
@@ -163,6 +165,18 @@ const kgdCounterparty = createKgdCounterpartyClient({
   token: KGD_API_TOKEN,
   baseUrl: KGD_API_BASE_URL,
   http: axios,
+});
+const GOSZAKUP_API_TOKEN = String(process.env.GOSZAKUP_API_TOKEN || '').trim();
+const GOSZAKUP_API_BASE_URL = process.env.GOSZAKUP_API_BASE_URL || 'https://ows.goszakup.gov.kz';
+const goszakup = createGoszakupClient({
+  token: GOSZAKUP_API_TOKEN,
+  baseUrl: GOSZAKUP_API_BASE_URL,
+  http: axios,
+});
+const companyCheckService = createCompanyCheckService({
+  companiesDb,
+  kgdClient: kgdCounterparty,
+  goszakupClient: goszakup,
 });
 const COMPANY_CHECK_CACHE_TTL_MS = 30 * 60 * 1000;
 const COMPANY_CHECK_CACHE_LIMIT = 1000;
@@ -266,6 +280,7 @@ function createRateLimiter({ windowMs, max, name }) {
 }
 
 const externalApiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, name: 'внешнему реестру' });
+const companySuggestLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'поиску организаций' });
 const leadLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 10, name: 'форме' });
 const commentLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 8, name: 'комментариям' });
 
@@ -1238,6 +1253,22 @@ function renderCompanyItem(req, res, localeCode = 'ru') {
 }
 
 app.get('/companies', (req, res) => renderCompaniesCatalog(req, res, 'ru'));
+app.get('/api/company-suggest', companySuggestLimiter, (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  const query = String(req.query.q || '').trim().slice(0, 120);
+  if (!companiesDb || !companiesDb.available() || query.length < 2) {
+    return res.json({ items: [] });
+  }
+  const items = companiesDb.search(query, 1, 8).items.map(company => ({
+    bin: company.bin,
+    name: company.name_ru || company.name_kk,
+    activity: company.activity_ru || null,
+    status: company.status_ru || null,
+    leader: company.leader || null,
+    url: `/company/${company.slug}`,
+  }));
+  return res.json({ items });
+});
 app.get('/:locale(kk|en|zh|tr)/companies', (req, res) => {
   renderCompaniesCatalog(req, res, req.params.locale);
 });
@@ -3001,6 +3032,7 @@ app.get('/health', (req, res) => {
         release: RELEASE_ID,
         egovKey: EGOV_API_KEY ? 'configured' : 'missing',
         kgdApi: kgdCounterparty.configured ? 'configured' : 'missing',
+        goszakupApi: goszakup.configured ? 'configured' : 'missing',
         companies: companyStats ? {
             available: companyStats.available,
             count: companyStats.count,
@@ -3098,13 +3130,6 @@ app.post('/api/company-check', externalApiLimiter, async (req, res) => {
       code: 'INVALID_BIN',
     });
   }
-  if (!kgdCounterparty.configured) {
-    return res.status(503).json({
-      error: 'Сервис КГД временно не настроен. Повторите позже.',
-      code: 'KGD_NOT_CONFIGURED',
-    });
-  }
-
   const cached = companyCheckCache.get(bin);
   if (cached && Date.now() - cached.savedAt < COMPANY_CHECK_CACHE_TTL_MS) {
     res.set('X-Data-Cache', 'HIT');
@@ -3113,7 +3138,7 @@ app.post('/api/company-check', externalApiLimiter, async (req, res) => {
   if (cached) companyCheckCache.delete(bin);
 
   try {
-    const report = await kgdCounterparty.check(bin);
+    const report = await companyCheckService.check(bin);
     if (companyCheckCache.size >= COMPANY_CHECK_CACHE_LIMIT) {
       const oldestKey = companyCheckCache.keys().next().value;
       if (oldestKey) companyCheckCache.delete(oldestKey);
@@ -3122,25 +3147,19 @@ app.post('/api/company-check', externalApiLimiter, async (req, res) => {
     res.set('X-Data-Cache', 'MISS');
     return res.json({ ...report, meta: { cached: false, cacheTtlMinutes: 30 } });
   } catch (error) {
-    const upstreamStatus = Number(error.response?.status || 0);
-    const notFound = error.code === 'KGD_NOT_FOUND' || upstreamStatus === 404;
-    if (notFound) {
-      return res.status(404).json({
-        error: 'По этому БИН данные КГД не найдены. Проверьте номер и повторите запрос.',
-        code: 'KGD_NOT_FOUND',
+    if (error.code === 'NO_OFFICIAL_DATA') {
+      const localRegistryChecked = error.sources?.egov === 'not_found';
+      return res.status(localRegistryChecked ? 404 : 503).json({
+        error: localRegistryChecked
+          ? 'Организация с таким БИН не найдена в подключённых официальных источниках.'
+          : 'Подключённые официальные источники временно не вернули данные.',
+        code: 'NO_OFFICIAL_DATA',
       });
     }
-    if ([401, 403].includes(upstreamStatus)) {
-      logger.error('[KGD company check] KGD rejected the configured API token');
-      return res.status(503).json({
-        error: 'Официальный источник временно недоступен. Повторите позже.',
-        code: 'KGD_AUTH_ERROR',
-      });
-    }
-    logger.error(`[KGD company check] Request failed: ${error.code || upstreamStatus || error.message}`);
+    logger.error(`[Company check] Request failed: ${error.code || error.message}`);
     return res.status(502).json({
-      error: 'Не удалось получить ответ КГД. Повторите запрос через несколько минут.',
-      code: 'KGD_UNAVAILABLE',
+      error: 'Не удалось собрать отчёт из официальных источников. Повторите через несколько минут.',
+      code: 'OFFICIAL_SOURCES_UNAVAILABLE',
     });
   }
 });
@@ -3173,7 +3192,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
     logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
     logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'задан ✓' : 'НЕ ЗАДАН — проверка ИИН не будет работать!'}`);
-    logger.info(`KGD_API_TOKEN: ${kgdCounterparty.configured ? 'задан ✓' : 'НЕ ЗАДАН — проверка контрагента будет недоступна'}`);
+    logger.info(`KGD_API_TOKEN: ${kgdCounterparty.configured ? 'задан ✓' : 'НЕ ЗАДАН — налоговый раздел будет недоступен'}`);
+    logger.info(`GOSZAKUP_API_TOKEN: ${goszakup.configured ? 'задан ✓' : 'НЕ ЗАДАН — раздел госзакупок будет недоступен'}`);
     // Запускаем Telegram бот (принимает команды /stats, /leads, /help)
     if (BACKGROUND_JOBS_ENABLED) {
       telegram.startPolling();

@@ -17,6 +17,7 @@ const server = spawn(process.execPath, ['server.js'], {
     DISABLE_BACKGROUND_JOBS: 'true',
     EGOV_API_KEY: '',
     KGD_API_TOKEN: '',
+    GOSZAKUP_API_TOKEN: '',
     ADMIN_KEY: '',
     ADMIN_PW: '',
     TELEGRAM_BOT_TOKEN: '',
@@ -138,6 +139,7 @@ async function run() {
 
     const health = await (await fetch(`${origin}/health`)).json();
     assert(health.kgdApi === 'missing', 'Smoke environment must report the missing KGD token');
+    assert(health.goszakupApi === 'missing', 'Smoke environment must report the missing Goszakup token');
 
     const routes = [
       '/',
@@ -215,12 +217,17 @@ async function run() {
 
     const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
-    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-4')
-      && companyCheckPage.includes('/js/company-check.js?v=20260815-1')
+    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-5')
+      && companyCheckPage.includes('/js/company-check.js?v=20260815-2')
       && companyCheckPage.includes('/js/site.js?v=20260815-2'),
     'Counterparty page assets are missing');
     assert(companyCheckPage.includes('data-nav-kgd') && !companyCheckPage.includes('class="sticky-wa"'),
       'Counterparty page navigation or floating button state is incorrect');
+    assert(companyCheckPage.includes('id="cc-sources"') && companyCheckPage.includes('id="cc-procurement"'),
+      'Multi-source company report sections are missing');
+    const companySuggest = await fetch(`${origin}/api/company-suggest?q=test`);
+    assert(companySuggest.status === 200 && Array.isArray((await companySuggest.json()).items),
+      'Company autocomplete endpoint is unavailable');
     const invalidCompanyCheck = await fetch(`${origin}/api/company-check`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -233,8 +240,8 @@ async function run() {
       body: JSON.stringify({ bin: '260740044168' }),
     });
     const disabledCompanyPayload = await disabledCompanyCheck.json();
-    assert(disabledCompanyCheck.status === 503 && disabledCompanyPayload.code === 'KGD_NOT_CONFIGURED',
-      'Counterparty API without KGD token must fail closed');
+    assert(disabledCompanyCheck.status === 503 && disabledCompanyPayload.code === 'NO_OFFICIAL_DATA',
+      'Counterparty API without any available official source must fail closed');
 
     const funnelEvent = await fetch(`${origin}/api/track-event`, {
       method: 'POST',
