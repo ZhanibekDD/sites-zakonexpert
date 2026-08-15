@@ -107,8 +107,20 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260815-1/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-1/,
   'homepage company-check entry styles must use the current cache key');
+const homeServiceImages = [
+  'arrest-accounts.webp',
+  'vehicle-restriction.webp',
+  'property-arrest.webp',
+  'travel-ban.webp',
+];
+for (const filename of homeServiceImages) {
+  assert(home.includes(`/img/services/${filename}`), `${filename} is not used by a homepage service card`);
+  const imagePath = path.join(PUBLIC, 'img', 'services', filename);
+  assert(fs.existsSync(imagePath), `${filename} is missing`);
+  assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a homepage card`);
+}
 assert.match(home, /id="iin-consent"[^>]*required/);
 assert.match(contact, /name="privacyConsent"[^>]*required/);
 assert.match(server, /Необходимо согласие на разовую обработку ИИН/);
