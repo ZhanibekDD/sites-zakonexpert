@@ -66,6 +66,21 @@ assert.strictEqual(
 );
 
 (async () => {
+  const catalogHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
+    {
+      selectedRegion: '',
+      allRegions: CHAMBERS.map(([, region]) => ({ region, count: 1 })),
+      regionItems: [],
+      lastUpdated: null,
+      getRegionEmblem,
+    },
+  );
+  const renderedEmblems = catalogHtml.match(/\/img\/regions\/[a-z-]+\.webp/g) || [];
+  assert.strictEqual(renderedEmblems.length, 20, 'catalog template must render all 20 regional emblems');
+  assert.ok(catalogHtml.includes('/img/regions/astana.webp'));
+  assert.ok(catalogHtml.includes('/img/regions/ulytau.webp'));
+
   const profile = notaries.find(item => item.address && item.phone && item.email && item.schedule);
   assert.ok(profile, 'notary profile fixture with public contacts is missing');
   const profileHtml = await ejs.renderFile(
