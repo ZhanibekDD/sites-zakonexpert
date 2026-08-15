@@ -65,6 +65,7 @@ const { TOOLS, findTool } = require('./modules/tools-catalog');
 const { createKgdCounterpartyClient, validateBin } = require('./modules/kgd-counterparty');
 const { createGoszakupClient } = require('./modules/goszakup');
 const { createCompanyCheckService } = require('./modules/company-check-sources');
+const { getRegionEmblem } = require('./modules/region-emblems');
 const {
   INDEXABLE_LOCALES: COMPANY_LOCALES,
   catalogAlternates,
@@ -712,9 +713,13 @@ app.get('/notaries', asyncHandler(async (req, res) => {
   ]);
   if (region) {
     const regionItems = await notariesDb.findByRegion(region);
-    return res.render('notary/catalog', { selectedRegion: region, allRegions, regionItems, lastUpdated });
+    return res.render('notary/catalog', {
+      selectedRegion: region, allRegions, regionItems, lastUpdated, getRegionEmblem,
+    });
   }
-  res.render('notary/catalog', { selectedRegion: '', allRegions, regionItems: [], lastUpdated });
+  res.render('notary/catalog', {
+    selectedRegion: '', allRegions, regionItems: [], lastUpdated, getRegionEmblem,
+  });
 }));
 
 // ===== REGIONAL LANDING PAGES =====
@@ -799,9 +804,13 @@ app.get('/bailiffs', asyncHandler(async (req, res) => {
   ]);
   if (region) {
     const regionItems = await bailiffsDb.findByRegion(region);
-    return res.render('bailiff/catalog', { selectedRegion: region, allRegions, regionItems, lastUpdated });
+    return res.render('bailiff/catalog', {
+      selectedRegion: region, allRegions, regionItems, lastUpdated, getRegionEmblem,
+    });
   }
-  res.render('bailiff/catalog', { selectedRegion: '', allRegions, regionItems: [], lastUpdated });
+  res.render('bailiff/catalog', {
+    selectedRegion: '', allRegions, regionItems: [], lastUpdated, getRegionEmblem,
+  });
 }));
 
 app.get('/lawyers', asyncHandler(async (req, res) => {

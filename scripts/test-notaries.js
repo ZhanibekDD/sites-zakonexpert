@@ -6,6 +6,7 @@ const ejs = require('ejs');
 const { buildNotaries, validEmail } = require('./import-notaries');
 const { CHAMBERS, parseNotaryPage, toRegistryRows } = require('./refresh-notaries-csv');
 const { readRegistrySource } = require('../modules/registry-source');
+const { REGION_EMBLEMS, getRegionEmblem } = require('../modules/region-emblems');
 
 const sample = `
 <table border="1">
@@ -18,6 +19,17 @@ assert.strictEqual(parsedPage.length, 1);
 assert.strictEqual(parsedPage[0].phone, '87010000000');
 assert.strictEqual(parsedPage[0].email, 'ivanov@mail.kz');
 assert.strictEqual(CHAMBERS.length, 20, 'all 20 ENIS chambers must be covered');
+assert.strictEqual(Object.keys(REGION_EMBLEMS).length, 20, 'all 20 regions must have an emblem');
+for (const [, region] of CHAMBERS) {
+  const emblem = getRegionEmblem(region);
+  assert.ok(emblem, `${region}: region emblem mapping is missing`);
+  assert.ok(
+    require('fs').existsSync(path.join(__dirname, '..', 'public', 'img', 'regions', `${emblem}.webp`)),
+    `${region}: optimized emblem asset is missing`,
+  );
+}
+assert.strictEqual(getRegionEmblem('область Жетысу'), 'jetisu', 'bailiff region alias must resolve');
+assert.strictEqual(getRegionEmblem('область Улытау'), 'ulytau', 'bailiff region alias must resolve');
 assert.strictEqual(validEmail('Test@Mail.KZ'), 'test@mail.kz');
 assert.strictEqual(validEmail('10.00-18.00'), null);
 
@@ -54,6 +66,21 @@ assert.strictEqual(
 );
 
 (async () => {
+  const catalogHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
+    {
+      selectedRegion: '',
+      allRegions: CHAMBERS.map(([, region]) => ({ region, count: 1 })),
+      regionItems: [],
+      lastUpdated: null,
+      getRegionEmblem,
+    },
+  );
+  const renderedEmblems = catalogHtml.match(/\/img\/regions\/[a-z-]+\.webp/g) || [];
+  assert.strictEqual(renderedEmblems.length, 20, 'catalog template must render all 20 regional emblems');
+  assert.ok(catalogHtml.includes('/img/regions/astana.webp'));
+  assert.ok(catalogHtml.includes('/img/regions/ulytau.webp'));
+
   const profile = notaries.find(item => item.address && item.phone && item.email && item.schedule);
   assert.ok(profile, 'notary profile fixture with public contacts is missing');
   const profileHtml = await ejs.renderFile(

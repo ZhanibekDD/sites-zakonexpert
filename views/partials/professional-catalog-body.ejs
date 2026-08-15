@@ -62,9 +62,19 @@ var verifiedDate = catalog.lastUpdated
           <span class="professional-catalog__meta"><%= regions.length %> регионов · <%= total %> записей</span>
         </div>
         <div class="professional-catalog__regions">
-          <% regions.forEach(function(region) { %>
+          <% regions.forEach(function(region) {
+            const emblem = typeof catalog.getRegionEmblem === 'function'
+              ? catalog.getRegionEmblem(region.region)
+              : '';
+          %>
             <a class="professional-catalog__region" href="<%= catalog.baseUrl %>?region=<%= encodeURIComponent(region.region) %>">
-              <span class="professional-catalog__region-icon"><i class="bi bi-geo-alt"></i></span>
+              <span class="professional-catalog__region-icon">
+                <% if (emblem) { %>
+                  <img src="/img/regions/<%= emblem %>.webp" width="128" height="128" alt="" aria-hidden="true" loading="lazy">
+                <% } else { %>
+                  <i class="bi bi-geo-alt"></i>
+                <% } %>
+              </span>
               <span><strong><%= region.region %></strong><small><%= region.count %> <%= catalog.countLabel %></small></span>
               <i class="bi bi-arrow-right"></i>
             </a>
