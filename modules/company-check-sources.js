@@ -11,6 +11,17 @@ function coordinatesInKazakhstan(latitude, longitude) {
     && longitude >= 46 && longitude <= 88;
 }
 
+function normalizeMapAddress(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^\s*(?:[A-Z]\d{2}[A-Z0-9]{4}|\d{6})\s*,\s*/i, '')
+    .replace(/\s*,?\s*(?:тел(?:ефон)?|моб(?:ильный)?)\.?\s*:?\s*\+?[\d\s()\-]{7,}.*$/iu, '')
+    .replace(/\s*,\s*(?:кв(?:артира)?|оф(?:ис)?)\.?\s*[\p{L}\d/\-]+.*$/iu, '')
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/,\s*$/, '')
+    .trim();
+}
+
 function publicSourceLabel(sourceKey, sourceLabel) {
   if (sourceKey === 'verified_override') return 'Подтверждённые сведения';
   if (sourceKey === 'business_directory_kz_2026' || sourceKey === 'directory') {
@@ -41,6 +52,7 @@ function publicCompanyDetails(company) {
       const hasValidCoordinates = coordinatesInKazakhstan(latitude, longitude);
       return {
         value: String(address.value).trim(),
+        mapValue: normalizeMapAddress(address.value),
         city: String(address.city || '').trim() || null,
         postalCode: String(address.postalCode || '').trim() || null,
         latitude: hasValidCoordinates ? latitude : null,
@@ -292,5 +304,6 @@ module.exports = {
   emptyAssessment,
   localCompanyProfile,
   mergeCompany,
+  normalizeMapAddress,
   publicCompanyDetails,
 };

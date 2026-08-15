@@ -36,7 +36,7 @@ const localCompany = {
   ],
   addresses: [
     { value: 'г. Алматы, ул. Тестовая, 1', latitude: 43.2389, longitude: 76.8897, sourceKey: 'business_directory_kz_2026' },
-    { value: 'г. Шымкент, мкр. Нурсат, 8', latitude: 0, longitude: 0, sourceKey: 'business_directory_kz_2026' },
+    { value: 'Z05T0C6, город Астана, район Есиль, ул. Әлихан Бөкейхан, д. 24, кв. 181, тел. +7(705)585-87-11', latitude: 0, longitude: 0, sourceKey: 'business_directory_kz_2026' },
   ],
   attributes: [
     { type: 'work_hours', value: 'Пн–Пт 09:00–18:00', sourceKey: 'business_directory_kz_2026' },
@@ -87,6 +87,9 @@ const kgd = {
   assert.strictEqual(report.company.addresses[0].latitude, 43.2389);
   assert.strictEqual(report.company.addresses[1].latitude, null, '0,0 must never be published as Kazakhstan coordinates');
   assert.strictEqual(report.company.addresses[1].longitude, null, '0,0 must never be published as Kazakhstan coordinates');
+  assert.strictEqual(report.company.addresses[1].mapValue,
+    'город Астана, район Есиль, ул. Әлихан Бөкейхан, д. 24',
+    'map query must exclude the postal code, apartment and telephone suffix');
   assert.strictEqual(report.company.attributes[0].type, 'work_hours');
   assert.strictEqual(report.coverage.contacts, true);
   assert.strictEqual(report.coverage.location, true);
