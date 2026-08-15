@@ -327,13 +327,20 @@
   color: rgba(255, 255, 255, .72) !important;
 }
 
+.ze-home-check-links {
+  display: grid;
+  width: min(100%, 620px);
+  gap: 9px;
+  margin-top: 14px;
+}
+
 .ze-home-company-check {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  width: min(100%, 620px);
-  margin-top: 14px;
+  width: 100%;
+  margin: 0;
   padding: 12px 14px;
   border: 1px solid rgba(217, 173, 82, .58);
   border-radius: 12px;
@@ -383,6 +390,23 @@
   color: #e7c56f;
   font-size: 1rem;
 }
+
+.ze-home-company-check--bankruptcy {
+  border-color: rgba(126, 180, 245, .4);
+  background: linear-gradient(100deg, rgba(52, 116, 194, .16), rgba(255, 255, 255, .05));
+}
+
+.ze-home-company-check--bankruptcy:hover {
+  border-color: rgba(145, 197, 255, .82);
+  background: linear-gradient(100deg, rgba(52, 116, 194, .25), rgba(255, 255, 255, .09));
+}
+
+.ze-home-company-check--bankruptcy .ze-home-company-check__icon {
+  color: #0d315d;
+  background: #9fc8f2;
+}
+
+.ze-home-company-check--bankruptcy .ze-home-company-check__arrow { color: #a9d2fb; }
 
 .ze-home-hero__actions {
   display: flex;

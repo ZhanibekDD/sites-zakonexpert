@@ -118,7 +118,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-2">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-3">
   <style>
     .problem-icon-card{transition:border-color .15s, box-shadow .15s;}
     .problem-icon-card:hover{border-color:#d7a742 !important;box-shadow:0 6px 20px rgba(15,42,78,0.08);}
@@ -302,14 +302,24 @@
             </p>
           </form>
 
-          <a class="ze-home-company-check" href="/proverka-kontragenta">
-            <span class="ze-home-company-check__icon" aria-hidden="true"><i class="bi bi-building-check"></i></span>
-            <span class="ze-home-company-check__copy">
-              <strong>Проверить организацию по БИН</strong>
-              <small>Регистрация, налоги, НДС и индикаторы КГД в одном отчёте</small>
-            </span>
-            <i class="bi bi-arrow-right ze-home-company-check__arrow" aria-hidden="true"></i>
-          </a>
+          <div class="ze-home-check-links">
+            <a class="ze-home-company-check" href="/proverka-kontragenta">
+              <span class="ze-home-company-check__icon" aria-hidden="true"><i class="bi bi-building-check"></i></span>
+              <span class="ze-home-company-check__copy">
+                <strong>Проверить организацию по БИН</strong>
+                <small>Регистрация, налоги, НДС и индикаторы КГД в одном отчёте</small>
+              </span>
+              <i class="bi bi-arrow-right ze-home-company-check__arrow" aria-hidden="true"></i>
+            </a>
+            <a class="ze-home-company-check ze-home-company-check--bankruptcy" href="/proverka-bankrotstva">
+              <span class="ze-home-company-check__icon" aria-hidden="true"><i class="bi bi-person-vcard"></i></span>
+              <span class="ze-home-company-check__copy">
+                <strong>Проверить статус банкротства по ИИН</strong>
+                <small>Внесудебное, судебное банкротство и восстановление платёжеспособности</small>
+              </span>
+              <i class="bi bi-arrow-right ze-home-company-check__arrow" aria-hidden="true"></i>
+            </a>
+          </div>
 
           <div class="ze-home-hero__actions">
             <a class="ze-home-consult-btn" href="https://wa.me/77479957635?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5.%20%D0%A5%D0%BE%D1%87%D1%83%20%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%BF%D1%80%D0%B8%D1%87%D0%B8%D0%BD%D1%83%20%D0%B0%D1%80%D0%B5%D1%81%D1%82%D0%B0%20%D0%B8%20%D1%83%D1%81%D0%BB%D0%BE%D0%B2%D0%B8%D1%8F%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B." target="_blank" rel="noopener">
@@ -554,28 +564,6 @@
         <article class="ze-plain-service-card ze-plain-service-card--cta">
           <div><span><i class="bi bi-compass"></i></span><h3>Не знаете с чего начать?</h3><p>Расскажите ситуацию — разберём бесплатно. Проверим по ИИН, объясним что можно сделать.</p><a href="https://wa.me/77479957635?text=Здравствуйте.+Хочу+разобраться+в+своей+ситуации." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать в WhatsApp</a></div>
         </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- BANKRUPTCY CHECK -->
-  <section class="section section-muted" id="bankruptcy-section">
-    <div class="landing-container">
-      <div style="max-width:700px;margin:0 auto;">
-        <span class="section-kicker">Бесплатная проверка</span>
-        <h2 class="section-title" style="margin-bottom:6px;">Проверка статуса банкротства</h2>
-        <p class="section-lead">Проверьте по ИИН наличие записей о внесудебном и судебном банкротстве физического лица через официальный портал РК.</p>
-        <div style="background:#0f2044;border-radius:18px;padding:28px 28px 24px;margin-top:20px;">
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-            <label for="bankr-iin-main" class="visually-hidden">ИИН — 12 цифр</label>
-            <input type="text" id="bankr-iin-main" placeholder="ИИН — 12 цифр" maxlength="12" inputmode="numeric"
-              style="flex:1;min-width:180px;padding:11px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.97rem;outline:none;">
-            <button onclick="checkBankruptcyMain()" style="padding:11px 26px;background:#d7a742;color:#0f2044;border:none;border-radius:10px;font-weight:700;font-size:0.97rem;cursor:pointer;white-space:nowrap;">Проверить</button>
-          </div>
-          <p style="font-size:0.78rem;color:rgba(255,255,255,0.4);margin:0 0 14px;">Данные из реестра tazalau.qoldau.kz. ИИН не сохраняется.</p>
-          <div id="bankr-result-main"></div>
-        </div>
-        <p style="text-align:center;margin-top:14px;font-size:0.85rem;color:#64748b;">Нужна консультация адвоката? <a href="/advocate" style="color:#1a3560;font-weight:700;">Страница адвоката →</a></p>
       </div>
     </div>
   </section>
@@ -1606,6 +1594,8 @@
           <a href="/courts">Суды РК</a>
           <a href="/chambers">Палаты нот. и ЧСИ</a>
           <a href="/companies">Компании РК</a>
+          <a href="/proverka-kontragenta">Проверка по БИН</a>
+          <a href="/proverka-bankrotstva">Проверка банкротства</a>
           <a href="/collectors">Коллекторы РК</a>
           <a href="/lombards">Ломбарды РК</a>
         </div>
@@ -1642,59 +1632,6 @@
 <script src="js/site.js?v=20260815-2"></script>
 <script src="/js/analytics-events.js"></script>
 <script src="js/main.js?v=20260618-4"></script>
-<script>
-// Bankruptcy check on main page
-function checkBankruptcyMain() {
-  var iin = document.getElementById('bankr-iin-main').value.replace(/\D/g,'');
-  var res = document.getElementById('bankr-result-main');
-  if (iin.length !== 12) { res.innerHTML = '<div style="color:#fca5a5;font-size:0.9rem;">Введите 12-значный ИИН</div>'; return; }
-  res.innerHTML = '<div style="color:rgba(255,255,255,0.5);font-size:0.88rem;text-align:center;padding:12px 0;">⏳ Проверяем по реестрам банкротства...</div>';
-  fetch('/api/bankruptcy-check?iin=' + iin)
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      var totals = (d.outOfCourt.rows||[]).length + (d.judicial.rows||[]).length + (d.recovery.rows||[]).length;
-      if (totals > 0) {
-        function renderSection(title, data) {
-          if (!(data.rows||[]).length) return '';
-          var html = '<div style="margin-top:12px;">'
-            + '<div style="font-weight:700;font-size:0.82rem;letter-spacing:0.06em;text-transform:uppercase;color:rgba(252,165,165,0.7);margin-bottom:6px;">'
-            + title + ' — ' + data.total + ' зап.</div>';
-          if ((data.headers||[]).length) {
-            html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 10px;font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:4px;">';
-            data.headers.forEach(function(h){ html += '<span>' + h + '</span>'; });
-            html += '</div>';
-          }
-          data.rows.forEach(function(row, idx) {
-            html += '<div style="background:rgba(239,68,68,0.08);border-radius:6px;padding:8px 10px;margin-bottom:4px;font-size:0.82rem;line-height:1.5;">';
-            if ((data.headers||[]).length) {
-              row.forEach(function(cell, i) {
-                if (!cell) return;
-                html += '<div><span style="color:rgba(255,255,255,0.4);font-size:0.75rem;">' + (data.headers[i]||'') + ':</span> ' + cell + '</div>';
-              });
-            } else {
-              html += row.filter(Boolean).join(' · ');
-            }
-            html += '</div>';
-          });
-          return html + '</div>';
-        }
-        var html = '<div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px 18px;color:#fca5a5;">'
-          + '<strong style="font-size:0.95rem;">⚠️ Найдены записи о банкротстве</strong>'
-          + renderSection('Внесудебное банкротство', d.outOfCourt)
-          + renderSection('Судебное банкротство', d.judicial)
-          + renderSection('Реабилитация', d.recovery)
-          + '<a href="/advocate" style="color:#f0c040;font-weight:700;font-size:0.85rem;display:inline-block;margin-top:12px;">Проконсультироваться с адвокатом →</a>'
-          + '</div>';
-        res.innerHTML = html;
-      } else {
-        res.innerHTML = '<div style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);border-radius:10px;padding:14px 16px;color:#b6f5cc;font-size:0.9rem;">✅ По данному ИИН записей о банкротстве не найдено.</div>';
-      }
-    })
-    .catch(function(e) { res.innerHTML = '<div style="color:#fca5a5;font-size:0.9rem;">Ошибка: ' + e.message + '</div>'; });
-}
-document.getElementById('bankr-iin-main').addEventListener('keydown', function(e) { if (e.key==='Enter') checkBankruptcyMain(); });
-document.getElementById('bankr-iin-main').addEventListener('input', function() { this.value = this.value.replace(/\D/g,''); });
-</script>
 <script>
 // Application form handler
 const appForm = document.getElementById('application-form-el');

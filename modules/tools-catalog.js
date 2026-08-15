@@ -9,6 +9,13 @@ const TOOLS = [
     applicationCategory: 'BusinessApplication',
   },
   {
+    slug: 'bankruptcy-check', href: '/proverka-bankrotstva', icon: 'bi-person-vcard',
+    title: 'Проверка банкротства по ИИН', short: 'Статус банкротства',
+    description: 'Внесудебное и судебное банкротство, а также восстановление платёжеспособности по открытым реестрам Казахстана.',
+    actionLabel: 'Проверить статус',
+    applicationCategory: 'FinanceApplication',
+  },
+  {
     slug: 'debt-penalty', href: '/calculator', icon: 'bi-percent',
     title: 'Калькулятор долга и пени', short: 'Долг и пеня',
     description: 'Предварительный расчёт процентов и пени по банковскому кредиту или микрозайму.',

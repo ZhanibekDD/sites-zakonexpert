@@ -1716,8 +1716,10 @@ app.get('/statya/:slug', asyncHandler(async (req, res) => {
 }));
 
 // ===== BANKRUPTCY CHECK (tazalau.qoldau.kz) =====
-app.get('/api/bankruptcy-check', externalApiLimiter, asyncHandler(async (req, res) => {
-  const iin = (req.query.iin || '').replace(/\D/g, '');
+const handleBankruptcyCheck = asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  const submittedIin = req.method === 'POST' ? req.body?.iin : req.query.iin;
+  const iin = String(submittedIin || '').replace(/\D/g, '');
   if (iin.length !== 12) return res.status(400).json({ error: 'Укажите корректный ИИН (12 цифр)' });
 
   const cheerio = require('cheerio');
@@ -1759,12 +1761,29 @@ app.get('/api/bankruptcy-check', externalApiLimiter, asyncHandler(async (req, re
     axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy/recovery?flApplicantXin=${iin}`, { headers: HEADERS, timeout: 15000 }),
   ]);
 
+  function publicResult(settled) {
+    if (settled.status !== 'fulfilled') return { ok: false, rows: [], total: 0, error: 'SOURCE_UNAVAILABLE' };
+    return { ok: true, ...parseHtmlTable(settled.value.data) };
+  }
+
+  const results = {
+    outOfCourt: publicResult(r1),
+    judicial: publicResult(r2),
+    recovery: publicResult(r3),
+  };
+  const availableSources = Object.values(results).filter(source => source.ok).length;
   res.json({
-    outOfCourt: r1.status === 'fulfilled' ? parseHtmlTable(r1.value.data) : { rows: [], total: 0, error: r1.reason?.message },
-    judicial:   r2.status === 'fulfilled' ? parseHtmlTable(r2.value.data) : { rows: [], total: 0, error: r2.reason?.message },
-    recovery:   r3.status === 'fulfilled' ? parseHtmlTable(r3.value.data) : { rows: [], total: 0, error: r3.reason?.message },
+    ...results,
+    meta: {
+      checkedAt: new Date().toISOString(),
+      availableSources,
+      totalSources: 3,
+      complete: availableSources === 3,
+    },
   });
-}));
+});
+app.get('/api/bankruptcy-check', externalApiLimiter, handleBankruptcyCheck);
+app.post('/api/bankruptcy-check', externalApiLimiter, handleBankruptcyCheck);
 
 // ===== ERDR CHECK (service.prosecutor.kz) =====
 app.get('/api/erdr-check', externalApiLimiter, asyncHandler(async (req, res) => {
@@ -2221,6 +2240,7 @@ function getCorePages() {
     { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
     { url: '/companies',      priority: '0.9',  freq: 'weekly' },
     { url: '/proverka-kontragenta', priority: '0.95', freq: 'weekly' },
+    { url: '/proverka-bankrotstva', priority: '0.95', freq: 'weekly' },
     { url: '/kk/companies',   priority: '0.75', freq: 'weekly' },
     { url: '/en/companies',   priority: '0.75', freq: 'weekly' },
     { url: '/zh/companies',   priority: '0.7',  freq: 'weekly' },
@@ -2888,6 +2908,7 @@ function classifyPageType(page) {
   if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
   if (page === '/bin-search') return 'bin_search';
   if (page === '/proverka-kontragenta') return 'company_check';
+  if (page === '/proverka-bankrotstva') return 'bankruptcy_check';
   return 'other';
 }
 function normalizeAnalyticsPage(page) {
@@ -3129,6 +3150,7 @@ app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
 app.get('/proverka-kompanii-po-bin', (req, res) => res.redirect(301, '/proverka-kontragenta'));
 app.get('/proverka-kontragenta', (req, res) => res.render('company-check'));
+app.get('/proverka-bankrotstva', (req, res) => res.render('bankruptcy-check'));
 app.post('/api/company-check', externalApiLimiter, async (req, res) => {
   res.set('Cache-Control', 'private, no-store');
   const bin = validateBin(req.body?.bin);
