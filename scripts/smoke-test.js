@@ -136,6 +136,9 @@ async function run() {
   try {
     await waitForServer();
 
+    const health = await (await fetch(`${origin}/health`)).json();
+    assert(health.kgdApi === 'missing', 'Smoke environment must report the missing KGD token');
+
     const routes = [
       '/',
       '/news',
@@ -205,7 +208,7 @@ async function run() {
 
     const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
-    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-2')
+    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-3')
       && companyCheckPage.includes('/js/company-check.js?v=20260815-1'),
     'Counterparty page assets are missing');
     const invalidCompanyCheck = await fetch(`${origin}/api/company-check`, {

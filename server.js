@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-15-kgd-card-backgrounds';
+const RELEASE_ID = '2026-08-15-kgd-card-backgrounds-v2';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -3000,6 +3000,7 @@ app.get('/health', (req, res) => {
         service: 'ZakonExpert',
         release: RELEASE_ID,
         egovKey: EGOV_API_KEY ? 'configured' : 'missing',
+        kgdApi: kgdCounterparty.configured ? 'configured' : 'missing',
         companies: companyStats ? {
             available: companyStats.available,
             count: companyStats.count,
