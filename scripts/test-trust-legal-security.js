@@ -132,12 +132,16 @@ for (const filename of [
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large`);
 }
-assert.match(resultsPage, /results-v2\.css\?v=20260816-3/,
+assert.match(resultsPage, /results-v2\.css\?v=20260816-4/,
   'results page must use the redesigned results stylesheet');
-assert.match(resultsPage, /results-archive-data\.js\?v=20260816-1/,
+assert.match(resultsPage, /results-archive-data\.js\?v=20260816-2/,
   'results page must load the additional rulings archive');
-assert.match(resultsPage, /results-v2\.js\?v=20260816-3/,
+assert.match(resultsPage, /results-v2\.js\?v=20260816-4/,
   'results page must load the interactive document viewer');
+assert.match(resultsPage, /101 постановление можно прочитать и открыть в полном размере/,
+  'results archive must explain that the documents are readable');
+assert.match(resultsPage, /Открыть документ отдельно и увеличить/,
+  'results lightbox must provide a direct high-resolution document link');
 const resultsArchiveSource = fs.readFileSync(path.join(PUBLIC, 'js', 'results-archive-data.js'), 'utf8');
 const resultsArchiveSandbox = { window: {} };
 vm.runInNewContext(resultsArchiveSource, resultsArchiveSandbox);
@@ -158,7 +162,12 @@ for (const item of resultsArchive) {
     `invalid archive preview path: ${item.src}`);
   const imagePath = path.join(PUBLIC, item.src);
   assert(fs.existsSync(imagePath), `archive preview is missing: ${item.src}`);
-  assert(fs.statSync(imagePath).size <= 80 * 1024, `archive preview is too large: ${item.src}`);
+  assert(fs.statSync(imagePath).size <= 520 * 1024, `readable archive preview is too large: ${item.src}`);
+  assert.match(item.thumbSrc, /^\/img\/rezultaty\/archive\/thumbs\/[a-z0-9-]+\.webp$/,
+    `invalid archive thumbnail path: ${item.thumbSrc}`);
+  const thumbPath = path.join(PUBLIC, item.thumbSrc);
+  assert(fs.existsSync(thumbPath), `archive thumbnail is missing: ${item.thumbSrc}`);
+  assert(fs.statSync(thumbPath).size <= 95 * 1024, `archive thumbnail is too large: ${item.thumbSrc}`);
 }
 assert.match(home, /data-result-viewer[\s\S]{0,1200}data-result-option/,
   'homepage must expose a large interactive result viewer');
