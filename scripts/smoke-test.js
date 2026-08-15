@@ -210,6 +210,15 @@ async function run() {
     assert(imageResponse.headers.get('cache-control')?.includes('max-age=604800'),
       'Static image cache policy is missing');
 
+    const notaryCatalog = await (await fetch(`${origin}/notaries`)).text();
+    assert(notaryCatalog.includes('/img/regions/astana.webp')
+      && notaryCatalog.includes('/img/regions/ulytau.webp'),
+    'Notary catalog is missing the regional emblems');
+    const bailiffCatalog = await (await fetch(`${origin}/bailiffs`)).text();
+    assert(bailiffCatalog.includes('/img/regions/jetisu.webp')
+      && bailiffCatalog.includes('/img/regions/ulytau.webp'),
+    'Bailiff catalog region aliases do not resolve to emblems');
+
     const companyCatalog = await fetch(`${origin}/companies`);
     assert(companyCatalog.headers.get('cache-control')?.includes('s-maxage='),
       'Company catalog is missing shared-cache headers');
