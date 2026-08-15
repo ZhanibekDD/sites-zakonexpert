@@ -217,7 +217,7 @@ async function run() {
 
     const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
-    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-7')
+    assert(companyCheckPage.includes('/css/company-check.css?v=20260816-1')
       && companyCheckPage.includes('/js/company-check.js?v=20260815-4')
       && companyCheckPage.includes('/js/site.js?v=20260815-2'),
     'Counterparty page assets are missing');
