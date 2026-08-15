@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
   <link rel="stylesheet" href="css/landing.css?v=20260619-2">
   <link rel="stylesheet" href="css/style.css?v=20260619-2">
-  <link rel="stylesheet" href="/css/results-v2.css?v=20260816-1">
+  <link rel="stylesheet" href="/css/results-v2.css?v=20260816-2">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -190,75 +190,30 @@
     <div class="landing-container">
       <header class="rez-v2-heading">
         <span>Архив подтверждений</span>
-        <h2>Другие завершённые дела</h2>
-        <p>Документы разделены по результату. Выберите категорию и нажмите на изображение, чтобы рассмотреть его.</p>
+        <h2>Все остальные постановления</h2>
+        <p>В архиве 105 уникальных документов: четыре главных результата показаны крупно выше, ещё 101 обезличенное превью доступно ниже.</p>
       </header>
 
-      <div class="rez-v2-filters" role="group" aria-label="Фильтр результатов">
-        <button class="rez-v2-filter is-active" type="button" data-results-filter="all" aria-pressed="true">Все документы</button>
-        <button class="rez-v2-filter" type="button" data-results-filter="cancellation" aria-pressed="false">Отмена надписи</button>
-        <button class="rez-v2-filter" type="button" data-results-filter="enforcement" aria-pressed="false">Прекращение ИП</button>
-        <button class="rez-v2-filter" type="button" data-results-filter="payment" aria-pressed="false">График погашения</button>
+      <div class="rez-v2-archive-tools">
+        <label class="rez-v2-search">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <span class="visually-hidden">Найти документ по сумме</span>
+          <input type="search" inputmode="numeric" placeholder="Найти по сумме — например, 2944991" autocomplete="off" data-results-search>
+        </label>
+        <div class="rez-v2-archive-count"><strong data-results-count>101</strong><span>документ в подборке</span></div>
       </div>
 
-      <div class="rez-v2-gallery">
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №1">
-            <img src="/img/rezultaty/otmena-nadpisi-01.jpeg" width="828" height="1030" alt="Постановление об отмене исполнительной надписи" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Исполнительная надпись отменена</h3><p>Официальное постановление нотариуса. Данные клиента закрыты.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №2">
-            <img src="/img/rezultaty/otmena-nadpisi-02.jpeg" width="828" height="1036" alt="Постановление об отмене исполнительной надписи" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Постановление нотариуса об отмене</h3><p>Документ подтверждает прекращение действия исполнительной надписи.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №3">
-            <img src="/img/rezultaty/otmena-nadpisi-03.jpeg" width="828" height="1031" alt="Отмена исполнительной надписи нотариусом" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Взыскание по надписи остановлено</h3><p>Опубликована обезличенная копия постановления по делу клиента.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №4">
-            <img src="/img/rezultaty/otmena-nadpisi-05.jpeg" width="828" height="1024" alt="Документ об отмене исполнительной надписи" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Ещё одна надпись отменена</h3><p>Результат зафиксирован официальным документом нотариуса.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №5">
-            <img src="/img/rezultaty/otmena-nadpisi-06.jpeg" width="828" height="1037" alt="Постановление нотариуса по результату клиента" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Результат подтверждён постановлением</h3><p>Персональные данные в опубликованной копии скрыты.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="cancellation">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительная надпись отменена — постановление №6">
-            <img src="/img/rezultaty/otmena-nadpisi-08.jpeg" width="828" height="1036" alt="Обезличенное постановление об отмене исполнительной надписи" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge">Отмена ИН</span><h3>Исполнительный документ отменён</h3><p>Публикуется только та часть документа, которая подтверждает результат.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="enforcement">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="Исполнительное производство прекращено">
-            <img src="/img/rezultaty/prekrashchenie-01.jpeg" width="828" height="1037" alt="Постановление о прекращении исполнительного производства" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge rez-v2-badge--blue">Производство закрыто</span><h3>Исполнительное производство прекращено</h3><p>Отдельный вид результата: официальное постановление о прекращении ИП.</p></div>
-        </article>
-        <article class="rez-v2-card" data-result-category="payment">
-          <button class="rez-v2-card__media" type="button" data-result-open data-lb-caption="С кредитором согласован график погашения">
-            <img src="/img/rezultaty/grafik-soglashenie-01.jpeg" width="828" height="1029" alt="Соглашение с кредитором и график погашения задолженности" loading="lazy">
-            <span class="rez-v2-card__zoom"><i class="bi bi-arrows-fullscreen"></i></span>
-          </button>
-          <div class="rez-v2-card__body"><span class="rez-v2-badge rez-v2-badge--gold">График</span><h3>Согласован график погашения</h3><p>Соглашение фиксирует условия и порядок исполнения обязательств.</p></div>
-        </article>
+      <div class="rez-v2-filters" role="group" aria-label="Фильтр результатов">
+        <button class="rez-v2-filter is-active" type="button" data-results-filter="all" aria-pressed="true">Все <span>101</span></button>
+        <button class="rez-v2-filter" type="button" data-results-filter="cancellation" aria-pressed="false">Отмена надписи <span>75</span></button>
+        <button class="rez-v2-filter" type="button" data-results-filter="enforcement" aria-pressed="false">Прекращение и снятие мер <span>15</span></button>
+        <button class="rez-v2-filter" type="button" data-results-filter="other" aria-pressed="false">Другие документы <span>11</span></button>
       </div>
+
+      <div class="rez-v2-gallery" data-results-gallery aria-live="polite"></div>
+      <div class="rez-v2-empty" data-results-empty hidden><i class="bi bi-search"></i><h3>По этой сумме ничего не найдено</h3><p>Попробуйте ввести только цифры или выбрать другую категорию.</p></div>
+      <div class="rez-v2-load-wrap"><button class="rez-v2-load" type="button" data-results-load-more><i class="bi bi-plus-lg"></i> Показать ещё</button></div>
+      <p class="rez-v2-archive-note"><i class="bi bi-shield-lock"></i> Из полученных 111 PDF убраны технические копии и повторные версии. В каталоге показаны только уникальные безопасные превью; исходные персональные данные не публикуются.</p>
     </div>
   </section>
 
@@ -297,7 +252,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/main.js?v=20260619-2"></script>
-<script src="/js/results-v2.js?v=20260816-1"></script>
+<script src="/js/results-archive-data.js?v=20260816-1"></script>
+<script src="/js/results-v2.js?v=20260816-2"></script>
 <script src="/js/analytics-events.js"></script>
 <script src="/js/chatbot.js?v=20260815-1" defer></script>
 </body>

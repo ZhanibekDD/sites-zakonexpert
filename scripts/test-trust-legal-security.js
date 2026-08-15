@@ -3,6 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const ROOT = path.join(__dirname, '..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -130,10 +131,27 @@ for (const filename of [
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large`);
 }
-assert.match(resultsPage, /results-v2\.css\?v=20260816-1/,
+assert.match(resultsPage, /results-v2\.css\?v=20260816-2/,
   'results page must use the redesigned results stylesheet');
-assert.match(resultsPage, /results-v2\.js\?v=20260816-1/,
+assert.match(resultsPage, /results-archive-data\.js\?v=20260816-1/,
+  'results page must load the additional rulings archive');
+assert.match(resultsPage, /results-v2\.js\?v=20260816-2/,
   'results page must load the interactive document viewer');
+const resultsArchiveSource = fs.readFileSync(path.join(PUBLIC, 'js', 'results-archive-data.js'), 'utf8');
+const resultsArchiveSandbox = { window: {} };
+vm.runInNewContext(resultsArchiveSource, resultsArchiveSandbox);
+const resultsArchive = resultsArchiveSandbox.window.ZAKONEXPERT_RESULTS_ARCHIVE;
+assert.strictEqual(resultsArchive.length, 101,
+  'results archive must expose 101 unique additional documents');
+assert.strictEqual(new Set(resultsArchive.map(item => item.id)).size, resultsArchive.length,
+  'results archive document IDs must be unique');
+for (const item of resultsArchive) {
+  assert.match(item.src, /^\/img\/rezultaty\/archive\/[a-z0-9-]+\.webp$/,
+    `invalid archive preview path: ${item.src}`);
+  const imagePath = path.join(PUBLIC, item.src);
+  assert(fs.existsSync(imagePath), `archive preview is missing: ${item.src}`);
+  assert(fs.statSync(imagePath).size <= 80 * 1024, `archive preview is too large: ${item.src}`);
+}
 assert.match(home, /data-result-viewer[\s\S]{0,1200}data-result-option/,
   'homepage must expose a large interactive result viewer');
 assert.doesNotMatch(resultsPage, /Наша команда|komanda-0[12]\.jpeg|rez-v2-team/,
