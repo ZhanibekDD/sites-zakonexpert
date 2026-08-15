@@ -623,11 +623,13 @@
 }
 
 .ze-service-card {
+  position: relative;
+  overflow: hidden;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  min-height: 300px;
-  padding: 25px 23px 22px;
+  min-height: 405px;
+  padding: 0;
   border: 1px solid #e0e7ef;
   border-radius: 14px;
   color: #122c4b;
@@ -644,12 +646,38 @@
   box-shadow: 0 17px 38px rgba(15, 39, 72, .1);
 }
 
-.ze-service-card > img {
-  width: 82px;
-  height: 82px;
-  margin-bottom: 19px;
-  object-fit: contain;
-  object-position: left center;
+.ze-service-card__media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 168px;
+  flex: 0 0 auto;
+  background: #071b34;
+}
+
+.ze-service-card__media::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 56%, rgba(7, 27, 52, .36));
+  content: "";
+}
+
+.ze-service-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .45s ease;
+}
+
+.ze-service-card:hover .ze-service-card__media img {
+  transform: scale(1.045);
+}
+
+.ze-service-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px 23px 23px;
 }
 
 .ze-service-card h3 {
@@ -666,14 +694,14 @@
   line-height: 1.62;
 }
 
-.ze-service-card span {
+.ze-service-card__link {
   margin-top: auto;
   color: #1c58bd;
   font-size: .79rem;
   font-weight: 760;
 }
 
-.ze-service-card span b {
+.ze-service-card__link b {
   margin-left: 6px;
   font-size: 1rem;
 }
@@ -922,7 +950,8 @@
   .ze-home-proof__icon { width: 38px; height: 38px; flex-basis: 38px; }
 
   .ze-home-services__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .ze-service-card { min-height: 270px; }
+  .ze-service-card { min-height: 390px; }
+  .ze-service-card__media { height: 190px; }
   .ze-home-process__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 0; }
   .ze-process-step:nth-child(2) { border-right: 0; }
   .ze-home-result__grid { grid-template-columns: minmax(0, 1fr) minmax(260px, .65fr); gap: 36px; }
@@ -1055,7 +1084,8 @@
   .ze-section-heading { margin-bottom: 26px; }
   .ze-section-heading h2 { font-size: 1.78rem; }
   .ze-home-services__grid { grid-template-columns: 1fr; }
-  .ze-service-card { min-height: 245px; padding: 22px; }
+  .ze-service-card { min-height: 365px; }
+  .ze-service-card__media { height: 190px; }
 
   .ze-home-process__grid { grid-template-columns: 1fr; gap: 0; }
   .ze-home-result__actions { align-items: stretch; flex-direction: column; }
