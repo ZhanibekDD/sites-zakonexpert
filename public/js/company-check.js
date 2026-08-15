@@ -14,6 +14,8 @@
   var currentReport = null;
   var suggestTimer = null;
   var suggestRequest = null;
+  var suggestionItems = [];
+  var activeSuggestion = -1;
 
   function escapeHtml(value) {
     return String(value == null ? '' : value)
@@ -61,8 +63,11 @@
 
   function hideSuggestions() {
     suggestions.innerHTML = '';
+    suggestionItems = [];
+    activeSuggestion = -1;
     setHidden(suggestions, true);
     input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
   }
 
   function track(type) {
@@ -186,6 +191,107 @@
     }).join('');
   }
 
+  function contactPresentation(type) {
+    var values = {
+      phone: ['Телефон', 'bi-telephone'],
+      mobile_phone: ['Мобильный телефон', 'bi-phone'],
+      email: ['E-mail', 'bi-envelope'],
+      website: ['Сайт', 'bi-globe2'],
+      whatsapp: ['WhatsApp', 'bi-whatsapp'],
+      viber: ['Viber', 'bi-chat-dots'],
+      telegram: ['Telegram', 'bi-telegram'],
+    };
+    return values[type] || ['Контакт', 'bi-link-45deg'];
+  }
+
+  function contactHref(contact) {
+    var value = String(contact.value || '').trim();
+    var normalized = String(contact.normalized || value).trim();
+    if (contact.type === 'email') return /^\S+@\S+\.\S+$/.test(value) ? 'mailto:' + value : '';
+    if (contact.type === 'phone' || contact.type === 'mobile_phone') {
+      var phone = normalized.replace(/[^\d+]/g, '');
+      return phone ? 'tel:' + phone : '';
+    }
+    if (contact.type === 'whatsapp') {
+      var whatsapp = normalized.replace(/\D/g, '');
+      return whatsapp ? 'https://wa.me/' + whatsapp : '';
+    }
+    if (contact.type === 'website') {
+      if (/^https?:\/\//i.test(value)) return value;
+      if (/^[\wа-яё-]+(?:\.[\wа-яё-]+)+(?:\/.*)?$/i.test(value)) return 'https://' + value;
+      return '';
+    }
+    if (contact.type === 'telegram') {
+      if (/^https?:\/\//i.test(value)) return value;
+      if (/^@[\w_]{4,}$/i.test(value)) return 'https://t.me/' + value.slice(1);
+    }
+    return /^https?:\/\//i.test(value) ? value : '';
+  }
+
+  function detailRow(icon, label, value, source, href) {
+    var external = href && /^https?:\/\//i.test(href);
+    var content = href
+      ? '<a href="' + escapeHtml(href) + '"' + (external ? ' target="_blank" rel="noopener"' : '') + '>' + escapeHtml(value) + '</a>'
+      : '<strong>' + escapeHtml(value) + '</strong>';
+    return '<div class="cc-detail-row"><i class="bi ' + escapeHtml(icon) + '"></i><div><span class="cc-detail-row__label">'
+      + escapeHtml(label) + '</span>' + content
+      + (source ? '<small>Источник: ' + escapeHtml(source) + '</small>' : '') + '</div></div>';
+  }
+
+  function renderCompanyDetails(company) {
+    var contacts = Array.isArray(company.contacts) ? company.contacts : [];
+    var addresses = Array.isArray(company.addresses) ? company.addresses.slice() : [];
+    var attributes = Array.isArray(company.attributes) ? company.attributes : [];
+    var legalAddress = String(company.address || '').trim();
+    if (legalAddress && legalAddress !== 'Нет данных'
+        && !addresses.some(function (item) { return String(item.value || '').trim() === legalAddress; })) {
+      addresses.unshift({ value: legalAddress, primary: true, sourceLabel: 'ГБД ЮЛ — data.egov.kz' });
+    }
+
+    var contactHtml = contacts.length
+      ? contacts.map(function (contact) {
+        var meta = contactPresentation(contact.type);
+        return detailRow(meta[1], meta[0], contact.value, contact.sourceLabel, contactHref(contact));
+      }).join('')
+      : '<p class="cc-empty">Телефоны и e-mail не опубликованы в подключённом справочнике.</p>';
+    var addressHtml = addresses.length
+      ? addresses.map(function (address) {
+        return detailRow('bi-geo-alt', address.primary ? 'Юридический адрес' : 'Дополнительный адрес', address.value, address.sourceLabel, '');
+      }).join('')
+      : '<p class="cc-empty">Адрес организации не опубликован.</p>';
+    var hours = attributes.filter(function (attribute) { return attribute.type === 'work_hours'; });
+    if (hours.length) {
+      addressHtml += hours.map(function (attribute) {
+        return detailRow('bi-clock', 'Режим работы', attribute.value, attribute.sourceLabel, '');
+      }).join('');
+    }
+
+    var mappedAddress = addresses.find(function (address) {
+      return Number.isFinite(Number(address.latitude)) && Number.isFinite(Number(address.longitude));
+    }) || addresses[0];
+    var mapHtml = '<div class="cc-map-card"><div class="cc-map-card__empty"><div><i class="bi bi-map"></i>Местонахождение не удалось определить по опубликованным данным.</div></div></div>';
+    if (mappedAddress && mappedAddress.value) {
+      var hasCoordinates = Number.isFinite(Number(mappedAddress.latitude)) && Number.isFinite(Number(mappedAddress.longitude));
+      var mapQuery = hasCoordinates
+        ? Number(mappedAddress.latitude) + ',' + Number(mappedAddress.longitude)
+        : mappedAddress.value;
+      var encodedMapQuery = encodeURIComponent(mapQuery);
+      var encodedAddress = encodeURIComponent(mappedAddress.value);
+      mapHtml = '<div class="cc-map-card"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Карта расположения '
+        + escapeHtml(company.nameRu) + '" src="https://maps.google.com/maps?q=' + encodedMapQuery
+        + '&amp;output=embed&amp;hl=ru&amp;z=15"></iframe><div class="cc-map-card__actions">'
+        + '<a href="https://2gis.kz/search/' + encodedAddress + '" target="_blank" rel="noopener"><i class="bi bi-geo-alt-fill"></i> Открыть в 2GIS</a>'
+        + '<a href="https://maps.google.com/?q=' + encodedMapQuery + '" target="_blank" rel="noopener"><i class="bi bi-map"></i> Google Maps</a>'
+        + '</div></div>';
+    }
+
+    document.getElementById('cc-company-details').innerHTML = '<div class="cc-details-stack">'
+      + '<section class="cc-details-group"><h4 class="cc-details-group__title"><i class="bi bi-person-lines-fill"></i> Контактные данные</h4>' + contactHtml + '</section>'
+      + '<section class="cc-details-group"><h4 class="cc-details-group__title"><i class="bi bi-building"></i> Адреса и режим работы</h4>' + addressHtml + '</section>'
+      + '</div>' + mapHtml
+      + '<p class="cc-details-note"><i class="bi bi-info-circle"></i><span>Контакты и координаты могут поступать из справочников организаций. Перед звонком, визитом или оплатой сверяйте их с официальным сайтом компании.</span></p>';
+  }
+
   function renderReport(report) {
     currentReport = report;
     var company = report.company;
@@ -235,6 +341,7 @@
       definitionRow('Дата НДС', date(tax.vatDate)),
       definitionRow('Задолженность', money(tax.debt)),
     ].join('');
+    renderCompanyDetails(company);
     renderProcurement(procurement);
     renderStatistics(report.statistics || []);
     renderSources(report.sources || []);
@@ -285,18 +392,56 @@
   }
 
   function renderSuggestions(items) {
+    suggestionItems = items;
+    activeSuggestion = -1;
     if (!items.length) {
       suggestions.innerHTML = '<p>Совпадений не найдено. Можно ввести точный БИН.</p>';
     } else {
-      suggestions.innerHTML = items.map(function (item) {
-        var details = [item.activity, item.leader].filter(Boolean).join(' · ');
-        return '<button type="button" role="option" data-bin="' + escapeHtml(item.bin) + '" data-name="'
-          + escapeHtml(item.name) + '"><strong>' + escapeHtml(item.name) + '</strong><span>БИН '
-          + escapeHtml(item.bin) + (details ? ' · ' + escapeHtml(details) : '') + '</span></button>';
-      }).join('');
+      suggestions.innerHTML = items.map(function (item, index) {
+        var contacts = [
+          item.phone ? '<span><i class="bi bi-telephone"></i>' + escapeHtml(item.phone) + '</span>' : '',
+          item.email ? '<span><i class="bi bi-envelope"></i>' + escapeHtml(item.email) + '</span>' : '',
+        ].filter(Boolean).join('');
+        return '<button id="company-suggestion-' + String(index) + '" type="button" role="option" aria-selected="false" data-index="'
+          + String(index) + '" data-bin="' + escapeHtml(item.bin) + '" data-name="' + escapeHtml(item.name) + '">'
+          + '<span class="cc-suggestion__top"><strong class="cc-suggestion__name">' + escapeHtml(item.name) + '</strong>'
+          + (item.status ? '<span class="cc-suggestion__status">' + escapeHtml(item.status) + '</span>' : '') + '</span>'
+          + '<span class="cc-suggestion__meta"><span><i class="bi bi-upc-scan"></i>БИН ' + escapeHtml(item.bin || 'не указан') + '</span>'
+          + (item.activity ? '<span><i class="bi bi-briefcase"></i>' + escapeHtml(item.activity) + '</span>' : '')
+          + (item.leader ? '<span><i class="bi bi-person"></i>' + escapeHtml(item.leader) + '</span>' : '')
+          + (item.address ? '<span class="cc-suggestion__address"><i class="bi bi-geo-alt"></i>' + escapeHtml(item.address) + '</span>' : '') + '</span>'
+          + (contacts ? '<span class="cc-suggestion__contacts">' + contacts + '</span>' : '') + '</button>';
+      }).join('') + '<a class="cc-suggestions__more" href="/companies?q=' + encodeURIComponent(input.value.trim())
+        + '"><i class="bi bi-search"></i> Показать больше совпадений в каталоге</a>';
     }
     setHidden(suggestions, false);
     input.setAttribute('aria-expanded', 'true');
+  }
+
+  function setActiveSuggestion(index) {
+    var options = suggestions.querySelectorAll('button[data-index]');
+    if (!options.length) return;
+    activeSuggestion = Math.max(0, Math.min(index, options.length - 1));
+    options.forEach(function (option, optionIndex) {
+      option.setAttribute('aria-selected', optionIndex === activeSuggestion ? 'true' : 'false');
+    });
+    var active = options[activeSuggestion];
+    input.setAttribute('aria-activedescendant', active.id);
+    active.scrollIntoView({ block: 'nearest' });
+  }
+
+  function chooseSuggestion(index) {
+    var item = suggestionItems[index];
+    if (!item) return;
+    if (!/^\d{12}$/.test(String(item.bin || ''))) {
+      if (item.url && /^\/company\//.test(item.url)) location.href = item.url;
+      return;
+    }
+    input.dataset.bin = item.bin;
+    input.value = item.bin + ' — ' + item.name;
+    hideSuggestions();
+    clearError();
+    check(item.bin);
   }
 
   async function loadSuggestions(query) {
@@ -326,16 +471,33 @@
       hideSuggestions();
       return;
     }
-    suggestTimer = window.setTimeout(function () { loadSuggestions(query); }, 220);
+    suggestTimer = window.setTimeout(function () { loadSuggestions(query); }, 170);
+  });
+
+  input.addEventListener('keydown', function (event) {
+    if (suggestions.hidden || !suggestionItems.length) {
+      if (event.key === 'Escape') hideSuggestions();
+      return;
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestion < suggestionItems.length - 1 ? activeSuggestion + 1 : 0);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveSuggestion(activeSuggestion > 0 ? activeSuggestion - 1 : suggestionItems.length - 1);
+    } else if (event.key === 'Enter' && activeSuggestion >= 0) {
+      event.preventDefault();
+      chooseSuggestion(activeSuggestion);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      hideSuggestions();
+    }
   });
 
   suggestions.addEventListener('click', function (event) {
     var option = event.target.closest('button[data-bin]');
     if (!option) return;
-    input.dataset.bin = option.dataset.bin;
-    input.value = option.dataset.bin + ' — ' + option.dataset.name;
-    hideSuggestions();
-    clearError();
+    chooseSuggestion(Number(option.dataset.index));
   });
 
   document.addEventListener('click', function (event) {

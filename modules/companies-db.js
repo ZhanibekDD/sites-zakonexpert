@@ -74,6 +74,15 @@ function sourceProjection(database, qualifier = '') {
   return "'egov_gbd_ul' AS primary_source_key";
 }
 
+function contactSummaryProjection(database, qualifier = '') {
+  const prefix = qualifier ? `${qualifier}.` : '';
+  return ['phone', 'mobile_phone', 'email', 'website']
+    .map(column => hasColumn(database, column)
+      ? `${prefix}${column}`
+      : `NULL AS ${column}`)
+    .join(', ');
+}
+
 function qualityRowsAvailable(database) {
   return hasColumn(database, 'is_indexable')
     && getMeta(database, 'quality_version') === QUALITY_VERSION;
@@ -211,23 +220,26 @@ function search(query, page = 1, limit = 30) {
 
   if (/^\d{12}$/.test(q)) {
     const primarySource = sourceProjection(database);
+    const contactSummary = contactSummaryProjection(database);
     items = database.prepare(`
       SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
-             activity_ru, leader, status_ru, ${primarySource}
+             activity_ru, leader, status_ru, ${contactSummary}, ${primarySource}
       FROM companies WHERE bin = ? ORDER BY id LIMIT ? OFFSET ?
     `).all(q, safeLimit + 1, offset);
   } else {
     const match = ftsQuery(q);
     if (!match) return { items: [], page: safePage, hasMore: false };
     const primarySource = sourceProjection(database, 'c');
+    const contactSummary = contactSummaryProjection(database, 'c');
     items = database.prepare(`
       SELECT c.id, c.bin, c.name_ru, c.name_kk, c.registration_date,
              c.address_ru, c.activity_ru, c.leader, c.status_ru,
-             ${primarySource}
+             ${contactSummary}, ${primarySource}
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
       WHERE companies_fts MATCH ?
-      ORDER BY rank, c.is_indexable DESC, c.quality_score DESC, c.id
+      ORDER BY bm25(companies_fts, 14.0, 10.0, 3.0, 5.0, 0.35),
+               c.is_indexable DESC, c.quality_score DESC, c.id
       LIMIT ? OFFSET ?
     `).all(match, safeLimit + 1, offset);
   }
