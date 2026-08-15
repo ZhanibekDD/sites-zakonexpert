@@ -1,0 +1,44 @@
+<%
+const canonical = 'https://zakonexpertt.kz/proverka-kontragenta';
+const pageTitle = 'Проверка контрагента по БИН бесплатно — данные КГД Казахстана | ZakonExpert';
+const pageDescription = 'Проверьте организацию или ИП по БИН: регистрация, ОКЭД, НДС, налоговый режим, задолженность, банкротство, ограничения ЭСФ и другие сведения КГД.';
+const faq = [
+  ['Какие сведения показывает проверка контрагента?', 'Сервис показывает открытые сведения КГД: регистрационные данные, ОКЭД, налоговый режим, сведения по НДС, налоговую задолженность, отдельные неблагоприятные признаки и доступную статистику по годам.'],
+  ['Откуда поступают данные?', 'Ответ формируется на основании открытых данных API Комитета государственных доходов Министерства финансов Республики Казахстан. Дата актуальности показывается в отчёте.'],
+  ['Можно ли считать зелёный статус гарантией надёжности?', 'Нет. Экспресс-проверка помогает заметить опубликованные КГД индикаторы, но не заменяет анализ договора, судебных дел, лицензий, полномочий подписанта и фактического исполнения обязательств.'],
+  ['Сохраняется ли введённый БИН?', 'Результат может кратковременно кэшироваться на сервере до 30 минут для скорости и защиты официального API. БИН не передаётся в рекламные системы, а API-токен КГД никогда не отправляется в браузер.'],
+  ['Можно ли сохранить отчёт?', 'Да. После проверки нажмите «Сохранить PDF» и выберите сохранение в PDF в системном окне печати.'],
+];
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Проверка контрагента по БИН Казахстана',
+    description: pageDescription,
+    url: canonical,
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KZT' },
+    provider: { '@type': 'Organization', name: 'ТОО «ZakonExpert»', url: 'https://zakonexpertt.kz/' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(function(item) {
+      return { '@type': 'Question', name: item[0], acceptedAnswer: { '@type': 'Answer', text: item[1] } };
+    }),
+  },
+];
+%>
+<%- include('./news/layout', {
+  title: pageTitle,
+  description: pageDescription,
+  canonical,
+  ogType: 'website',
+  ogImage: null,
+  schema,
+  noindex: false,
+  body: include('./partials/company-check-body', { faq }),
+  extraStyles: ['/css/company-check.css?v=20260815-1'],
+  extraScripts: ['/js/company-check.js?v=20260815-1']
+}) %>

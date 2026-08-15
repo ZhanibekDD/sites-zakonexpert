@@ -1,0 +1,120 @@
+<div class="cc-page">
+  <div class="landing-container">
+    <nav class="npage-breadcrumb cc-breadcrumb" aria-label="Хлебные крошки">
+      <a href="/">Главная</a><span class="npage-bc-sep">/</span>
+      <a href="/companies">Организации</a><span class="npage-bc-sep">/</span>
+      <span>Проверка контрагента</span>
+    </nav>
+
+    <section class="cc-hero" aria-labelledby="cc-title">
+      <div class="cc-hero__copy">
+        <div class="cc-kicker"><i class="bi bi-shield-check" aria-hidden="true"></i> Официальные открытые данные КГД</div>
+        <h1 id="cc-title">Проверка контрагента<br><span>по БИН за несколько секунд</span></h1>
+        <p class="cc-hero__lead">Один понятный отчёт вместо поиска по разным реестрам: регистрация, налоги, НДС, задолженность и неблагоприятные признаки организации или ИП.</p>
+        <div class="cc-trust-row" aria-label="Преимущества сервиса">
+          <span><i class="bi bi-check2-circle"></i> Бесплатно</span>
+          <span><i class="bi bi-person-x"></i> Без регистрации</span>
+          <span><i class="bi bi-lightning-charge"></i> Один запрос</span>
+          <span><i class="bi bi-printer"></i> Отчёт в PDF</span>
+        </div>
+      </div>
+
+      <div class="cc-search-card">
+        <div class="cc-search-card__head">
+          <span class="cc-search-card__icon"><i class="bi bi-building-check"></i></span>
+          <div><strong>Введите БИН</strong><small>12 цифр организации или ИП</small></div>
+        </div>
+        <form id="company-check-form" class="cc-form" novalidate>
+          <label for="company-check-bin">БИН контрагента</label>
+          <div class="cc-input-row">
+            <input id="company-check-bin" name="bin" type="text" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Например, 260740044168" aria-describedby="company-check-hint company-check-error">
+            <button type="submit"><span>Проверить</span><i class="bi bi-arrow-right"></i></button>
+          </div>
+          <p id="company-check-hint" class="cc-input-hint"><i class="bi bi-lock"></i> Токен КГД защищён на сервере и не передаётся в браузер.</p>
+          <p id="company-check-error" class="cc-form-error" role="alert" hidden></p>
+        </form>
+        <div class="cc-source-mini"><span>Источник</span><a href="https://portal.kgd.gov.kz/ru/pages/info-services/find-information-for-ip-ul" target="_blank" rel="noopener">КГД МФ РК <i class="bi bi-box-arrow-up-right"></i></a></div>
+      </div>
+    </section>
+
+    <section id="company-check-loading" class="cc-loading" aria-live="polite" hidden>
+      <span class="cc-loader" aria-hidden="true"></span>
+      <div><strong>Запрашиваем данные КГД</strong><p>Собираем профиль, налоги и индикаторы. Обычно это занимает несколько секунд.</p></div>
+    </section>
+
+    <section id="company-check-result" class="cc-result" aria-live="polite" hidden>
+      <header class="cc-result-head">
+        <div>
+          <div id="cc-risk-badge" class="cc-risk-badge"></div>
+          <h2 id="cc-company-name">Результат проверки</h2>
+          <p><span id="cc-company-bin"></span><span class="cc-dot">•</span>Актуальность КГД: <strong id="cc-actuality">—</strong></p>
+        </div>
+        <div class="cc-result-actions">
+          <button type="button" data-cc-action="share"><i class="bi bi-link-45deg"></i> Скопировать ссылку</button>
+          <button type="button" data-cc-action="print"><i class="bi bi-file-earmark-pdf"></i> Сохранить PDF</button>
+        </div>
+      </header>
+
+      <div id="cc-summary" class="cc-summary"></div>
+
+      <div class="cc-result-grid">
+        <section class="cc-panel cc-panel--wide" aria-labelledby="cc-indicators-title">
+          <div class="cc-panel__head"><div><span class="cc-section-number">01</span><h3 id="cc-indicators-title">Индикаторы внимания</h3></div><small>По открытым сведениям КГД</small></div>
+          <div id="cc-indicators" class="cc-indicators"></div>
+        </section>
+
+        <section class="cc-panel" aria-labelledby="cc-profile-title">
+          <div class="cc-panel__head"><div><span class="cc-section-number">02</span><h3 id="cc-profile-title">Профиль</h3></div></div>
+          <dl id="cc-profile" class="cc-definition-list"></dl>
+        </section>
+
+        <section class="cc-panel" aria-labelledby="cc-tax-title">
+          <div class="cc-panel__head"><div><span class="cc-section-number">03</span><h3 id="cc-tax-title">Налоги</h3></div></div>
+          <dl id="cc-tax" class="cc-definition-list"></dl>
+        </section>
+
+        <section class="cc-panel cc-panel--wide" aria-labelledby="cc-stats-title">
+          <div class="cc-panel__head"><div><span class="cc-section-number">04</span><h3 id="cc-stats-title">Динамика по годам</h3></div><small>Если опубликована КГД</small></div>
+          <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Год</th><th>Работники</th><th>Налоги</th><th>НДС</th><th>КНН</th><th>Средний КНН</th></tr></thead><tbody id="cc-statistics"></tbody></table></div>
+          <p id="cc-no-statistics" class="cc-empty" hidden>КГД не опубликовал статистику по годам для этого БИН.</p>
+        </section>
+      </div>
+
+      <section class="cc-conclusion">
+        <div><span>Экспресс‑вывод</span><h3 id="cc-conclusion-title"></h3><p id="cc-conclusion-text"></p></div>
+        <a id="cc-whatsapp" href="https://wa.me/77479957635" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i><span>Проверить договор и риски</span></a>
+      </section>
+
+      <div class="cc-disclaimer"><i class="bi bi-info-circle"></i><p><strong>Важно:</strong> показатель ZakonExpert — автоматическая интерпретация открытых данных, а не официальный рейтинг КГД и не гарантия надёжности. Перед крупной оплатой проверьте договор, полномочия подписанта, судебные споры, лицензии и фактический адрес.</p></div>
+    </section>
+
+    <section class="cc-coverage" aria-labelledby="cc-coverage-title">
+      <div class="cc-section-intro"><span>Что внутри отчёта</span><h2 id="cc-coverage-title">Главное о контрагенте — на одном экране</h2><p>Мы переводим служебные поля официального API на понятный язык и ничего не скрываем за регистрацией.</p></div>
+      <div class="cc-coverage-grid">
+        <article><i class="bi bi-building"></i><h3>Регистрация и ОКЭД</h3><p>Наименование, дата регистрации, резидентство, код и вид деятельности.</p></article>
+        <article><i class="bi bi-receipt"></i><h3>Налоги и НДС</h3><p>Режим налогообложения, сведения по НДС и опубликованная задолженность.</p></article>
+        <article><i class="bi bi-exclamation-triangle"></i><h3>Неблагоприятные признаки</h3><p>Бездействие, банкротство, отсутствие по адресу, ограничения ЭСФ и другие отметки.</p></article>
+        <article><i class="bi bi-graph-up-arrow"></i><h3>Динамика бизнеса</h3><p>Опубликованные КГД данные о работниках, налогах, НДС и коэффициенте налоговой нагрузки.</p></article>
+      </div>
+    </section>
+
+    <section class="cc-how" aria-labelledby="cc-how-title">
+      <div class="cc-section-intro"><span>Правильная проверка</span><h2 id="cc-how-title">Как использовать отчёт перед сделкой</h2></div>
+      <ol class="cc-steps">
+        <li><b>1</b><div><strong>Сверьте реквизиты</strong><p>Наименование и БИН в отчёте должны совпадать с договором, счётом и подписью.</p></div></li>
+        <li><b>2</b><div><strong>Изучите индикаторы</strong><p>Красная отметка — повод запросить объяснение и подтверждающие документы до оплаты.</p></div></li>
+        <li><b>3</b><div><strong>Проверьте договор</strong><p>Даже чистые реестры не защищают от слабого договора, неправильных полномочий и невыгодной подсудности.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="cc-faq" aria-labelledby="cc-faq-title">
+      <div class="cc-section-intro"><span>Ответы</span><h2 id="cc-faq-title">Частые вопросы</h2></div>
+      <% faq.forEach(function(item) { %><details><summary><%= item[0] %><i class="bi bi-plus-lg"></i></summary><p><%= item[1] %></p></details><% }); %>
+    </section>
+
+    <section class="cc-final-cta">
+      <div><span>Нужна глубокая проверка?</span><h2>Перед крупной оплатой проверьте не только БИН, но и договор</h2><p>Разберём документы, полномочия, риски оплаты и способы возврата денег. Стоимость и этапы фиксируются в договоре.</p></div>
+      <a href="https://wa.me/77479957635?text=Здравствуйте!%20Нужна%20проверка%20контрагента%20и%20договора." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Отправить документы</a>
+    </section>
+  </div>
+</div>

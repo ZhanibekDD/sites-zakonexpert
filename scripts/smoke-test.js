@@ -16,6 +16,7 @@ const server = spawn(process.execPath, ['server.js'], {
     NODE_ENV: 'test',
     DISABLE_BACKGROUND_JOBS: 'true',
     EGOV_API_KEY: '',
+    KGD_API_TOKEN: '',
     ADMIN_KEY: '',
     ADMIN_PW: '',
     TELEGRAM_BOT_TOKEN: '',
@@ -158,6 +159,7 @@ async function run() {
       '/zh/companies',
       '/tr/companies',
       '/tools',
+      '/proverka-kontragenta',
       '/marshrut-dolzhnika',
       '/tools/payment-plan',
       '/tools/mrp',
@@ -200,6 +202,26 @@ async function run() {
     const companySearch = await fetch(`${origin}/companies?q=test`);
     assert(companySearch.headers.get('cache-control')?.includes('no-store'),
       'Unbounded company search results must not enter the shared cache');
+
+    const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
+    assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
+    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-1')
+      && companyCheckPage.includes('/js/company-check.js?v=20260815-1'),
+    'Counterparty page assets are missing');
+    const invalidCompanyCheck = await fetch(`${origin}/api/company-check`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bin: '123' }),
+    });
+    assert(invalidCompanyCheck.status === 400, 'Invalid counterparty BIN must return 400');
+    const disabledCompanyCheck = await fetch(`${origin}/api/company-check`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ bin: '260740044168' }),
+    });
+    const disabledCompanyPayload = await disabledCompanyCheck.json();
+    assert(disabledCompanyCheck.status === 503 && disabledCompanyPayload.code === 'KGD_NOT_CONFIGURED',
+      'Counterparty API without KGD token must fail closed');
 
     const funnelEvent = await fetch(`${origin}/api/track-event`, {
       method: 'POST',

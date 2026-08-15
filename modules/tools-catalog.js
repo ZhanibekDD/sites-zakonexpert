@@ -2,6 +2,13 @@
 
 const TOOLS = [
   {
+    slug: 'counterparty-check', href: '/proverka-kontragenta', icon: 'bi-shield-check',
+    title: 'Проверка контрагента по БИН', short: 'Проверка по БИН',
+    description: 'Единый отчёт по данным КГД: регистрация, налоги, НДС, задолженность и неблагоприятные признаки.',
+    actionLabel: 'Проверить контрагента',
+    applicationCategory: 'BusinessApplication',
+  },
+  {
     slug: 'debt-penalty', href: '/calculator', icon: 'bi-percent',
     title: 'Калькулятор долга и пени', short: 'Долг и пеня',
     description: 'Предварительный расчёт процентов и пени по банковскому кредиту или микрозайму.',
