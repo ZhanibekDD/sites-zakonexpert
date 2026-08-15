@@ -30,6 +30,7 @@
             <input id="company-check-bin" name="bin" type="text" autocomplete="off" maxlength="160" placeholder="Например, 050140000656 или Казахмыс" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="company-check-suggestions" aria-describedby="company-check-hint company-check-error">
             <button type="submit"><span>Проверить</span><i class="bi bi-arrow-right"></i></button>
           </div>
+          <div id="company-check-selection" class="cc-selected-company" aria-live="polite" hidden></div>
           <div id="company-check-suggestions" class="cc-suggestions" role="listbox" aria-label="Подходящие организации" hidden></div>
           <p id="company-check-hint" class="cc-input-hint"><i class="bi bi-lock"></i> Ключи государственных API защищены на сервере и не передаются в браузер.</p>
           <p id="company-check-error" class="cc-form-error" role="alert" hidden></p>

@@ -70,13 +70,14 @@ const client = createKgdCounterpartyClient({
   await assert.rejects(client.check('123'), error => error.code === 'INVALID_BIN');
   const html = await ejs.renderFile(path.join(__dirname, '..', 'views', 'company-check.ejs'));
   assert(html.includes('https://zakonexpertt.kz/proverka-kontragenta'), 'Canonical URL is missing');
-  assert(html.includes('/css/company-check.css?v=20260815-6'), 'Page stylesheet is missing');
+  assert(html.includes('/css/company-check.css?v=20260815-7'), 'Page stylesheet is missing');
   assert(html.includes('/js/site.js?v=20260815-2'), 'Shared site script cache key is stale');
-  assert(html.includes('/js/company-check.js?v=20260815-3'), 'Page script is missing');
+  assert(html.includes('/js/company-check.js?v=20260815-4'), 'Page script is missing');
   assert(html.includes('data-nav-kgd') && html.includes('href="/proverka-kontragenta"'),
     'KGD navigation item is missing');
   assert(!html.includes('class="sticky-wa"'), 'Floating round WhatsApp button must be removed');
   assert(html.includes('id="company-check-suggestions"'), 'Company autocomplete is missing');
+  assert(html.includes('id="company-check-selection"'), 'Selected company summary is missing');
   assert(html.includes('id="cc-sources"') && html.includes('id="cc-procurement"'),
     'Multi-source report sections are missing');
   assert(!html.includes('id="cc-whatsapp"'), 'Advertising CTA must not be inside the report');
