@@ -83,6 +83,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(copy.eyebrow) + '</span></div>'
   + '<h1 class="npage-h1">' + esc(copy.h1) + '</h1>'
   + '<p style="color:#475569;max-width:850px;">' + esc(copy.intro) + '</p>' + statsHtml + '</section>'
+  + (locale.code === 'ru' ? '<a href="/proverka-kontragenta" style="display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;margin:20px 0;border-radius:14px;background:#0d2d59;color:#fff;text-decoration:none;box-shadow:0 10px 28px rgba(13,45,89,.16);"><span><strong style="display:block;font-size:1.02rem;">Проверить актуальные сведения КГД по БИН</strong><small style="display:block;color:#dbeafe;margin-top:4px;">Налоги, НДС, задолженность и неблагоприятные признаки — в одном отчёте</small></span><b style="white-space:nowrap;">Проверить →</b></a>' : '')
   + '<form action="' + companyCatalogPath + '" method="get" style="display:flex;gap:10px;background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:14px;margin:22px 0;box-shadow:0 8px 24px rgba(13,31,60,.06);">'
   + '<label class="visually-hidden" for="company-q">' + esc(copy.searchLabel) + '</label>'
   + '<input id="company-q" name="q" value="' + esc(query) + '" minlength="2" autocomplete="off" placeholder="' + esc(copy.placeholder) + '" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;font-size:1rem;">'

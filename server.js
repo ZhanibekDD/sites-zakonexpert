@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-04-company-mobile-trust-fix';
+const RELEASE_ID = '2026-08-15-kgd-counterparty-check';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -62,6 +62,7 @@ const logger = winston.createLogger({
 const telegram = require('./modules/telegram');
 const { lowContentBoost } = require('./modules/seo-blocks');
 const { TOOLS, findTool } = require('./modules/tools-catalog');
+const { createKgdCounterpartyClient, validateBin } = require('./modules/kgd-counterparty');
 const {
   INDEXABLE_LOCALES: COMPANY_LOCALES,
   catalogAlternates,
@@ -156,6 +157,16 @@ function maskIin(iin) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BACKGROUND_JOBS_ENABLED = !/^(1|true|yes)$/i.test(process.env.DISABLE_BACKGROUND_JOBS || '');
+const KGD_API_TOKEN = String(process.env.KGD_API_TOKEN || '').trim();
+const KGD_API_BASE_URL = process.env.KGD_API_BASE_URL || 'https://portal.kgd.gov.kz';
+const kgdCounterparty = createKgdCounterpartyClient({
+  token: KGD_API_TOKEN,
+  baseUrl: KGD_API_BASE_URL,
+  http: axios,
+});
+const COMPANY_CHECK_CACHE_TTL_MS = 30 * 60 * 1000;
+const COMPANY_CHECK_CACHE_LIMIT = 1000;
+const companyCheckCache = new Map();
 
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
@@ -2170,6 +2181,7 @@ function getCorePages() {
     { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
     { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
     { url: '/companies',      priority: '0.9',  freq: 'weekly' },
+    { url: '/proverka-kontragenta', priority: '0.95', freq: 'weekly' },
     { url: '/kk/companies',   priority: '0.75', freq: 'weekly' },
     { url: '/en/companies',   priority: '0.75', freq: 'weekly' },
     { url: '/zh/companies',   priority: '0.7',  freq: 'weekly' },
@@ -2812,6 +2824,8 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'click_cta_bailiff', 'click_cta_notary', 'send_document',
   'click_document_review', 'click_whatsapp_after_download',
   'view_company_page', 'view_company_cta', 'click_cta_company',
+  'company_check_started', 'company_check_completed', 'company_check_pdf',
+  'company_check_shared', 'click_cta_company_check',
 ]);
 const COMPANY_FUNNEL_EVENT_TYPES = new Set([
   'view_company_page', 'view_company_cta', 'click_cta_company',
@@ -2834,6 +2848,7 @@ function classifyPageType(page) {
   if (page === '/dokumenty') return 'documents';
   if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
   if (page === '/bin-search') return 'bin_search';
+  if (page === '/proverka-kontragenta') return 'company_check';
   return 'other';
 }
 function normalizeAnalyticsPage(page) {
@@ -3071,6 +3086,63 @@ app.get('/bin-search', (req, res) => {
 // ===== КАЛЬКУЛЯТОР =====
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
+app.get('/proverka-kompanii-po-bin', (req, res) => res.redirect(301, '/proverka-kontragenta'));
+app.get('/proverka-kontragenta', (req, res) => res.render('company-check'));
+app.post('/api/company-check', externalApiLimiter, async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  const bin = validateBin(req.body?.bin);
+  if (!bin) {
+    return res.status(400).json({
+      error: 'Введите БИН из 12 цифр.',
+      code: 'INVALID_BIN',
+    });
+  }
+  if (!kgdCounterparty.configured) {
+    return res.status(503).json({
+      error: 'Сервис КГД временно не настроен. Повторите позже.',
+      code: 'KGD_NOT_CONFIGURED',
+    });
+  }
+
+  const cached = companyCheckCache.get(bin);
+  if (cached && Date.now() - cached.savedAt < COMPANY_CHECK_CACHE_TTL_MS) {
+    res.set('X-Data-Cache', 'HIT');
+    return res.json({ ...cached.report, meta: { cached: true, cacheTtlMinutes: 30 } });
+  }
+  if (cached) companyCheckCache.delete(bin);
+
+  try {
+    const report = await kgdCounterparty.check(bin);
+    if (companyCheckCache.size >= COMPANY_CHECK_CACHE_LIMIT) {
+      const oldestKey = companyCheckCache.keys().next().value;
+      if (oldestKey) companyCheckCache.delete(oldestKey);
+    }
+    companyCheckCache.set(bin, { report, savedAt: Date.now() });
+    res.set('X-Data-Cache', 'MISS');
+    return res.json({ ...report, meta: { cached: false, cacheTtlMinutes: 30 } });
+  } catch (error) {
+    const upstreamStatus = Number(error.response?.status || 0);
+    const notFound = error.code === 'KGD_NOT_FOUND' || upstreamStatus === 404;
+    if (notFound) {
+      return res.status(404).json({
+        error: 'По этому БИН данные КГД не найдены. Проверьте номер и повторите запрос.',
+        code: 'KGD_NOT_FOUND',
+      });
+    }
+    if ([401, 403].includes(upstreamStatus)) {
+      logger.error('[KGD company check] KGD rejected the configured API token');
+      return res.status(503).json({
+        error: 'Официальный источник временно недоступен. Повторите позже.',
+        code: 'KGD_AUTH_ERROR',
+      });
+    }
+    logger.error(`[KGD company check] Request failed: ${error.code || upstreamStatus || error.message}`);
+    return res.status(502).json({
+      error: 'Не удалось получить ответ КГД. Повторите запрос через несколько минут.',
+      code: 'KGD_UNAVAILABLE',
+    });
+  }
+});
 app.get('/tools', (req, res) => res.render('tools/index', { tools: TOOLS }));
 app.get('/tools/:slug', (req, res) => {
   const tool = findTool(req.params.slug);
@@ -3100,6 +3172,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
     logger.info(`ZakonExpert сервер запущен на порту ${PORT}`);
     logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'задан ✓' : 'НЕ ЗАДАН — проверка ИИН не будет работать!'}`);
+    logger.info(`KGD_API_TOKEN: ${kgdCounterparty.configured ? 'задан ✓' : 'НЕ ЗАДАН — проверка контрагента будет недоступна'}`);
     // Запускаем Telegram бот (принимает команды /stats, /leads, /help)
     if (BACKGROUND_JOBS_ENABLED) {
       telegram.startPolling();

@@ -12,13 +12,14 @@ const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
   '/notaries', '/bailiffs', '/lawyers', '/banks', '/mfo', '/collectors',
   '/lombards', '/companies', '/courts', '/chambers', '/zakony', '/statyi', '/tools',
+  '/proverka-kontragenta',
   '/kk/companies', '/en/companies', '/zh/companies', '/tr/companies',
   '/marshrut-dolzhnika',
   '/tools/payment-plan', '/tools/mrp', '/tools/state-duty', '/tools/deadline',
 ];
 const stabilityRoutes = [
   '/health', '/notaries', '/bailiffs', '/lawyers',
-  '/companies', '/en/companies', '/zakony', '/statyi', '/tools', '/marshrut-dolzhnika',
+  '/companies', '/en/companies', '/zakony', '/statyi', '/tools', '/proverka-kontragenta', '/marshrut-dolzhnika',
 ];
 
 const failures = [];

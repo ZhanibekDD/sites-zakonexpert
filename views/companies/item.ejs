@@ -218,6 +218,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<a class="company-conversion-card__button" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="sidebar"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a>'
   + '<p class="company-conversion-card__trust"><i class="bi bi-lock" aria-hidden="true"></i> ' + esc(copy.offerTrust) + '</p></section>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;display:grid;gap:10px;">'
+  + (locale.code === 'ru' && hasVerifiedBin ? '<a href="/proverka-kontragenta?bin=' + esc(company.bin) + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:700;"><i class="bi bi-shield-check" style="color:#16845b;"></i> Проверить сведения КГД по БИН</a>' : '')
   + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a>'
   + '<a href="https://wa.me/77479957635?text=' + reportText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-flag" style="color:#1a56db;"></i> ' + esc(copy.report) + '</a></div>'
   + '</aside></div>'

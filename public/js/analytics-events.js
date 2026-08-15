@@ -36,7 +36,7 @@
     'submit_iin', 'calculator_completed', 'bin_search_completed',
     'download_document', 'send_document', 'click_cta_bailiff',
     'click_cta_notary', 'click_document_review', 'click_whatsapp_after_download',
-    'click_cta_company',
+    'click_cta_company', 'company_check_completed', 'click_cta_company_check',
   ]);
 
   function analyticsPagePath(type) {

@@ -10,10 +10,11 @@ const root = path.join(__dirname, '..');
 
 async function run() {
   const hub = await ejs.renderFile(path.join(root, 'views', 'tools', 'index.ejs'), { tools: TOOLS });
-  assert(hub.includes('Юридические калькуляторы Казахстана'));
+  assert(hub.includes('Проверки и юридические калькуляторы'));
   assert(hub.includes('https://zakonexpertt.kz/tools'));
   assert(hub.includes('/tools/payment-plan'));
   assert(hub.includes('/calculator'));
+  assert(hub.includes('/proverka-kontragenta'));
   assert.strictEqual(parseArgs([]).all, false, 'IndexNow full submission must be opt-in');
   assert.strictEqual(parseArgs(['--all']).all, true);
   assert.strictEqual(parseArgs(['--sitemap=sitemap-laws.xml']).sitemap, 'sitemap-laws.xml');
