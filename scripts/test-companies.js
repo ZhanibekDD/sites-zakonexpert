@@ -128,6 +128,7 @@ assert.strictEqual(companies.stats().count, 2);
 assert.strictEqual(companies.stats().indexableCount, 1);
 assert.strictEqual(companies.stats().excludedCount, 1);
 assert.strictEqual(companies.findById(7137221).bin, '970540001234');
+assert.strictEqual(companies.findByBin('970540001234').leader, 'ИВАНОВ ИВАН ИВАНОВИЧ');
 assert.strictEqual(companies.search('Альфа').items.length, 1);
   assert.strictEqual(companies.search('970540001234').items.length, 1);
   assert.deepStrictEqual(companies.browse().items.map(item => item.id), [7137221],

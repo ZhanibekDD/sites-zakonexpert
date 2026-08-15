@@ -433,6 +433,16 @@ function findById(id) {
   ));
 }
 
+function findByBin(bin) {
+  const database = open();
+  const safeBin = String(bin || '').replace(/\D/g, '');
+  if (!database || !getMeta(database, 'completed_at') || !/^\d{12}$/.test(safeBin)) return null;
+  return addSlug(hydrateDetails(
+    database,
+    database.prepare('SELECT * FROM companies WHERE bin = ? ORDER BY id LIMIT 1').get(safeBin)
+  ));
+}
+
 function regionStats() {
   const database = open();
   if (!database || !getMeta(database, 'completed_at')) return [];
@@ -512,6 +522,7 @@ module.exports = {
   browse,
   byRegion,
   close,
+  findByBin,
   findById,
   quality,
   redirectByOldSlug,
