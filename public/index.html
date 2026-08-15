@@ -118,7 +118,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-5">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-6">
   <style>
     .problem-icon-card{transition:border-color .15s, box-shadow .15s;}
     .problem-icon-card:hover{border-color:#d7a742 !important;box-shadow:0 6px 20px rgba(15,42,78,0.08);}
@@ -490,26 +490,29 @@
           <a class="landing-btn landing-btn-primary" href="/rezultaty">Смотреть все результаты</a>
         </div>
       </div>
-      <a class="ze-home-result__media" href="/rezultaty" aria-label="Посмотреть четыре подтверждённых результата подробнее">
-        <span class="ze-home-result__documents">
-          <span class="ze-home-result__document">
-            <img src="/img/rezultaty/cancellation-3780371.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 3 780 371,08 тенге" loading="lazy">
-            <small>3,78 млн ₸</small>
-          </span>
-          <span class="ze-home-result__document">
-            <img src="/img/rezultaty/cancellation-4091645.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 4 091 645 тенге" loading="lazy">
-            <small>4,09 млн ₸</small>
-          </span>
-          <span class="ze-home-result__document">
-            <img src="/img/rezultaty/cancellation-6047478.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 6 047 477,95 тенге" loading="lazy">
-            <small>6,05 млн ₸</small>
-          </span>
-          <span class="ze-home-result__document">
-            <img src="/img/rezultaty/cancellation-6942105.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге" loading="lazy">
-            <small>6,94 млн ₸</small>
-          </span>
-        </span>
-      </a>
+      <div class="ze-result-showcase" data-result-viewer>
+        <div class="ze-result-showcase__stage">
+          <div class="ze-result-showcase__status">
+            <span data-result-label>Исполнительная надпись отменена</span>
+            <strong data-result-amount>6 942 105,30 ₸</strong>
+          </div>
+          <a class="ze-result-showcase__document" href="/rezultaty#proof" aria-label="Открыть подтверждённые результаты крупно">
+            <img data-result-image src="/img/rezultaty/cancellation-6942105.webp" width="850" height="813" alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге" loading="lazy">
+            <span><i class="bi bi-arrows-fullscreen"></i> Рассмотреть документ</span>
+          </a>
+          <div class="ze-result-showcase__footer">
+            <b data-result-counter>1 из 4</b>
+            <span>официальных постановления</span>
+          </div>
+        </div>
+        <div class="ze-result-showcase__tabs" role="tablist" aria-label="Выбор результата">
+          <button class="is-active" type="button" role="tab" aria-selected="true" data-result-option data-src="/img/rezultaty/cancellation-6942105.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге" data-amount="6 942 105,30 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,94 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-src="/img/rezultaty/cancellation-6047478.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 047 477,95 тенге" data-amount="6 047 477,95 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,05 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-src="/img/rezultaty/cancellation-4091645.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 4 091 645 тенге" data-amount="4 091 645 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>4,09 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-src="/img/rezultaty/cancellation-3780371.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 3 780 371,08 тенге" data-amount="3 780 371,08 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>3,78 млн ₸</strong></button>
+        </div>
+        <p class="ze-result-showcase__hint"><i class="bi bi-hand-index-thumb"></i> Нажмите сумму, чтобы сменить документ</p>
+      </div>
     </div>
   </section>
 
@@ -1637,6 +1640,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/site.js?v=20260815-2"></script>
+<script src="/js/results-v2.js?v=20260816-1"></script>
 <script src="/js/analytics-events.js"></script>
 <script src="js/main.js?v=20260618-4"></script>
 <script>
