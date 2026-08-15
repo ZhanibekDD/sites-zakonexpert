@@ -109,8 +109,10 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-3/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-4/,
   'homepage company-check entry styles must use the current cache key');
+assert.doesNotMatch(home, /ze-home-specialist-card|Специалист по снятию арестов/,
+  'homepage must not render the removed specialist badge');
 const bankruptcyPage = fs.readFileSync(path.join(ROOT, 'views', 'partials', 'bankruptcy-check-body.ejs'), 'utf8');
 assert.match(bankruptcyPage, /id="bc-consent"[^>]*privacyConsent[^>]*required/,
   'bankruptcy checker must require consent before processing IIN');
