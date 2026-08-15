@@ -69,6 +69,17 @@
     input.removeAttribute('title');
   }
 
+  function normalizeMapAddress(value) {
+    return String(value || '')
+      .trim()
+      .replace(/^\s*(?:[A-Z]\d{2}[A-Z0-9]{4}|\d{6})\s*,\s*/i, '')
+      .replace(/\s*,?\s*(?:тел(?:ефон)?|моб(?:ильный)?)\.?\s*:?\s*\+?[\d\s()\-]{7,}.*$/iu, '')
+      .replace(/\s*,\s*(?:кв(?:артира)?|оф(?:ис)?)\.?\s*[\p{L}\d/\-]+.*$/iu, '')
+      .replace(/\s*,\s*/g, ', ')
+      .replace(/,\s*$/, '')
+      .trim();
+  }
+
   function showSelectedCompany(item) {
     if (!selectedCompany) return;
     selectedCompany.innerHTML = '<span>Выбрана организация</span><strong>'
@@ -296,11 +307,12 @@
     var mapHtml = '<div class="cc-map-card"><div class="cc-map-card__empty"><div><i class="bi bi-map"></i>Местонахождение не удалось определить по опубликованным данным.</div></div></div>';
     if (mappedAddress && mappedAddress.value) {
       var hasCoordinates = validKazakhstanCoordinates(mappedAddress);
+      var cleanAddress = normalizeMapAddress(mappedAddress.mapValue || mappedAddress.value);
       var mapQuery = hasCoordinates
         ? Number(mappedAddress.latitude) + ',' + Number(mappedAddress.longitude)
-        : mappedAddress.value + ', Казахстан';
+        : cleanAddress + ', Казахстан';
       var encodedMapQuery = encodeURIComponent(mapQuery);
-      var encodedAddress = encodeURIComponent(mappedAddress.value);
+      var encodedAddress = encodeURIComponent(cleanAddress + ', Казахстан');
       mapHtml = '<div class="cc-map-card"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Карта расположения '
         + escapeHtml(company.nameRu) + '" src="https://maps.google.com/maps?q=' + encodedMapQuery
         + '&amp;output=embed&amp;hl=ru&amp;z=15"></iframe><div class="cc-map-card__actions">'
