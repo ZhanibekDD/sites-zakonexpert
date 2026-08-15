@@ -107,13 +107,18 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-1/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-2/,
   'homepage company-check entry styles must use the current cache key');
 const homeServiceImages = [
   'arrest-accounts.webp',
   'vehicle-restriction.webp',
   'property-arrest.webp',
   'travel-ban.webp',
+  'enforcement-notification.webp',
+  'enforcement-fees.webp',
+  'notary-writ.webp',
+  'salary-withholding.webp',
+  'paid-debt-restriction.webp',
 ];
 for (const filename of homeServiceImages) {
   assert(home.includes(`/img/services/${filename}`), `${filename} is not used by a homepage service card`);

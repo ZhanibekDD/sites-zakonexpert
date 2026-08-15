@@ -118,7 +118,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-1">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-2">
   <style>
     .problem-icon-card{transition:border-color .15s, box-shadow .15s;}
     .problem-icon-card:hover{border-color:#d7a742 !important;box-shadow:0 6px 20px rgba(15,42,78,0.08);}
@@ -506,89 +506,54 @@
       </div>
 
       <!-- SMS 1414 — выделенный блок -->
-      <a href="/sms-1414" style="display:block;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;padding:24px 28px;margin-bottom:20px;text-decoration:none;border:2px solid #6366f1;">
-        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
-          <div style="font-size:2.5rem;flex-shrink:0;">📱</div>
-          <div style="flex:1;min-width:200px;">
-            <div style="font-size:0.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a5b4fc;margin-bottom:6px;">Часто ищут в Google</div>
-            <h3 style="color:#fff;font-size:1.15rem;font-weight:800;margin:0 0 8px;">Пришло сообщение с 1414 — что делать?</h3>
-            <p style="color:rgba(255,255,255,0.75);font-size:0.88rem;line-height:1.6;margin:0;">На вас возбудили исполнительное производство. У вас есть 10 рабочих дней до того, как наложат аресты. Но даже после — не поздно. Объясняем всё простыми словами.</p>
-          </div>
-          <div style="color:#a5b4fc;font-size:1.3rem;align-self:center;">→</div>
+      <a class="ze-plain-feature" href="/sms-1414">
+        <img src="/img/services/enforcement-notification.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+        <span class="ze-plain-feature__shade" aria-hidden="true"></span>
+        <div class="ze-plain-feature__content">
+          <span>Часто ищут в Google</span>
+          <h3>Пришло сообщение с 1414 — что делать?</h3>
+          <p>На вас возбудили исполнительное производство. У вас есть 10 рабочих дней до того, как наложат аресты. Но даже после — не поздно. Объясняем всё простыми словами.</p>
         </div>
+        <span class="ze-plain-feature__arrow" aria-hidden="true">→</span>
       </a>
 
       <!-- Service items plain language -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;">
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">💳</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Заблокировали Kaspi, Halyk или Freedom</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">Деньги на карте есть, но снять нельзя — или снимают без вашего согласия. Это арест счёта. Мы устанавливаем основание и снимаем блокировку.</p>
-          <a href="/snyatie-aresta-so-scheta" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">✈️</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Не выпускают из Казахстана</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">Узнали в аэропорту или на границе, что есть запрет на выезд? Это делает ЧСИ при долге от 40 МРП. Помогаем снять — через оплату, рассрочку или оспаривание.</p>
-          <a href="/zapret-na-vyezd-iz-kazahstana" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">🚗</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Нельзя продать или переоформить машину</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">ЦОН отказывает в сделке — запрет регистрационных действий на авто. Снимаем через ЧСИ или суд в зависимости от основания.</p>
-          <a href="/snyatie-zapreta-na-avto" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">🏠</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Нельзя продать или переоформить квартиру</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">Арест на недвижимость — нотариус отказывает в сделке. Разбираемся кто наложил и на каком основании, снимаем ограничение.</p>
-          <a href="/snyat-arest-s-nedvizhimosti" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">💰</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">К долгу добавили 25% — хотят слишком много</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">Это исполнительский сбор ЧСИ. Долг был 500 000 тг, а требуют 625 000 тг. Во многих случаях этот сбор можно убрать или снизить по закону.</p>
-          <a href="/ubrat-procenty-i-rashody-chsi" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">📋</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Нотариус сделал надпись — банк требует деньги</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">Банк или МФО взыскивает долг через нотариуса без суда. Если долг спорный или нотариус нарушил процедуру — надпись можно отменить.</p>
-          <a href="/otmena-ispolnitelnoi-nadpisi" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">💼</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Удерживают больше половины зарплаты</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">По закону ЧСИ может удерживать максимум 50% от зарплаты. Если списывают больше или не оставляют прожиточный минимум — это нарушение.</p>
-          <a href="/arest-zarplatnoy-karty" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:14px;padding:22px;">
-          <div style="font-size:1.8rem;margin-bottom:10px;">⚡</div>
-          <h3 style="font-size:1rem;font-weight:800;color:#0d1f3c;margin-bottom:8px;">Заплатил долг, но аресты не сняли</h3>
-          <p style="font-size:0.85rem;color:#64748b;line-height:1.65;margin:0 0 12px;">ЧСИ обязан снять ограничения в течение 1 рабочего дня после оплаты. Если не снимает — это нарушение закона. Помогаем добиться.</p>
-          <a href="/chsi-ne-snimaet-arest-posle-oplaty" style="font-size:0.82rem;font-weight:700;color:#1a3560;text-decoration:none;">Подробнее →</a>
-        </div>
-
-        <div style="background:linear-gradient(135deg,#0f2044,#1a3a5c);border-radius:14px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;">
-          <div>
-            <div style="font-size:1.8rem;margin-bottom:10px;">🤝</div>
-            <h3 style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:8px;">Не знаете с чего начать?</h3>
-            <p style="font-size:0.85rem;color:rgba(255,255,255,0.75);line-height:1.65;margin:0 0 16px;">Расскажите ситуацию — разберём бесплатно. Проверим по ИИН, объясним что можно сделать.</p>
-          </div>
-          <a href="https://wa.me/77479957635?text=Здравствуйте.+Хочу+разобраться+в+своей+ситуации." target="_blank" rel="noopener"
-             style="display:inline-flex;align-items:center;gap:8px;padding:11px 20px;background:#25d366;color:#fff;border-radius:10px;font-weight:700;font-size:0.88rem;text-decoration:none;width:fit-content;">
-            <i class="bi bi-whatsapp"></i> Написать в WhatsApp
-          </a>
-        </div>
-
+      <div class="ze-plain-services-grid">
+        <article class="ze-plain-service-card">
+          <img src="/img/services/arrest-accounts.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Заблокировали Kaspi, Halyk или Freedom</h3><p>Деньги на карте есть, но снять нельзя — или снимают без вашего согласия. Это арест счёта. Мы устанавливаем основание и снимаем блокировку.</p><a href="/snyatie-aresta-so-scheta">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/travel-ban.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Не выпускают из Казахстана</h3><p>Узнали в аэропорту или на границе, что есть запрет на выезд? Это делает ЧСИ при долге от 40 МРП. Помогаем снять — через оплату, рассрочку или оспаривание.</p><a href="/zapret-na-vyezd-iz-kazahstana">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/vehicle-restriction.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Нельзя продать или переоформить машину</h3><p>ЦОН отказывает в сделке — запрет регистрационных действий на авто. Снимаем через ЧСИ или суд в зависимости от основания.</p><a href="/snyatie-zapreta-na-avto">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/property-arrest.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Нельзя продать или переоформить квартиру</h3><p>Арест на недвижимость — нотариус отказывает в сделке. Разбираемся кто наложил и на каком основании, снимаем ограничение.</p><a href="/snyat-arest-s-nedvizhimosti">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/enforcement-fees.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>К долгу добавили 25% — хотят слишком много</h3><p>Это исполнительский сбор ЧСИ. Долг был 500 000 тг, а требуют 625 000 тг. Во многих случаях этот сбор можно убрать или снизить по закону.</p><a href="/ubrat-procenty-i-rashody-chsi">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/notary-writ.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Нотариус сделал надпись — банк требует деньги</h3><p>Банк или МФО взыскивает долг через нотариуса без суда. Если долг спорный или нотариус нарушил процедуру — надпись можно отменить.</p><a href="/otmena-ispolnitelnoi-nadpisi">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/salary-withholding.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Удерживают больше половины зарплаты</h3><p>По закону ЧСИ может удерживать максимум 50% от зарплаты. Если списывают больше или не оставляют прожиточный минимум — это нарушение.</p><a href="/arest-zarplatnoy-karty">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card">
+          <img src="/img/services/paid-debt-restriction.webp" width="960" height="640" alt="" aria-hidden="true" loading="lazy">
+          <div><h3>Заплатил долг, но аресты не сняли</h3><p>ЧСИ обязан снять ограничения в течение 1 рабочего дня после оплаты. Если не снимает — это нарушение закона. Помогаем добиться.</p><a href="/chsi-ne-snimaet-arest-posle-oplaty">Подробнее →</a></div>
+        </article>
+        <article class="ze-plain-service-card ze-plain-service-card--cta">
+          <div><span><i class="bi bi-compass"></i></span><h3>Не знаете с чего начать?</h3><p>Расскажите ситуацию — разберём бесплатно. Проверим по ИИН, объясним что можно сделать.</p><a href="https://wa.me/77479957635?text=Здравствуйте.+Хочу+разобраться+в+своей+ситуации." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать в WhatsApp</a></div>
+        </article>
       </div>
     </div>
   </section>
