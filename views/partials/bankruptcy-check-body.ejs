@@ -1,0 +1,91 @@
+<div class="bc-page">
+  <div class="landing-container">
+    <nav class="bc-breadcrumb" aria-label="Хлебные крошки">
+      <a href="/">Главная</a><i class="bi bi-chevron-right" aria-hidden="true"></i><span>Проверка банкротства</span>
+    </nav>
+
+    <section class="bc-hero" aria-labelledby="bc-title">
+      <div class="bc-hero__copy">
+        <span class="bc-kicker"><i class="bi bi-patch-check"></i> Бесплатный официальный поиск</span>
+        <h1 id="bc-title">Проверка статуса <span>банкротства по ИИН</span></h1>
+        <p class="bc-hero__lead">Проверьте опубликованные записи о внесудебном и судебном банкротстве физического лица, а также о восстановлении платёжеспособности.</p>
+        <div class="bc-trust-row" aria-label="Преимущества проверки">
+          <span><i class="bi bi-database-check"></i> Открытые реестры Tazalau</span>
+          <span><i class="bi bi-shield-lock"></i> ИИН не попадает в адрес страницы</span>
+          <span><i class="bi bi-cash-coin"></i> Бесплатно</span>
+        </div>
+      </div>
+
+      <div class="bc-search-card">
+        <div class="bc-search-card__head">
+          <span class="bc-search-card__icon" aria-hidden="true"><i class="bi bi-person-vcard"></i></span>
+          <div><strong>Введите ИИН физического лица</strong><small>12 цифр без пробелов и дефисов</small></div>
+        </div>
+        <form id="bc-form" novalidate>
+          <label class="bc-field-label" for="bc-iin">ИИН</label>
+          <div class="bc-input-row">
+            <input id="bc-iin" name="iin" type="text" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Например, 900101300000" aria-describedby="bc-privacy bc-form-error">
+            <button id="bc-submit" type="submit">Проверить <i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+          </div>
+          <label class="bc-consent" for="bc-consent">
+            <input id="bc-consent" name="privacyConsent" type="checkbox" required>
+            <span>Согласен(на) на разовую обработку ИИН для выполнения проверки согласно <a href="/privacy">политике обработки данных</a>.</span>
+          </label>
+          <p id="bc-form-error" class="bc-form-error" role="alert" hidden></p>
+          <p id="bc-privacy" class="bc-input-hint"><i class="bi bi-lock"></i> Запрос не кэшируется. Данные используются только для этой проверки.</p>
+        </form>
+        <div class="bc-source-mini"><span>Источники</span><a href="https://tazalau.qoldau.kz/ru/list/bankruptcy-and-insolvent" target="_blank" rel="noopener noreferrer">Tazalau · Qoldau <i class="bi bi-box-arrow-up-right"></i></a></div>
+      </div>
+    </section>
+
+    <section id="bc-loading" class="bc-loading" aria-live="polite" hidden>
+      <span class="bc-loader" aria-hidden="true"></span>
+      <div><strong>Проверяем три реестра</strong><p>Обычно это занимает несколько секунд.</p></div>
+    </section>
+
+    <section id="bc-result" class="bc-result" aria-labelledby="bc-result-title" aria-live="polite" hidden>
+      <div id="bc-result-summary" class="bc-result-summary"></div>
+      <div id="bc-result-sources" class="bc-result-sources"></div>
+      <div class="bc-result-actions">
+        <button id="bc-print" type="button"><i class="bi bi-printer"></i> Сохранить результат</button>
+        <a href="https://wa.me/77479957635?text=Здравствуйте.%20Нужна%20консультация%20по%20банкротству%20физического%20лица." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Обсудить результат</a>
+      </div>
+      <p class="bc-result-disclaimer"><i class="bi bi-info-circle"></i> Отсутствие записи о банкротстве не подтверждает отсутствие долгов, исполнительных производств или ограничений ЧСИ.</p>
+    </section>
+
+    <section class="bc-coverage" aria-labelledby="bc-coverage-title">
+      <div class="bc-section-intro">
+        <span>Что проверяем</span>
+        <h2 id="bc-coverage-title">Три процедуры — в одном результате</h2>
+        <p>Каждый источник показывается отдельно, чтобы было видно полноту проверки.</p>
+      </div>
+      <div class="bc-coverage-grid">
+        <article><span><i class="bi bi-building-check"></i></span><h3>Внесудебное банкротство</h3><p>Опубликованные сведения о процедуре через органы государственных доходов.</p></article>
+        <article><span><i class="bi bi-bank"></i></span><h3>Судебное банкротство</h3><p>Записи о рассмотрении процедуры банкротства физического лица судом.</p></article>
+        <article><span><i class="bi bi-arrow-repeat"></i></span><h3>Восстановление платёжеспособности</h3><p>Сведения о судебной процедуре с планом восстановления платёжеспособности.</p></article>
+      </div>
+    </section>
+
+    <section class="bc-explain" aria-labelledby="bc-explain-title">
+      <div>
+        <span class="bc-kicker">Как читать ответ</span>
+        <h2 id="bc-explain-title">Сервис не скрывает неполную проверку</h2>
+        <p>Если один из реестров не ответил, вы увидите предупреждение. Зелёный результат появляется только по тем источникам, которые реально были проверены.</p>
+      </div>
+      <ul>
+        <li><i class="bi bi-check-circle-fill"></i><span><strong>Записей не найдено</strong>Источник ответил, совпадений по ИИН нет.</span></li>
+        <li><i class="bi bi-exclamation-circle-fill"></i><span><strong>Источник недоступен</strong>Нужно повторить запрос позже — вывод не является полным.</span></li>
+        <li><i class="bi bi-x-octagon-fill"></i><span><strong>Найдена запись</strong>Откройте детали и проверьте вид процедуры, дату и статус.</span></li>
+      </ul>
+    </section>
+
+    <section class="bc-faq" aria-labelledby="bc-faq-title">
+      <div class="bc-section-intro"><span>Ответы</span><h2 id="bc-faq-title">Частые вопросы</h2></div>
+      <div class="bc-faq-list">
+        <% faq.forEach(function(item) { %>
+          <details><summary><%= item[0] %><i class="bi bi-plus-lg" aria-hidden="true"></i></summary><p><%= item[1] %></p></details>
+        <% }); %>
+      </div>
+    </section>
+  </div>
+</div>

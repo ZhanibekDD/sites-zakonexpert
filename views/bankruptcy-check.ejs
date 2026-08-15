@@ -1,0 +1,45 @@
+<%
+const canonical = 'https://zakonexpertt.kz/proverka-bankrotstva';
+const pageTitle = 'Проверка банкротства по ИИН бесплатно — Казахстан | ZakonExpert';
+const pageDescription = 'Бесплатная проверка статуса банкротства физического лица по ИИН: внесудебное банкротство, судебная процедура и восстановление платёжеспособности по официальным реестрам Казахстана.';
+const faq = [
+  ['Что показывает проверка банкротства?', 'Сервис ищет опубликованные записи о внесудебном банкротстве, судебной процедуре банкротства и восстановлении платёжеспособности физического лица.'],
+  ['Откуда поступают сведения?', 'Проверка выполняется по открытым реестрам портала Tazalau/Qoldau, который указан КГД среди электронных сервисов по банкротству физических лиц.'],
+  ['Если записей нет, значит долгов тоже нет?', 'Нет. Отсутствие записи о банкротстве не означает отсутствие кредитов, исполнительных производств, арестов или запретов. Это отдельные виды сведений.'],
+  ['Сохраняется ли введённый ИИН?', 'ИИН используется только для разового запроса, отправляется на сервер защищённым POST-запросом и не добавляется в адрес страницы. Результат не кэшируется.'],
+  ['Что делать, если реестр временно недоступен?', 'Повторите проверку позже. Сервис отдельно показывает, какой источник ответил, и не выдаёт неполный ответ за подтверждённое отсутствие записи.'],
+];
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Проверка банкротства по ИИН Казахстана',
+    description: pageDescription,
+    url: canonical,
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KZT' },
+    provider: { '@type': 'Organization', name: 'ТОО «ZakonExpert»', url: 'https://zakonexpertt.kz/' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faq.map(function(item) {
+      return { '@type': 'Question', name: item[0], acceptedAnswer: { '@type': 'Answer', text: item[1] } };
+    }),
+  },
+];
+%>
+<%- include('./news/layout', {
+  title: pageTitle,
+  description: pageDescription,
+  canonical,
+  ogType: 'website',
+  ogImage: null,
+  schema,
+  noindex: false,
+  activeNav: 'bankruptcy',
+  body: include('./partials/bankruptcy-check-body', { faq }),
+  extraStyles: ['/css/bankruptcy-check.css?v=20260816-1'],
+  extraScripts: ['/js/bankruptcy-check.js?v=20260816-1']
+}) %>

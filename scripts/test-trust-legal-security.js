@@ -103,12 +103,19 @@ const contact = fs.readFileSync(path.join(PUBLIC, 'contact.html'), 'utf8');
 const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 assert.match(home, /class="ze-home-company-check" href="\/proverka-kontragenta"/,
   'homepage must expose the company BIN checker above the fold');
+assert.match(home, /href="\/proverka-bankrotstva"[\s\S]{0,420}Проверить статус банкротства по ИИН/,
+  'homepage must expose the bankruptcy checker below the company checker');
 assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragenta"/,
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-2/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-3/,
   'homepage company-check entry styles must use the current cache key');
+const bankruptcyPage = fs.readFileSync(path.join(ROOT, 'views', 'partials', 'bankruptcy-check-body.ejs'), 'utf8');
+assert.match(bankruptcyPage, /id="bc-consent"[^>]*privacyConsent[^>]*required/,
+  'bankruptcy checker must require consent before processing IIN');
+assert.doesNotMatch(bankruptcyPage, /bankruptcy-check\?iin=/,
+  'bankruptcy checker must not send IIN in a URL query string');
 const homeServiceImages = [
   'arrest-accounts.webp',
   'vehicle-restriction.webp',

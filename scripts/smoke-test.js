@@ -165,6 +165,7 @@ async function run() {
       '/tr/companies',
       '/tools',
       '/proverka-kontragenta',
+      '/proverka-bankrotstva',
       '/marshrut-dolzhnika',
       '/tools/payment-plan',
       '/tools/mrp',
@@ -197,6 +198,9 @@ async function run() {
     assert(!homepageResponse.headers.has('x-powered-by'), 'Express signature is exposed');
     assert(homepageHtml.includes('class="ze-home-company-check" href="/proverka-kontragenta"'),
       'Homepage does not expose the company BIN checker above the fold');
+    assert(homepageHtml.includes('href="/proverka-bankrotstva"')
+      && homepageHtml.includes('Проверить статус банкротства по ИИН'),
+    'Homepage does not expose the bankruptcy checker below the company checker');
     assert(homepageHtml.includes('data-nav-kgd') && homepageHtml.includes('href="/proverka-kontragenta"'),
       'Homepage navigation does not expose the KGD company check');
     assert(!homepageHtml.includes('class="sticky-wa"'),
@@ -225,6 +229,21 @@ async function run() {
       'Counterparty page navigation or floating button state is incorrect');
     assert(companyCheckPage.includes('id="cc-sources"') && companyCheckPage.includes('id="cc-procurement"'),
       'Multi-source company report sections are missing');
+    const bankruptcyCheckPage = await (await fetch(`${origin}/proverka-bankrotstva`)).text();
+    assert(bankruptcyCheckPage.includes('Проверка статуса') && bankruptcyCheckPage.includes('банкротства по ИИН'),
+      'Bankruptcy checker page is missing its H1');
+    assert(bankruptcyCheckPage.includes('/css/bankruptcy-check.css?v=20260816-1')
+      && bankruptcyCheckPage.includes('/js/bankruptcy-check.js?v=20260816-1'),
+    'Bankruptcy checker page assets are missing');
+    assert(bankruptcyCheckPage.includes('id="bc-consent"') && bankruptcyCheckPage.includes('privacyConsent'),
+      'Bankruptcy checker must require privacy consent');
+    const invalidBankruptcyCheck = await fetch(`${origin}/api/bankruptcy-check`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ iin: '123' }),
+    });
+    assert(invalidBankruptcyCheck.status === 400,
+      'Bankruptcy checker must reject an invalid IIN');
     const companySuggest = await fetch(`${origin}/api/company-suggest?q=test`);
     assert(companySuggest.status === 200 && Array.isArray((await companySuggest.json()).items),
       'Company autocomplete endpoint is unavailable');
