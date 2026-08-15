@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-15-kgd-counterparty-check';
+const RELEASE_ID = '2026-08-15-kgd-card-backgrounds';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
