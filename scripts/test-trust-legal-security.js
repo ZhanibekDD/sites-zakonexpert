@@ -46,6 +46,12 @@ assert.doesNotMatch(consentScript, /data-ze-consent="ads"/);
 assert.doesNotMatch(consentScript, /реклам/iu);
 assert.match(consentScript, /Только необходимое/);
 
+const siteScript = fs.readFileSync(path.join(PUBLIC, 'js', 'site.js'), 'utf8');
+assert.doesNotMatch(siteScript, /stickyWa\.style\.position\s*=\s*['"]relative['"]/,
+  'site.js must not override the fixed WhatsApp button positioning');
+assert.doesNotMatch(siteScript, /announce-bar|guarantee-pill|article-cta-guarantee|Разбор бесплатно/,
+  'site.js must not inject promotional banners into pages or printed reports');
+
 const publicPages = fs.readdirSync(PUBLIC)
   .filter(name => name.endsWith('.html'))
   .filter(name => name !== '404.html')
@@ -57,9 +63,24 @@ for (const name of publicPages) {
     `${name} loads optional analytics without consent`);
 }
 
+const staleSiteScriptRefs = userFacingFiles
+  .filter(filename => /\.(?:html|ejs)$/i.test(filename))
+  .filter(filename => {
+    const source = fs.readFileSync(filename, 'utf8');
+    return /(?:^|\/)js\/site\.js\?v=/.test(source)
+      && !/(?:^|\/)js\/site\.js\?v=20260815-1/.test(source);
+  })
+  .map(filename => path.relative(ROOT, filename));
+assert.deepStrictEqual(staleSiteScriptRefs, [],
+  `stale site.js cache keys remain in: ${staleSiteScriptRefs.join(', ')}`);
+
 const home = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
 const contact = fs.readFileSync(path.join(PUBLIC, 'contact.html'), 'utf8');
 const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+assert.match(home, /class="ze-home-company-check" href="\/proverka-kontragenta"/,
+  'homepage must expose the company BIN checker above the fold');
+assert.match(home, /home-hero-v2\.css\?v=20260815-1/,
+  'homepage company-check entry styles must use the current cache key');
 assert.match(home, /id="iin-consent"[^>]*required/);
 assert.match(contact, /name="privacyConsent"[^>]*required/);
 assert.match(server, /Необходимо согласие на разовую обработку ИИН/);

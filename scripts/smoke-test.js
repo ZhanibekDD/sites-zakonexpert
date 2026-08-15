@@ -189,9 +189,12 @@ async function run() {
     const homepageResponse = await fetch(`${origin}/`, {
       headers: { 'user-agent': 'ZakonExpert-Smoke-Test' },
     });
+    const homepageHtml = await homepageResponse.text();
     assert(homepageResponse.headers.get('content-security-policy')?.includes("default-src 'self'"),
       'Homepage is missing Content-Security-Policy');
     assert(!homepageResponse.headers.has('x-powered-by'), 'Express signature is exposed');
+    assert(homepageHtml.includes('class="ze-home-company-check" href="/proverka-kontragenta"'),
+      'Homepage does not expose the company BIN checker above the fold');
 
     const imageResponse = await fetch(`${origin}/img/brand/zakonexpert-logo-transparent-hd.png`);
     assert(imageResponse.headers.get('cache-control')?.includes('max-age=604800'),
@@ -208,7 +211,7 @@ async function run() {
 
     const companyCheckPage = await (await fetch(`${origin}/proverka-kontragenta`)).text();
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
-    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-3')
+    assert(companyCheckPage.includes('/css/company-check.css?v=20260815-4')
       && companyCheckPage.includes('/js/company-check.js?v=20260815-1'),
     'Counterparty page assets are missing');
     const invalidCompanyCheck = await fetch(`${origin}/api/company-check`, {
