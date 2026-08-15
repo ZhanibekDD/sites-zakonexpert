@@ -158,9 +158,15 @@
 .cc-coverage, .cc-how, .cc-faq { padding: 34px 0; }
 .cc-coverage-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 13px; }
 .cc-coverage-grid article { border: 1px solid var(--cc-line); border-radius: 16px; background: #fff; padding: 20px; }
-.cc-coverage-grid i { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #edf5ff; color: var(--cc-blue); font-size: 1.12rem; }
-.cc-coverage-grid h3 { margin: 14px 0 7px; color: var(--cc-navy); font-size: .96rem; }
-.cc-coverage-grid p { margin: 0; color: var(--cc-muted); font-size: .76rem; line-height: 1.55; }
+.cc-coverage-grid .cc-coverage-card { position: relative; isolation: isolate; min-height: 235px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; border-color: rgba(255,255,255,.12); background-position: center; background-size: cover; box-shadow: 0 14px 34px rgba(13,35,66,.14); }
+.cc-coverage-card::before { position: absolute; z-index: -1; inset: 0; background: linear-gradient(180deg,rgba(7,27,52,.12) 0%,rgba(7,27,52,.7) 58%,rgba(7,27,52,.96) 100%); content: ""; }
+.cc-coverage-card--registration { background-image: url('/img/company-check/registration.webp'); }
+.cc-coverage-card--taxes { background-image: url('/img/company-check/taxes.webp'); }
+.cc-coverage-card--risks { background-image: url('/img/company-check/risks.webp'); }
+.cc-coverage-card--dynamics { background-image: url('/img/company-check/dynamics.webp'); }
+.cc-coverage-grid i { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: rgba(255,255,255,.14); color: #f1c75b; font-size: 1.12rem; backdrop-filter: blur(8px); }
+.cc-coverage-grid h3 { margin: 14px 0 7px; color: #fff; font-size: .96rem; text-shadow: 0 1px 8px rgba(0,0,0,.26); }
+.cc-coverage-grid p { margin: 0; color: rgba(255,255,255,.78); font-size: .76rem; line-height: 1.55; }
 .cc-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; margin: 0; padding: 0; list-style: none; counter-reset: none; }
 .cc-steps li { display: flex; gap: 13px; border-radius: 16px; background: var(--cc-navy); color: #fff; padding: 20px; }
 .cc-steps li > b { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: rgba(255,255,255,.1); color: #f1c75b; }
