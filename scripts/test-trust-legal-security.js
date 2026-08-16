@@ -206,15 +206,16 @@ assert.match(servicesPage, /services-v2\.css\?v=20260816-1/,
   'services page must use the redesigned catalog stylesheet');
 assert.strictEqual((servicesPage.match(/class="service-card-media"/g) || []).length, 26,
   'every service card must include a contextual image');
-for (const filename of [
-  'court-alimony-fines.webp',
-  'settlement-consultation.webp',
-  'advocate-practice.webp',
-]) {
-  assert(servicesPage.includes(`/img/services-v2/${filename}`), `${filename} is not used on the services page`);
-  const imagePath = path.join(PUBLIC, 'img', 'services-v2', filename);
+const servicesV3Images = [...servicesPage.matchAll(/class="service-card-media"[^>]*><img src="\/img\/services-v3\/([^"]+\.webp)"/g)]
+  .map(match => match[1]);
+assert.strictEqual(servicesV3Images.length, 26,
+  'every service card must use a services-v3 image');
+assert.strictEqual(new Set(servicesV3Images).size, 26,
+  'every service card must use its own unique image');
+for (const filename of servicesV3Images) {
+  const imagePath = path.join(PUBLIC, 'img', 'services-v3', filename);
   assert(fs.existsSync(imagePath), `${filename} is missing`);
-  assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a service card`);
+  assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large for a service card`);
 }
 assert.match(home, /id="iin-consent"[^>]*required/);
 assert.match(contact, /name="privacyConsent"[^>]*required/);
