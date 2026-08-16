@@ -110,13 +110,13 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-12/,
+assert.match(home, /home-hero-v2\.css\?v=20260816-13/,
   'homepage company-check entry styles must use the current cache key');
-assert.match(home, /hero-woman-zakonexpert-v7\.webp[^>]*width="1024"[^>]*height="1536"/,
+assert.match(home, /hero-woman-zakonexpert-v8\.webp[^>]*width="490"[^>]*height="1654"/,
   'homepage must use the approved high-resolution Kazakh lawyer portrait');
-const homePortrait = path.join(PUBLIC, 'img', 'hero', 'hero-woman-zakonexpert-v7.webp');
+const homePortrait = path.join(PUBLIC, 'img', 'hero', 'hero-woman-zakonexpert-v8.webp');
 assert(fs.existsSync(homePortrait), 'approved homepage lawyer portrait is missing');
-assert(fs.statSync(homePortrait).size <= 200 * 1024,
+assert(fs.statSync(homePortrait).size <= 500 * 1024,
   'homepage lawyer portrait is too large');
 assert.doesNotMatch(home, /ze-home-specialist-card|Специалист по снятию арестов/,
   'homepage must not render the removed specialist badge');

@@ -467,10 +467,10 @@
 .ze-home-hero__portrait {
   position: absolute;
   z-index: 2;
-  right: -80px;
+  right: clamp(-28px, -1.4vw, -12px);
   top: -10px;
   width: auto;
-  height: 1000px;
+  height: 1320px;
   max-width: none;
   filter: drop-shadow(-10px 16px 20px rgba(0, 0, 0, .2));
 }
@@ -1236,7 +1236,7 @@
   .site-header .header-contacts > a:first-child { display: none; }
   .ze-home-hero__grid { grid-template-columns: minmax(0, 1fr) minmax(360px, .82fr); min-height: 760px; }
   .ze-home-hero__visual { min-height: 760px; }
-  .ze-home-hero__portrait { top: -5px; right: -80px; height: 960px; }
+  .ze-home-hero__portrait { top: -5px; right: -28px; height: 1280px; }
 }
 
 @media (max-width: 1040px) {
@@ -1254,7 +1254,7 @@
   .ze-home-hero__content { padding: 44px 0 38px; }
   .ze-home-hero.search-hero .search-hero-title { font-size: clamp(3rem, 6.1vw, 4.2rem); }
   .ze-home-hero__visual { min-height: 780px; }
-  .ze-home-hero__portrait { top: 0; right: -50px; height: 930px; }
+  .ze-home-hero__portrait { top: 0; right: -4px; height: 1250px; }
   .ze-home-proof__item { padding-inline: 13px; }
   .ze-home-proof__icon { width: 38px; height: 38px; flex-basis: 38px; }
 
@@ -1313,7 +1313,7 @@
   .ze-home-hero__portrait {
     top: 0;
     right: 50%;
-    height: 760px;
+    height: 1100px;
     transform: translateX(50%);
   }
 
@@ -1389,7 +1389,7 @@
   .ze-home-consult-btn { width: 100%; }
   .ze-home-hero__response { max-width: none; text-align: center; }
   .ze-home-hero__visual { min-height: 580px; }
-  .ze-home-hero__portrait { height: 690px; }
+  .ze-home-hero__portrait { height: 950px; }
   .ze-home-proof__item {
     min-height: 94px;
     justify-content: flex-start;
