@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260619-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
+  <link rel="stylesheet" href="css/services-v2.css?v=20260816-1">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -56,7 +57,7 @@
 }
 </script>
 </head>
-<body>
+<body class="services-page">
 <script src="/js/privacy-consent.js?v=20260805-1"></script>
 
 <header class="site-header">
@@ -120,6 +121,11 @@
             </div>
           </div>
           <aside class="page-hero-side">
+            <figure class="services-hero-media">
+              <img src="/img/services/arrest-accounts.webp" width="960" height="640"
+                   alt="Юридическая помощь при аресте банковского счёта" fetchpriority="high">
+              <figcaption><i class="bi bi-shield-check"></i> Анализируем основание до начала работы</figcaption>
+            </figure>
             <h3>Что входит в работу</h3>
             <ul class="list-clean">
               <li>
@@ -145,12 +151,24 @@
     </div>
   </section>
 
+  <nav class="services-category-nav" aria-label="Категории услуг">
+    <div class="landing-container services-category-nav__inner">
+      <a href="#accounts"><i class="bi bi-credit-card"></i> Счета</a>
+      <a href="#property"><i class="bi bi-car-front"></i> Имущество</a>
+      <a href="#enforcement"><i class="bi bi-person-badge"></i> ЧСИ</a>
+      <a href="#notary"><i class="bi bi-file-earmark-check"></i> Нотариус</a>
+      <a href="#court"><i class="bi bi-bank"></i> Суд</a>
+      <a href="#settlement"><i class="bi bi-calendar-check"></i> Урегулирование</a>
+      <a href="#advocate"><i class="bi bi-briefcase"></i> Адвокат</a>
+    </div>
+  </nav>
+
   <!-- SERVICES GROUPS -->
-  <section class="section section-surface">
+  <section class="section section-surface services-catalog">
     <div class="landing-container">
 
       <!-- GROUP 1: СЧЕТА И КАРТЫ -->
-      <div class="services-group">
+      <div class="services-group" id="accounts">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -163,6 +181,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/arrest-accounts.webp" width="960" height="640" alt="Банковский счёт и защита средств от ареста" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
             </div>
@@ -175,6 +194,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/salary-withholding.webp" width="960" height="640" alt="Расчёт удержаний с зарплатной карты" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><path d="M5 15h2m4 0h4"/></svg>
             </div>
@@ -187,6 +207,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/arrest-accounts.webp" width="960" height="640" alt="Снятие ареста со счёта и банковской карты Kaspi" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             </div>
@@ -199,6 +220,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/paid-debt-restriction.webp" width="960" height="640" alt="Снятие ограничения со счёта Halyk после оплаты" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </div>
@@ -211,6 +233,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/enforcement-notification.webp" width="960" height="640" alt="Проверка ограничения банковского счёта Freedom" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
@@ -226,7 +249,7 @@
       </div>
 
       <!-- GROUP 2: АВТО И ИМУЩЕСТВО -->
-      <div class="services-group">
+      <div class="services-group" id="property">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/><circle cx="9" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
@@ -239,6 +262,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/vehicle-restriction.webp" width="960" height="640" alt="Снятие запрета с автомобиля" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l3-3h6l3 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z"/><circle cx="7.5" cy="14.5" r="1.5"/><circle cx="16.5" cy="14.5" r="1.5"/></svg>
             </div>
@@ -251,6 +275,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/property-arrest.webp" width="960" height="640" alt="Снятие ареста с квартиры и недвижимости" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/><line x1="3" y1="9" x2="21" y2="9" stroke-dasharray="3 2"/></svg>
             </div>
@@ -263,6 +288,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/notary-writ.webp" width="960" height="640" alt="Документы для снятия запрета регистрационных действий" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/><line x1="9" y1="9" x2="11" y2="9"/></svg>
             </div>
@@ -278,7 +304,7 @@
       </div>
 
       <!-- GROUP 3: ЧСИ И ИСПОЛНИТЕЛЬНОЕ ПРОИЗВОДСТВО -->
-      <div class="services-group">
+      <div class="services-group" id="enforcement">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/><line x1="15" y1="19" x2="21" y2="19"/><line x1="18" y1="16" x2="18" y2="22"/></svg>
@@ -291,6 +317,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/enforcement-notification.webp" width="960" height="640" alt="Сопровождение исполнительного производства" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
@@ -303,6 +330,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/enforcement-fees.webp" width="960" height="640" alt="Проверка расходов и процентов частного судебного исполнителя" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </div>
@@ -315,6 +343,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/enforcement-notification.webp" width="960" height="640" alt="Подготовка жалобы на частного судебного исполнителя" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
@@ -327,6 +356,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/paid-debt-restriction.webp" width="960" height="640" alt="Снятие ареста после полной оплаты задолженности" loading="lazy" decoding="async"></figure>
             <div class="service-icon" style="background:linear-gradient(145deg,#7f1d1d,#991b1b);">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
@@ -339,6 +369,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/travel-ban.webp" width="960" height="640" alt="Снятие запрета на выезд из Казахстана" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
@@ -354,7 +385,7 @@
       </div>
 
       <!-- GROUP 4: НОТАРИУС И ИСПОЛНИТЕЛЬНАЯ НАДПИСЬ -->
-      <div class="services-group">
+      <div class="services-group" id="notary">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
@@ -367,6 +398,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/notary-writ.webp" width="960" height="640" alt="Отмена исполнительной надписи нотариуса" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="18" x2="12" y2="18"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
             </div>
@@ -379,6 +411,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/notary-writ.webp" width="960" height="640" alt="Правовой анализ нотариальных документов" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
@@ -394,7 +427,7 @@
       </div>
 
       <!-- GROUP 5: СУД, АЛИМЕНТЫ, ШТРАФЫ -->
-      <div class="services-group">
+      <div class="services-group" id="court">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -407,6 +440,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services-v2/court-alimony-fines.webp" width="1200" height="800" alt="Работа с судебными решениями" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 3a3 3 0 0 0-3 3l-7 3a3 3 0 0 0-5 1.5 3 3 0 0 0 5 1.5l7 3a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3l-7-3a3 3 0 0 0 0-3l7-3a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
             </div>
@@ -419,6 +453,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services-v2/court-alimony-fines.webp" width="1200" height="800" alt="Проверка расчёта задолженности по алиментам" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
@@ -431,6 +466,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services/enforcement-fees.webp" width="960" height="640" alt="Проверка административных штрафов у ЧСИ" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="9" y1="9" x2="9" y2="11"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="15" y1="9" x2="15" y2="11"/></svg>
             </div>
@@ -446,7 +482,7 @@
       </div>
 
       <!-- GROUP 6: УРЕГУЛИРОВАНИЕ -->
-      <div class="services-group">
+      <div class="services-group" id="settlement">
         <div class="services-group-header">
           <div class="services-group-icon">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -459,6 +495,7 @@
         <div class="services-grid">
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services-v2/settlement-consultation.webp" width="1200" height="800" alt="Согласование графика погашения задолженности" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 15 11 17 15 13"/></svg>
             </div>
@@ -471,6 +508,7 @@
           </article>
 
           <article class="service-card fade-in-section">
+            <figure class="service-card-media"><img src="/img/services-v2/settlement-consultation.webp" width="1200" height="800" alt="Консультация и юридический разбор ситуации" loading="lazy" decoding="async"></figure>
             <div class="service-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
             </div>
@@ -530,7 +568,7 @@
   </section>
 
   <!-- ADVOCATE SERVICES -->
-  <section class="section section-muted">
+  <section class="section section-muted advocate-services" id="advocate">
     <div class="landing-container">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid rgba(16,32,51,0.1);">
         <div>
@@ -546,6 +584,7 @@
       <div class="services-grid">
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Защита адвоката по уголовным делам" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
@@ -558,6 +597,7 @@
         </article>
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Представительство адвоката по гражданским спорам" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
           </div>
@@ -570,6 +610,7 @@
         </article>
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Помощь адвоката по семейным делам" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </div>
@@ -582,6 +623,7 @@
         </article>
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Защита по административным делам" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
           </div>
@@ -594,6 +636,7 @@
         </article>
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Подготовка апелляций и жалоб адвокатом" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </div>
@@ -606,6 +649,7 @@
         </article>
 
         <article class="service-card fade-in-section">
+          <figure class="service-card-media"><img src="/img/services-v2/advocate-practice.webp" width="1200" height="800" alt="Судебное представительство адвоката" loading="lazy" decoding="async"></figure>
           <div class="service-icon" style="background:linear-gradient(145deg,#0f2044,#1a3a5c);">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
@@ -659,16 +703,18 @@
     </div>
   </section>
 
-<section style="background:#f0f4f8;padding:28px 0 8px">
-  <div class="landing-container">
-    <img src="/img/seo/uslugi-zakonexpert-kazakhstan.svg"
-         alt="Услуги ZakonExpert Казахстан — снятие арестов, отмена надписи, ЧСИ, МФО, адвокат +7 747 995-76-35"
-         width="800" height="500" loading="lazy"
-         style="width:100%;max-width:800px;height:auto;border-radius:12px;display:block;margin:0 auto 16px;">
-    <img src="/img/seo/snyatie-ogranicheniy-chsi-notarius.svg"
-         alt="Снятие ограничений ЧСИ и нотариуса Казахстан — ZakonExpert +7 747 995-76-35"
-         width="800" height="500" loading="lazy"
-         style="width:100%;max-width:800px;height:auto;border-radius:12px;display:block;margin:0 auto 16px;">
+<section class="services-proof-gallery" aria-label="Направления юридической помощи">
+  <div class="landing-container services-proof-gallery__grid">
+    <figure>
+      <img src="/img/seo/uslugi-zakonexpert-kazakhstan.svg"
+           alt="Услуги ZakonExpert Казахстан — снятие арестов, отмена надписи, ЧСИ, МФО, адвокат +7 747 995-76-35"
+           width="800" height="500" loading="lazy" decoding="async">
+    </figure>
+    <figure>
+      <img src="/img/seo/snyatie-ogranicheniy-chsi-notarius.svg"
+           alt="Снятие ограничений ЧСИ и нотариуса Казахстан — ZakonExpert +7 747 995-76-35"
+           width="800" height="500" loading="lazy" decoding="async">
+    </figure>
   </div>
 </section>
 

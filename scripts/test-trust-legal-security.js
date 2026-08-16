@@ -101,6 +101,7 @@ assert.deepStrictEqual(floatingButtonMarkup, [],
 
 const home = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
 const contact = fs.readFileSync(path.join(PUBLIC, 'contact.html'), 'utf8');
+const servicesPage = fs.readFileSync(path.join(PUBLIC, 'services.html'), 'utf8');
 const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
 assert.match(home, /class="ze-home-company-check" href="\/proverka-kontragenta"/,
   'homepage must expose the company BIN checker above the fold');
@@ -200,6 +201,20 @@ for (const filename of homeServiceImages) {
   const imagePath = path.join(PUBLIC, 'img', 'services', filename);
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a homepage card`);
+}
+assert.match(servicesPage, /services-v2\.css\?v=20260816-1/,
+  'services page must use the redesigned catalog stylesheet');
+assert.strictEqual((servicesPage.match(/class="service-card-media"/g) || []).length, 26,
+  'every service card must include a contextual image');
+for (const filename of [
+  'court-alimony-fines.webp',
+  'settlement-consultation.webp',
+  'advocate-practice.webp',
+]) {
+  assert(servicesPage.includes(`/img/services-v2/${filename}`), `${filename} is not used on the services page`);
+  const imagePath = path.join(PUBLIC, 'img', 'services-v2', filename);
+  assert(fs.existsSync(imagePath), `${filename} is missing`);
+  assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a service card`);
 }
 assert.match(home, /id="iin-consent"[^>]*required/);
 assert.match(contact, /name="privacyConsent"[^>]*required/);
