@@ -472,7 +472,9 @@
   width: auto;
   height: 1500px;
   max-width: none;
-  filter: drop-shadow(-18px 22px 28px rgba(0, 0, 0, .33));
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 84%, transparent 100%);
+  filter: drop-shadow(-12px 18px 24px rgba(0, 0, 0, .24));
 }
 
 .ze-home-hero .search-loading,
