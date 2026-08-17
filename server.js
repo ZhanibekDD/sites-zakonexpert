@@ -66,6 +66,7 @@ const { createKgdCounterpartyClient, validateBin } = require('./modules/kgd-coun
 const { createGoszakupClient } = require('./modules/goszakup');
 const { createCompanyCheckService } = require('./modules/company-check-sources');
 const { getRegionEmblem } = require('./modules/region-emblems');
+const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const {
   INDEXABLE_LOCALES: COMPANY_LOCALES,
   catalogAlternates,
@@ -1433,7 +1434,7 @@ function getCollectors() {
         let baseSlug = slugify(name) || 'kca-' + bin;
         if (!seen[baseSlug]) { seen[baseSlug] = 1; }
         else { seen[baseSlug]++; baseSlug = baseSlug + '-' + seen[baseSlug]; }
-        return {
+        return applyRegistryPrivacyOverride('collectors', {
           slug: baseSlug,
           bin, name,
           nameFull: r['Название'] || '',
@@ -1444,7 +1445,7 @@ function getCollectors() {
           emails: contacts.emails,
           sites: contacts.sites,
           dateAdded: r['Дата включения в реестр'] || '',
-        };
+        });
       });
   }
   return _collectorsCache;
