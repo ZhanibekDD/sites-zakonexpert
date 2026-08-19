@@ -91,6 +91,18 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
 document.querySelector('[data-language-switch]')?.addEventListener('change', function () {
   window.location.href = this.value;
 });
+
+// Some source datasets append a phone number to the postal address (for example
+// ", тел. 87781670117"). Keep the source data intact, but never show that phone
+// fragment inside the address field on company cards.
+document.querySelectorAll('.company-info-row__value').forEach(function (element) {
+  const original = element.textContent || '';
+  const cleaned = original
+    .replace(/\s*[,;]?\s*(?:тел(?:ефон)?\.?|моб\.?|phone)\s*[:.]?\s*\+?[\d\s()\-]{7,}\s*$/iu, '')
+    .replace(/[\s,;]+$/u, '')
+    .trim();
+  if (cleaned && cleaned !== original.trim()) element.textContent = cleaned;
+});
 </script>
 </body>
 </html>
