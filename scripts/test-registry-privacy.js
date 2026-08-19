@@ -3,7 +3,10 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
-const { applyRegistryPrivacyOverride } = require('../modules/registry-privacy');
+const {
+  applyRegistryPrivacyOverride,
+  isRegistryContactSuppressed,
+} = require('../modules/registry-privacy');
 
 const ROOT = path.join(__dirname, '..');
 const COLLECTOR_BIN = '210740004596';
@@ -27,5 +30,32 @@ const untouched = applyRegistryPrivacyOverride('collectors', {
   leader: 'Current person',
 });
 assert.strictEqual(untouched.leader, 'Current person', 'unrelated records must not change');
+
+const COMPANY_BIN = '101140004980';
+assert.strictEqual(
+  isRegistryContactSuppressed('companies', COMPANY_BIN, '+7 (778) 167-01-17'),
+  true,
+  'the disputed company phone must remain suppressed after future imports'
+);
+assert.strictEqual(
+  isRegistryContactSuppressed('companies', COMPANY_BIN, '+7 (7182) 33-40-88'),
+  false,
+  'unrelated company contacts must remain available'
+);
+
+const company = applyRegistryPrivacyOverride('companies', {
+  bin: COMPANY_BIN,
+  name: 'ДАН GRОUP COMPANY',
+  contacts: [
+    { type: 'mobile_phone', value: '8 778 167 01 17', normalized: '+77781670117' },
+    { type: 'phone', value: '+7 (7182) 33-40-88', normalized: '+77182334088' },
+  ],
+});
+assert.deepStrictEqual(
+  company.contacts.map(contact => contact.normalized),
+  ['+77182334088'],
+  'privacy override must remove only the disputed contact from hydrated company details'
+);
+assert.strictEqual(company.name, 'ДАН GRОUP COMPANY', 'company identity must be preserved');
 
 console.log('Registry privacy correction OK');

@@ -32,8 +32,14 @@ insert.run(
   'Зарегистрирован', '2026-08-15', 16, 1, '+7 (7172) 00-00-00',
   'mail@kazakh-stroy.test', 'kazakh-stroy.test', 'egov_gbd_ul'
 );
+insert.run(
+  3, '101140004980', 'ТОО «ДАН GRОUP COMPANY»', '', '2010-11-01',
+  'г. Павлодар, промышленная зона Центральная, строение 451', 'Прочая деятельность',
+  'КАНАЕВА АНАР МАРАЛОВНА', 'Зарегистрирован', '2026-08-15', 14, 1,
+  '+7 (778) 167-01-17', '', '', 'business_directory_kz_2026'
+);
 setMeta(database, 'completed_at', '2026-08-15');
-setMeta(database, 'record_count', '2');
+setMeta(database, 'record_count', '3');
 rebuildSearch(database);
 database.close();
 
@@ -44,6 +50,13 @@ try {
   assert.strictEqual(result.items[0].phone, '+7 (7212) 00-00-00');
   assert.strictEqual(result.items[0].email, 'info@kazakhmys.test');
   assert.strictEqual(companies.search('КАЗАХ', 1, 14).items.length, 2, 'search must be case-insensitive');
+  const correctedCompany = companies.findByBin('101140004980');
+  assert.strictEqual(correctedCompany.phone, '', 'the disputed phone must be absent from the company card');
+  assert.deepStrictEqual(correctedCompany.contacts, [], 'the disputed phone must be absent from hydrated contacts');
+  assert.strictEqual(companies.search('101140004980', 1, 14).items[0].phone, '',
+    'the disputed phone must be absent from BIN suggestions');
+  assert.strictEqual(companies.search('+7 778 167 01 17', 1, 14).items.length, 0,
+    'phone search must not preserve the disputed person-to-company association');
   console.log('Company suggestions OK: partial names, ranking and contact summaries');
 } finally {
   companies.close();

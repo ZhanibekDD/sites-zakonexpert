@@ -10,6 +10,11 @@ const { isGenericLegalFormName } = require('./company-name-normalize');
 const { contactValues, normalizePhoneDigits } = require('./company-details-normalize');
 const { hydrateDetails: hydrateCompactDetails } = require('./company-details-store');
 const { transliterateCompanyName } = require('./company-transliterate');
+const {
+  applyRegistryPrivacyOverride,
+  hasRegistryContactSuppressions,
+  isRegistryContactSuppressed,
+} = require('./registry-privacy');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
 const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
@@ -171,15 +176,42 @@ function sourceMetadata(company) {
 
 function decorateCompany(company) {
   if (!company) return null;
-  const source = sourceMetadata(company);
+  const sanitized = sanitizeCompanyContactFields(
+    applyRegistryPrivacyOverride('companies', company)
+  );
+  const source = sourceMetadata(sanitized);
   return {
-    ...company,
+    ...sanitized,
     primary_source_key: source.key,
     source_label: source.label,
     is_official_source: source.official,
-    has_verified_bin: /^\d{12}$/.test(String(company.bin || '').trim()),
-    display_name_kk: isGenericLegalFormName(company.name_kk) ? null : company.name_kk,
+    has_verified_bin: /^\d{12}$/.test(String(sanitized.bin || '').trim()),
+    display_name_kk: isGenericLegalFormName(sanitized.name_kk) ? null : sanitized.name_kk,
   };
+}
+
+function sanitizeCompanyContactFields(company) {
+  if (!company || !hasRegistryContactSuppressions('companies', company.bin)) return company;
+  const sanitized = { ...company };
+  for (const type of ['phone', 'mobile_phone', 'email', 'website', 'whatsapp', 'viber', 'telegram']) {
+    if (!sanitized[type]) continue;
+    sanitized[type] = contactValues(type, sanitized[type])
+      .filter(contact => !isRegistryContactSuppressed(
+        'companies',
+        sanitized.bin,
+        contact.normalized || contact.value
+      ))
+      .map(contact => contact.value)
+      .join(', ');
+  }
+  if (Array.isArray(sanitized.contacts)) {
+    sanitized.contacts = sanitized.contacts.filter(contact => !isRegistryContactSuppressed(
+      'companies',
+      sanitized.bin,
+      contact?.normalized || contact?.value
+    ));
+  }
+  return sanitized;
 }
 
 function addSlug(rawCompany) {
@@ -244,10 +276,11 @@ function search(query, page = 1, limit = 30) {
     `).all(match, safeLimit + 1, offset);
   }
 
+  const visibleItems = items.filter(item => !isRegistryContactSuppressed('companies', item.bin, q));
   return {
-    items: items.slice(0, safeLimit).map(addSlug),
+    items: visibleItems.slice(0, safeLimit).map(addSlug),
     page: safePage,
-    hasMore: items.length > safeLimit,
+    hasMore: visibleItems.length > safeLimit,
   };
 }
 
@@ -426,7 +459,14 @@ function hydrateDetails(database, rawCompany) {
     }
   }
 
-  company.contacts = dedupeDetails(contacts, item => `${item.type}:${item.normalized || item.value}`);
+  company.contacts = dedupeDetails(
+    contacts.filter(contact => !isRegistryContactSuppressed(
+      'companies',
+      company.bin,
+      contact.normalized || contact.value
+    )),
+    item => `${item.type}:${item.normalized || item.value}`
+  );
   company.addresses = dedupeDetails(addresses, item => String(item.value || '').toLocaleLowerCase('ru-RU'));
   company.names = dedupeDetails(names, item => `${item.locale}:${item.normalized || item.value}`);
   company.categories = dedupeDetails(categories, item => `${item.category}:${item.subcategory}`);

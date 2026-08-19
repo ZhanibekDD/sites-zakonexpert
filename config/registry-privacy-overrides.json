@@ -7,5 +7,14 @@
       "reason": "data_subject_correction_request",
       "effectiveDate": "2026-08-17"
     }
+  },
+  "companies": {
+    "101140004980": {
+      "suppressContacts": [
+        "77781670117"
+      ],
+      "reason": "data_subject_correction_request",
+      "effectiveDate": "2026-08-19"
+    }
   }
 }
