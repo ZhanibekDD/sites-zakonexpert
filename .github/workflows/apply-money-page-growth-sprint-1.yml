@@ -1,17 +1,16 @@
-name: Site checks
+name: Apply money-page growth sprint 1
 
 on:
-  pull_request:
   push:
     branches:
-      - main
+      - growth/money-pages-sprint-1
 
 permissions:
   contents: write
 
 jobs:
-  apply-money-page-growth:
-    if: github.event_name == 'pull_request' && github.head_ref == 'growth/money-pages-sprint-1' && github.actor != 'github-actions[bot]'
+  apply:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -19,7 +18,7 @@ jobs:
       - name: Check out growth branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: growth/money-pages-sprint-1
           fetch-depth: 0
 
       - name: Restore migration script
@@ -51,43 +50,6 @@ jobs:
       - name: Run full validation suite
         run: npm test
 
-      - name: Restore normal CI workflow
-        shell: bash
-        run: |
-          cat > .github/workflows/site-checks.yml <<'YAML'
-          name: Site checks
-
-          on:
-            pull_request:
-            push:
-              branches:
-                - main
-
-          permissions:
-            contents: read
-
-          jobs:
-            validate:
-              runs-on: ubuntu-latest
-              timeout-minutes: 10
-
-              steps:
-                - name: Check out repository
-                  uses: actions/checkout@v4
-
-                - name: Set up Node.js
-                  uses: actions/setup-node@v4
-                  with:
-                    node-version: 22
-                    cache: npm
-
-                - name: Install dependencies
-                  run: npm ci --ignore-scripts
-
-                - name: Validate site and run smoke tests
-                  run: npm test
-          YAML
-
       - name: Commit generated changes
         shell: bash
         run: |
@@ -103,31 +65,10 @@ jobs:
             public/sms-1414.html \
             public/css/money-page-growth.css \
             scripts/apply-money-page-growth-sprint-1.js.gz.b64 \
-            .github/workflows/apply-money-page-growth-sprint-1.yml \
-            .github/workflows/site-checks.yml
+            .github/workflows/apply-money-page-growth-sprint-1.yml
           if git diff --cached --quiet; then
             echo "No changes to commit"
             exit 0
           fi
           git commit -m "Improve seven high-intent SEO landing pages"
-          git push origin HEAD:${{ github.head_ref }}
-
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
-
-      - name: Validate site and run smoke tests
-        run: npm test
+          git push origin HEAD:growth/money-pages-sprint-1
