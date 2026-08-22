@@ -1,0 +1,57 @@
+name: Apply legal content gate v1
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: legal-content-gate-v1
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out legal-content branch
+        uses: actions/checkout@v4
+        with:
+          ref: growth/legal-content-gate-v1
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply legal content corrections
+        run: |
+          node --check scripts/apply-legal-content-gate-v1.js
+          node scripts/apply-legal-content-gate-v1.js
+          rm -f scripts/apply-legal-content-gate-v1.js
+          rm -f .github/workflows/apply-legal-content-gate-v1.yml
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run full validation suite
+        run: npm test
+
+      - name: Commit generated corrections
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Enforce legal accuracy on high-traffic pages"
+          git push origin HEAD:growth/legal-content-gate-v1
