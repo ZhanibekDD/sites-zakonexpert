@@ -4,6 +4,7 @@ const Datastore = require('nedb-promises');
 const path = require('path');
 const fs   = require('fs');
 const { enableAutocompaction } = require('./db-maintenance');
+const { findArchiveDirectory } = require('./notary-archive');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -78,8 +79,31 @@ module.exports = {
       phone: 1,
       email: 1,
       schedule: 1,
+      archiveFor: 1,
+      archiveEvidence: 1,
+      sourceChamberUrl: 1,
       updatedAt: 1,
       _id: 0,
     }).sort({ name: 1 }).limit(limit);
+  },
+  async getArchiveDirectory(query = '') {
+    const all = await db.find({}, {
+      name: 1,
+      slug: 1,
+      region: 1,
+      active: 1,
+      license: 1,
+      licenseDate: 1,
+      address: 1,
+      phone: 1,
+      email: 1,
+      archiveFor: 1,
+      archiveEvidence: 1,
+      sourceChamberUrl: 1,
+      schedule: 1,
+      updatedAt: 1,
+      _id: 0,
+    });
+    return findArchiveDirectory(all, query);
   },
 };
