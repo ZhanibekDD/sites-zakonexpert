@@ -7,10 +7,11 @@ const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
 const { readRegistrySource } = require('../modules/registry-source');
 const { applyNotaryOverride } = require('../modules/notary-overrides');
+const { extractArchiveTransfer, officialChamberUrl } = require('../modules/notary-archive');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 6; // content-fingerprint import; forces one complete production rebuild
+const DB_VERSION = 7; // includes verified ENIS archive-transfer annotations
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -67,6 +68,7 @@ function buildNotaries(rows, sourceMtime, sourceFingerprint = '') {
     const phone    = (row[6] || '').replace(/[,;\s]+$/, '').trim();
     const email    = validEmail(corrected.email);
     const schedule = (row[8] || '').trim().replace(/\s+/g, ' ');
+    const archiveTransfer = extractArchiveTransfer(schedule);
 
     if (!num || !/^\d+$/.test(num)) { skipped++; continue; }
     const cleanName = name.toUpperCase().replace(/\s+/g, ' ');
@@ -93,6 +95,9 @@ function buildNotaries(rows, sourceMtime, sourceFingerprint = '') {
       phone,
       email,
       schedule,
+      archiveFor: archiveTransfer.names,
+      archiveEvidence: archiveTransfer.evidence,
+      sourceChamberUrl: officialChamberUrl(region),
       slug,
       sourceMtime,
       sourceFingerprint,
