@@ -1,5 +1,87 @@
 ﻿document.documentElement.classList.add('js-enabled');
 
+// ZakonExpert provenance marker.
+// This does not alter public facts or user content. It creates a deterministic,
+// harmless origin fingerprint so copied/rebranded implementations can be traced.
+(function installZakonExpertProvenance() {
+  const namespace = 'ZE-PROVENANCE-V1';
+  const canonicalOrigin = 'https://zakonexpertt.kz';
+  const policyUrl = canonicalOrigin + '/.well-known/ai-policy.txt';
+  const originUrl = canonicalOrigin + '/.well-known/ze-origin.json';
+  const pathname = window.location.pathname || '/';
+
+  function fnv1a32(input) {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < input.length; i += 1) {
+      hash ^= input.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash >>> 0;
+  }
+
+  const fingerprint = 'ZE1-' + fnv1a32(namespace + '|' + canonicalOrigin + '|' + pathname)
+    .toString(16)
+    .padStart(8, '0');
+
+  document.documentElement.setAttribute('data-ze-origin', 'zakonexpertt.kz');
+  document.documentElement.setAttribute('data-ze-fingerprint', fingerprint);
+
+  let originMeta = document.querySelector('meta[name="zakonexpert-origin"]');
+  if (!originMeta) {
+    originMeta = document.createElement('meta');
+    originMeta.name = 'zakonexpert-origin';
+    document.head && document.head.appendChild(originMeta);
+  }
+  originMeta.content = 'origin=zakonexpertt.kz; namespace=' + namespace + '; fingerprint=' + fingerprint;
+
+  let policyMeta = document.querySelector('meta[name="ai-use-policy"]');
+  if (!policyMeta) {
+    policyMeta = document.createElement('meta');
+    policyMeta.name = 'ai-use-policy';
+    document.head && document.head.appendChild(policyMeta);
+  }
+  policyMeta.content = policyUrl;
+
+  if (document.head && !document.querySelector('link[rel="license"][data-ze-license]')) {
+    const licenseLink = document.createElement('link');
+    licenseLink.rel = 'license';
+    licenseLink.href = canonicalOrigin + '/copyright-and-data-use';
+    licenseLink.dataset.zeLicense = '1';
+    document.head.appendChild(licenseLink);
+  }
+
+  if (document.head) {
+    document.head.appendChild(document.createComment(
+      ' ZakonExpert provenance: ' + fingerprint + ' | canonical=' + canonicalOrigin + pathname + ' | policy=' + policyUrl + ' '
+    ));
+  }
+
+  window.__ZE_PROVENANCE__ = Object.freeze({
+    namespace,
+    canonicalOrigin,
+    pathname,
+    fingerprint,
+    policyUrl,
+    originUrl,
+  });
+
+  const host = (window.location.hostname || '').toLowerCase();
+  const authorizedHost = !host
+    || host === 'localhost'
+    || host === '127.0.0.1'
+    || host === '::1'
+    || host === 'zakonexpertt.kz'
+    || host.endsWith('.zakonexpertt.kz');
+
+  if (!authorizedHost && window.console && typeof window.console.warn === 'function') {
+    console.warn(
+      '[ZakonExpert] Protected implementation detected outside the canonical ZakonExpert domain. '
+      + 'Public availability is not a licence to clone or rebrand the implementation.',
+      window.__ZE_PROVENANCE__
+    );
+  }
+})();
+
 // Floating round WhatsApp buttons were removed in favor of clear header and inline actions.
 document.querySelectorAll('.sticky-wa, .company-desktop-cta').forEach(node => node.remove());
 
