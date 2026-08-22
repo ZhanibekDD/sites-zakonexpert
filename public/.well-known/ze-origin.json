@@ -1,0 +1,27 @@
+{
+  "schema": "https://zakonexpertt.kz/.well-known/ze-origin.schema.json",
+  "issuer": "ТОО «ZakonExpert»",
+  "canonical_origin": "https://zakonexpertt.kz",
+  "namespace": "ZE-PROVENANCE-V1",
+  "issued_at": "2026-08-22",
+  "purpose": "Origin and provenance verification for ZakonExpert-created implementation and presentation.",
+  "fingerprint": {
+    "version": "ZE1",
+    "algorithm": "FNV-1a-32",
+    "input_template": "ZE-PROVENANCE-V1|https://zakonexpertt.kz|<pathname>",
+    "client_implementation": "/js/site.js",
+    "notes": "The fingerprint is a non-invasive provenance marker. It does not modify public facts, customer data or legal records."
+  },
+  "policy": {
+    "ai_use": "https://zakonexpertt.kz/.well-known/ai-policy.txt",
+    "copyright": "https://github.com/ZhanibekDD/sites-zakonexpert/blob/main/COPYRIGHT_AND_DATA_USE.md",
+    "cloning": "not licensed",
+    "clean_room_reimplementation": "permitted when independently designed and independently sourced",
+    "citation": "preferred over reproduction"
+  },
+  "verification": {
+    "html_attribute": "data-ze-fingerprint",
+    "meta_name": "zakonexpert-origin",
+    "javascript_object": "window.__ZE_PROVENANCE__"
+  }
+}
