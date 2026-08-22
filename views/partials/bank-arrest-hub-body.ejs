@@ -1,0 +1,113 @@
+<%
+const whatsappText = encodeURIComponent('Здравствуйте! Не могу пользоваться банковским счётом. Хочу определить причину ограничения и проверить документы.');
+const retailPages = pages.filter(item => item.segment === 'retail');
+const otherPages = pages.filter(item => item.segment !== 'retail');
+%>
+<div class="zg-page zg-hub" data-growth-root data-growth-page-type="bank_arrest_hub" data-growth-page-key="/arest-scheta-v-bankah-kazahstana">
+  <section class="zg-hero zg-hero--hub">
+    <div class="zg-container">
+      <nav class="zg-breadcrumbs" aria-label="Навигационная цепочка"><a href="/">Главная</a><span>/</span><span>Аресты в банках</span></nav>
+      <div class="zg-hero-grid">
+        <div>
+          <span class="zg-kicker"><i class="bi bi-grid-3x3-gap"></i> 23 банка второго уровня</span>
+          <h1>Арест счёта в <span>банках Казахстана</span></h1>
+          <p class="zg-lead">Выберите банк и получите точный порядок проверки. Мы разделяем исполнительный арест, налоговую меру, судебное ограничение и внутренний финмониторинг — это четыре разных маршрута.</p>
+          <div class="zg-actions">
+            <a class="zg-button zg-button--primary" href="/#checker-section" data-growth-cta="checker"><i class="bi bi-search"></i> Проверить по ИИН</a>
+            <a class="zg-button zg-button--outline" href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="whatsapp"><i class="bi bi-whatsapp"></i> Определить причину</a>
+          </div>
+        </div>
+        <aside class="zg-hero-card zg-diagnostic-card">
+          <p class="zg-card-label">Диагностика за 4 вопроса</p>
+          <ol>
+            <li><span>1</span>Что именно пишет банк?</li>
+            <li><span>2</span>Есть ли ЧСИ или номер ИП?</li>
+            <li><span>3</span>Деньги только недоступны или уже списаны?</li>
+            <li><span>4</span>Банк запросил происхождение средств?</li>
+          </ol>
+          <a href="/kak-uznat-kto-nalozhil-arest-na-schet" data-growth-cta="diagnostic">Пройти правильный маршрут →</a>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="zg-trust">
+    <div class="zg-container zg-trust-grid">
+      <div><i class="bi bi-bank"></i><strong><%= pages.length %> банков</strong><span>Все действующие БВУ в одном разделе</span></div>
+      <div><i class="bi bi-signpost-split"></i><strong>4 источника мер</strong><span>ЧСИ, суд, КГД или банк</span></div>
+      <div><i class="bi bi-file-earmark-check"></i><strong>Документальный подход</strong><span>Без догадок по одному скриншоту</span></div>
+      <div><i class="bi bi-calendar-check"></i><strong>Проверено <%= reviewedAt.split('-').reverse().join('.') %></strong><span>Список и структура актуализированы</span></div>
+    </div>
+  </section>
+
+  <main class="zg-main">
+    <div class="zg-container">
+      <section class="zg-answer zg-answer--wide">
+        <span>Главный принцип</span>
+        <h2>Название банка не определяет способ снятия ограничения</h2>
+        <p>Kaspi, Halyk, BCC или любой другой банк видит только свою часть процесса. Решение зависит от документа: постановления ЧСИ, акта суда, меры КГД либо внутренней проверки банка. Поэтому каждая страница начинается с диагностики, а не с обещания «разблокировать за день».</p>
+      </section>
+
+      <section class="zg-section">
+        <div class="zg-section-heading"><div><span class="zg-eyebrow">Популярные банки</span><h2>Карты и счета физических лиц</h2></div><a href="/banks">Официальные контакты банков →</a></div>
+        <div class="zg-bank-grid">
+          <% retailPages.forEach(function(item) { %>
+          <a class="zg-bank-tile" href="<%= item.path %>" data-growth-cta="bank-card">
+            <span class="zg-bank-icon"><i class="bi bi-credit-card-2-front"></i></span>
+            <div><strong><%= item.brand %></strong><small><%= (item.aliases || []).slice(0, 2).join(' · ') || 'Банк Казахстана' %></small></div>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+          <% }); %>
+        </div>
+      </section>
+
+      <section class="zg-section">
+        <div class="zg-section-heading"><div><span class="zg-eyebrow">Бизнес и специальные модели</span><h2>Корпоративные и исламские банки</h2></div></div>
+        <div class="zg-bank-grid zg-bank-grid--compact">
+          <% otherPages.forEach(function(item) { %>
+          <a class="zg-bank-tile" href="<%= item.path %>" data-growth-cta="bank-card">
+            <span class="zg-bank-icon"><i class="bi bi-building"></i></span>
+            <div><strong><%= item.brand %></strong><small><%= item.segment === 'islamic' ? 'Исламский банкинг' : 'Физлица и/или бизнес' %></small></div>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+          <% }); %>
+        </div>
+        <div class="zg-inline-warning"><i class="bi bi-info-circle"></i><div><strong>Банк Развития Казахстана не включён в эти посадочные страницы</strong><span>БРК является национальным институтом развития и не обслуживает обычные розничные счета. Его справочная карточка остаётся в каталоге банков.</span></div></div>
+      </section>
+
+      <section class="zg-section">
+        <div class="zg-section-heading"><div><span class="zg-eyebrow">Не только ЧСИ</span><h2>Сильные маршруты по типу проблемы</h2></div></div>
+        <div class="zg-problem-grid">
+          <% legalPages.forEach(function(item) { %>
+          <a href="<%= item.path %>" data-growth-cta="legal-intent">
+            <span><i class="bi bi-compass"></i></span>
+            <div><strong><%= item.h1 %></strong><small><%= item.shortAnswer %></small></div>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+          <% }); %>
+        </div>
+      </section>
+
+      <section class="zg-section">
+        <h2>Что делать в первые 30 минут</h2>
+        <ol class="zg-steps zg-steps--horizontal">
+          <li><span>1</span><div><strong>Не удаляйте уведомление</strong><p>Сохраните скрин, дату, текст и номер телефона/канал банка.</p></div></li>
+          <li><span>2</span><div><strong>Получите выписку</strong><p>Проверьте, какие счета и суммы затронуты, были ли списания.</p></div></li>
+          <li><span>3</span><div><strong>Запросите реквизиты меры</strong><p>Инициатор, дата, номер документа и доступный порядок получения копии.</p></div></li>
+          <li><span>4</span><div><strong>Только затем выбирайте действие</strong><p>Возражение, жалоба, налоговый ответ, комплаенс-пакет или урегулирование.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="zg-source-note">
+        <strong>Источник списка банков</strong>
+        <p>Раздел построен по действующим банкам второго уровня Казахстана. Для проверки статуса банка используйте данные Агентства по регулированию и развитию финансового рынка и официальные сайты банков. ZakonExpert не связан с перечисленными банками и не выдаёт себя за их службу поддержки.</p>
+        <a href="https://www.gov.kz/memleket/entities/ardfm/press/news/details/1267313" target="_blank" rel="nofollow noopener">Состояние банковского сектора на 1 июля 2026 года →</a>
+      </section>
+    </div>
+  </main>
+
+  <div class="zg-mobile-actions">
+    <a href="/#checker-section" data-growth-cta="mobile-checker"><i class="bi bi-search"></i> Проверить</a>
+    <a href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="mobile-whatsapp"><i class="bi bi-whatsapp"></i> Помощь</a>
+  </div>
+</div>

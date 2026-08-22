@@ -1,0 +1,115 @@
+<%
+const whatsappText = encodeURIComponent('Здравствуйте! Нужна помощь по ситуации: ' + page.h1 + '. Страница: https://zakonexpertt.kz' + page.path);
+%>
+<div class="zg-page zg-intent" data-growth-root data-growth-page-type="legal_intent" data-growth-page-key="<%= page.path %>">
+  <section class="zg-hero zg-hero--intent">
+    <div class="zg-container">
+      <nav class="zg-breadcrumbs" aria-label="Навигационная цепочка"><a href="/">Главная</a><span>/</span><a href="/snyatie-aresta-so-scheta">Аресты счетов</a><span>/</span><span><%= page.kicker %></span></nav>
+      <div class="zg-hero-grid">
+        <div>
+          <span class="zg-kicker"><i class="bi bi-compass"></i> <%= page.kicker %></span>
+          <h1><%= page.h1 %></h1>
+          <p class="zg-lead"><%= page.lead %></p>
+          <div class="zg-actions">
+            <a class="zg-button zg-button--primary" href="/#checker-section" data-growth-cta="checker"><i class="bi bi-search"></i> Проверить по ИИН</a>
+            <a class="zg-button zg-button--outline" href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="whatsapp"><i class="bi bi-whatsapp"></i> Разобрать ситуацию</a>
+          </div>
+        </div>
+        <aside class="zg-hero-card">
+          <p class="zg-card-label">Что подготовить</p>
+          <h2>Начните с фактов, а не предположений</h2>
+          <ul class="zg-hero-list">
+            <% page.documents.slice(0, 4).forEach(function(item) { %><li><i class="bi bi-check2"></i><%= item %></li><% }); %>
+          </ul>
+          <p class="zg-not-affiliated">Не передавайте SMS-коды, пароли или доступ к банковскому приложению.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="zg-trust">
+    <div class="zg-container zg-trust-grid">
+      <div><i class="bi bi-search"></i><strong>Устанавливаем источник</strong><span>Документ и инициатор меры</span></div>
+      <div><i class="bi bi-file-earmark-text"></i><strong>Собираем доказательства</strong><span>Выписка, ответы и материалы</span></div>
+      <div><i class="bi bi-signpost-split"></i><strong>Выбираем маршрут</strong><span>Не смешиваем разные процедуры</span></div>
+      <div><i class="bi bi-shield-check"></i><strong>Без гарантий</strong><span>Прогноз только после анализа</span></div>
+    </div>
+  </section>
+
+  <main class="zg-main">
+    <div class="zg-container zg-layout">
+      <div class="zg-content">
+        <section class="zg-answer">
+          <span>Короткий ответ</span>
+          <h2>Что делать прямо сейчас</h2>
+          <p><%= page.shortAnswer %></p>
+        </section>
+
+        <section class="zg-section">
+          <h2>Почему это могло произойти</h2>
+          <div class="zg-cause-grid">
+            <% page.causes.forEach(function(item, index) { %>
+            <article><i class="bi <%= ['bi-file-earmark-lock','bi-building-exclamation','bi-receipt','bi-shield-lock'][index % 4] %>"></i><h3><%= item.title %></h3><p><%= item.text %></p></article>
+            <% }); %>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Пошаговый порядок</h2>
+          <ol class="zg-steps">
+            <% page.steps.forEach(function(item, index) { %>
+            <li><span><%= index + 1 %></span><div><strong><%= item.title %></strong><p><%= item.text %></p></div></li>
+            <% }); %>
+          </ol>
+        </section>
+
+        <section class="zg-section">
+          <h2>Документы для проверки</h2>
+          <div class="zg-document-list">
+            <% page.documents.forEach(function(item) { %><div><i class="bi bi-file-earmark-check"></i><span><%= item %></span></div><% }); %>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Частые вопросы</h2>
+          <div class="zg-faq">
+            <% page.faq.forEach(function(item) { %><details><summary><%= item.q %></summary><p><%= item.a %></p></details><% }); %>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Связанные маршруты</h2>
+          <div class="zg-related-grid">
+            <% relatedPages.forEach(function(item) { %><a href="<%= item.path %>" data-growth-cta="related-intent"><span><%= item.h1 %></span><i class="bi bi-arrow-right"></i></a><% }); %>
+            <a href="/arest-scheta-v-bankah-kazahstana" data-growth-cta="bank-hub"><span>Выбрать свой банк</span><i class="bi bi-bank"></i></a>
+          </div>
+        </section>
+
+        <section class="zg-source-note">
+          <strong>Источники и дата проверки</strong>
+          <p>Материал проверен <%= page.reviewedAt.split('-').reverse().join('.') %>. Для решения дела используйте актуальные документы и официальные сервисы.</p>
+          <div class="zg-source-links">
+            <% page.sources.forEach(function(source) { %><a href="<%= source.href %>" target="_blank" rel="nofollow noopener"><%= source.name %> <i class="bi bi-box-arrow-up-right"></i></a><% }); %>
+          </div>
+          <p>Информация не заменяет анализ конкретного исполнительного производства, банковского договора, налогового акта или судебного дела.</p>
+        </section>
+      </div>
+
+      <aside class="zg-sidebar">
+        <section class="zg-sticky-card">
+          <span class="zg-card-label">Разбор документов</span>
+          <h2>Определим, куда обращаться</h2>
+          <p>Проверим, относится ли ситуация к ЧСИ, суду, КГД или внутренней процедуре банка.</p>
+          <ul><% page.documents.slice(0, 3).forEach(function(item) { %><li><i class="bi bi-check2"></i><%= item %></li><% }); %></ul>
+          <a class="zg-button zg-button--primary zg-button--full" href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="sidebar-whatsapp"><i class="bi bi-whatsapp"></i> Отправить документы</a>
+          <a class="zg-text-link" href="/kak-uznat-kto-nalozhil-arest-na-schet">Не знаете источник ограничения? →</a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="zg-mobile-actions">
+    <a href="/#checker-section" data-growth-cta="mobile-checker"><i class="bi bi-search"></i> Проверить</a>
+    <a href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="mobile-whatsapp"><i class="bi bi-whatsapp"></i> Документы</a>
+  </div>
+</div>
