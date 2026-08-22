@@ -1,0 +1,53 @@
+name: Apply SEO snippets and legal accuracy
+
+on:
+  push:
+    branches:
+      - growth/seo-snippets-legal-accuracy-7-pages
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: growth/seo-snippets-legal-accuracy-7-pages
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rebuild and run migration
+        run: |
+          cat .github/seo-v2.part-* | gzip -dc > scripts/apply-seo-ctr-legal-v2.js
+          node --check scripts/apply-seo-ctr-legal-v2.js
+          node scripts/apply-seo-ctr-legal-v2.js
+          rm -f .github/seo-v2.part-*
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate HTML and run tests
+        run: npm test
+
+      - name: Commit generated improvements
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Improve SEO snippets and legal accuracy on seven pages"
+          git push origin HEAD:growth/seo-snippets-legal-accuracy-7-pages
