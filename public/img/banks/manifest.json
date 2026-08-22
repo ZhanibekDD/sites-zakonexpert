@@ -1,0 +1,238 @@
+{
+  "generatedAt": "2026-08-22T23:18:15.247Z",
+  "generator": "scripts/fetch-bank-logos.js",
+  "note": "Bank names and logos are trademarks of their respective owners. Local copies are used for identification in the ZakonExpert directory.",
+  "count": 23,
+  "logos": [
+    {
+      "slug": "kaspi-bank",
+      "brand": "Kaspi Bank",
+      "domain": "kaspi.kz",
+      "path": "/img/banks/kaspi-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://kaspi.kz/img/Logo.svg",
+      "sha256": "63e70f61ace7f59465e84a6b4b9dd7e435c5fef7b01690d55da65b04aabf5930",
+      "bytes": 9982
+    },
+    {
+      "slug": "halyk-bank",
+      "brand": "Halyk Bank",
+      "domain": "halykbank.kz",
+      "path": "/img/banks/halyk-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://halykbank.kz/storage/app/uploads/public/6a5/75a/f7a/6a575af7a9880610279451.svg",
+      "sha256": "b2b4227b6f3062e097593dee9a3971bbf09ae2fd7c2e3a18047458f6ea595c16",
+      "bytes": 9754
+    },
+    {
+      "slug": "freedom-bank",
+      "brand": "Freedom Bank",
+      "domain": "bankffin.kz",
+      "path": "/img/banks/freedom-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/bankffin.kz",
+      "sha256": "29213b851c9ec668627d1e0ae7701afeb29e44cad4f0a2386f1c355223e62c83",
+      "bytes": 64020
+    },
+    {
+      "slug": "bank-centercredit",
+      "brand": "Bank CenterCredit",
+      "domain": "bcc.kz",
+      "path": "/img/banks/bank-centercredit.png",
+      "sourceType": "official-jsonld-logo",
+      "sourceUrl": "https://www.bcc.kz/themes/bcc/assets/images/logo.svg",
+      "sha256": "73b696136cda4729299f4b2046b80184052c9e9ed61ed8d94e271e24c32da7cf",
+      "bytes": 8369
+    },
+    {
+      "slug": "fortebank",
+      "brand": "ForteBank",
+      "domain": "forte.kz",
+      "path": "/img/banks/fortebank.png",
+      "sourceType": "official-icon",
+      "sourceUrl": "https://forte.kz/-/icon.ico?icon.1mekyyj_k7agt.ico",
+      "sha256": "57622e8a5fe2202aa8141f166b26f9d1d708e251f333ed48cd454eca06ba5dec",
+      "bytes": 69152
+    },
+    {
+      "slug": "eurasian-bank",
+      "brand": "Евразийский Банк",
+      "domain": "eubank.kz",
+      "path": "/img/banks/eurasian-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/eubank.kz",
+      "sha256": "ac2bd2e3c188922d0dabb65dee47c7c37f5b94153e4ffbc95b235f3565587a0e",
+      "bytes": 42406
+    },
+    {
+      "slug": "bereke-bank",
+      "brand": "Bereke Bank",
+      "domain": "berekebank.kz",
+      "path": "/img/banks/bereke-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://berekebank.kz/themes/bereke/assets/images/logo-bereke.svg",
+      "sha256": "9d601ec53604a4ec81119f228d1151120e3d7f7e906869acc0cf6810dd4be3c8",
+      "bytes": 7053
+    },
+    {
+      "slug": "alatau-city-bank",
+      "brand": "Alatau City Bank",
+      "domain": "alataucitybank.kz",
+      "path": "/img/banks/alatau-city-bank.png",
+      "sourceType": "official-icon",
+      "sourceUrl": "https://alataucitybank.kz/favicon/favicon-96x96.png",
+      "sha256": "0e245dd6a63e084ce77d442d972d58f1b5a6a477b6d4d8b2c7722947b07ffb17",
+      "bytes": 13073
+    },
+    {
+      "slug": "bank-rbk",
+      "brand": "Bank RBK",
+      "domain": "bankrbk.kz",
+      "path": "/img/banks/bank-rbk.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/bankrbk.kz",
+      "sha256": "3b037ec53e0a03244f5035adfc0e349b8e8f278cb70acfbb43fc130feca0ad99",
+      "bytes": 23757
+    },
+    {
+      "slug": "home-credit-bank",
+      "brand": "Home Credit Bank",
+      "domain": "home.kz",
+      "path": "/img/banks/home-credit-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/home.kz",
+      "sha256": "6dd029b94647bd7f2c28f553b78efc4b0d61700bb359d65a55683701d99cc2cf",
+      "bytes": 11954
+    },
+    {
+      "slug": "nurbank",
+      "brand": "Нурбанк",
+      "domain": "nurbank.kz",
+      "path": "/img/banks/nurbank.png",
+      "sourceType": "official-icon",
+      "sourceUrl": "https://nurbank.kz/images/favicon.png?ct=1735624685",
+      "sha256": "bcf57c36ca590ebd4df44698cf68a556bb8d292812da9b18fba0cc0ecc7da9d4",
+      "bytes": 8932
+    },
+    {
+      "slug": "otbasy-bank",
+      "brand": "Отбасы банк",
+      "domain": "hcsbk.kz",
+      "path": "/img/banks/otbasy-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://hcsbk.kz/local/templates/.default/images/logo-otbasy-bank_white.svg",
+      "sha256": "bec7872fb541557d44440e8aa146b1a8c4d88c7c0ee4138477207fdc601b1e32",
+      "bytes": 9213
+    },
+    {
+      "slug": "altyn-bank",
+      "brand": "Altyn Bank",
+      "domain": "altynbank.kz",
+      "path": "/img/banks/altyn-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/altynbank.kz",
+      "sha256": "6f041014ab0723013eed27a4fa331c6080492d97a8096bf97d449c15ec059405",
+      "bytes": 38383
+    },
+    {
+      "slug": "vtb-bank",
+      "brand": "ВТБ (Казахстан)",
+      "domain": "vtb-bank.kz",
+      "path": "/img/banks/vtb-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/vtb-bank.kz",
+      "sha256": "e90bdc1ee9aae250d41711ed4b71a592e9746544d6fd89c3bf9c9304c6cd9cc7",
+      "bytes": 35784
+    },
+    {
+      "slug": "kzi-bank",
+      "brand": "KZI Bank",
+      "domain": "kzibank.kz",
+      "path": "/img/banks/kzi-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/kzibank.kz",
+      "sha256": "cbec4e3e2083e1eaf25f4449a7ba3ea50dc423a8cfa0451cd5f3d434a240bdfa",
+      "bytes": 71128
+    },
+    {
+      "slug": "bnk-commercial-bank",
+      "brand": "BNK Commercial Bank",
+      "domain": "bnkcommercialbank.kz",
+      "path": "/img/banks/bnk-commercial-bank.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/bnkcommercialbank.kz",
+      "sha256": "b19006c502f4520a7214b87524a8e6e23fbb9a41e48b9ac4df5ddcca7c8daa4b",
+      "bytes": 28005
+    },
+    {
+      "slug": "kmf-bank",
+      "brand": "KMF Банк",
+      "domain": "kmf.kz",
+      "path": "/img/banks/kmf-bank.png",
+      "sourceType": "official-jsonld-logo",
+      "sourceUrl": "https://kmf.kz/themes/kmf/assets/images/logo.svg",
+      "sha256": "b18b6c9aaaccf2cc339c76a499ced528d9d1195772859417e8ab0b104d673217",
+      "bytes": 7055
+    },
+    {
+      "slug": "shinhan-bank",
+      "brand": "Shinhan Bank Kazakhstan",
+      "domain": "shinhan.kz",
+      "path": "/img/banks/shinhan-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://www.shinhan.kz/public/page/images/logo_2.png",
+      "sha256": "b7bba024e9d8c18ecd9c6b6c4b170aa1bd8e2d6e35e2a38ae43ee0049cc3e86a",
+      "bytes": 22944
+    },
+    {
+      "slug": "bank-of-china",
+      "brand": "Bank of China Kazakhstan",
+      "domain": "boc.kz",
+      "path": "/img/banks/bank-of-china.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://boc.kz/images/Bank_of_china_logo.jpg",
+      "sha256": "2bd069d9a97546d5ac6c11d3205f91ba71a452d6bbf892c670a5af1dc387808d",
+      "bytes": 51510
+    },
+    {
+      "slug": "icbc-kazakhstan",
+      "brand": "ICBC Kazakhstan",
+      "domain": "kz.icbc.com.cn",
+      "path": "/img/banks/icbc-kazakhstan.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/kz.icbc.com.cn",
+      "sha256": "8f6581f3c3c1498cb6731ffc26ca4c3bc3b42e6b1f8bcd5f483b7a7ecf97c7ed",
+      "bytes": 124080
+    },
+    {
+      "slug": "citibank-kazakhstan",
+      "brand": "Citibank Kazakhstan",
+      "domain": "citigroup.com",
+      "path": "/img/banks/citibank-kazakhstan.png",
+      "sourceType": "official-icon",
+      "sourceUrl": "https://www.citigroup.com/global/citigroup-ui/akpublic/images/gpa_favicon.ico",
+      "sha256": "ce8d3d7b680fd1db723d415e57989f073d5244f96919d7361d27bb14383471da",
+      "bytes": 31880
+    },
+    {
+      "slug": "adcb-kazakhstan",
+      "brand": "ADCB Islamic Bank Kazakhstan",
+      "domain": "adcb.com",
+      "path": "/img/banks/adcb-kazakhstan.png",
+      "sourceType": "hunter-domain-logo",
+      "sourceUrl": "https://logos.hunter.io/adcb.com",
+      "sha256": "65ab3ace4af6fd892c042f4f1c602f6bc175d22a628271fb5e0a3dc7318a5af4",
+      "bytes": 17431
+    },
+    {
+      "slug": "zaman-bank",
+      "brand": "Zaman Bank",
+      "domain": "zamanbank.kz",
+      "path": "/img/banks/zaman-bank.png",
+      "sourceType": "official-html-logo",
+      "sourceUrl": "https://zamanbank.kz/themes/zaman/assets/images/Logo-colors.svg",
+      "sha256": "51f0ab8a6d796c3f4ca53f9201e720ee749b1068996002d1b9258b039c659958",
+      "bytes": 12463
+    }
+  ]
+}
