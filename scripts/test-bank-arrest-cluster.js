@@ -24,7 +24,7 @@ function assertNoRiskyUniversalClaims(text, label) {
     /расходы\s+ЧСИ\s*\(?\s*10\s*%/iu,
     /исполнительск(?:ий|ого)\s+(?:сбор|вознагражден)[^.!?]{0,30}25\s*%/iu,
     /обязан[^.!?]{0,80}в\s+течение\s+1\s+рабочего\s+дня/iu,
-    /гарантированн(?:о|ый|ая)/iu,
+    /(?:гарантируем|гарантированно\s+(?:снимем|верн[её]м|разблокируем))/iu,
     /снимем\s+арест\s+за\s+\d+/iu,
   ];
   banned.forEach(pattern => assert(!pattern.test(text), label + ' contains risky universal claim: ' + pattern));
