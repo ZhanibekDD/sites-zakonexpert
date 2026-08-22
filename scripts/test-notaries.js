@@ -7,6 +7,12 @@ const { buildNotaries, validEmail } = require('./import-notaries');
 const { CHAMBERS, parseNotaryPage, toRegistryRows } = require('./refresh-notaries-csv');
 const { readRegistrySource } = require('../modules/registry-source');
 const { REGION_EMBLEMS, getRegionEmblem } = require('../modules/region-emblems');
+const {
+  extractArchiveTransfer,
+  findArchiveDirectory,
+  nameLikelyMatches,
+  officialChamberUrl,
+} = require('../modules/notary-archive');
 
 const sample = `
 <table border="1">
@@ -32,6 +38,13 @@ assert.strictEqual(getRegionEmblem('область Жетысу'), 'jetisu', 'ba
 assert.strictEqual(getRegionEmblem('область Улытау'), 'ulytau', 'bailiff region alias must resolve');
 assert.strictEqual(validEmail('Test@Mail.KZ'), 'test@mail.kz');
 assert.strictEqual(validEmail('10.00-18.00'), null);
+assert.deepStrictEqual(
+  extractArchiveTransfer('09:00–18:00 / Передан архивный материал нотариуса ИВАНОВОЙ ИРИНЫ ИВАНОВНЫ, нотариуса ПЕТРОВА ПЕТРА ПЕТРОВИЧА').names,
+  ['ИВАНОВОЙ ИРИНЫ ИВАНОВНЫ', 'ПЕТРОВА ПЕТРА ПЕТРОВИЧА'],
+);
+assert.deepStrictEqual(extractArchiveTransfer('четверг — архивный день').names, [], 'archive workday must not become a transfer');
+assert.ok(nameLikelyMatches('Акбурушова Гульнара', 'Акбурушовой Гульнары Жалгасовны'), 'declined Russian names must match');
+assert.strictEqual(officialChamberUrl('Актюбинская область'), 'https://enis.kz/Notary/NotaryByChamber/2');
 
 const source = readRegistrySource(path.join(__dirname, '..', 'registry', 'notaries.json.gz'), 'notaries');
 const { notaries } = buildNotaries(source.records, source.sourceMtime);
@@ -49,6 +62,10 @@ assert.ok(balabaev, 'complete registry must include Balabaev Bekzat and preserve
 const aman = notaries.find(item => item.license === '22020237' && item.name === 'АМАН ЖАНЕРКЕ');
 assert.ok(aman, 'verified notary override target must exist');
 assert.strictEqual(aman.email, 'amanzhanerke87@gmail.com');
+const archiveDirectory = findArchiveDirectory(notaries);
+assert.ok(archiveDirectory.transfers.length >= 2, 'official ENIS archive-transfer annotations must be extracted');
+assert.ok(archiveDirectory.transfers.some(item => item.current), 'at least one archive holder in the snapshot must still be active');
+assert.ok(archiveDirectory.transfers.some(item => !item.current), 'inactive archive holder must be flagged as stale');
 assert.strictEqual(
   toRegistryRows([{
     region: 'Жамбылская область',
@@ -96,6 +113,20 @@ assert.strictEqual(
     'AdSense autoplacement must stay disabled on notary profiles');
   assert.doesNotMatch(profileHtml, /yandex\.ru\/ads\/system\/ap-loader\.js/,
     'Yandex autoplacement must stay disabled on notary profiles');
+
+  const archiveHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'archive-search.ejs'),
+    {
+      query: '',
+      directory: archiveDirectory,
+      lastUpdated: new Date('2026-08-23T00:00:00+05:00'),
+      chambers: [],
+    },
+  );
+  assert.match(archiveHtml, /Кому передан архив нотариуса/);
+  assert.match(archiveHtml, /Обновление каждый день/);
+  assert.match(archiveHtml, /Актуально/);
+  assert.match(archiveHtml, /Перепроверить/);
 
   console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
 })().catch(error => {
