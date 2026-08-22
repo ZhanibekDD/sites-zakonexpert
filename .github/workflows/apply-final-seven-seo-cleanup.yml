@@ -1,0 +1,51 @@
+name: Finalize seven SEO pages
+
+on:
+  push:
+    branches:
+      - growth/legal-residuals-final
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: growth/legal-residuals-final
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply final cleanup
+        run: |
+          node --check scripts/finalize-seven-seo-pages.js
+          node scripts/finalize-seven-seo-pages.js
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run complete test suite
+        run: npm test
+
+      - name: Commit final page changes
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Finalize legal accuracy on seven SEO pages"
+          git push origin HEAD:growth/legal-residuals-final
