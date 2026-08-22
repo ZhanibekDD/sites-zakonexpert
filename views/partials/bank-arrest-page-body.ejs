@@ -27,7 +27,7 @@ const segmentLabel = page.segment === 'business'
           <p class="zg-hero-note"><i class="bi bi-shield-check"></i> Первичная диагностика. Без обещаний гарантированного результата.</p>
         </div>
         <aside class="zg-hero-card" aria-label="Карточка банка">
-          <div class="zg-bank-mark"><i class="bi bi-building-check"></i></div>
+          <div class="zg-bank-mark"><img src="/img/banks/<%= page.bankSlug %>.png" alt="" width="512" height="256" decoding="async"></div>
           <p class="zg-card-label">Банк в вашем уведомлении</p>
           <h2><%= bankName %></h2>
           <% if (aliases) { %><p class="zg-aliases"><%= aliases %></p><% } %>

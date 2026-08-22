@@ -53,7 +53,7 @@ const otherPages = pages.filter(item => item.segment !== 'retail');
         <div class="zg-bank-grid">
           <% retailPages.forEach(function(item) { %>
           <a class="zg-bank-tile" href="<%= item.path %>" data-growth-cta="bank-card">
-            <span class="zg-bank-icon"><i class="bi bi-credit-card-2-front"></i></span>
+            <span class="zg-bank-icon"><img src="/img/banks/<%= item.bankSlug %>.png" alt="" width="512" height="256" loading="lazy" decoding="async"></span>
             <div><strong><%= item.brand %></strong><small><%= (item.aliases || []).slice(0, 2).join(' · ') || 'Банк Казахстана' %></small></div>
             <i class="bi bi-arrow-up-right"></i>
           </a>
@@ -66,7 +66,7 @@ const otherPages = pages.filter(item => item.segment !== 'retail');
         <div class="zg-bank-grid zg-bank-grid--compact">
           <% otherPages.forEach(function(item) { %>
           <a class="zg-bank-tile" href="<%= item.path %>" data-growth-cta="bank-card">
-            <span class="zg-bank-icon"><i class="bi bi-building"></i></span>
+            <span class="zg-bank-icon"><img src="/img/banks/<%= item.bankSlug %>.png" alt="" width="512" height="256" loading="lazy" decoding="async"></span>
             <div><strong><%= item.brand %></strong><small><%= item.segment === 'islamic' ? 'Исламский банкинг' : 'Физлица и/или бизнес' %></small></div>
             <i class="bi bi-arrow-up-right"></i>
           </a>
