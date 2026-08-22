@@ -1,0 +1,66 @@
+<%
+const canonical = 'https://zakonexpertt.kz' + page.path;
+const title = 'Арест счёта ' + page.brand + ': что делать | ZakonExpert';
+const description = 'Арестовали или заблокировали счёт в ' + page.brand + '? Узнайте, кто установил ограничение, какие документы запросить и куда обращаться в Казахстане.';
+const faq = [
+  {
+    q: 'Почему ' + page.brand + ' ограничил счёт?',
+    a: 'Сначала нужно определить вид ограничения. Банк может исполнять внешний документ ЧСИ, суда или государственного органа, а также проводить собственную антифрод- или комплаенс-проверку. Эти ситуации требуют разных действий.',
+  },
+  {
+    q: 'Может ли банк сам снять арест?',
+    a: 'Если банк исполняет внешний документ, ему обычно нужен документ об отмене или изменении меры от уполномоченного органа. При внутренней проверке порядок определяется правилами банка и результатами рассмотрения документов клиента.',
+  },
+  {
+    q: 'Какие данные нужно запросить у банка?',
+    a: 'Попросите указать вид меры, инициатора, дату и номер документа, сумму ограничения, затронутые счета и доступный порядок получения копии или официального ответа.',
+  },
+];
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': canonical + '#webpage',
+      url: canonical,
+      name: title,
+      description,
+      dateModified: page.reviewedAt,
+      inLanguage: 'ru-KZ',
+      isPartOf: { '@id': 'https://zakonexpertt.kz/#website' },
+      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+      about: { '@type': 'Thing', name: 'Ограничение банковского счёта в ' + page.brand },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Аресты в банках', item: 'https://zakonexpertt.kz/arest-scheta-v-bankah-kazahstana' },
+        { '@type': 'ListItem', position: 3, name: page.brand, item: canonical },
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: faq.map(item => ({
+        '@type': 'Question',
+        name: item.q,
+        acceptedAnswer: { '@type': 'Answer', text: item.a },
+      })),
+    },
+  ],
+};
+const body = include('../partials/bank-arrest-page-body', { page, bank, relatedPages, faq });
+%>
+<%- include('../news/layout', {
+  title,
+  description,
+  canonical,
+  ogType: 'website',
+  ogImage: '/img/brand/zakonexpert-logo-transparent-hd.png',
+  schema,
+  noindex: false,
+  enableAutoAds: false,
+  extraStyles: ['/css/bank-arrest-cluster.css?v=20260823-1'],
+  extraScripts: ['/js/growth-pages.js?v=20260823-1'],
+  body,
+}) %>

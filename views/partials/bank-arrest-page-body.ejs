@@ -1,0 +1,139 @@
+<%
+const bankName = bank.shortName || bank.name || page.brand;
+const bankWeb = bank.web || page.officialSite || '';
+const bankWebHref = bankWeb ? (/^https?:\/\//i.test(bankWeb) ? bankWeb : 'https://' + bankWeb) : '';
+const whatsappText = encodeURIComponent('Здравствуйте! Счёт в ' + page.brand + ' ограничен. Хочу понять основание и проверить документы. Страница: https://zakonexpertt.kz' + page.path);
+const checkerHref = '/#checker-section';
+const aliases = (page.aliases || []).join(' · ');
+const segmentLabel = page.segment === 'business'
+  ? 'Корпоративные счета'
+  : (page.segment === 'islamic' ? 'Исламский банкинг' : (page.segment === 'mixed' ? 'Физлица и бизнес' : 'Карты и счета физлиц'));
+%>
+<div class="zg-page" data-growth-root data-growth-page-type="bank_arrest" data-growth-page-key="<%= page.path %>">
+  <section class="zg-hero">
+    <div class="zg-container">
+      <nav class="zg-breadcrumbs" aria-label="Навигационная цепочка">
+        <a href="/">Главная</a><span>/</span><a href="/arest-scheta-v-bankah-kazahstana">Аресты в банках</a><span>/</span><span><%= page.brand %></span>
+      </nav>
+      <div class="zg-hero-grid">
+        <div>
+          <span class="zg-kicker"><i class="bi bi-bank"></i> <%= segmentLabel %></span>
+          <h1>Арестовали счёт в <span><%= page.brand %></span>: что делать</h1>
+          <p class="zg-lead">Банк может исполнять постановление ЧСИ, судебный или налоговый документ, а также ограничить операции в рамках собственной проверки. Сначала определяем точный вид меры — только потом выбираем способ действий.</p>
+          <div class="zg-actions">
+            <a class="zg-button zg-button--primary" href="<%= checkerHref %>" data-growth-cta="checker"><i class="bi bi-search"></i> Проверить по ИИН</a>
+            <a class="zg-button zg-button--outline" href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="whatsapp"><i class="bi bi-whatsapp"></i> Разобрать документы</a>
+          </div>
+          <p class="zg-hero-note"><i class="bi bi-shield-check"></i> Первичная диагностика. Без обещаний гарантированного результата.</p>
+        </div>
+        <aside class="zg-hero-card" aria-label="Карточка банка">
+          <div class="zg-bank-mark"><i class="bi bi-building-check"></i></div>
+          <p class="zg-card-label">Банк в вашем уведомлении</p>
+          <h2><%= bankName %></h2>
+          <% if (aliases) { %><p class="zg-aliases"><%= aliases %></p><% } %>
+          <% if (bank.bin) { %><div class="zg-bank-row"><span>БИН</span><strong><%= bank.bin %></strong></div><% } %>
+          <% if (bankWebHref) { %><a class="zg-official-link" href="<%= bankWebHref %>" target="_blank" rel="nofollow noopener"><i class="bi bi-box-arrow-up-right"></i> Официальный сайт банка</a><% } %>
+          <p class="zg-not-affiliated">ZakonExpert не является подразделением или представителем <%= page.brand %>.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="zg-trust" aria-label="Принципы работы">
+    <div class="zg-container zg-trust-grid">
+      <div><i class="bi bi-file-earmark-search"></i><strong>Сначала документ</strong><span>Номер, дата и инициатор меры</span></div>
+      <div><i class="bi bi-diagram-3"></i><strong>Разделяем причины</strong><span>ЧСИ, суд, КГД или банк</span></div>
+      <div><i class="bi bi-lock"></i><strong>ИИН не публикуется</strong><span>Не передаём персональные данные в страницу</span></div>
+      <div><i class="bi bi-geo-alt"></i><strong>По Казахстану</strong><span>Большинство действий дистанционно</span></div>
+    </div>
+  </section>
+
+  <main class="zg-main">
+    <div class="zg-container zg-layout">
+      <div class="zg-content">
+        <section class="zg-answer">
+          <span>Короткий ответ</span>
+          <h2>Банк обычно не решает, законен ли долг</h2>
+          <p>Если ограничение поступило извне, банк исполняет документ. Чтобы восстановить доступ к деньгам, нужно работать с источником меры: исполнительным документом, постановлением, налоговым актом или судебным обеспечением. Если ограничение внутреннее, нужен комплаенс-пакет и письменный ответ банка.</p>
+        </section>
+
+        <section class="zg-section">
+          <h2>Что важно именно для <%= page.brand %></h2>
+          <p><%= page.context %></p>
+          <div class="zg-inline-warning"><i class="bi bi-exclamation-triangle"></i><div><strong>Не путайте арест и блокировку карты</strong><span>Перевыпуск карты не снимает ограничение, установленное на банковский счёт или деньги клиента.</span></div></div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Четыре возможных источника ограничения</h2>
+          <div class="zg-cause-grid">
+            <article><i class="bi bi-person-badge"></i><h3>ЧСИ</h3><p>Постановление по исполнительному производству. Нужны номер ИП, взыскатель и исполнительный документ.</p></article>
+            <article><i class="bi bi-bank2"></i><h3>Суд</h3><p>Судебное обеспечение или исполнение судебного акта. Проверяется дело и конкретное определение.</p></article>
+            <article><i class="bi bi-receipt"></i><h3>КГД</h3><p>Налоговая задолженность, уведомление или иная мера органа государственных доходов.</p></article>
+            <article><i class="bi bi-shield-lock"></i><h3>Банк</h3><p>Антифрод, финансовый мониторинг или комплаенс. Здесь нужен другой комплект объяснений и документов.</p></article>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Что запросить у банка</h2>
+          <ol class="zg-steps">
+            <li><span>1</span><div><strong>Вид ограничения</strong><p>Арест, приостановление расходных операций, инкассовое списание, проверка операции или блокировка доступа.</p></div></li>
+            <li><span>2</span><div><strong>Реквизиты документа</strong><p>Инициатор, дата, номер, сумма и перечень затронутых счетов.</p></div></li>
+            <li><span>3</span><div><strong>Копию или порядок получения</strong><p>Уточните, где получить постановление либо официальный письменный ответ.</p></div></li>
+            <li><span>4</span><div><strong>Статус исполнения</strong><p>Деньги только ограничены, уже перечислены или доступна часть операций.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="zg-section">
+          <h2>Маршрут после получения документа</h2>
+          <div class="zg-route-table">
+            <div><strong>Исполнительная надпись</strong><span>Проверяем получение, бесспорность требования, сроки и материалы нотариуса.</span><a href="/otmena-ispolnitelnoi-nadpisi">Перейти к отмене →</a></div>
+            <div><strong>Постановление ЧСИ</strong><span>Отделяем спор с основанием взыскания от жалобы на действие или бездействие исполнителя.</span><a href="/snyatie-ogranichenii-chsi">Проверить действия ЧСИ →</a></div>
+            <div><strong>Налоговая мера</strong><span>Сверяем уведомление, лицевой счёт, отчётность и платежи в КГД.</span><a href="/arest-scheta-nalogovoy">Налоговый маршрут →</a></div>
+            <div><strong>Финмониторинг банка</strong><span>Готовим документы о происхождении средств и экономическом смысле операций.</span><a href="/blokirovka-scheta-po-finmonitoringu">Комплаенс-маршрут →</a></div>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Частые вопросы</h2>
+          <div class="zg-faq">
+            <% faq.forEach(function(item) { %>
+            <details><summary><%= item.q %></summary><p><%= item.a %></p></details>
+            <% }); %>
+          </div>
+        </section>
+
+        <section class="zg-section">
+          <h2>Другие банки</h2>
+          <div class="zg-related-grid">
+            <% relatedPages.forEach(function(item) { %><a href="<%= item.path %>" data-growth-cta="related-bank"><span><%= item.brand %></span><i class="bi bi-arrow-right"></i></a><% }); %>
+            <a href="/arest-scheta-v-bankah-kazahstana" data-growth-cta="hub"><span>Все банки Казахстана</span><i class="bi bi-grid"></i></a>
+          </div>
+        </section>
+
+        <section class="zg-source-note">
+          <strong>Проверено <%= page.reviewedAt.split('-').reverse().join('.') %></strong>
+          <p>Материал носит информационный характер. Названия и товарные знаки банков принадлежат их правообладателям. ZakonExpert не обещает автоматического снятия ограничения: вывод делается после изучения документов.</p>
+        </section>
+      </div>
+
+      <aside class="zg-sidebar">
+        <section class="zg-sticky-card">
+          <span class="zg-card-label">Что прислать для разбора</span>
+          <h2>Достаточно начать с 3 файлов</h2>
+          <ul>
+            <li><i class="bi bi-check2"></i> скрин или ответ банка;</li>
+            <li><i class="bi bi-check2"></i> постановление или SMS;</li>
+            <li><i class="bi bi-check2"></i> выписка без лишних операций.</li>
+          </ul>
+          <a class="zg-button zg-button--primary zg-button--full" href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="sidebar-whatsapp"><i class="bi bi-whatsapp"></i> Отправить документы</a>
+          <a class="zg-text-link" href="/kak-uznat-kto-nalozhil-arest-na-schet">Не знаете инициатора? Начните здесь →</a>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="zg-mobile-actions" aria-label="Быстрые действия">
+    <a href="<%= checkerHref %>" data-growth-cta="mobile-checker"><i class="bi bi-search"></i> Проверить</a>
+    <a href="https://wa.me/77479957635?text=<%= whatsappText %>" target="_blank" rel="noopener" data-growth-cta="mobile-whatsapp"><i class="bi bi-whatsapp"></i> Документы</a>
+  </div>
+</div>

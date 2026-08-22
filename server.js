@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-15-official-company-sources';
+const RELEASE_ID = '2026-08-23-bank-arrest-cluster-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -67,6 +67,20 @@ const { createGoszakupClient } = require('./modules/goszakup');
 const { createCompanyCheckService } = require('./modules/company-check-sources');
 const { getRegionEmblem } = require('./modules/region-emblems');
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
+const {
+  BANK_ARREST_HUB_PATH,
+  BANK_ARREST_PAGES,
+  BANK_ARREST_PATH_SET,
+  getBankArrestPageByPath,
+  findBankRecord,
+  getRelatedBankArrestPages,
+  getBankArrestPathForBank,
+} = require('./modules/bank-arrest-pages');
+const {
+  LEGAL_INTENT_PAGES,
+  LEGAL_INTENT_PATH_SET,
+  getLegalIntentPage,
+} = require('./modules/legal-intent-pages');
 const {
   INDEXABLE_LOCALES: COMPANY_LOCALES,
   catalogAlternates,
@@ -369,7 +383,10 @@ const TRACKED_PATHS = new Set([
 ]);
 app.use((req, res, next) => {
   const notifyVisits = /^(1|true|yes)$/i.test(process.env.TELEGRAM_VISIT_NOTIFICATIONS || '');
-  if (notifyVisits && req.method === 'GET' && TRACKED_PATHS.has(req.path)) {
+  const growthTracked = req.path === BANK_ARREST_HUB_PATH
+    || BANK_ARREST_PATH_SET.has(req.path)
+    || LEGAL_INTENT_PATH_SET.has(req.path);
+  if (notifyVisits && req.method === 'GET' && (TRACKED_PATHS.has(req.path) || growthTracked)) {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     const ua = req.headers['user-agent'] || '';
     const referer = req.headers['referer'] || req.headers['referrer'] || '';
@@ -863,7 +880,7 @@ function slugify(s) {
 
 // ===== BANKS DATA =====
 const BANKS_DATA = [
-  { slug:'halyk-bank', name:'Народный Банк Казахстана', shortName:'Halyk Bank', tag:'Государственный', city:'г. Алматы', address:'пр. Аль-Фараби, 40', phone:'+7 (727) 259-07-77', phoneRaw:'+77272590777', phoneShort:'7111 (физ.) · 9595 (юр.)', email:'info@halykbank.kz', web:'halykbank.kz', bin:'940140000385', chairman:'Шаяхметова Умут Болатовна', note:'Крупнейший частный банк Казахстана' },
+  { slug:'halyk-bank', name:'Народный Банк Казахстана', shortName:'Halyk Bank', tag:'', city:'г. Алматы', address:'пр. Аль-Фараби, 40', phone:'+7 (727) 259-07-77', phoneRaw:'+77272590777', phoneShort:'7111 (физ.) · 9595 (юр.)', email:'info@halykbank.kz', web:'halykbank.kz', bin:'940140000385', chairman:'Шаяхметова Умут Болатовна', note:'Крупнейший частный банк Казахстана' },
   { slug:'kaspi-bank', name:'Kaspi Bank', shortName:'Kaspi Bank', tag:'', city:'г. Алматы', address:'ул. Наурызбай батыра, 154А', phone:'+7 (727) 258-59-55', phoneRaw:'+77272585955', phoneShort:'9999 (моб.) · 8-800-080-18-00', email:'office@kaspi.kz', web:'kaspibank.kz', bin:'971240001315', chairman:'Миронов Павел Владимирович', note:'Онлайн-банкинг, рассрочка, кредиты, e-commerce' },
   { slug:'bank-centercredit', name:'Банк ЦентрКредит', shortName:'Bank CenterCredit (БЦК)', tag:'', city:'г. Алматы', address:'пр. Аль-Фараби, 38', phone:'505 (физ.) · 605 (бизнес)', phoneRaw:'', phoneShort:'', email:'info@bcc.kz', web:'bcc.kz', bin:'980640000093', chairman:'Владимиров Руслан Владимирович', note:'Универсальный банк, кредиты и депозиты' },
   { slug:'otbasy-bank', name:'Отбасы банк', shortName:'Otbasy Bank', tag:'Государственный', city:'г. Астана', address:'пр. Мәңгілік Ел, 55А', phone:'+7 (727) 330-93-00', phoneRaw:'+77273309300', phoneShort:'300 (моб.) · 8-8000-801-880', email:'mail@hcsbk.kz', web:'hcsbk.kz', bin:'030740001404', chairman:'Ибрагимова Ляззат Еркеновна', note:'Жилищный строительный сберегательный банк (ЖССБ)' },
@@ -884,6 +901,8 @@ const BANKS_DATA = [
   { slug:'adcb-kazakhstan', name:'Исламский банк ADCB', shortName:'ADCB Kazakhstan', tag:'Исламский', city:'г. Алматы', address:'пр. Аль-Фараби, 77/7, БЦ Esentai Tower', phone:'+7 (727) 233-00-00', phoneRaw:'+77272330000', phoneShort:'', email:'adcbk.reception@adcb.com', web:'adcb.com/kazakhstan', bin:'100140011772', chairman:'Гордон Джеймс Хаскинс', note:'Исламский банкинг. Бывший Al Hilal Bank, переименован 21.10.2024' },
   { slug:'zaman-bank', name:'Заман-Банк', shortName:'Zaman Bank', tag:'Исламский', city:'г. Астана', address:'пр. Рақымжан Қошқарбаев, 1а', phone:'+7 (7172) 26-20-26', phoneRaw:'+77172262026', phoneShort:'+7 (727) 355-65-75 (Алматы) · 4077', email:'info@zamanbank.kz', web:'zamanbank.kz', bin:'910640000060', chairman:'Асаева Гульфайруз Ерлановна', note:'Исламский банк, работает по принципам шариата' },
   { slug:'kmf-bank', name:'KMF Банк', shortName:'KMF Bank', tag:'Специализированный', city:'г. Алматы', address:'пр. Нұрсұлтан Назарбаев, 50', phone:'+7 (727) 331-74-74', phoneRaw:'+77273317474', phoneShort:'', email:'info@kmf.kz', web:'kmf.kz', bin:'061240001583', chairman:'Жусупов Шалкар Амангосович', note:'Бывшая МФО KMF. Конвертирована в банк 12.08.2025. Кредитование МСБ и физлиц' },
+  { slug:'kzi-bank', name:'Казахстан-Зираат Интернешнл Банк', shortName:'KZI Bank', tag:'Иностранный', city:'г. Алматы', address:'ул. Наурызбай батыра, 17А', phone:'+7 (727) 244-19-93', phoneRaw:'+77272441993', phoneShort:'9193 · +7 (727) 244-40-00', email:'kzibank@kzibank.kz', web:'kzibank.kz', bin:'930140000323', chairman:'', note:'Дочерний банк Ziraat Bankası. Обслуживает физических и юридических лиц' },
+  { slug:'bnk-commercial-bank', name:'Коммерческий Банк БиЭнКей', shortName:'BNK Commercial Bank', tag:'Иностранный', city:'г. Алматы', address:'ул. Ауэзова, 60', phone:'5210', phoneRaw:'', phoneShort:'Бесплатный звонок по Казахстану', email:'info@bnkcommercialbank.kz', web:'bnkcommercialbank.kz', bin:'180640000680', chairman:'Ким Сонгхён', note:'Банковская лицензия № 1.1.118 от 25.06.2025' },
   { slug:'citibank-kazakhstan', name:'Ситибанк Казахстан', shortName:'Citibank Kazakhstan', tag:'Иностранный', city:'г. Алматы', address:'ул. Зенкова, 26/41', phone:'+7 (727) 332-14-00', phoneRaw:'+77273321400', phoneShort:'+7 (717) 255-76-00 (Астана)', email:'citibank.kazakhstan@citi.com', web:'citibank.com/kazakhstan', bin:'980540003232', chairman:'Жакаева Сауле', note:'Международный банк Citigroup, корпоративное обслуживание' },
 ];
 
@@ -1336,7 +1355,50 @@ app.get('/emergency',     (req, res) => res.render('emergency/catalog', { items:
 app.get('/banks/:slug', (req, res) => {
   const bank = getBanksData().find(b => b.slug === req.params.slug);
   if (!bank) return sendNotFound(res);
-  res.render('banks/item', { bank, lowContentBoost });
+  res.render('banks/item', {
+    bank,
+    lowContentBoost,
+    bankArrestPath: getBankArrestPathForBank(bank),
+  });
+});
+
+app.get(BANK_ARREST_HUB_PATH, (req, res) => {
+  res.render('bank-arrest/hub', {
+    pages: BANK_ARREST_PAGES,
+    legalPages: LEGAL_INTENT_PAGES,
+    reviewedAt: BANK_ARREST_PAGES[0]?.reviewedAt || '2026-08-23',
+  });
+});
+
+BANK_ARREST_PAGES.filter(page => !page.legacyStatic).forEach(page => {
+  app.get(page.path, (req, res) => {
+    const bank = findBankRecord(page, getBanksData());
+    res.render('bank-arrest/page', {
+      page,
+      bank,
+      relatedPages: getRelatedBankArrestPages(page),
+    });
+  });
+});
+
+const RELATED_GROWTH_LABELS = Object.freeze({
+  '/snyatie-aresta-so-scheta': 'Как снять арест со счёта или карты',
+  '/snyatie-ogranichenii-chsi': 'Что делать с ограничениями ЧСИ',
+  '/chsi-ne-snimaet-arest-posle-oplaty': 'ЧСИ не снимает арест после оплаты',
+  '/arest-zarplatnoy-karty': 'Арест зарплатной карты',
+});
+
+LEGAL_INTENT_PAGES.forEach(page => {
+  app.get(page.path, (req, res) => {
+    const relatedPages = (page.related || []).map(relatedPath => {
+      const configured = getLegalIntentPage(relatedPath);
+      return configured || {
+        path: relatedPath,
+        h1: RELATED_GROWTH_LABELS[relatedPath] || 'Связанный правовой маршрут',
+      };
+    });
+    res.render('legal-intent/page', { page, relatedPages });
+  });
 });
 
 // ITEM PAGES: COURTS
@@ -2276,6 +2338,16 @@ function getCorePages() {
     { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
     { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
   ];
+  const growthPages = [
+    { url: BANK_ARREST_HUB_PATH, priority: '0.95', freq: 'weekly', lastmod: '2026-08-23' },
+    ...BANK_ARREST_PAGES.map(page => ({ url: page.path, priority: page.priority >= 95 ? '0.9' : '0.82', freq: 'monthly', lastmod: page.reviewedAt })),
+    ...LEGAL_INTENT_PAGES.map(page => ({ url: page.path, priority: page.priority >= 94 ? '0.9' : '0.85', freq: 'monthly', lastmod: page.reviewedAt })),
+  ];
+  growthPages.forEach(growthPage => {
+    const existing = pages.find(page => page.url === growthPage.url);
+    if (existing) Object.assign(existing, growthPage);
+    else pages.push(growthPage);
+  });
   TOOLS.forEach(tool => {
     if (!pages.some(page => page.url === tool.href)) {
       pages.push({ url: tool.href, priority: '0.82', freq: 'monthly' });
@@ -2289,16 +2361,40 @@ function getCorePages() {
   return pages;
 }
 
+function latestFileLastmod(relativePaths) {
+  const timestamps = (Array.isArray(relativePaths) ? relativePaths : [relativePaths])
+    .map(relativePath => {
+      try { return fs.statSync(path.join(__dirname, relativePath)).mtime; }
+      catch (_) { return null; }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.getTime() - a.getTime());
+  return timestamps.length ? timestamps[0].toISOString().substring(0, 10) : '';
+}
+
+function corePageLastmod(page) {
+  if (page.lastmod) return String(page.lastmod).substring(0, 10);
+  const cleanPath = String(page.url || '').split('?', 1)[0];
+  if (!cleanPath || cleanPath === '/') return latestFileLastmod('public/index.html');
+  const candidates = [
+    'public' + cleanPath + '.html',
+    'public' + cleanPath + '/index.html',
+  ];
+  return latestFileLastmod(candidates);
+}
+
 app.get('/sitemap-pages.xml', (req, res) => {
   const pages = getCorePages();
-  const today = new Date().toISOString().substring(0, 10);
-  const urls = pages.map(p => `
+  const urls = pages.map(page => {
+    const lastmod = corePageLastmod(page);
+    return `
   <url>
-    <loc>https://zakonexpertt.kz${p.url}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${p.freq}</changefreq>
-    <priority>${p.priority}</priority>
-  </url>`).join('');
+    <loc>https://zakonexpertt.kz${xmlEscape(page.url)}</loc>${lastmod ? `
+    <lastmod>${lastmod}</lastmod>` : ''}
+    <changefreq>${page.freq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+  }).join('');
 
   res.set('Content-Type', 'application/xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
@@ -2320,12 +2416,12 @@ app.get('/sitemap.txt', asyncHandler(async (req, res) => {
 }));
 
 // SITEMAPS: CSV-backed catalogs (banks, courts, mfo, lombards, gsi, insurance, collectors, chambers)
-function csvSitemap(res, items, prefix) {
-  const today = new Date().toISOString().substring(0, 10);
-  const urls = items.filter(i => i.slug).map(i => `
+function csvSitemap(res, items, prefix, sourceFiles) {
+  const lastmod = latestFileLastmod(sourceFiles || []);
+  const urls = items.filter(item => item.slug).map(item => `
   <url>
-    <loc>https://zakonexpertt.kz/${prefix}/${i.slug}</loc>
-    <lastmod>${today}</lastmod>
+    <loc>https://zakonexpertt.kz/${prefix}/${item.slug}</loc>${lastmod ? `
+    <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>`).join('');
@@ -2333,19 +2429,19 @@ function csvSitemap(res, items, prefix) {
   res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`);
 }
 
-app.get('/sitemap-banks.xml',      (req, res) => csvSitemap(res, getBanksData(),      'banks'));
-app.get('/sitemap-courts.xml',     (req, res) => csvSitemap(res, getCourtsData(),     'courts'));
-app.get('/sitemap-chambers.xml',   (req, res) => csvSitemap(res, getChambersData(),   'chambers'));
-app.get('/sitemap-collectors.xml', (req, res) => csvSitemap(res, getCollectors(),     'collectors'));
-app.get('/sitemap-gsi.xml',        (req, res) => csvSitemap(res, getGsiData(),        'gsi'));
-app.get('/sitemap-insurance.xml',  (req, res) => csvSitemap(res, getInsuranceData(),  'insurance'));
+app.get('/sitemap-banks.xml',      (req, res) => csvSitemap(res, getBanksData(),      'banks', 'Банки_Казахстана.csv'));
+app.get('/sitemap-courts.xml',     (req, res) => csvSitemap(res, getCourtsData(),     'courts', 'Суды_Казахстана.csv'));
+app.get('/sitemap-chambers.xml',   (req, res) => csvSitemap(res, getChambersData(),   'chambers', ['Нотариальные_палаты_Казахстана.csv', 'Палаты_ЧСИ_Казахстана.csv']));
+app.get('/sitemap-collectors.xml', (req, res) => csvSitemap(res, getCollectors(),     'collectors', 'Коллекторские_агентства_Казахстана.csv'));
+app.get('/sitemap-gsi.xml',        (req, res) => csvSitemap(res, getGsiData(),        'gsi', 'Государственные_судебные_исполнители_Департаменты_юстиции.csv'));
+app.get('/sitemap-insurance.xml',  (req, res) => csvSitemap(res, getInsuranceData(),  'insurance', 'Страховые_компании_Казахстана.csv'));
 app.get('/sitemap-mfo.xml', (req, res) => {
   const { mfo } = getMfoData();
-  csvSitemap(res, mfo, 'mfo');
+  csvSitemap(res, mfo, 'mfo', 'МФО_Ломбарды_КредТоварищества_Казахстана.csv');
 });
 app.get('/sitemap-lombards.xml', (req, res) => {
   const { lombards } = getMfoData();
-  csvSitemap(res, lombards, 'lombards');
+  csvSitemap(res, lombards, 'lombards', 'МФО_Ломбарды_КредТоварищества_Казахстана.csv');
 });
 
 // COMPANY SITEMAPS — bounded LRU cache. Caching every company sitemap caused a
@@ -2448,82 +2544,42 @@ ${urls}
 app.get('/sitemap.xml', (req, res) => res.redirect(301, '/sitemap-index.xml'));
 
 // SITEMAP INDEX
+function sitemapIndexEntry(sitemapPath, lastmod) {
+  return `  <sitemap>
+    <loc>https://zakonexpertt.kz${sitemapPath}</loc>${lastmod ? `
+    <lastmod>${lastmod}</lastmod>` : ''}
+  </sitemap>`;
+}
+
 app.get('/sitemap-index.xml', (req, res) => {
-  const today = new Date().toISOString().substring(0, 10);
   const companyLastmod = companiesDb
-    ? String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || today).substring(0, 10)
-    : today;
-  const companySitemaps = companiesDb
-    ? Array.from({ length: companiesDb.sitemapChunkCount() }, (_, index) => `
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-companies-${index + 1}.xml</loc>
-    <lastmod>${companyLastmod}</lastmod>
-  </sitemap>`).join('')
+    ? String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || '').substring(0, 10)
     : '';
+  const entries = [
+    ['/sitemap-pages.xml', latestFileLastmod(['server.js', 'modules/bank-arrest-pages.js', 'modules/legal-intent-pages.js'])],
+    ['/sitemap-news.xml', ''],
+    ['/sitemap-notaries.xml', latestFileLastmod(['Нотариусы.csv', 'notaries.csv'])],
+    ['/sitemap-bailiffs.xml', latestFileLastmod(['ЧСИ.csv', 'bailiffs.csv'])],
+    ['/sitemap-lawyers.xml', latestFileLastmod(['Адвокаты.csv', 'lawyers.csv'])],
+    ['/sitemap-laws.xml', ''],
+    ['/sitemap-banks.xml', latestFileLastmod('Банки_Казахстана.csv')],
+    ['/sitemap-courts.xml', latestFileLastmod('Суды_Казахстана.csv')],
+    ['/sitemap-chambers.xml', latestFileLastmod(['Нотариальные_палаты_Казахстана.csv', 'Палаты_ЧСИ_Казахстана.csv'])],
+    ['/sitemap-collectors.xml', latestFileLastmod('Коллекторские_агентства_Казахстана.csv')],
+    ['/sitemap-gsi.xml', latestFileLastmod('Государственные_судебные_исполнители_Департаменты_юстиции.csv')],
+    ['/sitemap-insurance.xml', latestFileLastmod('Страховые_компании_Казахстана.csv')],
+    ['/sitemap-mfo.xml', latestFileLastmod('МФО_Ломбарды_КредТоварищества_Казахстана.csv')],
+    ['/sitemap-image.xml', latestFileLastmod(['server.js', 'public/img/seo'])],
+    ['/sitemap-lombards.xml', latestFileLastmod('МФО_Ломбарды_КредТоварищества_Казахстана.csv')],
+  ];
+  const companyEntries = companiesDb
+    ? Array.from({ length: companiesDb.sitemapChunkCount() }, (_, index) => [`/sitemap-companies-${index + 1}.xml`, companyLastmod])
+    : [];
   res.set('Content-Type', 'application/xml');
+  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-pages.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-news.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-notaries.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-bailiffs.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-lawyers.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-laws.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-banks.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-courts.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-chambers.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-collectors.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-gsi.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-insurance.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-mfo.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-image.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  <sitemap>
-    <loc>https://zakonexpertt.kz/sitemap-lombards.xml</loc>
-    <lastmod>${today}</lastmod>
-  </sitemap>
-  ${companySitemaps}
+${entries.concat(companyEntries).map(([sitemapPath, lastmod]) => sitemapIndexEntry(sitemapPath, lastmod)).join('\n')}
 </sitemapindex>`);
 });
 
@@ -2895,6 +2951,8 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'view_company_page', 'view_company_cta', 'click_cta_company',
   'company_check_started', 'company_check_completed', 'company_check_pdf',
   'company_check_shared', 'click_cta_company_check',
+  'view_bank_arrest_page', 'click_cta_bank_arrest',
+  'view_legal_intent_page', 'click_cta_legal_intent',
 ]);
 const COMPANY_FUNNEL_EVENT_TYPES = new Set([
   'view_company_page', 'view_company_cta', 'click_cta_company',
@@ -2908,6 +2966,8 @@ const COMPANY_CTA_POSITIONS = new Set([
 function classifyPageType(page) {
   if (!page) return 'other';
   if (page === '/' ) return 'home';
+  if (page === BANK_ARREST_HUB_PATH || BANK_ARREST_PATH_SET.has(page)) return 'bank_arrest';
+  if (LEGAL_INTENT_PATH_SET.has(page)) return 'legal_intent';
   if (/^\/bailiff\//.test(page)) return 'bailiff_card';
   if (/^\/notary\//.test(page)) return 'notary_card';
   if (/^\/(?:(?:kk|en|zh|tr)\/)?company\//.test(page)) return 'company_card';

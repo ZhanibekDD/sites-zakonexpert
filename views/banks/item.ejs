@@ -2,6 +2,7 @@
 const pageTitle = bank.shortName + ' — контакты, адрес, БИН | ZakonExpert';
 const pageDesc = bank.shortName + ': БИН ' + bank.bin + ', адрес и официальные контакты. Помощь при аресте банковского счёта.';
 const canonical = 'https://zakonexpertt.kz/banks/' + bank.slug;
+const arrestGuidePath = typeof bankArrestPath === 'string' && bankArrestPath ? bankArrestPath : '/arest-scheta-v-bankah-kazahstana';
 const webHref = bank.web ? (/^https?:\/\//i.test(bank.web) ? bank.web : 'https://' + bank.web) : '';
 const schema = {
   '@context': 'https://schema.org',
@@ -44,7 +45,12 @@ const detail = {
     { icon: 'bi-file-earmark-text', title: 'Проверьте основание', text: 'Получите постановление, судебный акт или исполнительную надпись.' },
     { icon: 'bi-shield-check', title: 'Снимите ограничение', text: 'Оспорьте основание или исполните согласованный порядок урегулирования.' },
   ],
-  moreHtml: lowContentBoost({ entityLabel: bank.shortName }),
+  moreHtml: '<section style="margin:20px 0;padding:22px;border:1px solid #dbe4ed;border-radius:16px;background:#f8fafc;">'
+    + '<span style="color:#a17624;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Арест или блокировка счёта</span>'
+    + '<h2 style="margin:7px 0 9px;color:#071426;font-size:1.2rem;">Что делать именно в ' + esc(bank.shortName) + '</h2>'
+    + '<p style="margin:0 0 14px;color:#5b6e82;font-size:.86rem;line-height:1.6;">Отдельная инструкция: как запросить документ банка, отличить постановление ЧСИ от налоговой или внутренней проверки и выбрать правильный маршрут.</p>'
+    + '<a href="' + esc(arrestGuidePath) + '" style="display:inline-flex;align-items:center;gap:8px;color:#18558f;font-weight:800;text-decoration:none;">Открыть инструкцию →</a>'
+    + '</section>' + lowContentBoost({ entityLabel: bank.shortName }),
   backUrl: '/banks', backLabel: 'Все банки Казахстана',
 };
 const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
