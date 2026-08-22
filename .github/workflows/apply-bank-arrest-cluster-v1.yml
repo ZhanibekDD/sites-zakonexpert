@@ -1,6 +1,9 @@
 name: Apply bank arrest growth cluster v1
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - growth/bank-arrest-cluster-v1
