@@ -1,27 +1,60 @@
+# ZakonExpert crawler and AI-use policy
+# Search/indexing is allowed. AI training is not permitted.
+# AI systems may reference and cite ZakonExpert, but substantial reproduction,
+# mirroring, white-label cloning, or use as a replacement dataset is not permitted.
+
 User-agent: *
+Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
 
-# Admin/API paths — no index
+# Non-public / operational paths
 Disallow: /api/
 Disallow: /admin/
 Disallow: /data/
 Disallow: /node_modules/
 
-# AI crawlers — explicitly allowed (not just covered by the wildcard above)
-User-agent: GPTBot
+# OpenAI: keep search/referral access, opt out of training.
+User-agent: OAI-SearchBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
 
 User-agent: ChatGPT-User
+Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
 
-User-agent: PerplexityBot
+User-agent: GPTBot
+Disallow: /
+
+# Anthropic: allow user-requested retrieval, block training crawler.
+User-agent: Claude-User
+Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
 
 User-agent: ClaudeBot
+Disallow: /
+
+# AI search may cite/link to the site; training/scraping crawlers are blocked.
+User-agent: PerplexityBot
+Content-Signal: search=yes, ai-input=yes, ai-train=no, use=reference
 Allow: /
 
-User-agent: Claude-User
-Allow: /
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
 
 # Sitemaps
 Sitemap: https://zakonexpertt.kz/sitemap-index.xml
