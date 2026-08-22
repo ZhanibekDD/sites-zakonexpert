@@ -21,6 +21,21 @@ if (firstPhone.length === 10) firstPhone = '7' + firstPhone;
 var verifiedDate = notary.updatedAt
   ? new Date(notary.updatedAt).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
   : '';
+var archiveSearchUrl = '/zamena-notariusa?q=' + encodeURIComponent(notary.name || '');
+var detailRows = [
+  { icon: 'bi-geo-alt', label: 'Адрес', value: notary.address },
+  { icon: 'bi-telephone', label: 'Телефон нотариуса', value: phoneText || 'Не опубликован в ЕНИС', href: firstPhone ? 'tel:+' + firstPhone : '' },
+  { icon: 'bi-envelope', label: 'Email', value: notary.email || 'Не опубликован в ЕНИС', href: notary.email ? 'mailto:' + notary.email : '' },
+  { icon: 'bi-clock', label: 'Режим работы', value: notary.schedule },
+  { icon: 'bi-file-earmark-check', label: 'Лицензия', value: notary.license ? ('№ ' + notary.license + (notary.licenseDate ? ' от ' + notary.licenseDate : '')) : 'Не опубликована в ЕНИС' },
+];
+if (Array.isArray(notary.archiveFor) && notary.archiveFor.length) {
+  detailRows.push({ icon: 'bi-archive', label: 'Архивы по записи ЕНИС', value: notary.archiveFor.map(titleCase).join(' · '), href: '/zamena-notariusa' });
+}
+if (notary.active === false) {
+  detailRows.push({ icon: 'bi-search', label: 'Кому передан архив', value: 'Проверить передачу архива', href: archiveSearchUrl });
+}
+detailRows.push({ icon: 'bi-database-check', label: 'Источник', value: 'Официальный реестр ЕНИС' + (verifiedDate ? ' · проверено ' + verifiedDate : ''), href: notary.sourceChamberUrl || 'https://enis.kz/NotarySearch', external: true });
 var pageTitle = 'Нотариус ' + nameTitle + ' — контакты и лицензия | ZakonExpert';
 var pageDesc = 'Нотариус ' + nameTitle + ' (' + notary.region + '): телефон, email, адрес, режим работы и номер лицензии из официального реестра ЕНИС.';
 var canonical = 'https://zakonexpertt.kz/notary/' + notary.slug;
@@ -49,17 +64,16 @@ var detail = {
     { icon: 'bi-journal-bookmark', label: 'Данные ЕНИС' },
     { icon: notary.active === false ? 'bi-x-circle' : 'bi-check-circle', label: notary.active === false ? 'Деятельность прекращена' : 'Действующий нотариус', active: notary.active !== false },
   ],
-  rows: [
-    { icon: 'bi-geo-alt', label: 'Адрес', value: notary.address },
-    { icon: 'bi-telephone', label: 'Телефон нотариуса', value: phoneText || 'Не опубликован в ЕНИС', href: firstPhone ? 'tel:+' + firstPhone : '' },
-    { icon: 'bi-envelope', label: 'Email', value: notary.email || 'Не опубликован в ЕНИС', href: notary.email ? 'mailto:' + notary.email : '' },
-    { icon: 'bi-clock', label: 'Режим работы', value: notary.schedule },
-    { icon: 'bi-file-earmark-check', label: 'Лицензия', value: notary.license ? ('№ ' + notary.license + (notary.licenseDate ? ' от ' + notary.licenseDate : '')) : 'Не опубликована в ЕНИС' },
-    { icon: 'bi-database-check', label: 'Источник', value: 'Официальный реестр ЕНИС' + (verifiedDate ? ' · проверено ' + verifiedDate : ''), href: 'https://enis.kz/NotarySearch', external: true },
-  ],
+  rows: detailRows,
   address: notary.address,
   mapLocation: [notary.address, notary.region].filter(Boolean).join(', '),
-  help: {
+  help: notary.active === false ? {
+    icon: 'bi-archive',
+    title: 'Нужен документ из архива?',
+    text: 'Проверим, опубликовано ли в ЕНИС, кому переданы документы, и подскажем контакты нотариальной палаты.',
+    items: ['Найдём официальную запись о передаче', 'Проверим, действует ли хранитель', 'Подскажем порядок запроса документа'],
+    whatsappText: 'Здравствуйте! Нужен документ из архива нотариуса ' + nameTitle + '.',
+  } : {
     icon: 'bi-shield-check',
     title: 'Нотариус выдал исполнительную надпись?',
     text: 'Проверим соблюдение срока, уведомление и бесспорность требования, затем подскажем законный порядок отмены.',
@@ -70,8 +84,12 @@ var detail = {
     title: 'Важно знать',
     text: 'Контакты и режим работы публикует сам официальный реестр ЕНИС. Если поле отсутствует, мы честно показываем, что оно не опубликовано, и не подставляем непроверенные данные.',
   },
-  stepsTitle: 'Что делать при исполнительной надписи',
-  steps: [
+  stepsTitle: notary.active === false ? 'Как найти документ прежнего нотариуса' : 'Что делать при исполнительной надписи',
+  steps: notary.active === false ? [
+    { icon: 'bi-search', title: 'Проверьте передачу', text: 'Найдите в ЕНИС явную запись, кому передан архив.' },
+    { icon: 'bi-building', title: 'Подтвердите в палате', text: 'Если записи нет или хранитель тоже не работает, уточните место хранения в палате региона.' },
+    { icon: 'bi-file-earmark-arrow-down', title: 'Запросите документ', text: 'Сообщите ФИО, примерную дату, вид документа и стороны нотариального действия.' },
+  ] : [
     { icon: 'bi-file-earmark-text', title: 'Получите надпись', text: 'Уточните номер, дату, взыскателя и сумму требования.' },
     { icon: 'bi-search', title: 'Проверьте основания', text: 'Проверьте срок, уведомление и наличие спора по долгу.' },
     { icon: 'bi-shield-check', title: 'Подайте возражение', text: 'Направьте документы нотариусу и затем ЧСИ для снятия ограничений.' },
