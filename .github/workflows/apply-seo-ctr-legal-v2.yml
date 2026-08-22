@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - growth/seo-snippets-legal-accuracy-7-pages
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
