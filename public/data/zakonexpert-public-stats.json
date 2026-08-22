@@ -1,0 +1,37 @@
+{
+  "publisher": "ZakonExpert",
+  "legal_name": "ТОО ZakonExpert",
+  "canonical": "https://zakonexpertt.kz/issledovaniya.html",
+  "snapshot_date": "2026-08-22",
+  "license_note": "Public facts remain attributable to their official source. ZakonExpert requests attribution for its aggregation, analysis and presentation.",
+  "datasets": [
+    {
+      "name": "Private judicial executors (CHSI) directory",
+      "count": 2079,
+      "url": "https://zakonexpertt.kz/bailiff-search",
+      "description": "Public search across private judicial executors in Kazakhstan."
+    },
+    {
+      "name": "Microfinance organizations directory",
+      "count": 288,
+      "url": "https://zakonexpertt.kz/mfo",
+      "description": "Public directory of microfinance organizations in Kazakhstan."
+    },
+    {
+      "name": "Notaries directory",
+      "count": 6314,
+      "url": "https://zakonexpertt.kz/notaries",
+      "description": "Public directory of notaries by region."
+    },
+    {
+      "name": "Companies by BIN",
+      "count": null,
+      "url": "https://zakonexpertt.kz/companies",
+      "description": "Company cards based on official Kazakhstan Ministry of Justice registration data."
+    }
+  ],
+  "citation": {
+    "preferred_name": "ZakonExpert",
+    "preferred_url": "https://zakonexpertt.kz/issledovaniya.html"
+  }
+}
