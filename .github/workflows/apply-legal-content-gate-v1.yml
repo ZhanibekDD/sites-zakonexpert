@@ -34,8 +34,11 @@ jobs:
       - name: Apply legal content corrections
         run: |
           node --check scripts/apply-legal-content-gate-v1.js
+          node --check scripts/fix-legal-content-gate-residuals-v1.js
           node scripts/apply-legal-content-gate-v1.js
+          node scripts/fix-legal-content-gate-residuals-v1.js
           rm -f scripts/apply-legal-content-gate-v1.js
+          rm -f scripts/fix-legal-content-gate-residuals-v1.js
           rm -f .github/workflows/apply-legal-content-gate-v1.yml
 
       - name: Install dependencies
