@@ -176,6 +176,29 @@ document.addEventListener('DOMContentLoaded', () => {
     node.textContent = String(new Date().getFullYear());
   });
 
+  // Legacy SEO landing pages use the compact FAQ button class.
+  // Keep one answer open at a time and expose the state to assistive tech.
+  document.querySelectorAll('.law-faq-q').forEach(button => {
+    button.type = 'button';
+    button.setAttribute('aria-expanded', 'false');
+
+    button.addEventListener('click', () => {
+      const item = button.closest('.law-faq-item');
+      const faq = button.closest('.law-faq');
+      if (!item || !faq) return;
+
+      const willOpen = !item.classList.contains('open');
+      faq.querySelectorAll('.law-faq-item.open').forEach(openItem => {
+        openItem.classList.remove('open');
+        const openButton = openItem.querySelector('.law-faq-q');
+        if (openButton) openButton.setAttribute('aria-expanded', 'false');
+      });
+
+      if (willOpen) item.classList.add('open');
+      button.setAttribute('aria-expanded', String(willOpen));
+    });
+  });
+
   // Keep the legal entity visible on every page that uses the shared script.
   const footerBottom = document.querySelector('.footer-bottom');
   if (footerBottom && !footerBottom.querySelector('.ze-legal-entity')) {
