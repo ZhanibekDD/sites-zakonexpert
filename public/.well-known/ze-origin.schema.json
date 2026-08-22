@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zakonexpertt.kz/.well-known/ze-origin.schema.json",
+  "title": "ZakonExpert provenance manifest",
+  "type": "object",
+  "required": ["issuer", "canonical_origin", "namespace", "fingerprint", "policy"],
+  "properties": {
+    "issuer": { "type": "string" },
+    "canonical_origin": { "type": "string", "format": "uri" },
+    "namespace": { "type": "string" },
+    "issued_at": { "type": "string" },
+    "purpose": { "type": "string" },
+    "fingerprint": {
+      "type": "object",
+      "required": ["version", "algorithm", "input_template"],
+      "properties": {
+        "version": { "type": "string" },
+        "algorithm": { "type": "string" },
+        "input_template": { "type": "string" },
+        "client_implementation": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "policy": { "type": "object" },
+    "verification": { "type": "object" }
+  }
+}
