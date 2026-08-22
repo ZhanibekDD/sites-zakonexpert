@@ -32,6 +32,12 @@ jobs:
 
       - name: Apply bank cluster and growth routes
         run: |
+          python - <<'PYCODE'
+          from pathlib import Path
+          target = Path('scripts/apply-bank-arrest-cluster-v1.js')
+          source = target.read_text(encoding='utf-8')
+          target.write_text(source.replace('\\\\`', '\\`'), encoding='utf-8')
+          PYCODE
           node --check scripts/apply-bank-arrest-cluster-v1.js
           node scripts/apply-bank-arrest-cluster-v1.js
           rm -f scripts/apply-bank-arrest-cluster-v1.js
