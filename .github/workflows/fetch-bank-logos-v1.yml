@@ -1,0 +1,54 @@
+name: Fetch and verify bank logos v1
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bank-logos-v1
+  cancel-in-progress: true
+
+jobs:
+  fetch-logos:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out logo branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/bank-logos-v1
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Download, normalize and document bank logos
+        run: node scripts/fetch-bank-logos.js
+
+      - name: Validate complete site
+        run: npm test
+
+      - name: Commit local logo assets
+        run: |
+          rm -f .github/workflows/fetch-bank-logos-v1.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/img/banks docs/BANK_LOGO_SOURCES.md docs/bank-logos-contact-sheet.svg .github/workflows/fetch-bank-logos-v1.yml
+          if git diff --cached --quiet; then
+            echo "No logo changes to commit"
+            exit 0
+          fi
+          git commit -m "Cache official bank logos locally"
+          git push origin HEAD:feature/bank-logos-v1
