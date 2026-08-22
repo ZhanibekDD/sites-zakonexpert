@@ -506,6 +506,265 @@ body.seo-premium {
   --ze-hero-image: url("/img/seo-v2/travel-sms-hero.webp");
 }
 
+/* CHSI: verify the enforcement basis before paying. */
+.seo-chsi-before-payment {
+  --ze-hero-image: url("/img/seo-v3/chsi-before-payment-hero.webp");
+}
+
+.seo-chsi-before-payment .legal-hero::before {
+  background-image:
+    linear-gradient(
+      90deg,
+      rgb(4 15 30 / 99%) 0%,
+      rgb(7 20 38 / 94%) 42%,
+      rgb(7 20 38 / 55%) 63%,
+      rgb(7 20 38 / 10%) 100%
+    ),
+    var(--ze-hero-image);
+}
+
+.ze-strategy-notice {
+  padding: 24px 0 2px;
+}
+
+.ze-strategy-notice .legal-container {
+  display: grid;
+  gap: 16px;
+  padding: 20px 22px;
+  color: #fff;
+  background: linear-gradient(120deg, #0b1f3a, #123b68);
+  border: 1px solid rgb(216 166 61 / 38%);
+  border-radius: 18px;
+  box-shadow: 0 16px 38px rgb(11 31 58 / 16%);
+  align-items: center;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.ze-strategy-notice__icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  color: #f4cd75;
+  font-size: 1.35rem;
+  background: rgb(255 255 255 / 9%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 14px;
+  place-items: center;
+}
+
+.ze-strategy-notice strong,
+.ze-strategy-notice span {
+  display: block;
+}
+
+.ze-strategy-notice strong {
+  margin-bottom: 3px;
+  font-size: 1rem;
+}
+
+.ze-strategy-notice span {
+  color: rgb(255 255 255 / 70%);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.ze-strategy-notice a {
+  padding: 11px 15px;
+  color: #102039;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+  text-decoration: none;
+  background: #f1c75f;
+  border-radius: 10px;
+}
+
+.ze-decision-head > span,
+.ze-cta-eyebrow,
+.ze-sidebar-kicker,
+.ze-already-paid > div > span {
+  color: #a27620;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.ze-decision-head h2 {
+  margin-top: 7px !important;
+}
+
+.ze-decision-head p {
+  max-width: 720px;
+  color: #52667b;
+}
+
+.ze-choice-grid {
+  display: grid;
+  gap: 18px;
+  margin: 22px 0 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ze-choice-card {
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--ze-line);
+  border-radius: 18px;
+  box-shadow: 0 12px 32px rgb(11 31 58 / 8%);
+}
+
+.ze-choice-card--risk {
+  border-top: 4px solid #c64a4a;
+}
+
+.ze-choice-card--safe {
+  border-top: 4px solid #21815e;
+}
+
+.ze-choice-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.ze-choice-card__body {
+  padding: 20px 20px 21px;
+}
+
+.ze-choice-label {
+  display: inline-flex;
+  gap: 7px;
+  margin-bottom: 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  align-items: center;
+  text-transform: uppercase;
+}
+
+.ze-choice-card--risk .ze-choice-label {
+  color: #a63838;
+}
+
+.ze-choice-card--safe .ze-choice-label {
+  color: #176c4c;
+}
+
+.ze-choice-card h3 {
+  margin: 0 0 12px;
+  color: var(--ze-navy);
+  font-size: 1.08rem;
+}
+
+.ze-choice-card ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 18px;
+  margin: 0;
+  color: #536579;
+  font-size: 0.84rem;
+}
+
+.ze-choice-card li {
+  line-height: 1.55 !important;
+}
+
+.seo-premium .ze-legal-caveat {
+  margin: 20px 0 26px;
+  color: #604a16;
+  background: #fff9e9 !important;
+  border: 1px solid #ead49c !important;
+}
+
+.seo-premium .ze-review-cta {
+  margin: 0 0 34px;
+  background: linear-gradient(135deg, #0b1f3a, #173f6d) !important;
+  border: 1px solid rgb(216 166 61 / 35%) !important;
+}
+
+.ze-review-cta h3,
+.ze-review-cta p {
+  color: #fff !important;
+}
+
+.ze-review-cta p {
+  color: rgb(255 255 255 / 72%) !important;
+}
+
+.ze-review-cta .btn-legal-outline {
+  color: #fff !important;
+  border-color: rgb(255 255 255 / 35%) !important;
+}
+
+.ze-check-grid .law-card > span {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 13px;
+  color: #9a711f;
+  font-size: 0.72rem;
+  font-weight: 850;
+  background: #fff6db;
+  border: 1px solid #ead49c;
+  border-radius: 10px;
+  place-items: center;
+}
+
+.ze-already-paid {
+  display: grid;
+  gap: 22px;
+  padding: 26px;
+  margin: 32px 0 8px;
+  color: #fff;
+  background: linear-gradient(125deg, #10243f, #1a4b79);
+  border-radius: 20px;
+  box-shadow: 0 18px 42px rgb(11 31 58 / 16%);
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ze-already-paid h2 {
+  margin: 6px 0 8px !important;
+  color: #fff !important;
+  font-size: 1.42rem !important;
+}
+
+.ze-already-paid p {
+  margin: 0;
+  color: rgb(255 255 255 / 72%);
+  font-size: 0.86rem;
+}
+
+.ze-already-paid .btn-legal-cta {
+  white-space: nowrap;
+}
+
+.ze-sidebar-kicker {
+  margin-bottom: 7px;
+}
+
+.ze-official-sources {
+  display: grid;
+  gap: 8px;
+  padding-top: 16px;
+  margin-top: 18px;
+  border-top: 1px solid var(--ze-line);
+}
+
+.ze-official-sources strong {
+  color: var(--ze-navy);
+  font-size: 0.78rem;
+}
+
+.ze-official-sources a {
+  color: var(--ze-blue);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .seo-urgent .legal-kicker {
   color: #ffb3b3 !important;
   background: rgb(201 70 70 / 20%) !important;
@@ -637,6 +896,52 @@ body.seo-premium {
 
   .seo-premium .law-grid {
     grid-template-columns: 1fr;
+  }
+
+  .seo-chsi-before-payment .legal-hero {
+    min-height: 700px;
+    padding-top: 245px !important;
+  }
+
+  .ze-strategy-notice {
+    padding-top: 16px;
+  }
+
+  .ze-strategy-notice .legal-container {
+    width: calc(100% - 28px);
+    gap: 13px;
+    padding: 17px;
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .ze-strategy-notice__icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .ze-strategy-notice a {
+    width: 100%;
+    text-align: center;
+    grid-column: 1 / -1;
+  }
+
+  .ze-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ze-choice-card img {
+    aspect-ratio: 16 / 11;
+  }
+
+  .ze-already-paid {
+    padding: 21px;
+    grid-template-columns: 1fr;
+  }
+
+  .ze-already-paid .btn-legal-cta {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
   }
 
   .seo-premium .law-card,
