@@ -25,6 +25,14 @@
   object-position: center;
 }
 
+/* The official Otbasy asset is a white wordmark intended for a dark surface. */
+.zg-bank-icon img[src$="/otbasy-bank.png"],
+.zg-bank-mark img[src$="/otbasy-bank.png"] {
+  padding: 5px;
+  border-radius: 8px;
+  background: #00584a;
+}
+
 .zg-bank-mark {
   display: grid;
   width: min(210px, 100%);
