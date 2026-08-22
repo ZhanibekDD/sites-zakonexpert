@@ -607,12 +607,15 @@ body.seo-premium {
 }
 
 .ze-choice-card {
+  display: flex;
+  height: 100%;
   min-width: 0;
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--ze-line);
   border-radius: 18px;
   box-shadow: 0 12px 32px rgb(11 31 58 / 8%);
+  flex-direction: column;
 }
 
 .ze-choice-card--risk {
@@ -626,12 +629,23 @@ body.seo-premium {
 .ze-choice-card img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: clamp(205px, 17vw, 235px);
   object-fit: cover;
 }
 
+.ze-choice-card--risk img {
+  object-position: center 52%;
+}
+
+.ze-choice-card--safe img {
+  object-position: center 48%;
+}
+
 .ze-choice-card__body {
-  padding: 20px 20px 21px;
+  display: flex;
+  padding: 18px 20px 20px;
+  flex: 1;
+  flex-direction: column;
 }
 
 .ze-choice-label {
@@ -665,6 +679,7 @@ body.seo-premium {
   margin: 0;
   color: #536579;
   font-size: 0.84rem;
+  align-content: start;
 }
 
 .ze-choice-card li {
@@ -930,7 +945,7 @@ body.seo-premium {
   }
 
   .ze-choice-card img {
-    aspect-ratio: 16 / 11;
+    height: clamp(190px, 58vw, 230px);
   }
 
   .ze-already-paid {
