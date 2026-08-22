@@ -67,6 +67,7 @@ const { createGoszakupClient } = require('./modules/goszakup');
 const { createCompanyCheckService } = require('./modules/company-check-sources');
 const { getRegionEmblem } = require('./modules/region-emblems');
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
+const { normalizeRegionKey } = require('./modules/notary-archive');
 const {
   BANK_ARREST_HUB_PATH,
   BANK_ARREST_PAGES,
@@ -375,7 +376,7 @@ const TRACKED_PATHS = new Set([
   '/otmena-resheniya-suda.html',
   '/spornost-dolga',
   '/chsi-refinansirovanie',
-  '/notaries', '/bailiffs', '/lawyers',
+  '/notaries', '/zamena-notariusa', '/bailiffs', '/lawyers',
   '/notary-search', '/bailiff-search', '/lawyer-search',
   '/banks', '/mfo', '/courts', '/chambers', '/companies', '/collectors', '/lombards',
   '/gsi', '/insurance', '/credit-bureaus', '/regulators', '/emergency',
@@ -646,6 +647,25 @@ app.get('/api/notary-search', externalApiLimiter, asyncHandler(async (req, res) 
 }));
 
 // ===== NOTARY SEO PAGES =====
+
+app.get('/zamena-notariusa.html', (req, res) => {
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(301, '/zamena-notariusa' + qs);
+});
+
+app.get('/zamena-notariusa', asyncHandler(async (req, res) => {
+  if (!notariesDb) return res.status(503).send('Notary module not available');
+  const query = String(req.query.q || '').trim().slice(0, 160);
+  const [directory, lastUpdated] = await Promise.all([
+    notariesDb.getArchiveDirectory(query),
+    notariesDb.getLastUpdated(),
+  ]);
+  const regions = new Set();
+  directory.matchedNotaries.forEach(item => regions.add(normalizeRegionKey(item.region)));
+  directory.transfers.forEach(item => regions.add(normalizeRegionKey(item.holder.region)));
+  const chambers = getChambersData().filter(item => regions.has(normalizeRegionKey(item.region)));
+  res.render('notary/archive-search', { query, directory, lastUpdated, chambers });
+}));
 
 // Individual notary page
 app.get('/notary/:slug', asyncHandler(async (req, res) => {
@@ -2259,6 +2279,7 @@ function getCorePages() {
     { url: '/contact', priority: '0.8', freq: 'monthly' },
     { url: '/news', priority: '0.9', freq: 'daily' },
     { url: '/notaries', priority: '0.85', freq: 'weekly' },
+    { url: '/zamena-notariusa', priority: '0.85', freq: 'daily' },
     { url: '/bailiffs', priority: '0.85', freq: 'weekly' },
     { url: '/lawyers', priority: '0.85', freq: 'weekly' },
     { url: '/notary-search', priority: '0.8', freq: 'weekly' },
@@ -2848,9 +2869,10 @@ setTimeout(async () => {
 
 if (BACKGROUND_JOBS_ENABLED) {
 
-// Weekly refresh from the official ENIS registry, followed by a validated import.
-cron.schedule('0 3 * * 0', async () => {
-  logger.info('[Cron] Weekly notary+bailiff+lawyer re-import starting...');
+// Daily refresh from the official ENIS registry, followed by a validated import.
+// Archive-transfer notes are free text in ENIS and can change without notice.
+cron.schedule('15 3 * * *', async () => {
+  logger.info('[Cron] Daily notary+bailiff+lawyer re-import starting...');
   if (importNotaries) {
     try {
       if (refreshNotariesRegistry) await refreshNotariesRegistry();
@@ -2872,7 +2894,7 @@ cron.schedule('0 3 * * 0', async () => {
     catch (e) { logger.error('[Cron] Lawyer re-import failed: ' + e.message); }
   }
 });
-logger.info('Notary+Bailiff+Lawyer cron scheduled: every Sunday 03:00');
+logger.info('Notary+Bailiff+Lawyer cron scheduled: daily 03:15');
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
 if (newsImporter) {
