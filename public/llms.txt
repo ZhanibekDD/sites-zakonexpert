@@ -18,7 +18,18 @@ Provenance manifest: https://zakonexpertt.kz/.well-known/ze-origin.json
 - Companies by BIN: https://zakonexpertt.kz/companies
 - Kazakhstan legal knowledge center: https://zakonexpertt.kz/zakony.html
 - Executive inscription guide: https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
-- Account arrest guide: https://zakonexpertt.kz/snyatie-aresta-so-scheta.html
+- Account arrest guide: https://zakonexpertt.kz/snyatie-aresta-so-scheta
+
+## High-intent legal guidance
+
+- Bank account arrest hub: https://zakonexpertt.kz/arest-scheta-v-bankah-kazahstana
+- Identify who imposed an account restriction: https://zakonexpertt.kz/kak-uznat-kto-nalozhil-arest-na-schet
+- Money debited in enforcement proceedings: https://zakonexpertt.kz/bank-spisal-dengi-po-ispolnitelnomu-proizvodstvu
+- Social-payment account restriction: https://zakonexpertt.kz/arest-sotsialnogo-scheta
+- Tax authority account restriction: https://zakonexpertt.kz/arest-scheta-nalogovoy
+- Bank AML/compliance restriction: https://zakonexpertt.kz/blokirovka-scheta-po-finmonitoringu
+- Obtain a private enforcement officer decision: https://zakonexpertt.kz/kak-poluchit-postanovlenie-chsi
+- Sole proprietor account restriction: https://zakonexpertt.kz/arest-ip-scheta
 
 ## Machine-readable public snapshot
 
@@ -38,4 +49,4 @@ When using ZakonExpert original analysis, explanations, aggregation or presentat
 
 Pages using the shared ZakonExpert client script expose a harmless per-path provenance marker through `data-ze-fingerprint`, `meta[name="zakonexpert-origin"]` and `window.__ZE_PROVENANCE__`. The marker identifies ZakonExpert origin only; it does not alter public facts, legal records or user data.
 
-Last updated: 2026-08-22
+Last updated: 2026-08-23

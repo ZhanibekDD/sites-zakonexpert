@@ -37,6 +37,7 @@
     'download_document', 'send_document', 'click_cta_bailiff',
     'click_cta_notary', 'click_document_review', 'click_whatsapp_after_download',
     'click_cta_company', 'company_check_completed', 'click_cta_company_check',
+    'click_cta_bank_arrest', 'click_cta_legal_intent',
   ]);
 
   function analyticsPagePath(type) {

@@ -984,3 +984,60 @@
     background: var(--zg-green);
   }
 }
+
+
+.zg-legacy-cluster {
+  padding: 48px 0;
+  border-top: 1px solid #dbe4ed;
+  border-bottom: 1px solid #dbe4ed;
+  background: linear-gradient(135deg, #071426, #12375f);
+}
+
+.zg-legacy-cluster span {
+  color: #f2cf78;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.zg-legacy-cluster h2 {
+  max-width: 780px;
+  margin: 8px 0 12px;
+  color: #fff;
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.zg-legacy-cluster p {
+  max-width: 860px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.65;
+}
+
+.zg-legacy-cluster > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.zg-legacy-cluster a {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 11px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.zg-legacy-cluster a:hover {
+  border-color: rgba(242, 207, 120, 0.7);
+  color: #f2cf78;
+}
