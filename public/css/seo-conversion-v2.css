@@ -396,15 +396,89 @@ body.seo-premium {
 
 .seo-premium .law-faq-q,
 .seo-premium .law-faq-question {
+  position: relative;
+  display: flex;
+  width: 100%;
   min-height: 58px;
-  padding: 17px 50px 17px 20px !important;
+  padding: 18px 64px 18px 22px !important;
   color: var(--ze-navy) !important;
+  font-size: 0.96rem;
   font-weight: 750 !important;
+  line-height: 1.45;
+  text-align: left;
+  background: #fff;
+  border: 0;
+  cursor: pointer;
+  align-items: center;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.seo-premium .law-faq-q:hover,
+.seo-premium .law-faq-question:hover,
+.seo-premium .law-faq-item.open .law-faq-q,
+.seo-premium .law-faq-item.open .law-faq-question {
+  color: var(--ze-blue) !important;
+  background: #f8fafc;
+}
+
+.seo-premium .law-faq-q::after {
+  position: absolute;
+  right: 20px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  color: var(--ze-blue);
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1;
+  content: "+";
+  background: #eef4fa;
+  border: 1px solid #d8e4ef;
+  border-radius: 50%;
+  place-items: center;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.seo-premium .law-faq-item.open .law-faq-q::after {
+  color: #fff;
+  background: var(--ze-blue);
+  border-color: var(--ze-blue);
+  transform: rotate(45deg);
 }
 
 .seo-premium .law-faq-a,
 .seo-premium .law-faq-answer {
+  padding: 0 22px;
+  overflow: hidden;
   background: #fbfcfe;
+}
+
+.seo-premium .law-faq-a {
+  display: block;
+  max-height: 0;
+  opacity: 0;
+  border-top: 1px solid transparent;
+  transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+}
+
+.seo-premium .law-faq-item.open .law-faq-a {
+  max-height: 320px;
+  padding-top: 16px;
+  padding-bottom: 18px;
+  opacity: 1;
+  border-top-color: #edf1f5;
+}
+
+.seo-premium .law-faq-a p,
+.seo-premium .law-faq-answer p {
+  margin: 0;
+  color: #536579;
+  font-size: 0.92rem;
+  line-height: 1.72;
+}
+
+.seo-premium .law-faq > h2 {
+  margin-bottom: 18px;
 }
 
 .seo-premium .legal-disclaimer {
