@@ -364,6 +364,14 @@ async function searchNotary() {
 // Search on Enter
 document.getElementById('notary-fio').addEventListener('keydown', e => { if (e.key === 'Enter') searchNotary(); });
 document.getElementById('notary-phone').addEventListener('keydown', e => { if (e.key === 'Enter') searchNotary(); });
+const initialNotarySearch = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+const initialFio = initialNotarySearch.get('fio') || '';
+const initialPhone = initialNotarySearch.get('phone') || '';
+if (initialFio || initialPhone) {
+  document.getElementById('notary-fio').value = initialFio;
+  document.getElementById('notary-phone').value = initialPhone;
+  searchNotary();
+}
 document.querySelector('.current-year').textContent = new Date().getFullYear();
 </script>
 <script src="/js/analytics-events.js"></script>

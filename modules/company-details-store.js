@@ -15,11 +15,11 @@ function decodeDetails(raw) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return emptyDetails();
     return {
       v: DETAIL_VERSION,
-      n: Array.isArray(value.n) ? value.n : [],
-      a: Array.isArray(value.a) ? value.a : [],
-      c: Array.isArray(value.c) ? value.c : [],
-      g: Array.isArray(value.g) ? value.g : [],
-      x: Array.isArray(value.x) ? value.x : [],
+      n: Array.isArray(value.n) ? value.n.filter(item => typeof item === 'string') : [],
+      a: Array.isArray(value.a) ? value.a.filter(Array.isArray) : [],
+      c: Array.isArray(value.c) ? value.c.filter(Array.isArray) : [],
+      g: Array.isArray(value.g) ? value.g.filter(Array.isArray) : [],
+      x: Array.isArray(value.x) ? value.x.filter(Array.isArray) : [],
     };
   } catch (_) {
     return emptyDetails();
@@ -167,7 +167,7 @@ function hydrateDetails(raw, source = {}) {
       slug: value[2],
       ...base,
     })),
-    attributes: details.x.filter(value => value[3] !== 0).map(value => ({
+    attributes: details.x.filter(value => value[3] !== 0 && value[0] && value[1]).map(value => ({
       type: value[0],
       value: value[1],
       normalized: value[2],

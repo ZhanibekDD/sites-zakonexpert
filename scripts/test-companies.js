@@ -125,6 +125,19 @@ assert.strictEqual(qualityRowsNeedBackfill(driftDb), false,
     `public browsing must not sort the full registry; received: ${browsePlan}`);
   driftDb.close();
 
+const malformedDetailsDb = new DatabaseSync(dbPath);
+malformedDetailsDb.prepare(`
+  INSERT INTO organization_details(
+    company_id, source_key, details_json, search_text, created_run, last_seen_run, updated_at
+  ) VALUES(?, ?, ?, '', 1, 1, ?)
+`).run(
+  sample.id,
+  'malformed_test',
+  JSON.stringify({ a: [null, ['Дополнительный адрес']], x: [false, ['work_hours', '09:00–18:00', '', 1]] }),
+  '2026-08-23T00:00:00.000Z'
+);
+malformedDetailsDb.close();
+
 const companies = require('../modules/companies-db');
 assert.strictEqual(companies.stats().count, 2);
 assert.strictEqual(companies.stats().indexableCount, 1);
@@ -142,6 +155,10 @@ assert.strictEqual(companies.sitemapChunk(1).length, 1);
 
 const company = companies.findById(7137221);
 const lowQualityCompany = companies.findById(7137497);
+assert.strictEqual(company.addresses.some(item => item.value === 'Дополнительный адрес'), true,
+  'malformed supplemental detail tuples must be ignored without breaking the company card');
+assert.strictEqual(companies.quality({ ...company, is_indexable: 0 }).indexable, false,
+  'persisted indexability must keep card meta aligned with the sitemap');
 assert.strictEqual(lowQualityCompany.is_official_source, true,
   'an official registry row without BIN must not be mislabeled as a directory record');
 assert.strictEqual(lowQualityCompany.has_verified_bin, false);

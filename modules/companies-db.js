@@ -479,20 +479,28 @@ function findById(id) {
   const numericId = Number.parseInt(id, 10);
   if (!database || !getMeta(database, 'completed_at')
       || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
-  return addSlug(hydrateDetails(
-    database,
-    database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId)
-  ));
+  const row = database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId);
+  if (!row) return null;
+  try {
+    return addSlug(hydrateDetails(database, row));
+  } catch (error) {
+    console.warn(`[Companies] Detail hydration failed for id=${numericId}; serving core record: ${error.message}`);
+    return addSlug(row);
+  }
 }
 
 function findByBin(bin) {
   const database = open();
   const safeBin = String(bin || '').replace(/\D/g, '');
   if (!database || !getMeta(database, 'completed_at') || !/^\d{12}$/.test(safeBin)) return null;
-  return addSlug(hydrateDetails(
-    database,
-    database.prepare('SELECT * FROM companies WHERE bin = ? ORDER BY id LIMIT 1').get(safeBin)
-  ));
+  const row = database.prepare('SELECT * FROM companies WHERE bin = ? ORDER BY id LIMIT 1').get(safeBin);
+  if (!row) return null;
+  try {
+    return addSlug(hydrateDetails(database, row));
+  } catch (error) {
+    console.warn(`[Companies] Detail hydration failed for id=${row.id}; serving core record: ${error.message}`);
+    return addSlug(row);
+  }
 }
 
 function regionStats() {
@@ -564,7 +572,16 @@ function sitemapChunk(chunk) {
 }
 
 function quality(company) {
-  return evaluateCompany(company);
+  const computed = evaluateCompany(company);
+  if (company?.is_indexable !== 0 && company?.is_indexable !== 1) return computed;
+  return {
+    ...computed,
+    score: Number.isFinite(Number(company.quality_score))
+      ? Number(company.quality_score)
+      : computed.score,
+    indexable: company.is_indexable === 1,
+    persisted: true,
+  };
 }
 
 module.exports = {

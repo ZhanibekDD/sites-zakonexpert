@@ -189,6 +189,28 @@ async function run() {
     }
     await expectLawyerCatalog();
 
+    const redirectCases = [
+      ['/proverka-kontragenta?bin=260740044168', '/proverka-kontragenta#bin=260740044168'],
+      ['/notary-search?fio=Иванов', '/notary-search#fio=%D0%98%D0%B2%D0%B0%D0%BD%D0%BE%D0%B2'],
+      ['/news?cat=finance&page=2', '/news/category/finance?page=2'],
+      ['/kk/company/7137221-alfa-pravo', '/company/7137221-alfa-pravo'],
+      [
+        '/lombards/ovarishchestvo-s-ogranichennoy-otvetstvennostyu-lombard-baybol',
+        '/lombards/lombard-baybol',
+      ],
+    ];
+    for (const [from, to] of redirectCases) {
+      const response = await fetch(`${origin}${from}`, { redirect: 'manual' });
+      assert(response.status === 301, `${from}: expected 301, received ${response.status}`);
+      assert(response.headers.get('location') === to,
+        `${from}: expected redirect to ${to}, received ${response.headers.get('location')}`);
+    }
+    const newsCategory = await fetch(`${origin}/news/category/finance`);
+    const newsCategoryHtml = await newsCategory.text();
+    assert(newsCategory.status === 200, `/news/category/finance returned ${newsCategory.status}`);
+    assert(newsCategoryHtml.includes('rel="canonical" href="https://zakonexpertt.kz/news/category/finance"'),
+      'clean news category page has an incorrect canonical URL');
+
     const homepageResponse = await fetch(`${origin}/`, {
       headers: { 'user-agent': 'ZakonExpert-Smoke-Test' },
     });
@@ -205,6 +227,8 @@ async function run() {
       'Homepage navigation does not expose the KGD company check');
     assert(!homepageHtml.includes('class="sticky-wa"'),
       'Homepage still renders a floating round WhatsApp button');
+    assert(!homepageHtml.includes('notary-search?fio={search_term_string}'),
+      'Homepage still advertises an obsolete crawlable SearchAction query URL');
 
     const imageResponse = await fetch(`${origin}/img/brand/zakonexpert-logo-transparent-hd.png`);
     assert(imageResponse.headers.get('cache-control')?.includes('max-age=604800'),
