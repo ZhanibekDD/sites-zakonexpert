@@ -64,7 +64,7 @@ function domainFor(page) {
   return new URL(page.officialSite).hostname.replace(/^www\./i, '');
 }
 
-async function fetchBuffer(url, timeoutMs = 20000) {
+async function fetchBuffer(url, timeoutMs = 15000) {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
@@ -116,7 +116,7 @@ async function discoverOfficialCandidates(page) {
     response = await fetch(page.officialSite, {
       redirect: 'follow',
       headers: { 'user-agent': USER_AGENT, accept: 'text/html,application/xhtml+xml' },
-      signal: AbortSignal.timeout(18000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) return candidates;
   } catch (_) {
@@ -154,38 +154,51 @@ async function discoverOfficialCandidates(page) {
     addCandidate(candidates, $(node).attr('href'), 'official-icon', baseUrl);
   });
 
-  return candidates.slice(0, 12);
+  return candidates.slice(0, 8);
+}
+
+async function tryLogoCandidate(domain, candidate, errors) {
+  try {
+    const convertedUrl = weservUrl(candidate.url);
+    const result = await fetchBuffer(convertedUrl, 18000);
+    if (!isPng(result.buffer)) throw new Error(`not PNG (${result.contentType || 'unknown'})`);
+    if (result.buffer.length < 900) throw new Error(`image too small (${result.buffer.length} bytes)`);
+    if (result.buffer.length > 2_500_000) throw new Error(`image too large (${result.buffer.length} bytes)`);
+    return {
+      domain,
+      buffer: result.buffer,
+      sourceUrl: candidate.url,
+      sourceType: candidate.sourceType,
+      convertedUrl,
+    };
+  } catch (error) {
+    errors.push(`${candidate.sourceType}: ${error.message}`);
+    return null;
+  }
 }
 
 async function downloadLogo(page) {
   const domain = domainFor(page);
-  const official = await discoverOfficialCandidates(page);
-  const candidates = [
-    ...official,
-    { url: `https://logos.hunter.io/${domain}`, sourceType: 'hunter-domain-logo' },
-    { url: `https://www.google.com/s2/favicons?domain_url=https://${domain}&sz=256`, sourceType: 'google-domain-icon' },
-  ];
-
   const errors = [];
-  for (const candidate of candidates) {
-    try {
-      const convertedUrl = weservUrl(candidate.url);
-      const result = await fetchBuffer(convertedUrl, 25000);
-      if (!isPng(result.buffer)) throw new Error(`not PNG (${result.contentType || 'unknown'})`);
-      if (result.buffer.length < 900) throw new Error(`image too small (${result.buffer.length} bytes)`);
-      if (result.buffer.length > 2_500_000) throw new Error(`image too large (${result.buffer.length} bytes)`);
-      return {
-        domain,
-        buffer: result.buffer,
-        sourceUrl: candidate.url,
-        sourceType: candidate.sourceType,
-        convertedUrl,
-      };
-    } catch (error) {
-      errors.push(`${candidate.sourceType}: ${error.message}`);
-    }
-    await sleep(120);
+
+  const hunter = await tryLogoCandidate(domain, {
+    url: `https://logos.hunter.io/${domain}`,
+    sourceType: 'hunter-domain-logo',
+  }, errors);
+  if (hunter) return hunter;
+
+  const official = await discoverOfficialCandidates(page);
+  for (const candidate of official) {
+    const result = await tryLogoCandidate(domain, candidate, errors);
+    if (result) return result;
+    await sleep(60);
   }
+
+  const favicon = await tryLogoCandidate(domain, {
+    url: `https://www.google.com/s2/favicons?domain_url=https://${domain}&sz=256`,
+    sourceType: 'google-domain-icon',
+  }, errors);
+  if (favicon) return favicon;
 
   throw new Error(`${page.brand}: no usable logo. ${errors.join(' | ')}`);
 }
@@ -244,7 +257,7 @@ async function main() {
     };
     results.push(item);
     console.log(`${result.sourceType}, ${item.bytes} bytes`);
-    await sleep(180);
+    await sleep(80);
   }
 
   const duplicates = new Map();
