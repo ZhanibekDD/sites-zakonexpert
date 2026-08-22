@@ -1,0 +1,181 @@
+<%
+function titleCase(value) {
+  return String(value || '').toLocaleLowerCase('ru-RU').split(/\s+/).map(function(word) {
+    return word ? word[0].toLocaleUpperCase('ru-RU') + word.slice(1) : '';
+  }).join(' ');
+}
+function checkedDate(value) {
+  if (!value) return 'дата ещё не зафиксирована';
+  return new Date(value).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' });
+}
+var q = String(query || '').trim();
+var matched = directory && Array.isArray(directory.matchedNotaries) ? directory.matchedNotaries : [];
+var transfers = directory && Array.isArray(directory.transfers) ? directory.transfers : [];
+var chamberRows = Array.isArray(chambers) ? chambers : [];
+var verifiedActive = transfers.filter(function(item) { return item.current; }).length;
+var verifiedStale = transfers.length - verifiedActive;
+var waText = encodeURIComponent('Здравствуйте! Не могу определить, кому передан архив нотариуса' + (q ? ' ' + q : '') + '. Нужна помощь.');
+%>
+
+<main class="notary-archive">
+  <section class="notary-archive__hero">
+    <div class="notary-archive__container">
+      <nav class="notary-archive__breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a><i class="bi bi-chevron-right" aria-hidden="true"></i>
+        <a href="/notaries">Нотариусы</a><i class="bi bi-chevron-right" aria-hidden="true"></i>
+        <span>Передача архива</span>
+      </nav>
+      <div class="notary-archive__hero-grid">
+        <div>
+          <span class="notary-archive__eyebrow"><i class="bi bi-database-check"></i> Проверка по официальному реестру ЕНИС</span>
+          <h1>Кому передан архив нотариуса</h1>
+          <p>Введите фамилию нотариуса, который прекратил деятельность. Мы покажем только опубликованную в ЕНИС передачу архива и отдельно предупредим, если получатель уже не работает.</p>
+        </div>
+        <div class="notary-archive__trust" aria-label="Актуальность данных">
+          <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+          <div><strong>Обновление каждый день</strong><span>Последняя загрузка: <%= checkedDate(lastUpdated) %></span></div>
+        </div>
+      </div>
+      <form class="notary-archive__search" action="/zamena-notariusa" method="get" role="search">
+        <label for="archive-notary-query">ФИО прежнего нотариуса</label>
+        <div class="notary-archive__search-row">
+          <span class="notary-archive__search-icon"><i class="bi bi-search"></i></span>
+          <input id="archive-notary-query" name="q" value="<%= q %>" minlength="2" maxlength="160" placeholder="Например: Акбурушова Гульнара" autocomplete="off" required>
+          <button type="submit">Проверить архив</button>
+        </div>
+        <small>Можно ввести только фамилию. Склонение ФИО в реестре учитывается автоматически.</small>
+      </form>
+    </div>
+  </section>
+
+  <section class="notary-archive__content">
+    <div class="notary-archive__container">
+      <% if (q) { %>
+        <div class="notary-archive__section-head">
+          <div><span>Результат проверки</span><h2>По запросу «<%= q %>»</h2></div>
+          <a href="/zamena-notariusa">Очистить поиск</a>
+        </div>
+
+        <% if (matched.length) { %>
+          <div class="notary-archive__profiles">
+            <% matched.forEach(function(notary) { %>
+              <a class="notary-archive__profile" href="/notary/<%= notary.slug %>">
+                <span class="notary-archive__profile-icon"><i class="bi bi-person-vcard"></i></span>
+                <span class="notary-archive__profile-copy">
+                  <strong><%= titleCase(notary.name) %></strong>
+                  <small><%= notary.region %></small>
+                </span>
+                <span class="notary-archive__status <%= notary.active === false ? 'is-stopped' : 'is-active' %>">
+                  <i class="bi <%= notary.active === false ? 'bi-x-circle' : 'bi-check-circle' %>"></i>
+                  <%= notary.active === false ? 'Деятельность прекращена' : 'Действующий нотариус' %>
+                </span>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+
+        <% if (transfers.length) { %>
+          <div class="notary-archive__transfer-list">
+            <% transfers.forEach(function(item) {
+              var sourceLabel = item.sourceNotary ? titleCase(item.sourceNotary.name) : titleCase(item.sourceName);
+              var holderLabel = titleCase(item.holder.name);
+            %>
+              <article class="notary-archive__transfer <%= item.current ? 'is-current' : 'is-stale' %>">
+                <div class="notary-archive__transfer-state">
+                  <i class="bi <%= item.current ? 'bi-patch-check-fill' : 'bi-exclamation-triangle-fill' %>"></i>
+                  <span><%= item.current ? 'Подтверждено в ЕНИС' : 'Связь устарела — получатель не работает' %></span>
+                </div>
+                <div class="notary-archive__flow">
+                  <div><small>Прежний нотариус</small><strong><%= sourceLabel %></strong></div>
+                  <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                  <div><small>Архив указан у нотариуса</small><strong><%= holderLabel %></strong><span><%= item.holder.region %></span></div>
+                </div>
+                <p class="notary-archive__evidence"><strong>Запись ЕНИС:</strong> <%= item.evidence %></p>
+                <div class="notary-archive__actions">
+                  <a href="/notary/<%= item.holder.slug %>"><i class="bi bi-person-lines-fill"></i> Карточка нотариуса</a>
+                  <a href="<%= item.sourceUrl %>" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> Открыть ЕНИС</a>
+                </div>
+                <% if (!item.current) { %>
+                  <p class="notary-archive__warning">Не обращайтесь по этой старой цепочке без повторной проверки. Уточните нового хранителя в территориальной нотариальной палате.</p>
+                <% } %>
+              </article>
+            <% }); %>
+          </div>
+        <% } else if (matched.some(function(item) { return item.active === false; })) { %>
+          <div class="notary-archive__empty is-warning">
+            <i class="bi bi-shield-exclamation"></i>
+            <div><h2>Передача архива не опубликована в ЕНИС</h2><p>Нотариус найден и его деятельность прекращена, но назначать «замену» по совпадению адреса или региона нельзя. Надёжный следующий шаг — запросить место хранения документов в нотариальной палате региона.</p></div>
+          </div>
+        <% } else if (matched.length) { %>
+          <div class="notary-archive__empty is-ok">
+            <i class="bi bi-check-circle"></i>
+            <div><h2>Нотариус действует</h2><p>По актуальному реестру деятельность не прекращена. Для нового нотариального действия или получения документа можно связаться с нотариусом по контактам в карточке.</p></div>
+          </div>
+        <% } else { %>
+          <div class="notary-archive__empty">
+            <i class="bi bi-search"></i>
+            <div><h2>Нотариус не найден</h2><p>Проверьте написание фамилии или введите только первые 5–6 букв. Если ФИО менялось, обратитесь в нотариальную палату предполагаемого региона.</p></div>
+          </div>
+        <% } %>
+
+        <% if (chamberRows.length) { %>
+          <div class="notary-archive__chambers">
+            <div class="notary-archive__section-head"><div><span>Официальный следующий шаг</span><h2>Нотариальная палата региона</h2></div></div>
+            <div class="notary-archive__chamber-grid">
+              <% chamberRows.forEach(function(chamber) { %>
+                <article class="notary-archive__chamber">
+                  <span class="notary-archive__chamber-icon"><i class="bi bi-building"></i></span>
+                  <div><strong><%= chamber.notary_name || ('Нотариальная палата — ' + chamber.region) %></strong><small><%= chamber.region %></small></div>
+                  <% if (chamber.notary_phone) { %><a href="tel:<%= chamber.notary_phoneRaw || '' %>"><i class="bi bi-telephone"></i> <%= chamber.notary_phone %></a><% } %>
+                  <% if (chamber.notary_email) { %><a href="mailto:<%= chamber.notary_email %>"><i class="bi bi-envelope"></i> <%= chamber.notary_email %></a><% } %>
+                  <a class="notary-archive__chamber-more" href="/chambers/<%= chamber.slug %>">Все контакты <i class="bi bi-arrow-right"></i></a>
+                </article>
+              <% }); %>
+            </div>
+          </div>
+        <% } %>
+      <% } else { %>
+        <div class="notary-archive__section-head">
+          <div><span>Только подтверждённые связи</span><h2>Что сейчас опубликовано в ЕНИС</h2></div>
+          <p><strong><%= verifiedActive %></strong> актуальных · <strong><%= verifiedStale %></strong> требуют повторной проверки</p>
+        </div>
+        <% if (transfers.length) { %>
+          <div class="notary-archive__compact-list">
+            <% transfers.forEach(function(item) { %>
+              <a href="/zamena-notariusa?q=<%= encodeURIComponent(item.sourceName) %>" class="notary-archive__compact-row">
+                <span><small>Архив нотариуса</small><strong><%= item.sourceNotary ? titleCase(item.sourceNotary.name) : titleCase(item.sourceName) %></strong></span>
+                <i class="bi bi-arrow-right"></i>
+                <span><small><%= item.current ? 'Текущий хранитель' : 'Получатель уже не действует' %></small><strong><%= titleCase(item.holder.name) %></strong></span>
+                <em class="<%= item.current ? 'is-current' : 'is-stale' %>"><%= item.current ? 'Актуально' : 'Перепроверить' %></em>
+              </a>
+            <% }); %>
+          </div>
+        <% } %>
+        <div class="notary-archive__principles">
+          <article><i class="bi bi-fingerprint"></i><h3>Не назначаем замену сами</h3><p>Совпадение города, адреса или фамилии не доказывает передачу архива.</p></article>
+          <article><i class="bi bi-link-45deg"></i><h3>Показываем первоисточник</h3><p>У каждой связи есть дословная запись и ссылка на соответствующую палату ЕНИС.</p></article>
+          <article><i class="bi bi-shield-check"></i><h3>Проверяем получателя</h3><p>Если хранитель прекратил деятельность, запись помечается как устаревшая.</p></article>
+        </div>
+      <% } %>
+
+      <div class="notary-archive__explain">
+        <div>
+          <span class="notary-archive__eyebrow is-dark"><i class="bi bi-info-circle"></i> Важно</span>
+          <h2>«Замена нотариуса» и хранитель архива — не одно и то же</h2>
+          <p>Нотариус, которому передали документы, не становится правопреемником по всем вопросам. Его задача может ограничиваться хранением и выдачей документов. По закону передачу организуют территориальный орган юстиции и нотариальная палата.</p>
+        </div>
+        <div class="notary-archive__sources">
+          <strong>Официальные источники</strong>
+          <a href="https://enis.kz/NotarySearch" target="_blank" rel="noopener">Реестр нотариусов ЕНИС <i class="bi bi-box-arrow-up-right"></i></a>
+          <a href="https://www.notariat.kz/" target="_blank" rel="noopener">Республиканская нотариальная палата <i class="bi bi-box-arrow-up-right"></i></a>
+          <a href="https://adilet.zan.kz/rus/docs/Z970000155_" target="_blank" rel="noopener">Закон РК «О нотариате» <i class="bi bi-box-arrow-up-right"></i></a>
+        </div>
+      </div>
+
+      <div class="notary-archive__cta">
+        <div><span>Не удалось найти архив?</span><h2>Поможем составить запрос в палату</h2><p>Отправьте ФИО нотариуса, регион и примерную дату документа. Сначала проверим ситуацию.</p></div>
+        <a href="https://wa.me/77479957635?text=<%= waText %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать в WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</main>

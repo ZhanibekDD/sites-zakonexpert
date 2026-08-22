@@ -1,0 +1,33 @@
+<%
+const q = String(query || '').trim();
+const pageTitle = 'Замена нотариуса в Казахстане — кому передан архив | ZakonExpert';
+const pageDesc = 'Проверка прекратившего деятельность нотариуса и поиск нотариуса, которому официально передан архив. Ежедневная сверка с реестром ЕНИС.';
+const canonical = 'https://zakonexpertt.kz/zamena-notariusa';
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Проверка передачи архива нотариуса',
+  description: pageDesc,
+  url: canonical,
+  applicationCategory: 'LegalService',
+  operatingSystem: 'Any',
+  isAccessibleForFree: true,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: canonical + '?q={notary_name}',
+    'query-input': 'required name=notary_name',
+  },
+};
+const body = '<link rel="stylesheet" href="/css/notary-archive.css?v=20260823-1">'
+  + include('../partials/notary-archive-body', { query: q, directory, lastUpdated, chambers });
+%>
+<%- include('../news/layout', {
+  title: pageTitle,
+  description: pageDesc,
+  canonical,
+  ogType: 'website',
+  ogImage: null,
+  schema,
+  noindex: Boolean(q),
+  body,
+}) %>

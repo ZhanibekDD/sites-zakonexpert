@@ -5,6 +5,7 @@ const path = require('path');
 const cheerio = require('cheerio');
 const { writeRegistrySource } = require('../modules/registry-source');
 const { applyNotaryOverride } = require('../modules/notary-overrides');
+const { extractArchiveTransfer } = require('../modules/notary-archive');
 
 const OUTPUT_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const STATUS_PATH = path.join(__dirname, '..', 'data', 'notaries-registry-status.json');
@@ -117,6 +118,7 @@ async function refreshNotariesRegistry() {
   const active = rows.filter(row => !/прекращена/i.test(row.license)).length;
   const withPhone = rows.filter(row => row.phone).length;
   const withEmail = rows.filter(row => row.email).length;
+  const archiveTransfers = rows.reduce((count, row) => count + extractArchiveTransfer(row.schedule).names.length, 0);
   if (rows.length < 5000 || active < 3000) {
     throw new Error(`Проверка полноты не пройдена: всего ${rows.length}, действующих ${active}`);
   }
@@ -131,9 +133,10 @@ async function refreshNotariesRegistry() {
     active,
     withPhone,
     withEmail,
+    archiveTransfers,
   }, null, 2) + '\n', 'utf8');
-  console.log(`[Notaries] Saved ${rows.length}: active=${active}, phone=${withPhone}, email=${withEmail}`);
-  return { total: rows.length, active, withPhone, withEmail };
+  console.log(`[Notaries] Saved ${rows.length}: active=${active}, phone=${withPhone}, email=${withEmail}, archiveTransfers=${archiveTransfers}`);
+  return { total: rows.length, active, withPhone, withEmail, archiveTransfers };
 }
 
 if (require.main === module) {
