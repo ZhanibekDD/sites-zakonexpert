@@ -567,7 +567,8 @@
     else done();
   });
 
-  var initialBin = digits(new URLSearchParams(location.search).get('bin'));
+  var hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+  var initialBin = digits(hashParams.get('bin') || new URLSearchParams(location.search).get('bin'));
   if (initialBin.length === 12) {
     input.value = initialBin;
     input.dataset.bin = initialBin;

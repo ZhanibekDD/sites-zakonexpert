@@ -6,10 +6,11 @@ const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
 const { readRegistrySource } = require('../modules/registry-source');
+const { inheritLegacySlugs } = require('../modules/seo-url-policy');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'lawyers.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'lawyers.db');
-const DB_VERSION = 4;
+const DB_VERSION = 5; // preserves canonical URL history across registry refreshes
 
 slugify.extend({
   'ə': 'a', 'Ə': 'A',
@@ -168,7 +169,16 @@ async function importLawyers() {
   console.log('[Lawyers] Reading compressed registry source...');
   const rows = source.records;
   console.log(`[Lawyers] Parsed ${rows.length} rows`);
-  const { lawyers, skipped } = buildLawyers(rows, sourceMtime, sourceFingerprint);
+  const built = buildLawyers(rows, sourceMtime, sourceFingerprint);
+  const skipped = built.skipped;
+  const previousLawyers = await db.find({}, {
+    slug: 1, legacySlugs: 1, officialId: 1, licenseNo: 1, name: 1, region: 1, _id: 0,
+  });
+  const lawyers = inheritLegacySlugs(built.lawyers, previousLawyers, [
+    item => item.officialId,
+    item => item.licenseNo,
+    item => `${item.name || ''}|${item.region || ''}`,
+  ]);
   lawyers.forEach(lawyer => { lawyer.sourceRecordCount = lawyers.length; });
 
   const usesOfficialRecords = rows.some(row => row && !Array.isArray(row));

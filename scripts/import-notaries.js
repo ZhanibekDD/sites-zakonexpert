@@ -8,10 +8,11 @@ const { compactDatastore } = require('../modules/db-maintenance');
 const { readRegistrySource } = require('../modules/registry-source');
 const { applyNotaryOverride } = require('../modules/notary-overrides');
 const { extractArchiveTransfer, officialChamberUrl } = require('../modules/notary-archive');
+const { inheritLegacySlugs } = require('../modules/seo-url-policy');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 7; // includes verified ENIS archive-transfer annotations
+const DB_VERSION = 8; // preserves canonical URL history across registry refreshes
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -138,7 +139,15 @@ async function importNotaries() {
   const rows = source.records;
   console.log(`[Notaries] Parsed ${rows.length} rows`);
 
-  const { notaries, skipped } = buildNotaries(rows, sourceMtime, sourceFingerprint);
+  const built = buildNotaries(rows, sourceMtime, sourceFingerprint);
+  const skipped = built.skipped;
+  const previousNotaries = await db.find({}, {
+    slug: 1, legacySlugs: 1, license: 1, name: 1, region: 1, _id: 0,
+  });
+  const notaries = inheritLegacySlugs(built.notaries, previousNotaries, [
+    item => item.license,
+    item => `${item.name || ''}|${item.region || ''}`,
+  ]);
   notaries.forEach(notary => { notary.sourceRecordCount = notaries.length; });
 
   const regionCount = new Set(notaries.map(notary => notary.region)).size;

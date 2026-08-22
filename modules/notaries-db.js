@@ -5,6 +5,7 @@ const path = require('path');
 const fs   = require('fs');
 const { enableAutocompaction } = require('./db-maintenance');
 const { findArchiveDirectory } = require('./notary-archive');
+const { resolvePersonSlugAlias } = require('./seo-url-policy');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -20,7 +21,15 @@ db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
 db.ensureIndex({ fieldName: 'active' }).catch(() => {});
 
 module.exports = {
-  findBySlug(slug)  { return db.findOne({ slug }); },
+  async findBySlug(slug) {
+    const exact = await db.findOne({ slug });
+    if (exact) return exact;
+    const storedAlias = await db.findOne({ legacySlugs: slug });
+    if (storedAlias) return storedAlias;
+    const candidates = await db.find({}, { slug: 1, legacySlugs: 1, _id: 0 });
+    const inferred = resolvePersonSlugAlias(candidates, slug);
+    return inferred ? db.findOne({ slug: inferred.slug }) : null;
+  },
   count()           { return db.count({}); },
   getAllSlugs()      { return db.find({}, { slug: 1, name: 1, region: 1, updatedAt: 1, _id: 0 }); },
   getLastUpdated()  { return db.findOne({}, { updatedAt: 1, _id: 0 }).then(d => d ? d.updatedAt : null); },

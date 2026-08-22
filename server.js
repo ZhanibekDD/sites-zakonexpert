@@ -68,6 +68,7 @@ const { createCompanyCheckService } = require('./modules/company-check-sources')
 const { getRegionEmblem } = require('./modules/region-emblems');
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const { normalizeRegionKey } = require('./modules/notary-archive');
+const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
 const {
   BANK_ARREST_HUB_PATH,
   BANK_ARREST_PAGES,
@@ -316,6 +317,17 @@ const LEGACY_ALIAS_REDIRECTS = {
 for (const [oldPath, newPath] of Object.entries(LEGACY_ALIAS_REDIRECTS)) {
   app.get([oldPath, oldPath + '.html'], (req, res) => res.redirect(301, newPath));
 }
+
+// Search terms belong in the client-side state, not in crawlable canonical
+// URLs. This route must precede express.static because notary-search.html is a
+// physical file and would otherwise be served before Express can normalize it.
+app.get('/notary-search', (req, res, next) => {
+  const entries = Object.entries(req.query || {}).flatMap(([key, value]) =>
+    (Array.isArray(value) ? value : [value]).map(item => [key, String(item || '')])
+  ).filter(([, value]) => value);
+  if (!entries.length) return next();
+  res.redirect(301, `/notary-search#${new URLSearchParams(entries).toString()}`);
+});
 
 // ===== GENERIC .html SUFFIX → EXTENSIONLESS CANONICAL 301 REDIRECT =====
 // Real Yandex Webmaster data (2026-07-15 export) showed Yandex independently
@@ -672,6 +684,7 @@ app.get('/notary/:slug', asyncHandler(async (req, res) => {
   if (!notariesDb) return res.status(503).send('Notary module not available');
   const notary = await notariesDb.findBySlug(req.params.slug);
   if (!notary) return sendNotFound(res);
+  if (notary.slug !== req.params.slug) return res.redirect(301, `/notary/${notary.slug}`);
   const [comments, commentStats] = commentsDb
     ? await Promise.all([commentsDb.getApproved('notary', req.params.slug), commentsDb.stats('notary', req.params.slug)])
     : [[], null];
@@ -1218,7 +1231,7 @@ function companyLanguageLinks(companySlug = null) {
       nativeName: language.nativeName,
       href: companyCatalogPathFor(code),
       companyHref: companySlug
-        ? companyPathFor(code, companySlug)
+        ? (code === 'ru' ? companyPathFor('ru', companySlug) : companyCatalogPathFor(code))
         : companyCatalogPathFor(code),
     };
   });
@@ -1265,7 +1278,7 @@ function renderCompaniesCatalog(req, res, localeCode = 'ru') {
     alternates: catalogAlternates(),
     languages: companyLanguageLinks(),
     companyCatalogPath: companyCatalogPathFor(locale.code),
-    companyItemPrefix: locale.code === 'ru' ? '/company/' : `/${locale.code}/company/`,
+    companyItemPrefix: '/company/',
   });
 }
 
@@ -1352,7 +1365,14 @@ app.get('/companies/region/:slug', (req, res) => {
 });
 
 app.get('/:locale(kk|en|zh|tr)/company/:slug', (req, res) => {
-  renderCompanyItem(req, res, req.params.locale);
+  let canonicalSlug = req.params.slug;
+  if (companiesDb && companiesDb.available()) {
+    const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
+    const company = id ? companiesDb.findById(id) : null;
+    const redirect = company ? null : companiesDb.redirectByOldSlug(req.params.slug);
+    canonicalSlug = company?.slug || redirect?.slug || canonicalSlug;
+  }
+  res.redirect(301, `/company/${canonicalSlug}`);
 });
 app.get('/company/:slug', (req, res) => renderCompanyItem(req, res, 'ru'));
 app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
@@ -1363,7 +1383,12 @@ app.get('/gsi/:slug',     (req, res) => {
 });
 app.get('/insurance',     (req, res) => res.render('insurance/catalog', { items: getInsuranceData() }));
 app.get('/insurance/:slug', (req, res) => {
-  const item = getInsuranceData().find(c => c.slug === req.params.slug);
+  const items = getInsuranceData();
+  const item = items.find(c => c.slug === req.params.slug);
+  if (!item) {
+    const alias = resolveLegacyCatalogItem(items, req.params.slug);
+    if (alias) return res.redirect(301, `/insurance/${alias.slug}`);
+  }
   if (!item) return sendNotFound(res);
   res.render('insurance/item', { item, lowContentBoost });
 });
@@ -1589,6 +1614,10 @@ app.get('/mfo', (req, res) => {
 app.get('/mfo/:slug', (req, res) => {
   const { mfo } = getMfoData();
   const item = mfo.find(m => m.slug === req.params.slug);
+  if (!item) {
+    const alias = resolveLegacyCatalogItem(mfo, req.params.slug);
+    if (alias) return res.redirect(301, `/mfo/${alias.slug}`);
+  }
   if (!item) return sendNotFound(res);
   res.render('mfo/item', { item, lowContentBoost });
 });
@@ -1604,6 +1633,10 @@ app.get('/lombards', (req, res) => {
 app.get('/lombards/:slug', (req, res) => {
   const { lombards } = getMfoData();
   const item = lombards.find(l => l.slug === req.params.slug);
+  if (!item) {
+    const alias = resolveLegacyCatalogItem(lombards, req.params.slug);
+    if (alias) return res.redirect(301, `/lombards/${alias.slug}`);
+  }
   if (!item) return sendNotFound(res);
   res.render('lombards/item', { item, lowContentBoost });
 });
@@ -1678,6 +1711,7 @@ app.get('/lawyer/:slug', asyncHandler(async (req, res) => {
   if (!lawyersDb) return res.status(503).send('Lawyer module not available');
   const lawyer = await lawyersDb.findBySlug(req.params.slug);
   if (!lawyer) return sendNotFound(res);
+  if (lawyer.slug !== req.params.slug) return res.redirect(301, `/lawyer/${lawyer.slug}`);
   res.render('lawyer/page', { lawyer });
 }));
 
@@ -2157,12 +2191,18 @@ function buildNewsCoverSvg(article) {
 </svg>`;
 }
 
-// NEWS LIST
-app.get('/news', asyncHandler(async (req, res) => {
+const NEWS_CATEGORY_SLUGS = new Set([
+  'аресты', 'finance', 'chsi', 'notarius', 'sud', 'alimenty', 'shtrafy', 'avto', 'laws',
+]);
+
+function newsCategoryPath(category, page = 1) {
+  const base = category ? `/news/category/${encodeURIComponent(category)}` : '/news';
+  return page > 1 ? `${base}?page=${page}` : base;
+}
+
+async function renderNewsList(req, res, category = null) {
   if (!newsDb) return res.status(503).send('News module not available');
-  if (req.query.cat === 'Адвокат') return res.redirect(301, '/advocate');
   const page = Math.max(1, parseInt(req.query.page) || 1);
-  const category = (req.query.cat && req.query.cat !== 'Адвокат') ? req.query.cat : null;
   const offset = (page - 1) * NEWS_PER_PAGE;
 
   const [articles, total] = await Promise.all([
@@ -2171,12 +2211,12 @@ app.get('/news', asyncHandler(async (req, res) => {
   ]);
   const totalPages = Math.ceil(total / NEWS_PER_PAGE);
 
-  const canonical = `https://zakonexpertt.kz/news${page > 1 ? '?page=' + page : ''}`;
+  const canonical = `https://zakonexpertt.kz${newsCategoryPath(category, page)}`;
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: 'Новости ZakonExpert',
-    url: 'https://zakonexpertt.kz/news',
+    name: category ? `Новости ZakonExpert: ${category}` : 'Новости ZakonExpert',
+    url: `https://zakonexpertt.kz${newsCategoryPath(category)}`,
     numberOfItems: total,
     itemListElement: articles.slice(0, 10).map((a, i) => ({
       '@type': 'ListItem',
@@ -2186,7 +2226,9 @@ app.get('/news', asyncHandler(async (req, res) => {
   };
 
   res.render('news/list', {
-    title: 'Новости по арестам счетов и ЧСИ | ZakonExpert',
+    title: category
+      ? `Новости по теме «${category}» | ZakonExpert`
+      : 'Новости по арестам счетов и ЧСИ | ZakonExpert',
     description: 'Актуальные новости о банках, арестах счетов, ЧСИ, должниках и законах Казахстана. Юридические комментарии.',
     canonical,
     articles,
@@ -2196,12 +2238,26 @@ app.get('/news', asyncHandler(async (req, res) => {
     allowSourceImages: process.env.NEWS_USE_SOURCE_IMAGES !== 'false',
     schema,
   });
+}
+
+// NEWS LIST
+app.get('/news', asyncHandler(async (req, res) => {
+  const category = String(req.query.cat || '').trim();
+  if (category === 'Адвокат') return res.redirect(301, '/advocate');
+  if (category) {
+    if (!NEWS_CATEGORY_SLUGS.has(category)) return res.redirect(301, '/news');
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    return res.redirect(301, newsCategoryPath(category, page));
+  }
+  return renderNewsList(req, res);
 }));
 
 // NEWS CATEGORY
 app.get('/news/category/:category', asyncHandler(async (req, res) => {
   if (!newsDb) return res.status(503).send('News module not available');
-  res.redirect(301, `/news?cat=${req.params.category}`);
+  const category = String(req.params.category || '').trim();
+  if (!NEWS_CATEGORY_SLUGS.has(category)) return sendNotFound(res);
+  return renderNewsList(req, res, category);
 }));
 
 // NEWS RSS FEED
@@ -2364,6 +2420,9 @@ function getCorePages() {
     ...BANK_ARREST_PAGES.map(page => ({ url: page.path, priority: page.priority >= 95 ? '0.9' : '0.82', freq: 'monthly', lastmod: page.reviewedAt })),
     ...LEGAL_INTENT_PAGES.map(page => ({ url: page.path, priority: page.priority >= 94 ? '0.9' : '0.85', freq: 'monthly', lastmod: page.reviewedAt })),
   ];
+  NEWS_CATEGORY_SLUGS.forEach(category => pages.push({
+    url: newsCategoryPath(category), priority: '0.75', freq: 'daily',
+  }));
   growthPages.forEach(growthPage => {
     const existing = pages.find(page => page.url === growthPage.url);
     if (existing) Object.assign(existing, growthPage);
@@ -3241,7 +3300,13 @@ app.get('/bin-search', (req, res) => {
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
 app.get('/proverka-kompanii-po-bin', (req, res) => res.redirect(301, '/proverka-kontragenta'));
-app.get('/proverka-kontragenta', (req, res) => res.render('company-check'));
+app.get('/proverka-kontragenta', (req, res) => {
+  if (Object.keys(req.query || {}).length) {
+    const bin = validateBin(req.query.bin);
+    return res.redirect(301, bin ? `/proverka-kontragenta#bin=${bin}` : '/proverka-kontragenta');
+  }
+  return res.render('company-check');
+});
 app.get('/proverka-bankrotstva', (req, res) => res.render('bankruptcy-check'));
 app.post('/api/company-check', externalApiLimiter, async (req, res) => {
   res.set('Cache-Control', 'private, no-store');

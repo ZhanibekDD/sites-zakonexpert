@@ -141,6 +141,14 @@ function getTags(a) {
   try { return JSON.parse(a.tags || '[]').filter(t => typeof t === 'string'); } catch { return []; }
 }
 
+function categoryHref(slug) {
+  return slug ? '/news/category/' + encodeURIComponent(slug) : '/news';
+}
+
+function pageHref(page) {
+  return categoryHref(currentCategory) + '?page=' + page;
+}
+
 const featured   = articles.length > 0 ? articles[0] : null;
 const secondary  = articles.slice(1, 3);
 const gridItems  = articles.slice(3);
@@ -164,7 +172,7 @@ const body = `
     </div>
     <nav class="news-categories" aria-label="Фильтр">
       ${CATEGORIES.map(c => `
-      <a href="${c.slug ? '/news?cat=' + c.slug : '/news'}"
+      <a href="${categoryHref(c.slug)}"
          class="${(!currentCategory && !c.slug) || currentCategory === c.slug ? 'active' : ''}">${c.label}</a>`).join('')}
     </nav>
   </div>
@@ -318,11 +326,11 @@ const body = `
     ${totalPages > 1 ? `
     <nav class="news-pagination" aria-label="Пагинация">
       ${currentPage > 1 ? `
-      <a href="/news?page=${currentPage - 1}${currentCategory ? '&cat=' + currentCategory : ''}"
+      <a href="${pageHref(currentPage - 1)}"
          class="news-page-btn">← Назад</a>` : ''}
       <span class="news-page-info">Страница ${currentPage} из ${totalPages}</span>
       ${currentPage < totalPages ? `
-      <a href="/news?page=${currentPage + 1}${currentCategory ? '&cat=' + currentCategory : ''}"
+      <a href="${pageHref(currentPage + 1)}"
          class="news-page-btn">Вперёд →</a>` : ''}
     </nav>
     ` : ''}
