@@ -2428,6 +2428,7 @@ function getCorePages() {
     // Инструменты
     { url: '/calculator',     priority: '0.85', freq: 'monthly' },
     { url: '/marshrut-dolzhnika', priority: '0.9', freq: 'monthly' },
+    { url: '/diagnostika-aresta', priority: '0.95', freq: 'monthly', lastmod: '2026-08-24' },
     { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
     { url: '/gallery',        priority: '0.85', freq: 'monthly' },
     { url: '/press',          priority: '0.7',  freq: 'monthly' },
@@ -3059,6 +3060,9 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'company_check_shared', 'click_cta_company_check',
   'view_bank_arrest_page', 'click_cta_bank_arrest',
   'view_legal_intent_page', 'click_cta_legal_intent',
+  'arrest_diagnostic_started', 'arrest_diagnostic_step',
+  'arrest_diagnostic_completed', 'arrest_diagnostic_copy',
+  'arrest_diagnostic_whatsapp',
 ]);
 const COMPANY_FUNNEL_EVENT_TYPES = new Set([
   'view_company_page', 'view_company_cta', 'click_cta_company',
@@ -3082,6 +3086,7 @@ function classifyPageType(page) {
   if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
   if (page === '/dokumenty') return 'documents';
   if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
+  if (page === '/diagnostika-aresta') return 'arrest_diagnostic';
   if (page === '/bin-search') return 'bin_search';
   if (page === '/proverka-kontragenta') return 'company_check';
   if (page === '/proverka-bankrotstva') return 'bankruptcy_check';
@@ -3324,6 +3329,7 @@ app.get('/bin-search', (req, res) => {
 // ===== КАЛЬКУЛЯТОР =====
 app.get('/calculator', (req, res) => res.render('calculator/index', {}));
 app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
+app.get('/diagnostika-aresta', (req, res) => res.render('arrest-diagnostic'));
 app.get('/proverka-kompanii-po-bin', (req, res) => res.redirect(301, '/proverka-kontragenta'));
 app.get('/proverka-kontragenta', (req, res) => {
   if (Object.keys(req.query || {}).length) {
