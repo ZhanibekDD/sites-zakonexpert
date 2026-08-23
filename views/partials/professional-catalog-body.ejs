@@ -178,6 +178,47 @@ var verifiedDate = catalog.lastUpdated
         </section>
       <% } %>
 
+      <% if (catalog.type === 'notary' && catalog.regionPage) { %>
+        <section class="bailiff-region-help" aria-labelledby="notary-region-help-title">
+          <div class="bailiff-region-help__heading">
+            <div><span>Если нотариус совершил исполнительную надпись</span><h2 id="notary-region-help-title">Что проверить до оплаты</h2></div>
+            <a href="/otmena-ispolnitelnoi-nadpisi">Порядок отмены надписи <i class="bi bi-arrow-right"></i></a>
+          </div>
+          <div class="bailiff-region-help__steps">
+            <article><span>1</span><div><strong>Получите копию надписи</strong><p>Проверьте нотариуса, взыскателя, сумму, дату и основание требования. Одного уведомления банка недостаточно.</p></div></article>
+            <article><span>2</span><div><strong>Зафиксируйте дату получения</strong><p>Закон связывает срок подачи письменного возражения с получением копии исполнительной надписи должником.</p></div></article>
+            <article><span>3</span><div><strong>Проверьте возражение</strong><p>При наличии оснований направьте его нотариусу, совершившему надпись. Если срок или порядок спорны, оцените судебный маршрут.</p></div></article>
+          </div>
+          <div class="bailiff-region-help__routes">
+            <a href="/zamena-notariusa"><i class="bi bi-archive"></i><span><strong>Нотариус не работает</strong><small>Узнать, кому передан его архив</small></span></a>
+            <a href="/notary-search"><i class="bi bi-search"></i><span><strong>Найти нотариуса</strong><small>Поиск по ФИО в реестре ЕНИС</small></span></a>
+            <a href="/otmena-ispolnitelnoi-nadpisi"><i class="bi bi-file-earmark-x"></i><span><strong>Отменить надпись</strong><small>Сроки, документы и порядок действий</small></span></a>
+            <a href="https://adilet.zan.kz/rus/docs/Z970000155_" target="_blank" rel="noopener"><i class="bi bi-bank"></i><span><strong>Проверить закон</strong><small>Статьи 92-6–92-8 на Әділет</small></span></a>
+          </div>
+          <div class="bailiff-region-help__cta">
+            <div><strong>Надпись уже передали ЧСИ или нотариус не отвечает?</strong><span>Ответьте на два вопроса — покажем подходящий маршрут. Не отправляйте SMS-коды, CVV и пароли.</span></div>
+            <div class="bailiff-region-help__cta-actions">
+              <a class="bailiff-region-help__diagnostic" href="/diagnostika-aresta?source=notary&amp;entry=notary_region"
+                data-product-event="arrest_diagnostic_entry" data-event-target="registry-diagnostic"
+                data-event-cta="notary_region" data-source-entity-type="notary"
+                data-service-type="arrest_diagnostic" data-document-type="notary"><i class="bi bi-signpost-split"></i> Ответить на 2 вопроса</a>
+              <a href="https://wa.me/77003097566?text=<%= encodeURIComponent(catalog.whatsappText) %>" target="_blank" rel="noopener"
+                data-product-event="click_cta_notary" data-event-target="catalog-whatsapp"
+                data-event-cta="region_bottom" data-source-entity-type="notary"><i class="bi bi-whatsapp"></i> Написать</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="bailiff-region-links" aria-labelledby="other-notary-regions">
+          <div class="professional-catalog__heading"><h2 id="other-notary-regions">Нотариусы в других регионах</h2><a href="/notaries">Все регионы Казахстана →</a></div>
+          <div>
+            <% regions.filter(function(item) { return item.region !== catalog.region; }).forEach(function(item) { %>
+              <a href="<%= item.path || (catalog.baseUrl + '?region=' + encodeURIComponent(item.region)) %>"><%= item.region %><span><%= item.count %></span></a>
+            <% }); %>
+          </div>
+        </section>
+      <% } %>
+
       <div class="professional-catalog__source">
         <i class="bi bi-database-check"></i>
         <div><strong>Источник данных:</strong> <a href="<%= catalog.sourceUrl %>" target="_blank" rel="noopener"><%= catalog.sourceName %></a>. <%= catalog.sourceText %><%= verifiedDate ? ' Последнее обновление базы ZakonExpert: ' + verifiedDate + '.' : '' %></div>

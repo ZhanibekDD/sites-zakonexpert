@@ -1,23 +1,50 @@
 <%
 const region = (selectedRegion || '').trim();
+const currentRegion = regionPage || null;
 const regions = allRegions || [];
 const notaries = regionItems || [];
 const total = regions.reduce(function(sum, item) { return sum + (item.count || 0); }, 0);
-const pageTitle = region
-  ? ('Нотариусы ' + region + ' — контакты, лицензии и график | ZakonExpert')
+const pageTitle = currentRegion
+  ? ('Нотариусы ' + currentRegion.genitive + ': контакты | ZakonExpert')
   : 'Каталог нотариусов Казахстана — контакты и лицензии | ZakonExpert';
-const pageDesc = region
-  ? ('Нотариусы ' + region + ': ' + notaries.length + ' карточек с телефонами, email, адресами, лицензиями и режимом работы.')
+const pageDesc = currentRegion
+  ? ('Список нотариусов ' + currentRegion.genitive + ': ' + notaries.length + ' карточек. Поиск по ФИО, телефоны, адреса, лицензии и помощь при исполнительной надписи.')
   : ('Каталог ' + total + ' нотариусов Казахстана. Актуальные контакты, адреса, лицензии и режим работы из официального реестра ЕНИС.');
-const canonical = region
-  ? ('https://zakonexpertt.kz/notaries?region=' + encodeURIComponent(region))
+const canonical = currentRegion
+  ? ('https://zakonexpertt.kz' + currentRegion.path)
   : 'https://zakonexpertt.kz/notaries';
+const modifiedDate = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : undefined;
 const schema = {
   '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: pageTitle,
-  description: pageDesc,
-  url: canonical,
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': canonical + '#webpage',
+      name: pageTitle,
+      description: pageDesc,
+      url: canonical,
+      dateModified: modifiedDate,
+      inLanguage: 'ru-KZ',
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: notaries.length || total,
+        itemListElement: notaries.slice(0, 50).map(function(item, index) {
+          return { '@type': 'ListItem', position: index + 1, name: item.name, url: 'https://zakonexpertt.kz/notary/' + item.slug };
+        }),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: currentRegion ? [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Каталог нотариусов', item: 'https://zakonexpertt.kz/notaries' },
+        { '@type': 'ListItem', position: 3, name: currentRegion.displayName, item: canonical },
+      ] : [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Каталог нотариусов', item: canonical },
+      ],
+    },
+  ],
 };
 const catalog = {
   type: 'notary',
@@ -27,24 +54,33 @@ const catalog = {
   searchLabel: 'Найти нотариуса по ФИО',
   searchPlaceholder: 'Введите фамилию или полное ФИО нотариуса',
   region,
+  regionPage: currentRegion,
   regions,
   items: notaries,
   lastUpdated,
   pluralLabel: 'Каталог нотариусов',
   registryLabel: 'Официальные данные ЕНИС',
   title: 'Нотариусы Казахстана',
-  regionTitle: 'Нотариусы',
+  regionTitle: currentRegion ? ('Нотариусы ' + currentRegion.genitive) : 'Нотариусы',
+  regionH1: currentRegion ? ('Нотариусы ' + currentRegion.genitive + ': список и контакты') : '',
+  regionIntro: currentRegion
+    ? ('В каталоге ' + notaries.length + ' нотариусов. Найдите специалиста по ФИО, проверьте лицензию, адрес и официальные контакты. Если нотариус совершил исполнительную надпись, сначала получите её копию и проверьте сроки для возражения.')
+    : '',
+  regionEmblem: currentRegion ? getRegionEmblem(currentRegion.sourceName) : '',
   subtitle: 'Телефоны, email, адреса, лицензии и режим работы нотариусов по всем 20 территориальным палатам Казахстана.',
   countLabel: 'нотариусов',
   heroIcon: 'bi-journal-bookmark',
   cardIcon: 'bi-person-vcard',
-  whatsappText: 'Здравствуйте! Нужна помощь по исполнительной надписи нотариуса.',
+  whatsappText: currentRegion
+    ? ('Здравствуйте! Нотариус ' + currentRegion.genitive + ' совершил исполнительную надпись. Хочу проверить документ и возможный порядок отмены.')
+    : 'Здравствуйте! Нужна помощь по исполнительной надписи нотариуса.',
+  analyticsEvent: 'click_cta_notary',
   sourceUrl: 'https://enis.kz/NotarySearch',
   sourceName: 'Единая нотариальная информационная система Казахстана (ЕНИС)',
   sourceText: 'Данные автоматически сверяются со всеми 20 территориальными нотариальными палатами.',
   getRegionEmblem,
 };
-const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260816-1">'
+const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260824-3">'
   + include('../partials/professional-catalog-body', { catalog });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

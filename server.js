@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-23-bank-arrest-cluster-v1';
+const RELEASE_ID = '2026-08-24-notary-regions-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -71,6 +71,11 @@ const {
   getBailiffRegionByName,
   withBailiffRegionPaths,
 } = require('./modules/bailiff-regions');
+const {
+  getNotaryRegionBySlug,
+  getNotaryRegionByName,
+  withNotaryRegionPaths,
+} = require('./modules/notary-regions');
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const { normalizeRegionKey } = require('./modules/notary-archive');
 const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
@@ -705,9 +710,9 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   const [all, regions] = await Promise.all([notariesDb.getAllSlugs(), notariesDb.getRegions()]);
   const lastUpdated = await notariesDb.getLastUpdated();
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const regionUrls = regions.map(r => `
+  const regionUrls = withNotaryRegionPaths(regions).map(r => `
   <url>
-    <loc>https://zakonexpertt.kz/notaries?region=${encodeURIComponent(r.region)}</loc>
+    <loc>https://zakonexpertt.kz${r.path}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -763,18 +768,36 @@ app.get('/bailiff-search', asyncHandler(async (req, res) => {
 app.get('/notaries', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!notariesDb) return res.status(503).send('Notary module not available');
+  if (region) {
+    const regionPage = getNotaryRegionByName(region);
+    return res.redirect(301, regionPage ? regionPage.path : '/notaries');
+  }
   const [allRegions, lastUpdated] = await Promise.all([
     notariesDb.getRegions(),
     notariesDb.getLastUpdated(),
   ]);
-  if (region) {
-    const regionItems = await notariesDb.findByRegion(region);
-    return res.render('notary/catalog', {
-      selectedRegion: region, allRegions, regionItems, lastUpdated, getRegionEmblem,
-    });
-  }
   res.render('notary/catalog', {
-    selectedRegion: '', allRegions, regionItems: [], lastUpdated, getRegionEmblem,
+    selectedRegion: '', regionPage: null, allRegions: withNotaryRegionPaths(allRegions),
+    regionItems: [], lastUpdated, getRegionEmblem,
+  });
+}));
+
+app.get('/notaries/:regionSlug', asyncHandler(async (req, res) => {
+  if (!notariesDb) return res.status(503).send('Notary module not available');
+  const regionPage = getNotaryRegionBySlug(req.params.regionSlug);
+  if (!regionPage) return sendNotFound(res);
+  const [allRegions, regionItems, lastUpdated] = await Promise.all([
+    notariesDb.getRegions(),
+    notariesDb.findByRegion(regionPage.sourceName),
+    notariesDb.getLastUpdated(),
+  ]);
+  res.render('notary/catalog', {
+    selectedRegion: regionPage.sourceName,
+    regionPage,
+    allRegions: withNotaryRegionPaths(allRegions),
+    regionItems,
+    lastUpdated,
+    getRegionEmblem,
   });
 }));
 
@@ -782,7 +805,7 @@ app.get('/notaries', asyncHandler(async (req, res) => {
 const REGIONAL_CITIES = {
   'almaty': {
     slug: 'almaty', name: 'Алматы', prepIn: 'Алматы', caseIn: 'Алматы', caseByCity: 'Алматы',
-    bailiffRegion: 'город Алматы', bailiffPath: '/bailiffs/almaty', notaryRegion: 'город Алматы',
+    bailiffRegion: 'город Алматы', bailiffPath: '/bailiffs/almaty', notaryRegion: 'город Алматы', notaryPath: '/notaries/almaty',
     intro: 'Алматы — крупнейший город Казахстана и лидер по количеству исполнительных производств. Здесь работает больше всего ЧСИ и нотариусов в стране, поэтому и арестов счетов Kaspi, Halyk и Freedom Bank больше, чем в любом другом регионе.',
     faq: [
       { q: 'Нужно ли приезжать в офис в Алматы?', a: 'Нет. Мы работаем дистанционно по всему Казахстану, включая Алматы — документы передаются через WhatsApp, личный визит не обязателен.' },
@@ -792,7 +815,7 @@ const REGIONAL_CITIES = {
   },
   'astana': {
     slug: 'astana', name: 'Астана', prepIn: 'Астане', caseIn: 'Астане', caseByCity: 'Астане',
-    bailiffRegion: 'город Астана', bailiffPath: '/bailiffs/astana', notaryRegion: 'город Астана',
+    bailiffRegion: 'город Астана', bailiffPath: '/bailiffs/astana', notaryRegion: 'город Астана', notaryPath: '/notaries/astana',
     intro: 'Астана — столица Казахстана с активно растущим количеством исполнительных производств. Клиенты Kaspi, Halyk и Freedom Bank в Астане часто сталкиваются с арестом счёта из-за исполнительной надписи нотариуса или постановления ЧСИ.',
     faq: [
       { q: 'Работаете ли вы с клиентами в Астане дистанционно?', a: 'Да, мы ведём дела по всей Астане удалённо — присылаете документы в WhatsApp, мы готовим и подаём всё сами.' },
@@ -802,7 +825,7 @@ const REGIONAL_CITIES = {
   },
   'shymkent': {
     slug: 'shymkent', name: 'Шымкент', prepIn: 'Шымкенте', caseIn: 'Шымкенте', caseByCity: 'Шымкенту',
-    bailiffRegion: 'город Шымкент', bailiffPath: '/bailiffs/shymkent', notaryRegion: 'город Шымкент',
+    bailiffRegion: 'город Шымкент', bailiffPath: '/bailiffs/shymkent', notaryRegion: 'город Шымкент', notaryPath: '/notaries/shymkent',
     intro: 'Шымкент — третий по величине город Казахстана со своим отдельным реестром ЧСИ и нотариусов. Арест счёта в Шымкенте чаще всего связан с исполнительной надписью нотариуса по кредиту или МФО.',
     faq: [
       { q: 'Есть ли у ZakonExpert офис в Шымкенте?', a: 'Мы работаем по Шымкенту дистанционно — весь процесс, от разбора документов до подачи возражения, ведётся удалённо через WhatsApp.' },
@@ -812,7 +835,7 @@ const REGIONAL_CITIES = {
   },
   'taldykorgan': {
     slug: 'taldykorgan', name: 'Талдыкорган', prepIn: 'Талдыкоргане', caseIn: 'Талдыкоргане', caseByCity: 'Талдыкоргану',
-    bailiffRegion: 'область Жетысу', bailiffPath: '/bailiffs/zhetisu', notaryRegion: 'область Жетысу',
+    bailiffRegion: 'область Жетысу', bailiffPath: '/bailiffs/zhetisu', notaryRegion: 'область Жетісу', notaryPath: '/notaries/zhetisu',
     intro: 'Талдыкорган — административный центр области Жетысу. Исполнительные производства и исполнительные надписи по клиентам региона ведутся ЧСИ и нотариусами, зарегистрированными в области Жетысу.',
     faq: [
       { q: 'Талдыкорган относится к какой области по реестру ЧСИ?', a: 'К области Жетысу — административным центром которой является Талдыкорган. Все ЧСИ и нотариусы региона зарегистрированы именно там.' },
@@ -822,7 +845,7 @@ const REGIONAL_CITIES = {
   },
   'karaganda': {
     slug: 'karaganda', name: 'Караганда', prepIn: 'Караганде', caseIn: 'Караганде', caseByCity: 'Караганде',
-    bailiffRegion: 'Карагандинская область', bailiffPath: '/bailiffs/karagandinskaya-oblast', notaryRegion: 'Карагандинская область',
+    bailiffRegion: 'Карагандинская область', bailiffPath: '/bailiffs/karagandinskaya-oblast', notaryRegion: 'Карагандинская область', notaryPath: '/notaries/karagandinskaya-oblast',
     intro: 'Караганда — крупный промышленный центр и административный центр Карагандинской области. Исполнительные производства должников региона ведут ЧСИ, зарегистрированные в Карагандинской области.',
     faq: [
       { q: 'Работает ли ZakonExpert с должниками в Караганде?', a: 'Да, мы ведём дела по всей Карагандинской области дистанционно — от первичной проверки по ИИН до подачи документов.' },

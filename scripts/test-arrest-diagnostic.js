@@ -59,7 +59,7 @@ async function run() {
   assert(!script.includes('FormData'), 'Diagnostic must not create an upload payload');
   assert.doesNotThrow(() => new Function(script), 'Diagnostic client JavaScript is invalid');
   assert(script.includes("['notary', 'court', 'bailiff', 'state', 'unknown']"), 'Preset source must use a strict allowlist');
-  assert(script.includes("['bailiff_profile', 'notary_profile', 'bailiff_region']"), 'Entry attribution must use a strict allowlist');
+  assert(script.includes("['bailiff_profile', 'notary_profile', 'bailiff_region', 'notary_region']"), 'Entry attribution must use a strict allowlist');
   assert(script.includes("currentStep === 1 && presetSource"), 'A known registry source must skip the redundant source question');
 
   for (const key of ['notary', 'court', 'bailiff', 'state', 'unknown']) {
@@ -86,6 +86,7 @@ async function run() {
   assert(notaryPage.includes("source: 'notary'") && notaryPage.includes("entry: 'notary_profile'"), 'Active notary profiles must prefill the diagnostic safely');
   assert(registryBody.includes('data-product-event="arrest_diagnostic_entry"'), 'Registry profile diagnostic event is missing');
   assert(catalogBody.includes('entry=bailiff_region'), 'Regional bailiff pages must link to the diagnostic');
+  assert(catalogBody.includes('entry=notary_region'), 'Regional notary pages must link to the diagnostic');
   assert(analytics.includes("send(eventType, link.getAttribute('data-event-target')"), 'Shared product CTA analytics handler is missing');
   assert(server.includes('source_entity_type:') && server.includes('source_page:'), 'Safe registry attribution dimensions are not persisted');
   assert(bailiffHtml.includes('source=bailiff&amp;entry=bailiff_profile'), 'Rendered bailiff diagnostic link is invalid');
