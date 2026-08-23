@@ -2,6 +2,13 @@
 
 const TOOLS = [
   {
+    slug: 'arrest-diagnostic', href: '/diagnostika-aresta', icon: 'bi-shield-exclamation',
+    title: 'Диагностика ареста счёта онлайн', short: 'Диагностика ареста',
+    description: 'Три вопроса определят документ-основание, первый шаг до оплаты и персональный маршрут по снятию ареста.',
+    actionLabel: 'Получить маршрут за 60 секунд',
+    applicationCategory: 'LegalApplication',
+  },
+  {
     slug: 'counterparty-check', href: '/proverka-kontragenta', icon: 'bi-shield-check',
     title: 'Проверка контрагента по БИН', short: 'Проверка по БИН',
     description: 'Единый отчёт по данным КГД: регистрация, налоги, НДС, задолженность и неблагоприятные признаки.',

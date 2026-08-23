@@ -39,6 +39,7 @@
     'click_cta_company', 'company_check_completed', 'click_cta_company_check',
     'click_cta_bank_arrest', 'click_cta_legal_intent',
     'whatsapp_qr_opened', 'whatsapp_qr_clicked',
+    'arrest_diagnostic_completed', 'arrest_diagnostic_whatsapp',
   ]);
 
   function analyticsPagePath(type) {

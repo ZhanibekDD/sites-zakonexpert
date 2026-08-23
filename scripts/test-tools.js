@@ -15,6 +15,7 @@ async function run() {
   assert(hub.includes('/tools/payment-plan'));
   assert(hub.includes('/calculator'));
   assert(hub.includes('/proverka-kontragenta'));
+  assert(hub.includes('/diagnostika-aresta'));
   assert.strictEqual(parseArgs([]).all, false, 'IndexNow full submission must be opt-in');
   assert.strictEqual(parseArgs(['--all']).all, true);
   assert.strictEqual(parseArgs(['--sitemap=sitemap-laws.xml']).sitemap, 'sitemap-laws.xml');

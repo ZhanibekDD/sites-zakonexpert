@@ -1,0 +1,241 @@
+<%
+const title = 'Диагностика ареста счёта онлайн за 60 секунд | ZakonExpert';
+const description = 'Ответьте на 3 вопроса и получите предварительный маршрут: что проверить до оплаты, какой документ запросить и как действовать при аресте счёта или карты.';
+const canonical = 'https://zakonexpertt.kz/diagnostika-aresta';
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      '@id': canonical + '#app',
+      name: 'Диагностика ареста ZakonExpert',
+      url: canonical,
+      applicationCategory: 'LegalApplication',
+      operatingSystem: 'Any',
+      browserRequirements: 'Requires JavaScript',
+      inLanguage: 'ru-KZ',
+      description,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'KZT' },
+      provider: {
+        '@type': 'LegalService',
+        name: 'ZakonExpert',
+        url: 'https://zakonexpertt.kz',
+        telephone: '+77003097566',
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Инструменты', item: 'https://zakonexpertt.kz/tools' },
+        { '@type': 'ListItem', position: 3, name: 'Диагностика ареста', item: canonical },
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Нужно ли сразу оплачивать долг, чтобы снять арест?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Сначала нужно получить документ-основание и материалы исполнительного производства. Если есть законные основания для отмены документа или прекращения производства, их проверяют до оплаты. Самостоятельная оплата без проверки не гарантирует снятие мер и может не закрыть вопрос с оплатой деятельности ЧСИ.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Диагностика отправляет мои ответы на сервер?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Нет. Ответы обрабатываются только в браузере. Форма не запрашивает ИИН, номер карты, SMS-код, ЭЦП или документы.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Что делать, если неизвестно, кто наложил арест?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Запросите у банка номер и дату документа, инициатора ограничения и проверьте исполнительное производство в официальной АИС ОИП. После этого можно определить, какой документ обжаловать или исполнять.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Можно ли отменить исполнительную надпись нотариуса?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Возможность и способ зависят от даты получения копии, содержания требования и документов. Министерство юстиции разъясняет, что возражение нотариусу направляется в течение десяти рабочих дней со дня получения копии надписи.',
+          },
+        },
+      ],
+    },
+  ],
+};
+const body = `
+<div class="ad-page">
+  <section class="ad-hero">
+    <div class="landing-container">
+      <nav class="npage-breadcrumb ad-breadcrumb" aria-label="Навигационная цепочка">
+        <a href="/">Главная</a><span class="npage-bc-sep">/</span><a href="/tools">Инструменты</a><span class="npage-bc-sep">/</span><span>Диагностика ареста</span>
+      </nav>
+      <div class="ad-hero__grid">
+        <div class="ad-hero__copy">
+          <span class="ad-kicker"><i class="bi bi-shield-check" aria-hidden="true"></i> Бесплатно · без ИИН · 60 секунд</span>
+          <h1>Диагностика ареста счёта: <span>что делать до оплаты</span></h1>
+          <p>Три коротких вопроса помогут определить документ-основание, первый безопасный шаг и подходящий способ: отмена, прекращение производства, жалоба или урегулирование.</p>
+          <div class="ad-hero__actions">
+            <a class="ad-button ad-button--gold" href="#diagnostic"><i class="bi bi-arrow-down-circle" aria-hidden="true"></i> Получить маршрут</a>
+            <a class="ad-text-link" href="/#checker-section"><i class="bi bi-search" aria-hidden="true"></i> Проверить по ИИН</a>
+          </div>
+          <ul class="ad-trust" aria-label="Преимущества диагностики">
+            <li><i class="bi bi-phone" aria-hidden="true"></i><span><strong>Работает в браузере</strong>Ответы не уходят на сервер</span></li>
+            <li><i class="bi bi-file-earmark-lock" aria-hidden="true"></i><span><strong>Без загрузки документов</strong>Не просим ЭЦП и коды</span></li>
+            <li><i class="bi bi-signpost-split" aria-hidden="true"></i><span><strong>Не шаблонный совет</strong>Маршрут зависит от основания</span></li>
+          </ul>
+        </div>
+        <aside class="ad-hero__visual" aria-label="Порядок проверки">
+          <div class="ad-case-card">
+            <div class="ad-case-card__top"><span>Ситуация</span><b>Счёт недоступен</b></div>
+            <div class="ad-case-line"><span>01</span><div><strong>Установить инициатора</strong><small>ЧСИ, суд, КГД или банк</small></div></div>
+            <div class="ad-case-line"><span>02</span><div><strong>Получить основание</strong><small>Не действовать по одному SMS</small></div></div>
+            <div class="ad-case-line ad-case-line--active"><span>03</span><div><strong>Выбрать правовой способ</strong><small>До необратимого платежа</small></div></div>
+            <div class="ad-case-card__stamp"><i class="bi bi-check2-circle" aria-hidden="true"></i> Маршрут готов</div>
+          </div>
+          <p><i class="bi bi-info-circle" aria-hidden="true"></i> Банк исполняет полученную меру. Он не всегда может назвать правовой способ её отмены.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <main class="ad-main">
+    <div class="landing-container">
+      <section class="ad-diagnostic" id="diagnostic" data-arrest-diagnostic>
+        <div class="ad-progress" aria-label="Прогресс диагностики">
+          <div class="ad-progress__meta"><span data-progress-label>Вопрос 1 из 3</span><strong data-progress-percent>33%</strong></div>
+          <div class="ad-progress__track"><span data-progress-bar></span></div>
+          <ol>
+            <li class="is-active" data-progress-step="1"><span>1</span>Ситуация</li>
+            <li data-progress-step="2"><span>2</span>Основание</li>
+            <li data-progress-step="3"><span>3</span>Оплата</li>
+          </ol>
+        </div>
+
+        <div class="ad-wizard">
+          <section class="ad-question is-active" data-question="1" aria-labelledby="ad-question-1">
+            <div class="ad-question__heading"><span>Шаг 1</span><h2 id="ad-question-1">Что произошло?</h2><p>Выберите наиболее близкую ситуацию.</p></div>
+            <div class="ad-options" role="group" aria-labelledby="ad-question-1">
+              <button type="button" class="ad-option" data-answer="symptom" data-value="account"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i><span><strong>Счёт или карта заблокированы</strong><small>Деньги видны, но недоступны</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="symptom" data-value="writeoff"><i class="bi bi-arrow-down-up" aria-hidden="true"></i><span><strong>Деньги удержали или списали</strong><small>Есть расходная операция или инкассовое распоряжение</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="symptom" data-value="paid"><i class="bi bi-check2-circle" aria-hidden="true"></i><span><strong>Долг оплатил(а), но арест остался</strong><small>Банк или ЧСИ не снял ограничение</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="symptom" data-value="restriction"><i class="bi bi-car-front" aria-hidden="true"></i><span><strong>Запрет на выезд, авто или имущество</strong><small>Проблема не только с банковским счётом</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="symptom" data-value="sms"><i class="bi bi-chat-left-text" aria-hidden="true"></i><span><strong>Пришло SMS 1414 или уведомление</strong><small>Пока не понимаю, что именно открыто</small></span><b>→</b></button>
+            </div>
+          </section>
+
+          <section class="ad-question" data-question="2" aria-labelledby="ad-question-2" hidden>
+            <div class="ad-question__heading"><span>Шаг 2</span><h2 id="ad-question-2">Какой документ лежит в основе?</h2><p>Если не уверены, выбирайте «Не знаю» — это нормальная ситуация.</p></div>
+            <div class="ad-options" role="group" aria-labelledby="ad-question-2">
+              <button type="button" class="ad-option" data-answer="source" data-value="notary"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span><strong>Исполнительная надпись нотариуса</strong><small>Указаны нотариус и взыскатель</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="source" data-value="court"><i class="bi bi-bank" aria-hidden="true"></i><span><strong>Судебный акт или судебный приказ</strong><small>Есть суд, номер дела или акт</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="source" data-value="bailiff"><i class="bi bi-person-badge" aria-hidden="true"></i><span><strong>Вижу только постановление ЧСИ</strong><small>Документ-основание пока не получил(а)</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="source" data-value="state"><i class="bi bi-building-check" aria-hidden="true"></i><span><strong>Штраф, налог, алименты или иной акт</strong><small>Требование государственного органа или специальная категория</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="source" data-value="unknown"><i class="bi bi-question-circle" aria-hidden="true"></i><span><strong>Не знаю</strong><small>Есть только сообщение банка или SMS</small></span><b>→</b></button>
+            </div>
+            <button type="button" class="ad-back" data-back><i class="bi bi-arrow-left" aria-hidden="true"></i> Назад</button>
+          </section>
+
+          <section class="ad-question" data-question="3" aria-labelledby="ad-question-3" hidden>
+            <div class="ad-question__heading"><span>Шаг 3</span><h2 id="ad-question-3">Что уже оплачено?</h2><p>Это влияет на документы и риск повторного взыскания.</p></div>
+            <div class="ad-options" role="group" aria-labelledby="ad-question-3">
+              <button type="button" class="ad-option" data-answer="payment" data-value="none"><i class="bi bi-shield-exclamation" aria-hidden="true"></i><span><strong>Пока ничего</strong><small>Сначала хочу проверить законность и сумму</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="payment" data-value="principal"><i class="bi bi-receipt" aria-hidden="true"></i><span><strong>Основной долг полностью или частично</strong><small>Есть квитанции, но производство не закрыто</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="payment" data-value="all"><i class="bi bi-patch-check" aria-hidden="true"></i><span><strong>Всё по расчёту ЧСИ</strong><small>Долг и выставленные расходы оплачены</small></span><b>→</b></button>
+              <button type="button" class="ad-option" data-answer="payment" data-value="unknown"><i class="bi bi-calculator" aria-hidden="true"></i><span><strong>Не понимаю расчёт</strong><small>Неясно, из чего состоит сумма</small></span><b>→</b></button>
+            </div>
+            <button type="button" class="ad-back" data-back><i class="bi bi-arrow-left" aria-hidden="true"></i> Назад</button>
+          </section>
+
+          <section class="ad-result" data-result hidden aria-live="polite">
+            <div class="ad-result__head">
+              <span class="ad-result__badge"><i class="bi bi-check2-circle" aria-hidden="true"></i> Предварительный маршрут готов</span>
+              <button type="button" class="ad-reset" data-reset><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Пройти заново</button>
+            </div>
+            <div class="ad-result__grid">
+              <div class="ad-result__main">
+                <p class="ad-result__eyebrow" data-result-eyebrow></p>
+                <h2 data-result-title></h2>
+                <p class="ad-result__lead" data-result-lead></p>
+                <div class="ad-priority"><span><i class="bi bi-1-circle" aria-hidden="true"></i> Первый приоритет</span><strong data-result-priority></strong></div>
+                <h3>Порядок действий</h3>
+                <ol class="ad-result__steps" data-result-steps></ol>
+              </div>
+              <aside class="ad-result__side">
+                <div class="ad-result__panel"><h3><i class="bi bi-folder2-open" aria-hidden="true"></i> Что подготовить</h3><ul data-result-docs></ul></div>
+                <div class="ad-result__warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><p data-result-warning></p></div>
+              </aside>
+            </div>
+            <div class="ad-result__actions">
+              <a class="ad-button ad-button--whatsapp" href="#" target="_blank" rel="noopener" data-result-whatsapp><i class="bi bi-whatsapp" aria-hidden="true"></i><span>Отправить маршрут в WhatsApp<small>Специалист увидит ответы и продолжит без повторных вопросов</small></span></a>
+              <button type="button" class="ad-button ad-button--copy" data-copy-result><i class="bi bi-copy" aria-hidden="true"></i> Скопировать результат</button>
+            </div>
+            <div class="ad-payment-note"><i class="bi bi-file-earmark-check" aria-hidden="true"></i><div><strong>Как начинается работа ZakonExpert</strong><span>После изучения документов фиксируем объём и стоимость. Работа начинается по договору с предоплатой 50%, остаток — по согласованному этапу.</span></div></div>
+          </section>
+        </div>
+        <p class="ad-privacy"><i class="bi bi-lock" aria-hidden="true"></i> Диагностика не запрашивает и не передаёт ИИН, ФИО, номер карты или документы. В WhatsApp никогда не отправляйте SMS-коды, CVV, пароль или ключ ЭЦП.</p>
+      </section>
+
+      <section class="ad-principle" aria-labelledby="ad-principle-title">
+        <div><span class="ad-section-kicker">Главный принцип</span><h2 id="ad-principle-title">Сначала документ и возможность отмены — затем обоснованная оплата</h2></div>
+        <div class="ad-principle__content">
+          <p>Оплата основного долга сама по себе не всегда прекращает исполнительное производство и не всегда снимает все меры. До платежа нужно получить постановление о возбуждении ИП, исполнительный документ и письменный расчёт.</p>
+          <p>Если документы дают основания для отмены исполнительной надписи, судебного акта или прекращения производства, этот вопрос проверяют <strong>до оплаты долга</strong>. Если оснований нет, выбирают законный способ исполнения или урегулирования и отдельно контролируют снятие ограничений.</p>
+        </div>
+        <div class="ad-principle__guard"><i class="bi bi-shield-check" aria-hidden="true"></i><span><strong>Без ложного обещания</strong>Диагностика не утверждает, что любой долг или оплата деятельности ЧСИ будут отменены. Итог зависит от вида документа, сроков и уже совершённых исполнительных действий.</span></div>
+      </section>
+
+      <section class="ad-resources" aria-labelledby="ad-resources-title">
+        <div class="ad-section-heading"><div><span class="ad-section-kicker">Следующий точный шаг</span><h2 id="ad-resources-title">Проверки и страницы по вашей ситуации</h2></div><a href="/tools">Все инструменты →</a></div>
+        <div class="ad-resource-grid">
+          <a href="/bailiff-search"><i class="bi bi-person-badge" aria-hidden="true"></i><span><strong>Найти ЧСИ</strong><small>Поиск по актуальному каталогу</small></span><b>→</b></a>
+          <a href="/zamena-notariusa"><i class="bi bi-file-earmark-search" aria-hidden="true"></i><span><strong>Найти замену нотариуса</strong><small>Архив и правопреемник</small></span><b>→</b></a>
+          <a href="/snyatie-aresta-so-scheta"><i class="bi bi-credit-card" aria-hidden="true"></i><span><strong>Снятие ареста со счёта</strong><small>Полная пошаговая инструкция</small></span><b>→</b></a>
+          <a href="/arest-scheta-v-bankah-kazahstana"><i class="bi bi-bank" aria-hidden="true"></i><span><strong>Арест в конкретном банке</strong><small>Маршруты по 23 банкам</small></span><b>→</b></a>
+        </div>
+      </section>
+
+      <section class="ad-sources" aria-labelledby="ad-sources-title">
+        <h2 id="ad-sources-title">Официальные источники</h2>
+        <div>
+          <a href="https://www.adilet.zan.kz/rus/docs/Z100000261_" target="_blank" rel="nofollow noopener"><span><i class="bi bi-journal-text" aria-hidden="true"></i><strong>Закон об исполнительном производстве</strong><small>Статьи 47 и 118, действующая редакция</small></span><b>Әділет →</b></a>
+          <a href="https://www.gov.kz/memleket/entities/adilet-abai/press/article/details/186380" target="_blank" rel="nofollow noopener"><span><i class="bi bi-building-check" aria-hidden="true"></i><strong>Возражение на исполнительную надпись</strong><small>Разъяснение органов юстиции о 10 рабочих днях</small></span><b>gov.kz →</b></a>
+          <a href="https://aisoip.adilet.gov.kz" target="_blank" rel="nofollow noopener"><span><i class="bi bi-search" aria-hidden="true"></i><strong>АИС ОИП</strong><small>Официальная проверка производства и исполнителя</small></span><b>Открыть →</b></a>
+        </div>
+      </section>
+
+      <section class="ad-faq" aria-labelledby="ad-faq-title">
+        <span class="ad-section-kicker">Частые вопросы</span><h2 id="ad-faq-title">Что важно знать до действий</h2>
+        <details><summary>Нужно ли сразу оплачивать долг, чтобы снять арест?</summary><p>Сначала получите документ-основание и материалы ИП. Если есть основания для отмены документа или прекращения производства, их проверяют до оплаты. Платёж без проверки не гарантирует снятие мер и может не закрыть вопрос с оплатой деятельности ЧСИ.</p></details>
+        <details><summary>Диагностика отправляет мои ответы на сервер?</summary><p>Нет. Ответы обрабатываются только в браузере. Мы не просим ИИН, номер карты, SMS-код, ЭЦП или загрузку документа.</p></details>
+        <details><summary>Что делать, если неизвестно, кто наложил арест?</summary><p>Запросите у банка номер, дату и инициатора документа, затем проверьте исполнительное производство в официальной АИС ОИП. После этого можно определить правовой способ.</p></details>
+        <details><summary>Можно ли отменить исполнительную надпись нотариуса?</summary><p>Возможность зависит от срока, уведомления и оснований требования. Органы юстиции указывают на 10 рабочих дней со дня получения копии надписи для направления возражения нотариусу.</p></details>
+      </section>
+    </div>
+  </main>
+
+  <div class="ad-mobile-bar" data-mobile-bar>
+    <a href="#diagnostic"><i class="bi bi-shield-check" aria-hidden="true"></i><span>Пройти диагностику<small>3 вопроса · без ИИН</small></span></a>
+  </div>
+</div>`;
+%>
+<%- include('news/layout', {
+  title,
+  description,
+  canonical,
+  ogType: 'website',
+  ogImage: '/img/seo/snyatie-aresta-scheta-zakonexpert.svg',
+  schema,
+  noindex: false,
+  enableAutoAds: false,
+  extraStyles: ['/css/arrest-diagnostic.css?v=20260824-1'],
+  extraScripts: ['/js/arrest-diagnostic.js?v=20260824-1'],
+  body,
+}) %>
