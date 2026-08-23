@@ -89,7 +89,7 @@ async function auditCompanyGrowth() {
   if (!item.response.headers.get('server-timing')?.includes('company-db')) {
     record(failures, `${itemPath} is missing database timing telemetry`);
   }
-  if (!/data-company-whatsapp/i.test(item.body) || !/wa\.me\/77479957635\?text=/i.test(item.body)) {
+  if (!/data-company-whatsapp/i.test(item.body) || !/wa\.me\/77003097566\?text=/i.test(item.body)) {
     record(failures, `${itemPath} is missing the contextual WhatsApp CTA`);
   }
   if (!/data-company-page-type=["']company_card["']/i.test(item.body)

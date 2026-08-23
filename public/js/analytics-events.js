@@ -38,6 +38,7 @@
     'click_cta_notary', 'click_document_review', 'click_whatsapp_after_download',
     'click_cta_company', 'company_check_completed', 'click_cta_company_check',
     'click_cta_bank_arrest', 'click_cta_legal_intent',
+    'whatsapp_qr_opened', 'whatsapp_qr_clicked',
   ]);
 
   function analyticsPagePath(type) {
@@ -126,6 +127,15 @@
     var downloadedOn = null;
     try { downloadedOn = sessionStorage.getItem('ze_downloaded_doc'); } catch (err) { /* noop */ }
     if (downloadedOn) send('click_whatsapp_after_download', link.getAttribute('href') || link.href, { source_page: downloadedOn });
+  });
+
+  // ── official WhatsApp Business QR/link conversion ───────────────────────
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-whatsapp-qr-link]');
+    if (!link) return;
+    send('whatsapp_qr_clicked', 'official-business-link', {
+      cta: link.closest('.ze-wa-qr-panel') ? 'desktop_qr' : 'contact_qr',
+    });
   });
 
   // ── external_campaign_visit: utm_source present on page load ─────────────

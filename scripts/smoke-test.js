@@ -247,7 +247,7 @@ async function run() {
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
     assert(companyCheckPage.includes('/css/company-check.css?v=20260816-1')
       && companyCheckPage.includes('/js/company-check.js?v=20260816-1')
-      && companyCheckPage.includes('/js/site.js?v=20260815-2'),
+      && companyCheckPage.includes('/js/site.js?v=20260823-1'),
     'Counterparty page assets are missing');
     assert(companyCheckPage.includes('data-nav-kgd') && !companyCheckPage.includes('class="sticky-wa"'),
       'Counterparty page navigation or floating button state is incorrect');

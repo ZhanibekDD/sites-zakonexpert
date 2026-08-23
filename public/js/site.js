@@ -110,6 +110,9 @@ document.querySelectorAll('.sticky-wa, .company-desktop-cta').forEach(node => no
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+  const companyWhatsAppLink = 'https://wa.me/message/3EDJVE7JWAUPF1';
+  const companyPhoneRaw = '77003097566';
+  const companyPhoneDisplay = '+7 (700) 309-75-66';
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navLinks = document.querySelector('[data-nav-links]');
 
@@ -185,11 +188,60 @@ document.addEventListener('DOMContentLoaded', () => {
     footerBottom.appendChild(legalEntity);
   }
 
+  // Desktop visitors can scan the official WhatsApp Business link without
+  // copying a phone number. Mobile visitors keep the direct inline links.
+  if (!document.querySelector('.ze-wa-qr-dock')) {
+    const qrDock = document.createElement('aside');
+    qrDock.className = 'ze-wa-qr-dock';
+    qrDock.setAttribute('aria-label', 'WhatsApp ZakonExpert');
+    qrDock.innerHTML = `
+      <button class="ze-wa-qr-trigger" type="button" aria-expanded="false" aria-controls="ze-wa-qr-panel">
+        <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+        <span>WhatsApp QR</span>
+      </button>
+      <div class="ze-wa-qr-panel" id="ze-wa-qr-panel" hidden>
+        <button class="ze-wa-qr-close" type="button" aria-label="Закрыть QR-код">&times;</button>
+        <span class="ze-wa-qr-kicker">Напишите компании ZakonExpert</span>
+        <strong>Отсканируйте камерой телефона</strong>
+        <a class="ze-wa-qr-image-link" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
+          <img src="/img/contact/whatsapp-zakonexpert-qr.svg" width="320" height="320" alt="QR-код WhatsApp компании ZakonExpert" loading="lazy">
+        </a>
+        <a class="ze-wa-qr-phone" href="tel:+${companyPhoneRaw}">${companyPhoneDisplay}</a>
+        <a class="ze-wa-qr-button" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
+          <i class="bi bi-whatsapp" aria-hidden="true"></i> Открыть WhatsApp
+        </a>
+      </div>`;
+    document.body.appendChild(qrDock);
+
+    const trigger = qrDock.querySelector('.ze-wa-qr-trigger');
+    const panel = qrDock.querySelector('.ze-wa-qr-panel');
+    const close = qrDock.querySelector('.ze-wa-qr-close');
+    const setPanelOpen = (open) => {
+      panel.hidden = !open;
+      trigger.setAttribute('aria-expanded', String(open));
+      if (open && typeof window.ZE_trackEvent === 'function') {
+        window.ZE_trackEvent('whatsapp_qr_opened', 'desktop-dock', { cta: 'desktop_qr' });
+      }
+    };
+
+    trigger.addEventListener('click', () => setPanelOpen(panel.hidden));
+    close.addEventListener('click', () => setPanelOpen(false));
+    document.addEventListener('click', (event) => {
+      if (!panel.hidden && !qrDock.contains(event.target)) setPanelOpen(false);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) {
+        setPanelOpen(false);
+        trigger.focus();
+      }
+    });
+  }
+
   const contactForm = document.getElementById('contact-form');
   if (contactForm) {
     const lang = document.documentElement.lang && document.documentElement.lang.startsWith('kk') ? 'kk' : 'ru';
     const resultNote = contactForm.querySelector('.contact-result-note');
-    const whatsappNumber = '77479957635';
+    const whatsappNumber = companyPhoneRaw;
 
     contactForm.addEventListener('submit', (event) => {
       event.preventDefault();
