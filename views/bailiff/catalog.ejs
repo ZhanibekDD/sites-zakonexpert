@@ -74,12 +74,13 @@ const catalog = {
   whatsappText: currentRegion
     ? ('Здравствуйте! ЧСИ ' + currentRegion.genitive + ' наложил ограничение. Хочу проверить исполнительное производство и документы.')
     : 'Здравствуйте! Хочу проверить исполнительное производство и действия ЧСИ.',
+  analyticsEvent: 'click_cta_bailiff',
   sourceUrl: 'https://aisoip.adilet.gov.kz/',
   sourceName: 'АИС органов исполнительного производства Министерства юстиции РК',
   sourceText: 'Каталог носит справочный характер; перед обращением рекомендуем дополнительно проверить статус ЧСИ в государственной системе.',
   getRegionEmblem,
 };
-const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260824-1">'
+const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260824-2">'
   + include('../partials/professional-catalog-body', { catalog });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

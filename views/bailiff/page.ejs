@@ -64,6 +64,15 @@ var detail = {
     items: ['Найдём производство и постановления', 'Проверим сумму и основания взыскания', 'Подготовим документы для снятия ограничений'],
     whatsappText: 'Здравствуйте! ЧСИ ' + nameTitle + ' наложил ограничение, нужна консультация.',
   },
+  diagnostic: {
+    source: 'bailiff',
+    entry: 'bailiff_profile',
+    entityType: 'bailiff',
+    title: 'Сначала пройти диагностику',
+    note: '2 вопроса · основание «ЧСИ» уже учтено',
+  },
+  analyticsEvent: 'click_cta_bailiff',
+  analyticsEntityType: 'bailiff',
   warning: {
     title: 'Важно знать',
     text: 'Номер лицензии подтверждает право на деятельность ЧСИ, но перед обращением рекомендуем проверить текущий статус исполнителя в государственной АИС ОИП.',
@@ -78,7 +87,7 @@ var detail = {
   backUrl: '/bailiffs',
   backLabel: 'Все ЧСИ Казахстана',
 };
-var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-2">'
+var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260824-1">'
   + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

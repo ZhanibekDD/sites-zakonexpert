@@ -1,5 +1,64 @@
 @import url("/css/collector-item.css?v=20260716-1");
 
+.collector-help__actions {
+  display: grid;
+  gap: 10px;
+}
+
+.collector-help__diagnostic {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 18px;
+  gap: 11px;
+  align-items: center;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, .3);
+  border-radius: 8px;
+  color: #092d5a;
+  background: linear-gradient(135deg, #fff, #f4f8fd);
+  box-shadow: 0 12px 28px rgba(3, 23, 47, .18);
+  text-decoration: none;
+}
+
+.collector-help__diagnostic:hover {
+  color: #062247;
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.collector-help__diagnostic-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(145deg, #0b5bd3, #073f9d);
+  font-size: 20px;
+}
+
+.collector-help__diagnostic strong,
+.collector-help__diagnostic small {
+  display: block;
+}
+
+.collector-help__diagnostic strong {
+  font-size: .82rem;
+  line-height: 1.25;
+}
+
+.collector-help__diagnostic small {
+  margin-top: 3px;
+  color: #617892;
+  font-size: .64rem;
+  line-height: 1.35;
+}
+
+.collector-help__diagnostic > .bi-arrow-right {
+  color: #0b5bd3;
+  font-size: 18px;
+}
+
 .registry-hero-subtitle {
   position: relative;
   z-index: 1;

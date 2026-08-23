@@ -39,6 +39,7 @@
     'click_cta_company', 'company_check_completed', 'click_cta_company_check',
     'click_cta_bank_arrest', 'click_cta_legal_intent',
     'whatsapp_qr_opened', 'whatsapp_qr_clicked',
+    'arrest_diagnostic_entry',
     'arrest_diagnostic_completed', 'arrest_diagnostic_whatsapp',
   ]);
 
@@ -85,6 +86,22 @@
       page_locale: document.documentElement.getAttribute('data-company-locale') || 'ru',
       page_type: document.documentElement.getAttribute('data-company-page-type') || 'company_catalog',
       source_entity_type: 'company',
+    });
+  });
+
+  // Shared registry/product CTAs. Attribute values are fixed enums in the
+  // templates; names, phone numbers and other card data are never copied.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-product-event]');
+    if (!link) return;
+    var eventType = link.getAttribute('data-product-event') || '';
+    if (!eventType) return;
+    send(eventType, link.getAttribute('data-event-target') || 'product-cta', {
+      cta: link.getAttribute('data-event-cta') || 'unknown',
+      source_entity_type: link.getAttribute('data-source-entity-type') || '',
+      source_page: location.pathname,
+      service_type: link.getAttribute('data-service-type') || '',
+      document_type: link.getAttribute('data-document-type') || '',
     });
   });
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const { spawnSync } = require('child_process');
-const { getCompanyFunnelStats } = require('../modules/clicks-db');
+const { getArrestDiagnosticFunnelStats, getCompanyFunnelStats } = require('../modules/clicks-db');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -18,9 +18,14 @@ async function main() {
   if (audit.stdout) process.stdout.write(audit.stdout);
   if (audit.stderr) process.stderr.write(audit.stderr);
 
-  const stats = await getCompanyFunnelStats(Date.now() - DAY_MS);
+  const [stats, arrestStats] = await Promise.all([
+    getCompanyFunnelStats(Date.now() - DAY_MS),
+    getArrestDiagnosticFunnelStats(Date.now() - DAY_MS),
+  ]);
   console.log('\nCompany conversion funnel (last 24 hours)');
   console.log(JSON.stringify(stats, null, 2));
+  console.log('\nArrest diagnostic funnel (last 24 hours)');
+  console.log(JSON.stringify(arrestStats, null, 2));
 
   if (audit.error) throw audit.error;
   if (audit.status !== 0) process.exitCode = audit.status || 1;
