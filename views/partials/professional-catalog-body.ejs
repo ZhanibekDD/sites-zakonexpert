@@ -30,7 +30,7 @@ var verifiedDate = catalog.lastUpdated
 <div class="professional-catalog">
   <section class="collector-hero">
     <div class="collector-container">
-      <nav class="collector-breadcrumbs" aria-label="breadcrumb">
+      <nav class="collector-breadcrumbs" aria-label="Хлебные крошки каталога">
         <a href="/">Главная</a><span>/</span>
         <% if (catalog.region) { %><a href="<%= catalog.baseUrl %>"><%= catalog.pluralLabel %></a><span>/</span><span><%= catalog.region %></span><% } else { %><span><%= catalog.pluralLabel %></span><% } %>
       </nav>
@@ -38,12 +38,19 @@ var verifiedDate = catalog.lastUpdated
         <span class="collector-badge"><i class="bi <%= catalog.heroIcon %>"></i> <%= catalog.registryLabel %></span>
         <span class="collector-badge collector-badge--active"><i class="bi bi-database-check"></i> <%= total %> записей</span>
       </div>
-      <h1><%= catalog.region ? catalog.regionTitle + ' — ' + catalog.region : catalog.title %></h1>
-      <p class="professional-catalog__subtitle"><%= catalog.region ? ('В регионе найдено ' + items.length + ' ' + catalog.countLabel + '. Контакты, адреса и лицензии собраны в одном каталоге.') : catalog.subtitle %></p>
+      <div class="professional-catalog__hero-grid<%= catalog.regionEmblem ? ' professional-catalog__hero-grid--emblem' : '' %>">
+        <div>
+          <h1><%= catalog.region ? (catalog.regionH1 || catalog.regionTitle + ' — ' + catalog.region) : catalog.title %></h1>
+          <p class="professional-catalog__subtitle"><%= catalog.region ? (catalog.regionIntro || 'Контакты, адреса и лицензии собраны в одном каталоге.') : catalog.subtitle %></p>
+        </div>
+        <% if (catalog.regionEmblem) { %>
+          <div class="professional-catalog__hero-emblem" aria-hidden="true"><img src="/img/regions/<%= catalog.regionEmblem %>.webp" width="128" height="128" alt=""></div>
+        <% } %>
+      </div>
     </div>
   </section>
 
-  <main class="professional-catalog__main">
+  <div class="professional-catalog__main">
     <div class="collector-container">
       <section class="professional-catalog__toolbar" aria-label="Поиск по каталогу">
         <form method="GET" action="<%= catalog.searchAction %>" class="professional-catalog__search">
@@ -67,7 +74,7 @@ var verifiedDate = catalog.lastUpdated
               ? catalog.getRegionEmblem(region.region)
               : '';
           %>
-            <a class="professional-catalog__region" href="<%= catalog.baseUrl %>?region=<%= encodeURIComponent(region.region) %>">
+            <a class="professional-catalog__region" href="<%= region.path || (catalog.baseUrl + '?region=' + encodeURIComponent(region.region)) %>">
               <span class="professional-catalog__region-icon">
                 <% if (emblem) { %>
                   <img src="/img/regions/<%= emblem %>.webp" width="128" height="128" alt="" aria-hidden="true" loading="lazy">
@@ -129,10 +136,43 @@ var verifiedDate = catalog.lastUpdated
         <% } %>
       <% } %>
 
+      <% if (catalog.type === 'bailiff' && catalog.regionPage) { %>
+        <section class="bailiff-region-help" aria-labelledby="bailiff-region-help-title">
+          <div class="bailiff-region-help__heading">
+            <div><span>Если ЧСИ наложил ограничение</span><h2 id="bailiff-region-help-title">Что проверить до оплаты</h2></div>
+            <a href="/snyatie-ogranichenii-chsi">Полный порядок действий <i class="bi bi-arrow-right"></i></a>
+          </div>
+          <div class="bailiff-region-help__steps">
+            <article><span>1</span><div><strong>Найдите своего ЧСИ</strong><p>Сверьте ФИО, регион, номер лицензии и контакты с документами исполнительного производства.</p></div></article>
+            <article><span>2</span><div><strong>Получите постановления</strong><p>Запросите документ о возбуждении производства, основание взыскания и постановление о конкретной мере.</p></div></article>
+            <article><span>3</span><div><strong>Выберите правовой маршрут</strong><p>Проверяйте основание, сроки и уведомление. Оплата неизвестного требования не заменяет анализ документов.</p></div></article>
+          </div>
+          <div class="bailiff-region-help__routes">
+            <a href="/kak-uznat-kto-nalozhil-arest-na-schet"><i class="bi bi-search"></i><span><strong>Кто наложил арест</strong><small>Установить инициатора и документ</small></span></a>
+            <a href="/kak-poluchit-postanovlenie-chsi"><i class="bi bi-file-earmark-text"></i><span><strong>Получить постановление</strong><small>Какие материалы запросить у ЧСИ</small></span></a>
+            <a href="/snyatie-aresta-so-scheta"><i class="bi bi-credit-card"></i><span><strong>Снять арест со счёта</strong><small>Пошаговый маршрут по документу</small></span></a>
+            <a href="/arest-snyat-no-schet-zablokirovan"><i class="bi bi-unlock"></i><span><strong>Арест уже снят</strong><small>Почему счёт всё ещё недоступен</small></span></a>
+          </div>
+          <div class="bailiff-region-help__cta">
+            <div><strong>Не знаете, какое производство относится к аресту?</strong><span>Пришлите скрин банка и постановление. Не отправляйте SMS-коды, CVV и пароли.</span></div>
+            <a href="https://wa.me/77003097566?text=<%= encodeURIComponent(catalog.whatsappText) %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Проверить документы</a>
+          </div>
+        </section>
+
+        <section class="bailiff-region-links" aria-labelledby="other-bailiff-regions">
+          <div class="professional-catalog__heading"><h2 id="other-bailiff-regions">ЧСИ в других регионах</h2><a href="/bailiffs">Все регионы Казахстана →</a></div>
+          <div>
+            <% regions.filter(function(item) { return item.region !== catalog.region; }).forEach(function(item) { %>
+              <a href="<%= item.path || (catalog.baseUrl + '?region=' + encodeURIComponent(item.region)) %>"><%= item.region %><span><%= item.count %></span></a>
+            <% }); %>
+          </div>
+        </section>
+      <% } %>
+
       <div class="professional-catalog__source">
         <i class="bi bi-database-check"></i>
         <div><strong>Источник данных:</strong> <a href="<%= catalog.sourceUrl %>" target="_blank" rel="noopener"><%= catalog.sourceName %></a>. <%= catalog.sourceText %><%= verifiedDate ? ' Последнее обновление базы ZakonExpert: ' + verifiedDate + '.' : '' %></div>
       </div>
     </div>
-  </main>
+  </div>
 </div>

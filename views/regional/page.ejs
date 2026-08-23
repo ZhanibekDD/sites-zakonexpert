@@ -55,7 +55,7 @@ const body = `
         <h2 style="font-size:1.2rem;font-weight:800;color:#0f2044;">ЧСИ и нотариусы в ${city.prepIn}</h2>
         <p style="color:#475569;">В ${city.caseIn} работают <strong>${bailiffCount ? bailiffCount + ' частных судебных исполнителей' : 'частные судебные исполнители'}</strong> и <strong>${notaryCount ? notaryCount + ' нотариусов' : 'нотариусы'}</strong>, которые ведут исполнительные производства и совершают исполнительные надписи по кредитам и МФО. Именно они накладывают арест на счета, карты, авто и недвижимость.</p>
         <div class="npage-links-row" style="margin:1rem 0 1.5rem;">
-          <a href="/bailiffs?region=${encodeURIComponent(city.bailiffRegion)}">ЧСИ в ${city.prepIn} →</a>
+          <a href="${city.bailiffPath}">ЧСИ в ${city.prepIn} →</a>
           <a href="/notaries?region=${encodeURIComponent(city.notaryRegion)}">Нотариусы в ${city.prepIn} →</a>
         </div>
 

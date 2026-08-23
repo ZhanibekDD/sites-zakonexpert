@@ -1,23 +1,50 @@
 <%
 const region = (selectedRegion || '').trim();
+const currentRegion = regionPage || null;
 const regions = allRegions || [];
 const bailiffs = regionItems || [];
 const total = regions.reduce(function(sum, item) { return sum + (item.count || 0); }, 0);
-const pageTitle = region
-  ? ('ЧСИ ' + region + ' — контакты, адреса и лицензии | ZakonExpert')
+const pageTitle = currentRegion
+  ? ('ЧСИ ' + currentRegion.genitive + ': список, контакты и адреса | ZakonExpert')
   : 'Каталог ЧСИ Казахстана — контакты и лицензии | ZakonExpert';
-const pageDesc = region
-  ? ('Частные судебные исполнители ' + region + ': ' + bailiffs.length + ' карточек с телефонами, адресами и номерами лицензий.')
+const pageDesc = currentRegion
+  ? ('Список ЧСИ ' + currentRegion.genitive + ': ' + bailiffs.length + ' частных судебных исполнителей. Поиск по ФИО, телефоны, адреса, лицензии и порядок действий при аресте счёта.')
   : ('Каталог ' + total + ' частных судебных исполнителей Казахстана. Поиск по ФИО, контакты, адреса и номера лицензий.');
-const canonical = region
-  ? ('https://zakonexpertt.kz/bailiffs?region=' + encodeURIComponent(region))
+const canonical = currentRegion
+  ? ('https://zakonexpertt.kz' + currentRegion.path)
   : 'https://zakonexpertt.kz/bailiffs';
+const modifiedDate = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : undefined;
 const schema = {
   '@context': 'https://schema.org',
-  '@type': 'CollectionPage',
-  name: pageTitle,
-  description: pageDesc,
-  url: canonical,
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': canonical + '#webpage',
+      name: pageTitle,
+      description: pageDesc,
+      url: canonical,
+      dateModified: modifiedDate,
+      inLanguage: 'ru-KZ',
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: bailiffs.length || total,
+        itemListElement: bailiffs.slice(0, 50).map(function(item, index) {
+          return { '@type': 'ListItem', position: index + 1, name: item.name, url: 'https://zakonexpertt.kz/bailiff/' + item.slug };
+        }),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: currentRegion ? [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: 'https://zakonexpertt.kz/bailiffs' },
+        { '@type': 'ListItem', position: 3, name: currentRegion.displayName, item: canonical },
+      ] : [
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: canonical },
+      ],
+    },
+  ],
 };
 const catalog = {
   type: 'bailiff',
@@ -27,24 +54,32 @@ const catalog = {
   searchLabel: 'Найти ЧСИ по ФИО',
   searchPlaceholder: 'Введите фамилию или полное ФИО ЧСИ',
   region,
+  regionPage: currentRegion,
   regions,
   items: bailiffs,
   lastUpdated,
   pluralLabel: 'Каталог ЧСИ',
   registryLabel: 'Реестр ЧСИ Казахстана',
   title: 'Частные судебные исполнители Казахстана',
-  regionTitle: 'ЧСИ',
+  regionTitle: currentRegion ? ('ЧСИ ' + currentRegion.genitive) : 'ЧСИ',
+  regionH1: currentRegion ? ('ЧСИ ' + currentRegion.genitive + ': список и контакты') : '',
+  regionIntro: currentRegion
+    ? ('В каталоге ' + bailiffs.length + ' частных судебных исполнителей. Найдите ЧСИ по ФИО, проверьте лицензию, адрес и официальные контакты перед отправкой документов или оплатой.')
+    : '',
+  regionEmblem: currentRegion ? getRegionEmblem(currentRegion.sourceName) : '',
   subtitle: 'Контакты, адреса и номера лицензий частных судебных исполнителей по всем регионам Казахстана.',
   countLabel: 'ЧСИ',
   heroIcon: 'bi-person-badge',
   cardIcon: 'bi-briefcase',
-  whatsappText: 'Здравствуйте! Хочу проверить исполнительное производство и действия ЧСИ.',
+  whatsappText: currentRegion
+    ? ('Здравствуйте! ЧСИ ' + currentRegion.genitive + ' наложил ограничение. Хочу проверить исполнительное производство и документы.')
+    : 'Здравствуйте! Хочу проверить исполнительное производство и действия ЧСИ.',
   sourceUrl: 'https://aisoip.adilet.gov.kz/',
   sourceName: 'АИС органов исполнительного производства Министерства юстиции РК',
   sourceText: 'Каталог носит справочный характер; перед обращением рекомендуем дополнительно проверить статус ЧСИ в государственной системе.',
   getRegionEmblem,
 };
-const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260816-1">'
+const body = '<link rel="stylesheet" href="/css/professional-catalog.css?v=20260824-1">'
   + include('../partials/professional-catalog-body', { catalog });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
