@@ -86,7 +86,7 @@ async function run() {
   assert(notaryPage.includes("source: 'notary'") && notaryPage.includes("entry: 'notary_profile'"), 'Active notary profiles must prefill the diagnostic safely');
   assert(registryBody.includes('data-product-event="arrest_diagnostic_entry"'), 'Registry profile diagnostic event is missing');
   assert(catalogBody.includes('entry=bailiff_region'), 'Regional bailiff pages must link to the diagnostic');
-  assert(analytics.includes("send(link.getAttribute('data-product-event')"), 'Shared product CTA analytics handler is missing');
+  assert(analytics.includes("send(eventType, link.getAttribute('data-event-target')"), 'Shared product CTA analytics handler is missing');
   assert(server.includes('source_entity_type:') && server.includes('source_page:'), 'Safe registry attribution dimensions are not persisted');
   assert(bailiffHtml.includes('source=bailiff&amp;entry=bailiff_profile'), 'Rendered bailiff diagnostic link is invalid');
   assert(activeNotaryHtml.includes('source=notary&amp;entry=notary_profile'), 'Rendered notary diagnostic link is invalid');
