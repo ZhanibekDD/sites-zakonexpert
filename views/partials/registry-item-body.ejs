@@ -25,6 +25,12 @@ var mapLocation = detail.mapLocation || detail.address || '';
 var mapQuery = encodeURIComponent(mapLocation + ', Казахстан');
 var mapSearch = encodeURIComponent(mapLocation);
 var whatsAppText = encodeURIComponent(detail.help.whatsappText || detail.help.title || 'Нужна консультация');
+var diagnostic = detail.diagnostic || null;
+var diagnosticHref = diagnostic
+  ? '/diagnostika-aresta?source=' + encodeURIComponent(diagnostic.source) + '&entry=' + encodeURIComponent(diagnostic.entry)
+  : '';
+var analyticsEvent = detail.analyticsEvent || '';
+var analyticsEntityType = detail.analyticsEntityType || '';
 %>
 <div class="collector-detail-page">
   <section class="collector-hero">
@@ -67,8 +73,23 @@ var whatsAppText = encodeURIComponent(detail.help.whatsappText || detail.help.ti
             <ul class="collector-help__list">
               <% detail.help.items.forEach(function(item) { %><li><i class="bi bi-check-lg"></i><span><%= item %></span></li><% }); %>
             </ul>
-            <a class="collector-help__cta" href="https://wa.me/77003097566?text=<%= whatsAppText %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Получить бесплатную консультацию</a>
-            <p class="collector-help__response"><i class="bi bi-clock"></i> Ответ специалиста в течение 10 минут</p>
+            <div class="collector-help__actions">
+              <% if (diagnostic) { %>
+                <a class="collector-help__diagnostic" href="<%= diagnosticHref %>"
+                  data-product-event="arrest_diagnostic_entry" data-event-target="registry-diagnostic"
+                  data-event-cta="<%= diagnostic.entry %>" data-source-entity-type="<%= diagnostic.entityType %>"
+                  data-service-type="arrest_diagnostic" data-document-type="<%= diagnostic.source %>">
+                  <span class="collector-help__diagnostic-icon"><i class="bi bi-signpost-split"></i></span>
+                  <span><strong><%= diagnostic.title %></strong><small><%= diagnostic.note %></small></span>
+                  <i class="bi bi-arrow-right"></i>
+                </a>
+              <% } %>
+              <a class="collector-help__cta" href="https://wa.me/77003097566?text=<%= whatsAppText %>" target="_blank" rel="noopener"
+                <% if (analyticsEvent) { %>data-product-event="<%= analyticsEvent %>" data-event-target="registry-whatsapp" data-event-cta="profile_sidebar" data-source-entity-type="<%= analyticsEntityType %>"<% } %>>
+                <i class="bi bi-whatsapp"></i> Написать специалисту
+              </a>
+            </div>
+            <p class="collector-help__response"><i class="bi bi-shield-check"></i> Сначала проверяем документ-основание и возможность отмены</p>
           </section>
           <section class="collector-warning" aria-labelledby="registry-warning-title">
             <div class="collector-warning__title" id="registry-warning-title"><i class="bi bi-exclamation-triangle"></i> <%= detail.warning.title %></div>

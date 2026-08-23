@@ -144,15 +144,82 @@ async function getCompanyFunnelStats(since) {
   return summarizeCompanyFunnel(await db.find(query));
 }
 
+function emptyArrestDiagnosticBucket() {
+  return { entryClicks: 0, starts: 0, completions: 0, whatsappClicks: 0 };
+}
+
+function addArrestDiagnosticEvent(bucket, type) {
+  if (type === 'arrest_diagnostic_entry') bucket.entryClicks += 1;
+  if (type === 'arrest_diagnostic_started') bucket.starts += 1;
+  if (type === 'arrest_diagnostic_completed') bucket.completions += 1;
+  if (type === 'arrest_diagnostic_whatsapp') bucket.whatsappClicks += 1;
+}
+
+function finishArrestDiagnosticBucket(bucket) {
+  return {
+    ...bucket,
+    completionRatePct: roundedRate(bucket.completions, bucket.starts),
+    whatsappRatePct: roundedRate(bucket.whatsappClicks, bucket.completions),
+  };
+}
+
+function summarizeArrestDiagnosticFunnel(clicks) {
+  const allowedTypes = new Set([
+    'arrest_diagnostic_entry',
+    'arrest_diagnostic_started',
+    'arrest_diagnostic_completed',
+    'arrest_diagnostic_whatsapp',
+  ]);
+  const overall = emptyArrestDiagnosticBucket();
+  const byEntry = {};
+  const byDocumentType = {};
+  const bySourceEntity = {};
+
+  function addSegment(group, key, type) {
+    const safeKey = String(key || 'unknown').slice(0, 50);
+    if (!group[safeKey]) group[safeKey] = emptyArrestDiagnosticBucket();
+    addArrestDiagnosticEvent(group[safeKey], type);
+  }
+
+  for (const click of clicks || []) {
+    const type = String(click.type || '');
+    if (!allowedTypes.has(type)) continue;
+    addArrestDiagnosticEvent(overall, type);
+    addSegment(byEntry, click.cta_position || 'direct', type);
+    if (click.document_type) addSegment(byDocumentType, click.document_type, type);
+    if (click.source_entity_type) addSegment(bySourceEntity, click.source_entity_type, type);
+  }
+
+  function finishSegments(group) {
+    return Object.fromEntries(
+      Object.entries(group).map(([key, bucket]) => [key, finishArrestDiagnosticBucket(bucket)])
+    );
+  }
+
+  return {
+    ...finishArrestDiagnosticBucket(overall),
+    byEntry: finishSegments(byEntry),
+    byDocumentType: finishSegments(byDocumentType),
+    bySourceEntity: finishSegments(bySourceEntity),
+  };
+}
+
+async function getArrestDiagnosticFunnelStats(since) {
+  const query = since ? { ts: { $gte: since } } : {};
+  return summarizeArrestDiagnosticFunnel(await db.find(query));
+}
+
 async function purgeOlderThan(cutoff) {
   return db.remove({ ts: { $lt: cutoff } }, { multi: true });
 }
 
 module.exports = {
+  getArrestDiagnosticFunnelStats,
   getCompanyFunnelStats,
   getEventStats,
   getStats,
   recordClick,
   purgeOlderThan,
+  summarizeArrestDiagnosticFunnel,
   summarizeCompanyFunnel,
 };

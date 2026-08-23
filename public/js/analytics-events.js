@@ -39,6 +39,7 @@
     'click_cta_company', 'company_check_completed', 'click_cta_company_check',
     'click_cta_bank_arrest', 'click_cta_legal_intent',
     'whatsapp_qr_opened', 'whatsapp_qr_clicked',
+    'arrest_diagnostic_entry',
     'arrest_diagnostic_completed', 'arrest_diagnostic_whatsapp',
   ]);
 
@@ -72,6 +73,20 @@
   }
 
   window.ZE_trackEvent = send;
+
+  // Shared registry/product CTAs. Attribute values are fixed enums in the
+  // templates; names, phone numbers and other card data are never copied.
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('[data-product-event]');
+    if (!link) return;
+    send(link.getAttribute('data-product-event') || '', link.getAttribute('data-event-target') || 'product-cta', {
+      cta: link.getAttribute('data-event-cta') || 'unknown',
+      source_entity_type: link.getAttribute('data-source-entity-type') || '',
+      source_page: location.pathname,
+      service_type: link.getAttribute('data-service-type') || '',
+      document_type: link.getAttribute('data-document-type') || '',
+    });
+  });
 
   // Company-directory CTA clicks are a separate conversion channel. The
   // current page path identifies the card; no company name, BIN or WhatsApp

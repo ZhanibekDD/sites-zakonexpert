@@ -4,7 +4,16 @@
   var root = document.querySelector('[data-arrest-diagnostic]');
   if (!root) return;
 
-  var answers = { symptom: '', source: '', payment: '' };
+  var queryParams = new URLSearchParams(location.search);
+  var requestedSource = queryParams.get('source') || '';
+  var presetSource = ['notary', 'court', 'bailiff', 'state', 'unknown'].indexOf(requestedSource) >= 0
+    ? requestedSource
+    : '';
+  var requestedEntry = queryParams.get('entry') || '';
+  var entryPoint = ['bailiff_profile', 'notary_profile', 'bailiff_region'].indexOf(requestedEntry) >= 0
+    ? requestedEntry
+    : 'direct';
+  var answers = { symptom: '', source: presetSource, payment: '' };
   var currentStep = 1;
   var resultSummary = '';
 
@@ -233,8 +242,10 @@
     if (mobileBar) mobileBar.classList.add('is-hidden');
     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
     track('arrest_diagnostic_completed', answers.source + ':' + answers.symptom, {
+      cta: entryPoint,
       service_type: 'arrest_diagnostic',
       document_type: answers.source,
+      source_entity_type: presetSource === 'bailiff' || presetSource === 'notary' ? presetSource : '',
     });
   }
 
@@ -245,10 +256,13 @@
       var value = option.getAttribute('data-value');
       answers[key] = value;
       track(currentStep === 1 ? 'arrest_diagnostic_started' : 'arrest_diagnostic_step', key + ':' + value, {
+        cta: entryPoint,
         service_type: 'arrest_diagnostic',
         document_type: key === 'source' ? value : '',
+        source_entity_type: presetSource === 'bailiff' || presetSource === 'notary' ? presetSource : '',
       });
-      if (currentStep < 3) showStep(currentStep + 1);
+      if (currentStep === 1 && presetSource && answers.source === presetSource) showStep(3);
+      else if (currentStep < 3) showStep(currentStep + 1);
       else buildResult();
       return;
     }
@@ -259,7 +273,7 @@
     }
 
     if (event.target.closest('[data-reset]')) {
-      answers = { symptom: '', source: '', payment: '' };
+      answers = { symptom: '', source: presetSource, payment: '' };
       resultSummary = '';
       if (mobileBar) mobileBar.classList.remove('is-hidden');
       showStep(1);
@@ -272,7 +286,11 @@
       var original = copyButton.innerHTML;
       var done = function () {
         copyButton.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i> Результат скопирован';
-        track('arrest_diagnostic_copy', answers.source + ':' + answers.symptom, { service_type: 'arrest_diagnostic' });
+        track('arrest_diagnostic_copy', answers.source + ':' + answers.symptom, {
+          cta: entryPoint,
+          service_type: 'arrest_diagnostic',
+          document_type: answers.source,
+        });
         setTimeout(function () { copyButton.innerHTML = original; }, 1800);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -294,9 +312,10 @@
 
   root.querySelector('[data-result-whatsapp]').addEventListener('click', function () {
     track('arrest_diagnostic_whatsapp', answers.source + ':' + answers.symptom, {
-      cta: 'diagnostic_result',
+      cta: entryPoint,
       service_type: 'arrest_diagnostic',
       document_type: answers.source,
+      source_entity_type: presetSource === 'bailiff' || presetSource === 'notary' ? presetSource : '',
     });
   });
 

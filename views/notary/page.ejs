@@ -80,6 +80,15 @@ var detail = {
     items: ['Проверим основания для взыскания', 'Подготовим возражение нотариусу', 'Поможем снять ограничения ЧСИ'],
     whatsappText: 'Здравствуйте! Нотариус ' + nameTitle + ' выдал исполнительную надпись, нужна консультация.',
   },
+  diagnostic: notary.active === false ? null : {
+    source: 'notary',
+    entry: 'notary_profile',
+    entityType: 'notary',
+    title: 'Проверить маршрут отмены',
+    note: '2 вопроса · основание «надпись» уже учтено',
+  },
+  analyticsEvent: 'click_cta_notary',
+  analyticsEntityType: 'notary',
   warning: {
     title: 'Важно знать',
     text: 'Контакты и режим работы публикует сам официальный реестр ЕНИС. Если поле отсутствует, мы честно показываем, что оно не опубликовано, и не подставляем непроверенные данные.',
@@ -98,7 +107,7 @@ var detail = {
   backUrl: '/notaries',
   backLabel: 'Все нотариусы Казахстана',
 };
-var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-2">'
+var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260824-1">'
   + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

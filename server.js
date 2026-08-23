@@ -3061,6 +3061,7 @@ const ANALYTICS_EVENT_TYPES = new Set([
   'view_bank_arrest_page', 'click_cta_bank_arrest',
   'view_legal_intent_page', 'click_cta_legal_intent',
   'arrest_diagnostic_started', 'arrest_diagnostic_step',
+  'arrest_diagnostic_entry',
   'arrest_diagnostic_completed', 'arrest_diagnostic_copy',
   'arrest_diagnostic_whatsapp',
 ]);
@@ -3111,7 +3112,13 @@ function classifyDevice(userAgent) {
   return 'desktop';
 }
 app.post('/api/track-event', asyncHandler(async (req, res) => {
-  const { type, target, page, utm, cta, offer_variant: offerVariant } = req.body || {};
+  const {
+    type, target, page, utm, cta, offer_variant: offerVariant,
+    source_entity_type: sourceEntityType,
+    source_page: sourcePage,
+    service_type: serviceType,
+    document_type: documentType,
+  } = req.body || {};
   if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
   const safePage = normalizeAnalyticsPage(page);
   const ua = req.headers['user-agent'] || '';
@@ -3132,6 +3139,10 @@ app.post('/api/track-event', asyncHandler(async (req, res) => {
       offer_variant: offerVariant === 'b' ? 'b' : 'a',
       page_locale: classifyPageLocale(safePage),
       device_type: classifyDevice(ua),
+      source_entity_type: ['bailiff', 'notary', 'company', 'bank', 'legal_intent'].includes(sourceEntityType) ? sourceEntityType : '',
+      source_page: normalizeAnalyticsPage(sourcePage || safePage),
+      service_type: ['arrest_diagnostic', 'document_review', 'legal_help'].includes(serviceType) ? serviceType : '',
+      document_type: ['notary', 'court', 'bailiff', 'state', 'unknown'].includes(documentType) ? documentType : '',
       ...(companyFunnelEvent ? { funnel_version: 'v2' } : {
         ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
         ua,
