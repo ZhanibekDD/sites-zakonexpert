@@ -3,7 +3,7 @@ const resolvedOgImage = 'https://zakonexpertt.kz/img/brand/zakonexpert-logo-tran
 const safeSchemaJson = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') : '';
 const resolvedWhatsAppHref = typeof whatsappHref === 'string' && whatsappHref
   ? whatsappHref
-  : 'https://wa.me/77479957635';
+  : 'https://wa.me/77003097566';
 const conversionEnabled = typeof companyCta !== 'undefined' && companyCta;
 const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPageType
   ? companyPageType
@@ -34,7 +34,7 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/css/design-system.css?v=20260715-1">
   <link rel="stylesheet" href="/css/landing.css?v=20260619-1">
-  <link rel="stylesheet" href="/css/style.css?v=20260619-1">
+  <link rel="stylesheet" href="/css/style.css?v=20260823-1">
   <link rel="stylesheet" href="/css/news.css?v=20260720-1">
   <% if (conversionEnabled) { %><link rel="stylesheet" href="/css/company-conversion.css?v=20260804-3"><% } %>
 </head>
@@ -76,7 +76,7 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
     </div>
     <div class="footer-cols">
       <div class="footer-col"><h3 class="footer-col-title"><%= copy.directory %></h3><div class="footer-links"><a href="<%= companyCatalogPath %>"><%= copy.companies %></a><a href="/companies/regions"><%= copy.regions %></a></div></div>
-      <div class="footer-col"><h3 class="footer-col-title"><%= copy.legalHelp %></h3><div class="footer-contacts"><a href="tel:+77479957635">+7 (747) 995-76-35</a><a href="<%= resolvedWhatsAppHref %>" target="_blank" rel="noopener"<% if (conversionEnabled) { %> data-company-whatsapp data-cta-position="footer" data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"<% } %>><%= conversionEnabled ? copy.offerButtonA : 'WhatsApp' %></a></div></div>
+      <div class="footer-col"><h3 class="footer-col-title"><%= copy.legalHelp %></h3><div class="footer-contacts"><a href="tel:+77003097566">+7 (700) 309-75-66</a><a href="<%= resolvedWhatsAppHref %>" target="_blank" rel="noopener"<% if (conversionEnabled) { %> data-company-whatsapp data-cta-position="footer" data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"<% } %>><%= conversionEnabled ? copy.offerButtonA : 'WhatsApp' %></a></div></div>
     </div>
   </div>
   <div class="landing-container footer-bottom"><span>© <span class="current-year"></span> ZakonExpert</span><span class="ze-legal-entity">ТОО «ZakonExpert» · БИН 260740044168</span><span>Kazakhstan</span></div>
@@ -84,7 +84,7 @@ const resolvedCompanyPageType = typeof companyPageType === 'string' && companyPa
 <% if (conversionEnabled) { %>
 <a href="<%= resolvedWhatsAppHref %>" class="company-mobile-cta" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="mobile-sticky"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="<%= copy.offerButtonA %>" data-offer-b="<%= copy.offerButtonB %>"><%= copy.offerButtonA %></span></a>
 <% } %>
-<script src="/js/site.js?v=20260815-2"></script>
+<script src="/js/site.js?v=20260823-1"></script>
 <script src="/js/analytics-events.js"></script>
 <% if (conversionEnabled) { %><script src="/js/company-conversion.js?v=20260804-2"></script><% } %>
 <script>

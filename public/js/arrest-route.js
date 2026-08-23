@@ -53,7 +53,7 @@
     copy.textContent = route.copy;
     docs.textContent = route.docs;
     icon.className = 'bi ' + route.icon;
-    whatsapp.href = 'https://wa.me/77479957635?text=' + encodeURIComponent(route.message);
+    whatsapp.href = 'https://wa.me/77003097566?text=' + encodeURIComponent(route.message);
 
     if (trackChoice && typeof window.ZE_trackEvent === 'function') {
       window.ZE_trackEvent('arrest_route_selected', routeName, {

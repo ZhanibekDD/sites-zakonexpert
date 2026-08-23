@@ -6,9 +6,10 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SEARCH_ROOTS = ['public', 'views', 'modules', 'docs'];
 const TEXT_EXTENSIONS = new Set(['.css', '.ejs', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml']);
-const EXPECTED_RAW = '77479957635';
-const EXPECTED_DISPLAY = '+7 (747) 995-76-35';
-const OLD_NUMBER = /(?:\+?7[ ()-]*)?(?:775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38)/g;
+const EXPECTED_RAW = '77003097566';
+const EXPECTED_DISPLAY = '+7 (700) 309-75-66';
+const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/message/3EDJVE7JWAUPF1';
+const RETIRED_NUMBER = /(?:\+?7[ ()-]*)?(?:747[ ()-]*995[ ()-]*76[ ()-]*35|775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38)/g;
 
 function listTextFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -25,8 +26,8 @@ const staleFiles = [];
 
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
-  if (OLD_NUMBER.test(source)) staleFiles.push(path.relative(ROOT, file));
-  OLD_NUMBER.lastIndex = 0;
+  if (RETIRED_NUMBER.test(source)) staleFiles.push(path.relative(ROOT, file));
+  RETIRED_NUMBER.lastIndex = 0;
   rawCount += source.split(EXPECTED_RAW).length - 1;
   displayCount += source.split(EXPECTED_DISPLAY).length - 1;
 }
@@ -38,4 +39,17 @@ if (rawCount < 1 || displayCount < 1) {
   throw new Error('The current contact number is missing from public source files.');
 }
 
-console.log(`Contact number OK: ${rawCount} links/values and ${displayCount} formatted labels.`);
+const siteScript = fs.readFileSync(path.join(ROOT, 'public', 'js', 'site.js'), 'utf8');
+const contactRu = fs.readFileSync(path.join(ROOT, 'public', 'contact.html'), 'utf8');
+const contactKk = fs.readFileSync(path.join(ROOT, 'public', 'contact_kz.html'), 'utf8');
+const qrPath = path.join(ROOT, 'public', 'img', 'contact', 'whatsapp-zakonexpert-qr.svg');
+if (!siteScript.includes(OFFICIAL_WHATSAPP_LINK)
+  || !contactRu.includes(OFFICIAL_WHATSAPP_LINK)
+  || !contactKk.includes(OFFICIAL_WHATSAPP_LINK)) {
+  throw new Error('The official WhatsApp Business link is missing from the site-wide QR experience.');
+}
+if (!fs.existsSync(qrPath) || fs.statSync(qrPath).size < 1000) {
+  throw new Error('The local WhatsApp QR asset is missing or invalid.');
+}
+
+console.log(`Contact number and WhatsApp QR OK: ${rawCount} links/values and ${displayCount} formatted labels.`);
