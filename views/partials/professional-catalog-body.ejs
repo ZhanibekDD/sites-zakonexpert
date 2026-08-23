@@ -22,6 +22,7 @@ function phoneParts(raw) {
 
 var regions = catalog.regions || [];
 var items = catalog.items || [];
+var paging = catalog.pagination || { page: 1, pageSize: items.length || 1, total: items.length, totalPages: 1 };
 var total = regions.reduce(function(sum, region) { return sum + (region.count || 0); }, 0);
 var verifiedDate = catalog.lastUpdated
   ? new Date(catalog.lastUpdated).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
@@ -32,7 +33,7 @@ var verifiedDate = catalog.lastUpdated
     <div class="collector-container">
       <nav class="collector-breadcrumbs" aria-label="Хлебные крошки каталога">
         <a href="/">Главная</a><span>/</span>
-        <% if (catalog.region) { %><a href="<%= catalog.baseUrl %>"><%= catalog.pluralLabel %></a><span>/</span><span><%= catalog.region %></span><% } else { %><span><%= catalog.pluralLabel %></span><% } %>
+        <% if (catalog.region) { %><a href="<%= catalog.baseUrl %>"><%= catalog.pluralLabel %></a><span>/</span><span><%= catalog.regionBreadcrumbLabel || catalog.region %></span><% } else { %><span><%= catalog.pluralLabel %></span><% } %>
       </nav>
       <div class="collector-hero__badges">
         <span class="collector-badge"><i class="bi <%= catalog.heroIcon %>"></i> <%= catalog.registryLabel %></span>
@@ -90,8 +91,8 @@ var verifiedDate = catalog.lastUpdated
         </div>
       <% } else { %>
         <div class="professional-catalog__heading">
-          <h2><%= catalog.regionTitle %> в регионе</h2>
-          <span class="professional-catalog__meta"><%= items.length %> записей<%= verifiedDate ? ' · обновлено ' + verifiedDate : '' %></span>
+          <h2><%= catalog.regionListTitle || (catalog.regionTitle + ' в регионе') %></h2>
+          <span class="professional-catalog__meta"><% if (paging.total) { %><%= ((paging.page - 1) * paging.pageSize) + 1 %>–<%= Math.min(paging.page * paging.pageSize, paging.total) %> из <%= paging.total %><% } else { %>0 записей<% } %><%= verifiedDate ? ' · обновлено ' + verifiedDate : '' %></span>
         </div>
         <% if (!items.length) { %>
           <div class="professional-catalog__empty">В выбранном регионе записи не найдены.</div>
@@ -134,6 +135,23 @@ var verifiedDate = catalog.lastUpdated
               </article>
             <% }); %>
           </div>
+          <% if (paging.totalPages > 1 && catalog.regionPage) {
+            var startPage = Math.max(2, paging.page - 2);
+            var endPage = Math.min(paging.totalPages - 1, paging.page + 2);
+            function pagePath(page) { return catalog.regionPage.path + (page > 1 ? '?page=' + page : ''); }
+          %>
+            <nav class="professional-pagination" aria-label="Страницы каталога нотариусов">
+              <% if (paging.page > 1) { %><a href="<%= pagePath(paging.page - 1) %>" rel="prev" aria-label="Предыдущая страница"><i class="bi bi-arrow-left"></i><span>Назад</span></a><% } %>
+              <a href="<%= pagePath(1) %>" class="<%= paging.page === 1 ? 'is-current' : '' %>"<% if (paging.page === 1) { %> aria-current="page"<% } %>>1</a>
+              <% if (startPage > 2) { %><span aria-hidden="true">…</span><% } %>
+              <% for (var page = startPage; page <= endPage; page += 1) { %>
+                <a href="<%= pagePath(page) %>" class="<%= page === paging.page ? 'is-current' : '' %>"<% if (page === paging.page) { %> aria-current="page"<% } %>><%= page %></a>
+              <% } %>
+              <% if (endPage < paging.totalPages - 1) { %><span aria-hidden="true">…</span><% } %>
+              <a href="<%= pagePath(paging.totalPages) %>" class="<%= paging.page === paging.totalPages ? 'is-current' : '' %>"<% if (paging.page === paging.totalPages) { %> aria-current="page"<% } %>><%= paging.totalPages %></a>
+              <% if (paging.page < paging.totalPages) { %><a href="<%= pagePath(paging.page + 1) %>" rel="next" aria-label="Следующая страница"><span>Дальше</span><i class="bi bi-arrow-right"></i></a><% } %>
+            </nav>
+          <% } %>
         <% } %>
       <% } %>
 

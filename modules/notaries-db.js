@@ -19,6 +19,7 @@ enableAutocompaction(db);
 db.ensureIndex({ fieldName: 'slug'   }).catch(() => {});
 db.ensureIndex({ fieldName: 'name'   }).catch(() => {});
 db.ensureIndex({ fieldName: 'active' }).catch(() => {});
+db.ensureIndex({ fieldName: 'region' }).catch(() => {});
 
 module.exports = {
   async findBySlug(slug) {
@@ -76,9 +77,11 @@ module.exports = {
     all.forEach(d => { if (d.region) counts[d.region] = (counts[d.region] || 0) + 1; });
     return Object.entries(counts).map(([region, count]) => ({ region, count })).sort((a, b) => b.count - a.count);
   },
-  findByRegion(region, limit = 2000) {
-    const safe = region.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return db.find({ region: new RegExp('^' + safe + '$', 'i') }, {
+  countByRegion(region) {
+    return db.count({ region: region.trim() });
+  },
+  findByRegion(region, limit = 60, skip = 0) {
+    return db.find({ region: region.trim() }, {
       name: 1,
       slug: 1,
       active: 1,
@@ -93,7 +96,7 @@ module.exports = {
       sourceChamberUrl: 1,
       updatedAt: 1,
       _id: 0,
-    }).sort({ name: 1 }).limit(limit);
+    }).sort({ name: 1 }).skip(skip).limit(limit);
   },
   async getArchiveDirectory(query = '') {
     const all = await db.find({}, {

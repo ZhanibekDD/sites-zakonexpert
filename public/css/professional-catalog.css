@@ -387,6 +387,52 @@
   color: #043f8b;
 }
 
+.professional-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.professional-pagination a,
+.professional-pagination > span {
+  min-width: 42px;
+  min-height: 42px;
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid #c9d8e7;
+  border-radius: 9px;
+  color: #174b80;
+  background: #fff;
+  font-size: .76rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.professional-pagination > span {
+  border-color: transparent;
+  color: #7187a0;
+  background: transparent;
+}
+
+.professional-pagination a:hover,
+.professional-pagination a:focus-visible,
+.professional-pagination a.is-current {
+  border-color: #0b5bd3;
+  color: #fff;
+  background: #0b5bd3;
+  outline: 0;
+}
+
+.professional-pagination a:focus-visible {
+  box-shadow: 0 0 0 3px rgba(11, 91, 211, .18);
+}
+
 .professional-catalog__source {
   display: flex;
   gap: 12px;
@@ -718,6 +764,17 @@
 
   .professional-card {
     padding: 16px;
+  }
+
+  .professional-pagination a,
+  .professional-pagination > span {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 10px;
+  }
+
+  .professional-pagination a span {
+    display: none;
   }
 
   .professional-catalog__hero-grid--emblem {
