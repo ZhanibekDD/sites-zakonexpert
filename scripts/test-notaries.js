@@ -1,6 +1,7 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
 const path = require('path');
 const ejs = require('ejs');
 const { buildNotaries, validEmail } = require('./import-notaries');
@@ -45,6 +46,29 @@ assert.deepStrictEqual(
 assert.deepStrictEqual(extractArchiveTransfer('четверг — архивный день').names, [], 'archive workday must not become a transfer');
 assert.ok(nameLikelyMatches('Акбурушова Гульнара', 'Акбурушовой Гульнары Жалгасовны'), 'declined Russian names must match');
 assert.strictEqual(officialChamberUrl('Актюбинская область'), 'https://enis.kz/Notary/NotaryByChamber/2');
+
+const publicDir = path.join(__dirname, '..', 'public');
+const registryNavFiles = fs.readdirSync(publicDir)
+  .filter(file => file.endsWith('.html'))
+  .map(file => path.join(publicDir, file))
+  .concat([
+    path.join(__dirname, '..', 'views', 'news', 'layout.ejs'),
+    path.join(__dirname, '..', 'views', 'laws', 'layout.ejs'),
+  ])
+  .filter(file => {
+    const html = fs.readFileSync(file, 'utf8');
+    return html.includes('nav-dropdown-menu') && html.includes('href="/notary-search"');
+  });
+assert.ok(registryNavFiles.length >= 30, 'all registry navigation variants must be covered');
+for (const file of registryNavFiles) {
+  const html = fs.readFileSync(file, 'utf8');
+  const searchLink = html.indexOf('href="/notary-search"');
+  const archiveLink = html.indexOf('href="/zamena-notariusa"', searchLink);
+  const nextDivider = html.indexOf('nav-dropdown-divider', searchLink);
+  assert.ok(archiveLink > searchLink, `${path.relative(path.join(__dirname, '..'), file)}: archive search link is missing after notary search`);
+  assert.ok(nextDivider === -1 || archiveLink < nextDivider,
+    `${path.relative(path.join(__dirname, '..'), file)}: archive search must stay in the notary section`);
+}
 
 const source = readRegistrySource(path.join(__dirname, '..', 'registry', 'notaries.json.gz'), 'notaries');
 const { notaries } = buildNotaries(source.records, source.sourceMtime);
