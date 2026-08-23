@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-24-notary-regions-v1';
+const RELEASE_ID = '2026-08-24-notary-pagination-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -765,6 +765,8 @@ app.get('/bailiff-search', asyncHandler(async (req, res) => {
 
 // ===== CATALOG PAGES =====
 
+const NOTARY_PAGE_SIZE = 60;
+
 app.get('/notaries', asyncHandler(async (req, res) => {
   const region = (req.query.region || '').trim();
   if (!notariesDb) return res.status(503).send('Notary module not available');
@@ -779,6 +781,7 @@ app.get('/notaries', asyncHandler(async (req, res) => {
   res.render('notary/catalog', {
     selectedRegion: '', regionPage: null, allRegions: withNotaryRegionPaths(allRegions),
     regionItems: [], lastUpdated, getRegionEmblem,
+    pagination: { page: 1, pageSize: NOTARY_PAGE_SIZE, total: 0, totalPages: 1 },
   });
 }));
 
@@ -786,11 +789,23 @@ app.get('/notaries/:regionSlug', asyncHandler(async (req, res) => {
   if (!notariesDb) return res.status(503).send('Notary module not available');
   const regionPage = getNotaryRegionBySlug(req.params.regionSlug);
   if (!regionPage) return sendNotFound(res);
-  const [allRegions, regionItems, lastUpdated] = await Promise.all([
+  const requestedPage = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const [allRegions, total, lastUpdated] = await Promise.all([
     notariesDb.getRegions(),
-    notariesDb.findByRegion(regionPage.sourceName),
+    notariesDb.countByRegion(regionPage.sourceName),
     notariesDb.getLastUpdated(),
   ]);
+  const totalPages = Math.max(1, Math.ceil(total / NOTARY_PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const normalizedPath = regionPage.path + (page > 1 ? `?page=${page}` : '');
+  if (req.query.page !== undefined && String(req.query.page) !== (page > 1 ? String(page) : '')) {
+    return res.redirect(301, normalizedPath);
+  }
+  const regionItems = await notariesDb.findByRegion(
+    regionPage.sourceName,
+    NOTARY_PAGE_SIZE,
+    (page - 1) * NOTARY_PAGE_SIZE,
+  );
   res.render('notary/catalog', {
     selectedRegion: regionPage.sourceName,
     regionPage,
@@ -798,6 +813,7 @@ app.get('/notaries/:regionSlug', asyncHandler(async (req, res) => {
     regionItems,
     lastUpdated,
     getRegionEmblem,
+    pagination: { page, pageSize: NOTARY_PAGE_SIZE, total, totalPages },
   });
 }));
 

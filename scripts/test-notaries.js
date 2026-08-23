@@ -144,18 +144,22 @@ assert.strictEqual(
 
   const astanaRegion = getNotaryRegionBySlug('astana');
   const astanaNotaries = notaries.filter(item => item.region === astanaRegion.sourceName);
+  const regionalCounts = withNotaryRegionPaths(CHAMBERS.map(([, chamber]) => ({
+    region: chamber,
+    count: notaries.filter(item => item.region === chamber).length,
+  })));
+  const pageSize = 60;
+  const totalPages = Math.ceil(astanaNotaries.length / pageSize);
   const regionalCatalogHtml = await ejs.renderFile(
     path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
     {
       selectedRegion: astanaRegion.sourceName,
       regionPage: astanaRegion,
-      allRegions: withNotaryRegionPaths(CHAMBERS.map(([, chamber]) => ({
-        region: chamber,
-        count: notaries.filter(item => item.region === chamber).length,
-      }))),
-      regionItems: astanaNotaries,
+      allRegions: regionalCounts,
+      regionItems: astanaNotaries.slice(0, pageSize),
       lastUpdated: new Date('2026-08-24T00:00:00+05:00'),
       getRegionEmblem,
+      pagination: { page: 1, pageSize, total: astanaNotaries.length, totalPages },
     },
   );
   assert.ok(astanaNotaries.length > 0, 'Astana regional fixture is empty');
@@ -164,11 +168,40 @@ assert.strictEqual(
   assert.ok(regionalCatalogHtml.includes('source=notary&amp;entry=notary_region'), 'regional notary diagnostic bridge is missing');
   assert.ok(regionalCatalogHtml.includes('/zamena-notariusa'), 'archive-holder search must be linked from regional notary pages');
   assert.ok(regionalCatalogHtml.includes('BreadcrumbList') && regionalCatalogHtml.includes('ItemList'), 'regional structured data is incomplete');
+  assert.strictEqual((regionalCatalogHtml.match(/<article class="professional-card(?:\s|")/g) || []).length, pageSize,
+    'regional response must render one bounded page of notary cards');
+  assert.ok(regionalCatalogHtml.length < 250000, 'regional HTML response is unexpectedly large after pagination');
+  assert.ok(regionalCatalogHtml.includes('1–60 из ' + astanaNotaries.length), 'visible result range is missing');
+  assert.ok(regionalCatalogHtml.includes('href="/notaries/astana?page=2"'), 'next page link is missing');
+
+  const secondPageHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
+    {
+      selectedRegion: astanaRegion.sourceName,
+      regionPage: astanaRegion,
+      allRegions: regionalCounts,
+      regionItems: astanaNotaries.slice(pageSize, pageSize * 2),
+      lastUpdated: new Date('2026-08-24T00:00:00+05:00'),
+      getRegionEmblem,
+      pagination: { page: 2, pageSize, total: astanaNotaries.length, totalPages },
+    },
+  );
+  assert.match(secondPageHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/astana\?page=2">/);
+  assert.match(secondPageHtml, /<title>Нотариусы Астаны — страница 2 \| ZakonExpert<\/title>/);
+  assert.match(secondPageHtml, /<h1>Нотариусы Астаны: список и контакты — страница 2<\/h1>/);
+  assert.ok(secondPageHtml.includes('href="/notaries/astana" rel="prev"'), 'page two must link back to the clean first page');
+  assert.ok(secondPageHtml.includes('aria-current="page">2</a>'), 'current pagination page is not exposed accessibly');
+  assert.ok(secondPageHtml.includes('"position":61'), 'ItemList positions must continue across pages');
 
   const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const notariesDbSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'notaries-db.js'), 'utf8');
   const regionalLanding = fs.readFileSync(path.join(__dirname, '..', 'views', 'regional', 'page.ejs'), 'utf8');
   assert.ok(server.includes("app.get('/notaries/:regionSlug'"), 'clean regional notary route is missing');
   assert.ok(server.includes("return res.redirect(301, regionPage ? regionPage.path : '/notaries')"), 'legacy query URLs must redirect permanently');
+  assert.ok(server.includes('const NOTARY_PAGE_SIZE = 60'), 'regional notary response must have a bounded page size');
+  assert.ok(server.includes('notariesDb.countByRegion(regionPage.sourceName)'), 'regional pagination must use a real total');
+  assert.ok(server.includes('return res.redirect(301, normalizedPath)'), 'non-canonical page parameters must redirect');
+  assert.ok(notariesDbSource.includes('.sort({ name: 1 }).skip(skip).limit(limit)'), 'database pagination must happen before rendering');
   assert.ok(server.includes('<loc>https://zakonexpertt.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
   assert.ok(regionalLanding.includes('href="${city.notaryPath}"'), 'regional arrest pages must link to clean notary URLs');
 
