@@ -1411,7 +1411,7 @@ app.get(BANK_ARREST_HUB_PATH, (req, res) => {
   res.render('bank-arrest/hub', {
     pages: BANK_ARREST_PAGES,
     legalPages: LEGAL_INTENT_PAGES,
-    reviewedAt: BANK_ARREST_PAGES[0]?.reviewedAt || '2026-08-23',
+    reviewedAt: BANK_ARREST_PAGES[0]?.reviewedAt || '2026-08-24',
   });
 });
 
@@ -1431,6 +1431,8 @@ const RELATED_GROWTH_LABELS = Object.freeze({
   '/snyatie-ogranichenii-chsi': 'Что делать с ограничениями ЧСИ',
   '/chsi-ne-snimaet-arest-posle-oplaty': 'ЧСИ не снимает арест после оплаты',
   '/arest-zarplatnoy-karty': 'Арест зарплатной карты',
+  '/otmena-ispolnitelnoi-nadpisi': 'Как отменить исполнительную надпись',
+  '/arest-scheta-v-bankah-kazahstana': 'Аресты счетов по банкам Казахстана',
 });
 
 LEGAL_INTENT_PAGES.forEach(page => {
@@ -2416,7 +2418,7 @@ function getCorePages() {
     { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
   ];
   const growthPages = [
-    { url: BANK_ARREST_HUB_PATH, priority: '0.95', freq: 'weekly', lastmod: '2026-08-23' },
+    { url: BANK_ARREST_HUB_PATH, priority: '0.95', freq: 'weekly', lastmod: '2026-08-24' },
     ...BANK_ARREST_PAGES.map(page => ({ url: page.path, priority: page.priority >= 95 ? '0.9' : '0.82', freq: 'monthly', lastmod: page.reviewedAt })),
     ...LEGAL_INTENT_PAGES.map(page => ({ url: page.path, priority: page.priority >= 94 ? '0.9' : '0.85', freq: 'monthly', lastmod: page.reviewedAt })),
   ];

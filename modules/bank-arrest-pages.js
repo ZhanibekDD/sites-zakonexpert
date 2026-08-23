@@ -1,6 +1,6 @@
 'use strict';
 
-const REVIEWED_AT = '2026-08-23';
+const REVIEWED_AT = '2026-08-24';
 const BANK_ARREST_HUB_PATH = '/arest-scheta-v-bankah-kazahstana';
 
 const BANK_ARREST_PAGES = Object.freeze([

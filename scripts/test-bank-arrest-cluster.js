@@ -64,11 +64,18 @@ function validateBankLogos() {
 async function main() {
   assert.strictEqual(BANK_ARREST_HUB_PATH, '/arest-scheta-v-bankah-kazahstana');
   assert.strictEqual(BANK_ARREST_PAGES.length, 23, 'cluster must cover 23 second-tier banks');
-  assert(LEGAL_INTENT_PAGES.length >= 7, 'at least seven distinct high-intent pages are required');
+  assert(LEGAL_INTENT_PAGES.length >= 12, 'at least twelve distinct high-intent pages are required');
 
   unique(BANK_ARREST_PAGES.map(page => page.path), 'bank paths');
   unique(BANK_ARREST_PAGES.map(page => page.bin), 'bank BINs');
   unique(LEGAL_INTENT_PAGES.map(page => page.path), 'legal intent paths');
+  [
+    '/arest-snyat-no-schet-zablokirovan',
+    '/srok-snyatiya-aresta-so-scheta',
+    '/arest-scheta-bez-uvedomleniya',
+    '/neskolko-arestov-na-schete',
+    '/arest-posle-otmeny-ispolnitelnoy-nadpisi',
+  ].forEach(pagePath => assert(getLegalIntentPage(pagePath), pagePath + ' must exist in the growth cluster'));
   validateBankLogos();
 
   BANK_ARREST_PAGES.forEach(page => {
@@ -119,7 +126,7 @@ async function main() {
   const hubHtml = await render('views/bank-arrest/hub.ejs', {
     pages: BANK_ARREST_PAGES,
     legalPages: LEGAL_INTENT_PAGES,
-    reviewedAt: '2026-08-23',
+    reviewedAt: '2026-08-24',
   });
   assert(hubHtml.includes('23 банка второго уровня'));
   assert(hubHtml.includes('/arest-bank-centercredit'));
@@ -127,6 +134,8 @@ async function main() {
   assert(hubHtml.includes('/arest-kzi-bank'));
   assert(hubHtml.includes('/img/banks/kaspi-bank.png'));
   assert(hubHtml.includes('/img/banks/zaman-bank.png'));
+  assert(hubHtml.includes('/arest-snyat-no-schet-zablokirovan'));
+  assert(hubHtml.includes('/arest-posle-otmeny-ispolnitelnoy-nadpisi'));
   assert(!hubHtml.includes('bi-credit-card-2-front'));
   assert(!hubHtml.includes('undefined'));
 
@@ -141,6 +150,17 @@ async function main() {
     assert(!html.includes('undefined'));
     assertNoRiskyUniversalClaims(html, page.path);
   }
+
+  const kaspiHtml = fs.readFileSync(path.join(root, 'public', 'arest-kaspi.html'), 'utf8');
+  assert(kaspiHtml.includes('<title>Арест карты Kaspi и Kaspi Gold: как снять и кто наложил'));
+  assert(kaspiHtml.includes('/arest-snyat-no-schet-zablokirovan'));
+  assert(kaspiHtml.includes('https://guide.kaspi.kz/client/ru/gold/arrest'));
+  assert(kaspiHtml.includes('деньги сверх неё могут оставаться доступными'));
+
+  const halykHtml = fs.readFileSync(path.join(root, 'public', 'arest-halyk-bank.html'), 'utf8');
+  assert(halykHtml.includes('<title>Арест счёта Halyk Bank: как снять и кто наложил'));
+  assert(halykHtml.includes('/neskolko-arestov-na-schete'));
+  assert(halykHtml.includes('https://halykbank.kz/card/aresty'));
 
   [
     'public/css/bank-arrest-cluster.css',
