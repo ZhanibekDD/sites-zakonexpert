@@ -10,7 +10,7 @@
     ? requestedSource
     : '';
   var requestedEntry = queryParams.get('entry') || '';
-  var entryPoint = ['bailiff_profile', 'notary_profile', 'bailiff_region'].indexOf(requestedEntry) >= 0
+  var entryPoint = ['bailiff_profile', 'notary_profile', 'bailiff_region', 'notary_region'].indexOf(requestedEntry) >= 0
     ? requestedEntry
     : 'direct';
   var answers = { symptom: '', source: presetSource, payment: '' };

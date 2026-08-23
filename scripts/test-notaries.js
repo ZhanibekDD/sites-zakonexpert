@@ -9,6 +9,12 @@ const { CHAMBERS, parseNotaryPage, toRegistryRows } = require('./refresh-notarie
 const { readRegistrySource } = require('../modules/registry-source');
 const { REGION_EMBLEMS, getRegionEmblem } = require('../modules/region-emblems');
 const {
+  NOTARY_REGIONS,
+  getNotaryRegionBySlug,
+  getNotaryRegionByName,
+  withNotaryRegionPaths,
+} = require('../modules/notary-regions');
+const {
   extractArchiveTransfer,
   findArchiveDirectory,
   nameLikelyMatches,
@@ -26,6 +32,17 @@ assert.strictEqual(parsedPage.length, 1);
 assert.strictEqual(parsedPage[0].phone, '87010000000');
 assert.strictEqual(parsedPage[0].email, 'ivanov@mail.kz');
 assert.strictEqual(CHAMBERS.length, 20, 'all 20 ENIS chambers must be covered');
+assert.strictEqual(NOTARY_REGIONS.length, 20, 'all 20 ENIS chambers must have a stable regional URL');
+assert.strictEqual(new Set(NOTARY_REGIONS.map(item => item.slug)).size, 20, 'regional notary slugs must be unique');
+assert.strictEqual(new Set(NOTARY_REGIONS.map(item => item.sourceName)).size, 20, 'regional notary source names must be unique');
+for (const [, region] of CHAMBERS) {
+  const regionPage = getNotaryRegionByName(region);
+  assert.ok(regionPage, `${region}: stable regional notary URL is missing`);
+  assert.strictEqual(getNotaryRegionBySlug(regionPage.slug), regionPage, `${region}: slug lookup is inconsistent`);
+}
+assert.strictEqual(getNotaryRegionByName('г. Астана').path, '/notaries/astana');
+assert.strictEqual(getNotaryRegionByName('область Жетысу').path, '/notaries/zhetisu');
+assert.strictEqual(getNotaryRegionByName('область Улытау').path, '/notaries/ulytau');
 assert.strictEqual(Object.keys(REGION_EMBLEMS).length, 20, 'all 20 regions must have an emblem');
 for (const [, region] of CHAMBERS) {
   const emblem = getRegionEmblem(region);
@@ -111,7 +128,8 @@ assert.strictEqual(
     path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
     {
       selectedRegion: '',
-      allRegions: CHAMBERS.map(([, region]) => ({ region, count: 1 })),
+      regionPage: null,
+      allRegions: withNotaryRegionPaths(CHAMBERS.map(([, region]) => ({ region, count: 1 }))),
       regionItems: [],
       lastUpdated: null,
       getRegionEmblem,
@@ -121,6 +139,38 @@ assert.strictEqual(
   assert.strictEqual(renderedEmblems.length, 20, 'catalog template must render all 20 regional emblems');
   assert.ok(catalogHtml.includes('/img/regions/astana.webp'));
   assert.ok(catalogHtml.includes('/img/regions/ulytau.webp'));
+  assert.ok(catalogHtml.includes('href="/notaries/astana"'), 'catalog must link to stable regional URLs');
+  assert.ok(!catalogHtml.includes('/notaries?region='), 'known ENIS regions must not use query-parameter URLs');
+
+  const astanaRegion = getNotaryRegionBySlug('astana');
+  const astanaNotaries = notaries.filter(item => item.region === astanaRegion.sourceName);
+  const regionalCatalogHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'catalog.ejs'),
+    {
+      selectedRegion: astanaRegion.sourceName,
+      regionPage: astanaRegion,
+      allRegions: withNotaryRegionPaths(CHAMBERS.map(([, chamber]) => ({
+        region: chamber,
+        count: notaries.filter(item => item.region === chamber).length,
+      }))),
+      regionItems: astanaNotaries,
+      lastUpdated: new Date('2026-08-24T00:00:00+05:00'),
+      getRegionEmblem,
+    },
+  );
+  assert.ok(astanaNotaries.length > 0, 'Astana regional fixture is empty');
+  assert.match(regionalCatalogHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/astana">/);
+  assert.match(regionalCatalogHtml, /<h1>Нотариусы Астаны: список и контакты<\/h1>/);
+  assert.ok(regionalCatalogHtml.includes('source=notary&amp;entry=notary_region'), 'regional notary diagnostic bridge is missing');
+  assert.ok(regionalCatalogHtml.includes('/zamena-notariusa'), 'archive-holder search must be linked from regional notary pages');
+  assert.ok(regionalCatalogHtml.includes('BreadcrumbList') && regionalCatalogHtml.includes('ItemList'), 'regional structured data is incomplete');
+
+  const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const regionalLanding = fs.readFileSync(path.join(__dirname, '..', 'views', 'regional', 'page.ejs'), 'utf8');
+  assert.ok(server.includes("app.get('/notaries/:regionSlug'"), 'clean regional notary route is missing');
+  assert.ok(server.includes("return res.redirect(301, regionPage ? regionPage.path : '/notaries')"), 'legacy query URLs must redirect permanently');
+  assert.ok(server.includes('<loc>https://zakonexpertt.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
+  assert.ok(regionalLanding.includes('href="${city.notaryPath}"'), 'regional arrest pages must link to clean notary URLs');
 
   const profile = notaries.find(item => item.address && item.phone && item.email && item.schedule);
   assert.ok(profile, 'notary profile fixture with public contacts is missing');
