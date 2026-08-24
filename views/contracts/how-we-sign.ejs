@@ -1,0 +1,134 @@
+<%
+const canonical = 'https://zakonexpertt.kz/kak-my-zaklyuchaem-dogovor';
+const title = 'Как ZakonExpert заключает договор с клиентом — пример | ZakonExpert';
+const description = 'Показываем, как фиксируем услугу, результат, срок, стоимость, оплату и подписи. Три страницы реального формата договора с закрытыми данными клиента.';
+const whatsappText = encodeURIComponent('Здравствуйте! Хочу получить договор ZakonExpert по моей услуге.');
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebPage',
+      '@id': canonical + '#webpage',
+      url: canonical,
+      name: title,
+      description,
+      inLanguage: 'ru-KZ',
+      dateModified: '2026-08-24',
+      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+      primaryImageOfPage: { '@id': canonical + '#contract-page-1' },
+    },
+    {
+      '@type': 'HowTo',
+      name: 'Как заключается договор с ZakonExpert',
+      description: 'Порядок согласования индивидуального договора оказания услуг.',
+      step: [
+        { '@type': 'HowToStep', position: 1, name: 'Определяем задачу', text: 'Устанавливаем предмет работы и перечень документов.' },
+        { '@type': 'HowToStep', position: 2, name: 'Фиксируем индивидуальные условия', text: 'В договоре указываются услуга, проверяемый результат, срок действий, стоимость и порядок оплаты.' },
+        { '@type': 'HowToStep', position: 3, name: 'Клиент проверяет договор', text: 'Клиент получает полный экземпляр и может задать вопросы до подписания.' },
+        { '@type': 'HowToStep', position: 4, name: 'Стороны подписывают', text: 'Договор подписывается доступным и согласованным способом.' },
+        { '@type': 'HowToStep', position: 5, name: 'Начинается работа', text: 'Работа начинается после выполнения условий, прямо указанных в конкретном договоре.' },
+      ],
+    },
+    {
+      '@type': 'ImageObject',
+      '@id': canonical + '#contract-page-1',
+      contentUrl: 'https://zakonexpertt.kz/img/contracts/client-contract-page-1.webp',
+      caption: 'Первая страница договора ZakonExpert с закрытыми персональными данными клиента',
+    },
+  ],
+};
+const body = `
+<div class="contract-public-page">
+  <section class="contract-public-hero">
+    <div class="contract-public-container">
+      <nav class="contract-public-breadcrumbs" aria-label="Хлебные крошки"><a href="/">Главная</a><i class="bi bi-chevron-right"></i><span>Как заключаем договор</span></nav>
+      <div class="contract-public-hero-grid">
+        <div>
+          <span class="contract-public-eyebrow"><i class="bi bi-file-earmark-check"></i> Работаем по письменным условиям</span>
+          <h1>Как мы заключаем договор с клиентом</h1>
+          <p>До начала работы фиксируем не общие обещания, а конкретную услугу, проверяемый результат действий, срок нашей работы, стоимость, порядок оплаты и правила взаимодействия.</p>
+          <div class="contract-public-actions">
+            <a href="#contract-example" class="contract-public-button is-primary"><i class="bi bi-images"></i> Посмотреть все 3 страницы</a>
+            <a href="https://wa.me/77003097566?text=${whatsappText}" target="_blank" rel="noopener" class="contract-public-button is-outline"><i class="bi bi-whatsapp"></i> Получить свой договор</a>
+          </div>
+        </div>
+        <aside class="contract-public-hero-card">
+          <span>В договоре фиксируется</span>
+          <ul>
+            <li><i class="bi bi-check2"></i> предмет и объём услуги;</li>
+            <li><i class="bi bi-check2"></i> проверяемый результат действий;</li>
+            <li><i class="bi bi-check2"></i> срок работы ZakonExpert;</li>
+            <li><i class="bi bi-check2"></i> цена и этапы оплаты;</li>
+            <li><i class="bi bi-check2"></i> порядок приёмки и прекращения.</li>
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="contract-public-process">
+    <div class="contract-public-container">
+      <div class="contract-public-section-head"><span>Порядок работы</span><h2>Пять этапов без устных разночтений</h2></div>
+      <ol class="contract-public-steps">
+        <li><span>01</span><div><strong>Разбираем задачу</strong><p>Проверяем документы и определяем, что именно входит в поручение.</p></div></li>
+        <li><span>02</span><div><strong>Согласовываем условия</strong><p>Отдельно фиксируем объём, результат действий, срок, стоимость и оплату.</p></div></li>
+        <li><span>03</span><div><strong>Отправляем полный договор</strong><p>Клиент видит все три страницы до подписания и может задать вопросы.</p></div></li>
+        <li><span>04</span><div><strong>Подписываем</strong><p>Используется способ, согласованный сторонами и допустимый для конкретной ситуации.</p></div></li>
+        <li><span>05</span><div><strong>Начинаем работу</strong><p>Стартуем после передачи документов и выполнения условий конкретного договора.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="contract-public-gallery" id="contract-example">
+    <div class="contract-public-container">
+      <div class="contract-public-section-head is-row">
+        <div><span>Реальный формат</span><h2>Пример договора — 3 страницы</h2></div>
+        <p><i class="bi bi-shield-lock"></i> ФИО, ИИН, телефон, адрес и подпись клиента закрыты. Реквизиты компании оставлены открытыми.</p>
+      </div>
+      <div class="contract-public-notice"><i class="bi bi-info-circle"></i><p>Это пример оформления, а не универсальные условия для всех клиентов. Предмет, цена, срок и порядок оплаты формируются индивидуально под конкретную услугу.</p></div>
+      <div class="contract-public-pages">
+        <figure>
+          <a href="/img/contracts/client-contract-page-1.webp" target="_blank" rel="noopener"><img src="/img/contracts/client-contract-page-1.webp" width="900" height="1272" alt="Первая страница договора ZakonExpert с закрытыми данными клиента" decoding="async"></a>
+          <figcaption><span>Страница 1</span><strong>Индивидуальные условия</strong><p>Услуга, результат, срок, стоимость и порядок оплаты.</p></figcaption>
+        </figure>
+        <figure>
+          <a href="/img/contracts/client-contract-page-2.webp" target="_blank" rel="noopener"><img src="/img/contracts/client-contract-page-2.webp" width="900" height="1272" alt="Вторая страница договора ZakonExpert — обязанности, приёмка и персональные данные" loading="lazy" decoding="async"></a>
+          <figcaption><span>Страница 2</span><strong>Правила работы</strong><p>Обязанности сторон, приёмка, расходы, ответственность и электронное взаимодействие.</p></figcaption>
+        </figure>
+        <figure>
+          <a href="/img/contracts/client-contract-page-3.webp" target="_blank" rel="noopener"><img src="/img/contracts/client-contract-page-3.webp" width="900" height="1272" alt="Третья страница договора ZakonExpert с реквизитами и закрытыми данными клиента" loading="lazy" decoding="async"></a>
+          <figcaption><span>Страница 3</span><strong>Реквизиты и подписи</strong><p>Способы оплаты, подтверждение платежа и подписи сторон.</p></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="contract-public-protection">
+    <div class="contract-public-container contract-public-protection-grid">
+      <div><span class="contract-public-eyebrow is-dark"><i class="bi bi-shield-check"></i> Защита клиента</span><h2>Что договор даёт клиенту</h2><p>Договор позволяет сверить, что было поручено, сколько это стоит, какие действия выполняет ZakonExpert, какие документы передаются и как подтверждается выполненная работа.</p></div>
+      <div class="contract-public-protection-list">
+        <article><i class="bi bi-cash-stack"></i><strong>Цена не меняется устно</strong><p>Дополнительные расходы предварительно согласовываются, если они не включены в цену.</p></article>
+        <article><i class="bi bi-folder-check"></i><strong>Работа подтверждается</strong><p>Документами, талонами, ответами органов, перепиской и иными объективными материалами.</p></article>
+        <article><i class="bi bi-person-lock"></i><strong>Персональные данные защищаются</strong><p>На публичной странице данные клиента закрыты; в работе они используются только в необходимом объёме.</p></article>
+        <article><i class="bi bi-signpost-split"></i><strong>Решение органа не подменяется обещанием</strong><p>Суд, ЧСИ, нотариус, банк или государственный орган принимают решение самостоятельно.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="contract-public-cta">
+    <div class="contract-public-container"><div><span>Нужен договор под вашу задачу?</span><h2>Сначала согласуем условия — затем вы получите полный экземпляр</h2><p>Отправьте документы и кратко опишите цель. До оплаты можно сверить предмет, стоимость и порядок работы.</p></div><a href="https://wa.me/77003097566?text=${whatsappText}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Запросить договор</a></div>
+  </section>
+</div>`;
+%>
+<%- include('../news/layout', {
+  title,
+  description,
+  canonical,
+  ogType: 'website',
+  ogImage: '/img/contracts/client-contract-page-1.webp',
+  schema,
+  noindex: false,
+  enableAutoAds: false,
+  extraStyles: ['/css/client-contract.css?v=20260824-1'],
+  body,
+}) %>
