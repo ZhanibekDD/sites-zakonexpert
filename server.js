@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-24-notary-pagination-404-v1';
+const RELEASE_ID = '2026-08-24-notary-registry-changes-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -78,6 +78,7 @@ const {
 } = require('./modules/notary-regions');
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const { normalizeRegionKey } = require('./modules/notary-archive');
+const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
 const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
 const {
   BANK_ARREST_HUB_PATH,
@@ -710,6 +711,16 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   const [all, regions] = await Promise.all([notariesDb.getAllSlugs(), notariesDb.getRegions()]);
   const lastUpdated = await notariesDb.getLastUpdated();
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
+  const changeHistory = readNotaryChanges();
+  const changeDate = new Date(changeHistory.latestChangeAt || changeHistory.checkedAt || lastmod);
+  const changeLastmod = Number.isNaN(changeDate.getTime()) ? lastmod : changeDate.toISOString().substring(0, 10);
+  const changesUrl = changeHistory.changes.length ? `
+  <url>
+    <loc>https://zakonexpertt.kz/notaries/changes</loc>
+    <lastmod>${changeLastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>` : '';
   const regionUrls = withNotaryRegionPaths(regions).map(r => `
   <url>
     <loc>https://zakonexpertt.kz${r.path}</loc>
@@ -726,6 +737,7 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   </url>`).join('');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${changesUrl}
   ${regionUrls}
   ${profileUrls}
 </urlset>`);
@@ -782,6 +794,38 @@ app.get('/notaries', asyncHandler(async (req, res) => {
     selectedRegion: '', regionPage: null, allRegions: withNotaryRegionPaths(allRegions),
     regionItems: [], lastUpdated, getRegionEmblem,
     pagination: { page: 1, pageSize: NOTARY_PAGE_SIZE, total: 0, totalPages: 1 },
+  });
+}));
+
+app.get('/notaries/changes', asyncHandler(async (req, res) => {
+  const allowedTypes = new Set(['added', 'status', 'updated', 'removed']);
+  const type = allowedTypes.has(String(req.query.type || '')) ? String(req.query.type) : '';
+  const region = String(req.query.region || '').trim().slice(0, 100);
+  const history = readNotaryChanges();
+  const profiles = notariesDb ? await notariesDb.getAllSlugs() : [];
+  const profileByKey = new Map(profiles.map(profile => [notaryKey(profile), profile.slug]));
+  const allChanges = history.changes.map(change => ({
+    ...change,
+    profileSlug: profileByKey.get(notaryKey(change)) || '',
+  }));
+  const regions = [...new Set(allChanges.map(change => change.region).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'ru'));
+  const filteredChanges = allChanges.filter(change => {
+    if (type && change.type !== type) return false;
+    if (region && normalizeRegionKey(change.region) !== normalizeRegionKey(region)) return false;
+    return true;
+  }).slice(0, 200);
+  const stats = allChanges.reduce((result, change) => {
+    result[change.type] = (result[change.type] || 0) + 1;
+    return result;
+  }, { added: 0, status: 0, updated: 0, removed: 0 });
+  res.render('notary/changes', {
+    history,
+    changes: filteredChanges,
+    stats,
+    filters: { type, region },
+    regions,
+    noindex: Boolean(type || region || !history.changes.length),
   });
 }));
 
@@ -2972,7 +3016,7 @@ app.get('/api/news/health', asyncHandler(async (_req, res) => {
 setTimeout(async () => {
   if (importNotaries) {
     // Startup must be deterministic and fast. Network refresh belongs to the
-    // weekly cron/manual admin action; here we only import the validated local
+    // daily cron/manual admin action; here we only import the validated local
     // snapshot when its version is newer than the DB.
     try {
       const count = await importNotaries();
