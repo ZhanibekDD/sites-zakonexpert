@@ -200,6 +200,8 @@ assert.strictEqual(
   assert.ok(server.includes("return res.redirect(301, regionPage ? regionPage.path : '/notaries')"), 'legacy query URLs must redirect permanently');
   assert.ok(server.includes('const NOTARY_PAGE_SIZE = 60'), 'regional notary response must have a bounded page size');
   assert.ok(server.includes('notariesDb.countByRegion(regionPage.sourceName)'), 'regional pagination must use a real total');
+  assert.ok(server.includes('if (requestedPage > totalPages) return sendNotFound(res)'),
+    'out-of-range regional pagination must return a real 404 instead of looking like the last page');
   assert.ok(server.includes('return res.redirect(301, normalizedPath)'), 'non-canonical page parameters must redirect');
   assert.ok(notariesDbSource.includes('.sort({ name: 1 }).skip(skip).limit(limit)'), 'database pagination must happen before rendering');
   assert.ok(server.includes('<loc>https://zakonexpertt.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
