@@ -6,9 +6,9 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SMS с 1414: что значит и что делать — разбор онлайн | ZakonExpert</title>
-  <meta name="description" content="Вставьте текст SMS с 1414 без ИИН и кодов. Бесплатный анализатор определит вид уведомления и покажет, какие документы и реестры проверить в Казахстане.">
-  <meta name="keywords" content="сообщение 1414 казахстан, смс 1414 исполнительное производство, возбуждено исполнительное производство что делать, 1414 что это казахстан, пришло сообщение чси">
+  <title>SMS 1414 от ЕНИС/БНАЖ: что значит — разбор онлайн | ZakonExpert</title>
+  <meta name="description" content="Пришло SMS 1414 от ЕНИС или БНАЖ? Бесплатный анализатор распознает исполнительную надпись на русском и казахском и покажет порядок проверки и возражения.">
+  <meta name="keywords" content="сообщение 1414 казахстан, уведомление от енис, бнаж-дан хабарлама, атқарушылық жазба, смс 1414 исполнительная надпись, 1414 что это казахстан">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://zakonexpertt.kz/sms-1414">
   <meta property="og:type" content="article">
@@ -21,6 +21,14 @@
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Что значит «БНАЖ-дан хабарлама» или «Уведомление от ЕНИС»?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "ЕНІС / БНАЖ сообщает, что нотариус совершил исполнительную надпись. Это само по себе еще не подтверждает возбуждение исполнительного производства ЧСИ. Нужно получить копию надписи и проверить срок и основания для возражения."
+      }
+    },
     {
       "@type": "Question",
       "name": "Кто мог открыть на меня исполнительное производство?",
@@ -82,7 +90,7 @@
   <link rel="stylesheet" href="/css/style.css?v=20260823-1">
   <link rel="stylesheet" href="/css/legal.css?v=20260504-2">
   <link rel="stylesheet" href="/css/seo-conversion-v2.css?v=20260822-3">
-  <link rel="stylesheet" href="/css/sms-analyzer.css?v=20260824-1">
+  <link rel="stylesheet" href="/css/sms-analyzer.css?v=20260824-2">
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -149,7 +157,7 @@
         <div class="sms-analyzer-copy">
           <span class="sms-analyzer-kicker">Новый бесплатный инструмент</span>
           <h2 id="sms-analyzer-title">Расшифруйте уведомление с 1414</h2>
-          <p>Помощник различает исполнительную надпись, производство ЧСИ, судебный документ, арест и ограничение на выезд. Он не заменяет изучение постановлений, но сразу ведёт к правильной проверке.</p>
+          <p>Помощник понимает уведомления ЕНИС / БНАЖ на русском и казахском, отличает исполнительную надпись от производства ЧСИ, судебного документа, ареста и ограничения на выезд.</p>
           <ul class="sms-privacy-list">
             <li><i class="bi bi-phone" aria-hidden="true"></i><span>Текст обрабатывается только на этом устройстве и не отправляется на сервер.</span></li>
             <li><i class="bi bi-eye-slash" aria-hidden="true"></i><span>В результат, аналитику и WhatsApp не копируется ваш текст сообщения.</span></li>
@@ -160,11 +168,12 @@
           <form data-sms-form novalidate>
             <label class="sms-analyzer-label" for="sms-analyzer-input">Текст уведомления без персональных данных</label>
             <div class="sms-analyzer-input-wrap">
-              <textarea class="sms-analyzer-input" id="sms-analyzer-input" maxlength="2000" rows="6" autocomplete="off" spellcheck="false" placeholder="Например: Возбуждено исполнительное производство..." data-sms-input></textarea>
+              <textarea class="sms-analyzer-input" id="sms-analyzer-input" maxlength="2000" rows="6" autocomplete="off" spellcheck="false" placeholder="Например: БНАЖ-дан хабарлама / Уведомление от ЕНИС..." data-sms-input></textarea>
               <span class="sms-analyzer-counter" data-sms-counter>0 / 2000</span>
             </div>
             <p class="sms-analyzer-warning"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i><span>Если в тексте есть ИИН или номер карты — удалите их перед анализом.</span></p>
             <div class="sms-analyzer-examples" role="group" aria-label="Безопасные примеры">
+              <button class="sms-example-button" type="button" data-sms-example="БНАЖ-дан хабарлама. Сізге қатысты атқарушылық жазба жасалғаны туралы хабарлаймыз. Уведомление от ЕНИС. Уведомляем о совершении исполнительной надписи в отношении Вас.">ЕНІС / БНАЖ</button>
               <button class="sms-example-button" type="button" data-sms-example="Совершена исполнительная надпись нотариуса">Надпись нотариуса</button>
               <button class="sms-example-button" type="button" data-sms-example="Возбуждено исполнительное производство. ЧСИ">Производство ЧСИ</button>
               <button class="sms-example-button" type="button" data-sms-example="Установлено временное ограничение на выезд из Республики Казахстан">Запрет на выезд</button>
@@ -196,9 +205,14 @@
           <h2>Что значит сообщение с 1414 — простыми словами</h2>
           <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:14px;padding:22px;margin-bottom:28px;">
             <p style="margin:0;font-size:0.95rem;line-height:1.8;color:#92400e;">
-              <strong>Типичный текст SMS с 1414:</strong><br>
-              <em>«На вас возбуждено исполнительное производство №XXXXXXX. Сумма взыскания: XXX тенге. ЧСИ: [имя]. Телефон: ...»</em>
+              <strong>Типичное уведомление ЕНИС / БНАЖ:</strong><br>
+              <em>«БНАЖ-дан хабарлама. Сізге қатысты атқарушылық жазба жасалғаны туралы хабарлаймыз… / Уведомление от ЕНИС. Уведомляем о совершении исполнительной надписи в отношении Вас…»</em>
             </p>
+          </div>
+
+          <div style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:14px;padding:22px;margin-bottom:28px;">
+            <h3 style="color:#1e3a8a;margin:0 0 10px;font-size:1.08rem;">Это ещё не постановление ЧСИ</h3>
+            <p style="color:#1e40af;margin:0;line-height:1.75;">Такое SMS сообщает, что нотариус уже совершил исполнительную надпись. Оно само по себе не подтверждает возбуждение исполнительного производства. Сначала скачайте копию надписи, проверьте взыскателя, сумму и нотариуса. Если не согласны — закон предусматривает десять рабочих дней со дня получения копии для мотивированного письменного возражения нотариусу.</p>
           </div>
 
           <p style="font-size:1rem;line-height:1.8;color:#334155;">
@@ -295,6 +309,10 @@
           <!-- FAQ -->
           <div class="law-faq mt-4">
             <h2>Частые вопросы</h2>
+            <div class="law-faq-item">
+              <button class="law-faq-q">Что значит «БНАЖ-дан хабарлама» или «Уведомление от ЕНИС»?</button>
+              <div class="law-faq-a"><p>ЕНІС / БНАЖ сообщает, что нотариус совершил в отношении вас исполнительную надпись. Это ещё не означает, что ЧСИ уже возбудил исполнительное производство. Получите копию надписи и проверьте срок и основания для возражения.</p></div>
+            </div>
             <div class="law-faq-item">
               <button class="law-faq-q">Кто мог открыть на меня исполнительное производство?</button>
               <div class="law-faq-a"><p>Чаще всего это банк (Kaspi, Halyk, Freedom и другие) или МФО. Реже — коллекторская компания, которой продали ваш долг. Также могут быть штрафы, алименты или другие долги. Проверьте по ИИН на нашем сайте — там будет вся информация.</p></div>
@@ -432,7 +450,7 @@
 <script src="/js/site.js?v=20260823-1"></script>
 <script src="/js/seo-faq.js?v=20260822-1"></script>
 <script src="/js/analytics-events.js"></script>
-<script src="/js/sms-analyzer.js?v=20260824-1"></script>
+<script src="/js/sms-analyzer.js?v=20260824-2"></script>
 <script src="/js/chatbot.js?v=20260815-1" defer></script>
 
 <div class="ze-mobile-cta" role="navigation" aria-label="Быстрые действия"><a class="ze-check" href="/#checker-section"><i class="bi bi-search"></i>&nbsp; Проверить ИИН</a><a class="ze-wa" href="https://wa.me/77003097566?text=%D0%9F%D1%80%D0%B8%D1%88%D0%BB%D0%BE+SMS+%D1%81+1414.+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BF%D0%BE%D0%BC%D0%BE%D1%89%D1%8C." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i>&nbsp; Написать специалисту</a></div>
