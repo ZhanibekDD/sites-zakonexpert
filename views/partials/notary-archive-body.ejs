@@ -11,9 +11,14 @@ function checkedDate(value) {
 var q = String(query || '').trim();
 var matched = directory && Array.isArray(directory.matchedNotaries) ? directory.matchedNotaries : [];
 var transfers = directory && Array.isArray(directory.transfers) ? directory.transfers : [];
+var summary = directory && directory.summary ? directory.summary : {};
+var unpublished = directory && directory.unpublished ? directory.unpublished : { items: [], total: 0, page: 1, totalPages: 1 };
+var unpublishedItems = Array.isArray(unpublished.items) ? unpublished.items : [];
 var chamberRows = Array.isArray(chambers) ? chambers : [];
-var verifiedActive = transfers.filter(function(item) { return item.current; }).length;
-var verifiedStale = transfers.length - verifiedActive;
+var verifiedActive = typeof summary.currentTransferTotal === 'number' ? summary.currentTransferTotal : transfers.filter(function(item) { return item.current; }).length;
+var verifiedStale = typeof summary.staleTransferTotal === 'number' ? summary.staleTransferTotal : transfers.length - verifiedActive;
+var unpublishedPage = Math.max(1, Number(unpublished.page) || 1);
+var unpublishedPages = Math.max(1, Number(unpublished.totalPages) || 1);
 var waText = encodeURIComponent('Здравствуйте! Не могу определить, кому передан архив нотариуса' + (q ? ' ' + q : '') + '. Нужна помощь.');
 %>
 
@@ -29,7 +34,7 @@ var waText = encodeURIComponent('Здравствуйте! Не могу опр�
         <div>
           <span class="notary-archive__eyebrow"><i class="bi bi-database-check"></i> Проверка по официальному реестру ЕНИС</span>
           <h1>Кому передан архив нотариуса</h1>
-          <p>Введите фамилию нотариуса, который прекратил деятельность. Мы покажем только опубликованную в ЕНИС передачу архива и отдельно предупредим, если получатель уже не работает.</p>
+          <p>Введите фамилию нотариуса, который прекратил деятельность. Подтверждённого хранителя показываем только при наличии прямой записи ЕНИС. Для остальных нотариусов честно указываем, что место хранения нужно запросить в палате.</p>
         </div>
         <div class="notary-archive__trust" aria-label="Актуальность данных">
           <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
@@ -151,10 +156,52 @@ var waText = encodeURIComponent('Здравствуйте! Не могу опр�
             <% }); %>
           </div>
         <% } %>
+
+        <div class="notary-archive__scope-note">
+          <i class="bi bi-info-circle"></i>
+          <div><strong>Почему здесь только <%= Number(summary.confirmedTransferTotal) || transfers.length %> подтверждённые связи?</strong><p>Это все прямые записи о передаче архива, которые текущий снимок ЕНИС публикует в карточках нотариусов. Остальных мы не скрываем: они перечислены ниже отдельно, но без выдуманного «нового нотариуса».</p></div>
+        </div>
+
+        <section class="notary-archive__unpublished" id="archive-not-published">
+          <div class="notary-archive__section-head">
+            <div><span>Остальные прекращённые нотариусы</span><h2>Хранитель архива публично не указан</h2></div>
+            <p><strong><%= Number(summary.unpublishedTotal) || unpublished.total || 0 %></strong> записей</p>
+          </div>
+          <div class="notary-archive__unpublished-warning">
+            <i class="bi bi-building-exclamation"></i>
+            <p>Это не подтверждённые «замены». По этим нотариусам ЕНИС показывает прекращение деятельности, но не публикует прямую запись, кому переданы документы. Официальный адресат — нотариальная палата соответствующего региона.</p>
+          </div>
+          <% if (unpublishedItems.length) { %>
+            <div class="notary-archive__unpublished-grid">
+              <% unpublishedItems.forEach(function(notary) { %>
+                <article class="notary-archive__unpublished-card">
+                  <div class="notary-archive__unpublished-top">
+                    <span class="notary-archive__unpublished-icon"><i class="bi bi-person-x"></i></span>
+                    <em>Архив не указан</em>
+                  </div>
+                  <h3><a href="/notary/<%= notary.slug %>"><%= titleCase(notary.name) %></a></h3>
+                  <p><i class="bi bi-geo-alt"></i> <%= notary.region || 'Регион не указан' %></p>
+                  <div class="notary-archive__unpublished-actions">
+                    <a href="/zamena-notariusa?q=<%= encodeURIComponent(notary.name) %>">Проверить ФИО</a>
+                    <a href="<%= notary.sourceChamberUrl || 'https://enis.kz/NotarySearch' %>" target="_blank" rel="noopener">Палата ЕНИС <i class="bi bi-box-arrow-up-right"></i></a>
+                  </div>
+                </article>
+              <% }); %>
+            </div>
+          <% } %>
+          <% if (unpublishedPages > 1) { %>
+            <nav class="notary-archive__pagination" aria-label="Страницы нотариусов без опубликованной передачи архива">
+              <% if (unpublishedPage > 1) { %><a href="/zamena-notariusa?page=<%= unpublishedPage - 1 %>#archive-not-published"><i class="bi bi-chevron-left"></i> Назад</a><% } else { %><span></span><% } %>
+              <strong>Страница <%= unpublishedPage %> из <%= unpublishedPages %></strong>
+              <% if (unpublishedPage < unpublishedPages) { %><a href="/zamena-notariusa?page=<%= unpublishedPage + 1 %>#archive-not-published">Дальше <i class="bi bi-chevron-right"></i></a><% } else { %><span></span><% } %>
+            </nav>
+          <% } %>
+        </section>
+
         <div class="notary-archive__principles">
           <article><i class="bi bi-fingerprint"></i><h3>Не назначаем замену сами</h3><p>Совпадение города, адреса или фамилии не доказывает передачу архива.</p></article>
-          <article><i class="bi bi-link-45deg"></i><h3>Показываем первоисточник</h3><p>У каждой связи есть дословная запись и ссылка на соответствующую палату ЕНИС.</p></article>
-          <article><i class="bi bi-shield-check"></i><h3>Проверяем получателя</h3><p>Если хранитель прекратил деятельность, запись помечается как устаревшая.</p></article>
+          <article><i class="bi bi-link-45deg"></i><h3>Показываем первоисточник</h3><p>У каждой подтверждённой связи есть дословная запись и ссылка на палату ЕНИС.</p></article>
+          <article><i class="bi bi-shield-check"></i><h3>Показываем и пробелы данных</h3><p>Если хранитель не опубликован, нотариус остаётся в отдельном списке с маршрутом в палату.</p></article>
         </div>
       <% } %>
 
