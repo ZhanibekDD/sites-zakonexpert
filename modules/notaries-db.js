@@ -98,7 +98,7 @@ module.exports = {
       _id: 0,
     }).sort({ name: 1 }).skip(skip).limit(limit);
   },
-  async getArchiveDirectory(query = '') {
+  async getArchiveDirectory(query = '', options = {}) {
     const all = await db.find({}, {
       name: 1,
       slug: 1,
@@ -116,6 +116,6 @@ module.exports = {
       updatedAt: 1,
       _id: 0,
     });
-    return findArchiveDirectory(all, query);
+    return findArchiveDirectory(all, query, options);
   },
 };
