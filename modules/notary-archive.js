@@ -91,22 +91,20 @@ function extractArchiveTransfer(schedule) {
   };
 }
 
-function findArchiveDirectory(notaries, query = '') {
-  const rows = Array.isArray(notaries) ? notaries : [];
-  const normalizedQuery = clean(query);
-  const matchedNotaries = normalizedQuery
-    ? rows.filter(item => nameLikelyMatches(normalizedQuery, item.name)).slice(0, 12)
-    : [];
+function buildArchiveTransfers(rows) {
   const transfers = [];
+  const seen = new Set();
 
   for (const holder of rows) {
     const archiveFor = Array.isArray(holder.archiveFor) ? holder.archiveFor : [];
     for (const sourceName of archiveFor) {
-      if (normalizedQuery && !nameLikelyMatches(normalizedQuery, sourceName)) continue;
       const sourceNotary = rows.find(item => (
         normalizeRegionKey(item.region) === normalizeRegionKey(holder.region)
         && nameLikelyMatches(sourceName, item.name)
       )) || null;
+      const key = `${normalizeName(sourceName)}|${holder.slug || normalizeName(holder.name)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       transfers.push({
         sourceName,
         sourceNotary,
@@ -120,12 +118,62 @@ function findArchiveDirectory(notaries, query = '') {
 
   transfers.sort((left, right) => Number(right.current) - Number(left.current)
     || normalizeName(left.sourceName).localeCompare(normalizeName(right.sourceName), 'ru'));
+  return transfers;
+}
 
-  return { matchedNotaries, transfers };
+function transferBelongsToNotary(transfer, notary) {
+  if (!transfer || !notary) return false;
+  if (transfer.sourceNotary && transfer.sourceNotary.slug && transfer.sourceNotary.slug === notary.slug) return true;
+  return normalizeRegionKey(transfer.holder?.region) === normalizeRegionKey(notary.region)
+    && nameLikelyMatches(transfer.sourceName, notary.name);
+}
+
+function findArchiveDirectory(notaries, query = '', options = {}) {
+  const rows = Array.isArray(notaries) ? notaries : [];
+  const normalizedQuery = clean(query);
+  const page = Math.max(1, Number.parseInt(options.page, 10) || 1);
+  const limit = Math.min(48, Math.max(12, Number.parseInt(options.limit, 10) || 24));
+  const allTransfers = buildArchiveTransfers(rows);
+  const matchedNotaries = normalizedQuery
+    ? rows.filter(item => nameLikelyMatches(normalizedQuery, item.name)).slice(0, 12)
+    : [];
+  const transfers = normalizedQuery
+    ? allTransfers.filter(item => nameLikelyMatches(normalizedQuery, item.sourceName))
+    : allTransfers;
+
+  const inactive = rows
+    .filter(item => item.active === false)
+    .sort((left, right) => normalizeRegionKey(left.region).localeCompare(normalizeRegionKey(right.region), 'ru')
+      || normalizeName(left.name).localeCompare(normalizeName(right.name), 'ru'));
+  const unpublishedRows = inactive.filter(notary => !allTransfers.some(transfer => transferBelongsToNotary(transfer, notary)));
+  const totalPages = Math.max(1, Math.ceil(unpublishedRows.length / limit));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * limit;
+
+  return {
+    matchedNotaries,
+    transfers,
+    summary: {
+      totalNotaries: rows.length,
+      inactiveTotal: inactive.length,
+      confirmedTransferTotal: allTransfers.length,
+      currentTransferTotal: allTransfers.filter(item => item.current).length,
+      staleTransferTotal: allTransfers.filter(item => !item.current).length,
+      unpublishedTotal: unpublishedRows.length,
+    },
+    unpublished: {
+      items: unpublishedRows.slice(start, start + limit),
+      total: unpublishedRows.length,
+      page: safePage,
+      totalPages,
+      limit,
+    },
+  };
 }
 
 module.exports = {
   CHAMBER_IDS,
+  buildArchiveTransfers,
   clean,
   extractArchiveTransfer,
   findArchiveDirectory,
@@ -133,4 +181,5 @@ module.exports = {
   normalizeName,
   normalizeRegionKey,
   officialChamberUrl,
+  transferBelongsToNotary,
 };
