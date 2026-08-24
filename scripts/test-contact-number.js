@@ -9,7 +9,7 @@ const TEXT_EXTENSIONS = new Set(['.css', '.ejs', '.html', '.js', '.json', '.md',
 const EXPECTED_RAW = '77003097566';
 const EXPECTED_DISPLAY = '+7 (700) 309-75-66';
 const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/message/3EDJVE7JWAUPF1';
-const RETIRED_NUMBER = /(?:\+?7[ ()-]*)?(?:747[ ()-]*995[ ()-]*76[ ()-]*35|775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38)/g;
+const RETIRED_NUMBER = /(?:\+?7[ ()-]*)?(?:747[ ()-]*995[ ()-]*76[ ()-]*35|775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38|700[ ()-]*030[ ()-]*00[ ()-]*24)/g;
 
 function listTextFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
