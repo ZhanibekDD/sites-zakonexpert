@@ -1,7 +1,8 @@
 <%
 const q = String(query || '').trim();
+const unpublishedPage = directory && directory.unpublished ? Number(directory.unpublished.page) || 1 : 1;
 const pageTitle = 'Замена нотариуса в Казахстане — кому передан архив | ZakonExpert';
-const pageDesc = 'Проверка прекратившего деятельность нотариуса и поиск нотариуса, которому официально передан архив. Ежедневная сверка с реестром ЕНИС.';
+const pageDesc = 'Проверка прекратившего деятельность нотариуса, подтверждённых передач архива и записей, где хранитель публично не указан. Ежедневная сверка с ЕНИС.';
 const canonical = 'https://zakonexpertt.kz/zamena-notariusa';
 const schema = {
   '@context': 'https://schema.org',
@@ -18,8 +19,7 @@ const schema = {
     'query-input': 'required name=notary_name',
   },
 };
-const body = '<link rel="stylesheet" href="/css/notary-archive.css?v=20260823-1">'
-  + include('../partials/notary-archive-body', { query: q, directory, lastUpdated, chambers });
+const body = include('../partials/notary-archive-body', { query: q, directory, lastUpdated, chambers });
 %>
 <%- include('../news/layout', {
   title: pageTitle,
@@ -28,6 +28,7 @@ const body = '<link rel="stylesheet" href="/css/notary-archive.css?v=20260823-1"
   ogType: 'website',
   ogImage: null,
   schema,
-  noindex: Boolean(q),
+  noindex: Boolean(q || unpublishedPage > 1),
+  extraStyles: ['/css/notary-archive.css?v=20260823-1', '/css/notary-archive-directory.css?v=20260824-1'],
   body,
 }) %>
