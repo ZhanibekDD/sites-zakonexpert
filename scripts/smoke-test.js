@@ -148,6 +148,7 @@ async function run() {
       '/mediator',
       '/services',
       '/contact',
+      '/sms-1414',
       '/dokumenty',
       '/rezultaty',
       '/notaries',
@@ -182,6 +183,8 @@ async function run() {
       '/img/rezultaty/instagram-2025-09-22-111346.webp',
       '/img/rezultaty/instagram-2025-09-22-118723.webp',
       '/img/rezultaty/instagram-2025-09-22-chsi-5388.webp',
+      '/js/sms-analyzer.js',
+      '/css/sms-analyzer.css',
     ];
     for (const route of routes) await expectGet(route);
     for (const catalog of ['/courts', '/mfo', '/lombards', '/collectors']) {

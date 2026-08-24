@@ -13,6 +13,7 @@ async function run() {
   assert(hub.includes('Проверки и юридические калькуляторы'));
   assert(hub.includes('https://zakonexpertt.kz/tools'));
   assert(hub.includes('/tools/payment-plan'));
+  assert(hub.includes('/sms-1414') && hub.includes('Расшифровка SMS с 1414'));
   assert(hub.includes('/calculator'));
   assert(hub.includes('/proverka-kontragenta'));
   assert(hub.includes('/diagnostika-aresta'));

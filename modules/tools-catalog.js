@@ -9,6 +9,13 @@ const TOOLS = [
     applicationCategory: 'LegalApplication',
   },
   {
+    slug: 'sms-1414-analyzer', href: '/sms-1414', icon: 'bi-chat-square-text',
+    title: 'Расшифровка SMS с 1414', short: 'Разбор SMS 1414',
+    description: 'Вставьте уведомление без ИИН и кодов: браузерный помощник определит вид документа и покажет безопасный маршрут проверки.',
+    actionLabel: 'Расшифровать уведомление',
+    applicationCategory: 'LegalApplication',
+  },
+  {
     slug: 'counterparty-check', href: '/proverka-kontragenta', icon: 'bi-shield-check',
     title: 'Проверка контрагента по БИН', short: 'Проверка по БИН',
     description: 'Единый отчёт по данным КГД: регистрация, налоги, НДС, задолженность и неблагоприятные признаки.',
