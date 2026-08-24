@@ -1,0 +1,152 @@
+<%
+function titleCase(value) {
+  return String(value || '').toLowerCase().split(' ').map(function(word) {
+    return word ? word[0].toUpperCase() + word.slice(1) : '';
+  }).join(' ');
+}
+function formatDate(value, withTime) {
+  if (!value) return 'ещё не выполнялась';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'дата не указана';
+  return date.toLocaleString('ru-RU', {
+    timeZone: 'Asia/Almaty',
+    day: '2-digit', month: 'long', year: 'numeric',
+    hour: withTime ? '2-digit' : undefined,
+    minute: withTime ? '2-digit' : undefined,
+  });
+}
+const typeInfo = {
+  added: { icon: 'bi-person-plus', label: 'Новая запись', className: 'is-added' },
+  status: { icon: 'bi-shield-exclamation', label: 'Статус изменён', className: 'is-status' },
+  updated: { icon: 'bi-pencil-square', label: 'Данные изменены', className: 'is-updated' },
+  removed: { icon: 'bi-person-dash', label: 'Нет в новой выгрузке', className: 'is-removed' },
+};
+function changeDescription(change) {
+  if (change.type === 'added') return 'Запись появилась в новой официальной выгрузке ЕНИС.';
+  if (change.type === 'status') return change.status === 'stopped'
+    ? 'В новой выгрузке указано прекращение деятельности.'
+    : 'Запись снова отмечена как действующая.';
+  if (change.type === 'removed') return 'Запись отсутствует в последней выгрузке. Это не доказывает прекращение деятельности — статус необходимо перепроверить в ЕНИС или нотариальной палате.';
+  const labels = Array.isArray(change.changedLabels) ? change.changedLabels : [];
+  return labels.length ? ('Изменились: ' + labels.join(', ') + '.') : 'В официальной записи изменились сведения.';
+}
+const activeType = filters.type || '';
+const activeRegion = filters.region || '';
+const totalChanges = stats.added + stats.status + stats.updated + stats.removed;
+%>
+<div class="registry-changes">
+  <section class="registry-changes__hero">
+    <div class="registry-changes__container">
+      <nav class="registry-changes__breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a><i class="bi bi-chevron-right"></i>
+        <a href="/notaries">Нотариусы</a><i class="bi bi-chevron-right"></i>
+        <span>Изменения реестра</span>
+      </nav>
+      <div class="registry-changes__hero-grid">
+        <div>
+          <span class="registry-changes__eyebrow"><i class="bi bi-arrow-repeat"></i> Автоматическая сверка ЕНИС</span>
+          <h1>Изменения в реестре нотариусов Казахстана</h1>
+          <p>Система сравнивает официальные выгрузки и фиксирует новые записи, изменения статуса, адресов, контактов, режима работы и сведений о передаче архивов.</p>
+        </div>
+        <div class="registry-changes__trust">
+          <i class="bi bi-database-check"></i>
+          <div><strong>Последняя проверка</strong><span><%= formatDate(history.checkedAt, true) %></span></div>
+          <a href="https://enis.kz/NotarySearch" target="_blank" rel="noopener">Открыть источник <i class="bi bi-box-arrow-up-right"></i></a>
+        </div>
+      </div>
+      <div class="registry-changes__facts">
+        <span><i class="bi bi-calendar-check"></i> Сверка каждый день</span>
+        <span><i class="bi bi-shield-check"></i> Защита от ложных массовых изменений</span>
+        <span><i class="bi bi-clock-history"></i> Сохраняется история</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="registry-changes__content">
+    <div class="registry-changes__container">
+      <section class="registry-changes__stats" aria-label="Статистика изменений">
+        <a href="/notaries/changes?type=added" class="is-added"><i class="bi bi-person-plus"></i><span><strong><%= stats.added %></strong><small>новых записей</small></span></a>
+        <a href="/notaries/changes?type=status" class="is-status"><i class="bi bi-shield-exclamation"></i><span><strong><%= stats.status %></strong><small>изменений статуса</small></span></a>
+        <a href="/notaries/changes?type=updated" class="is-updated"><i class="bi bi-pencil-square"></i><span><strong><%= stats.updated %></strong><small>обновлений данных</small></span></a>
+        <a href="/notaries/changes?type=removed" class="is-removed"><i class="bi bi-person-dash"></i><span><strong><%= stats.removed %></strong><small>нет в новой выгрузке</small></span></a>
+      </section>
+
+      <section class="registry-changes__toolbar" aria-label="Фильтры реестра">
+        <div>
+          <span>История изменений</span>
+          <h2><%= activeType || activeRegion ? 'Результаты фильтра' : 'Последние изменения' %></h2>
+          <p><%= changes.length %> показано · <%= totalChanges %> сохранено</p>
+        </div>
+        <form method="get" action="/notaries/changes">
+          <label><span>Тип</span>
+            <select name="type">
+              <option value="">Все изменения</option>
+              <option value="added"<%= activeType === 'added' ? ' selected' : '' %>>Новые записи</option>
+              <option value="status"<%= activeType === 'status' ? ' selected' : '' %>>Статус</option>
+              <option value="updated"<%= activeType === 'updated' ? ' selected' : '' %>>Обновление данных</option>
+              <option value="removed"<%= activeType === 'removed' ? ' selected' : '' %>>Нет в выгрузке</option>
+            </select>
+          </label>
+          <label><span>Регион</span>
+            <select name="region">
+              <option value="">Весь Казахстан</option>
+              <% regions.forEach(function(region) { %><option value="<%= region %>"<%= activeRegion === region ? ' selected' : '' %>><%= region %></option><% }); %>
+            </select>
+          </label>
+          <button type="submit"><i class="bi bi-funnel"></i> Показать</button>
+          <% if (activeType || activeRegion) { %><a href="/notaries/changes">Сбросить</a><% } %>
+        </form>
+      </section>
+
+      <% if (!changes.length) { %>
+        <section class="registry-changes__empty">
+          <i class="bi bi-hourglass-split"></i>
+          <h2><%= history.changes.length ? 'По этому фильтру изменений нет' : 'Система истории подключена' %></h2>
+          <p><%= history.changes.length ? 'Сбросьте фильтр или выберите другой регион.' : 'Первые подтверждённые изменения появятся после следующей автоматической сверки с ЕНИС.' %></p>
+          <a href="/notaries">Перейти в каталог нотариусов</a>
+        </section>
+      <% } else { %>
+        <div class="registry-changes__timeline">
+          <% changes.forEach(function(change) {
+            const info = typeInfo[change.type] || typeInfo.updated;
+            const searchHref = change.profileSlug
+              ? '/notary/' + change.profileSlug
+              : '/notary-search#fio=' + encodeURIComponent(change.name || '');
+          %>
+            <article class="registry-change <%= info.className %>">
+              <div class="registry-change__marker"><i class="bi <%= info.icon %>"></i></div>
+              <div class="registry-change__body">
+                <div class="registry-change__top">
+                  <span class="registry-change__type"><%= info.label %></span>
+                  <time datetime="<%= change.at %>"><%= formatDate(change.at, true) %></time>
+                </div>
+                <h3><%= titleCase(change.name) %></h3>
+                <p class="registry-change__region"><i class="bi bi-geo-alt"></i> <%= change.region %></p>
+                <p class="registry-change__description"><%= changeDescription(change) %></p>
+                <div class="registry-change__actions">
+                  <a href="<%= searchHref %>"><i class="bi bi-person-vcard"></i> Проверить текущую карточку</a>
+                  <% if (change.type === 'status' || change.type === 'removed') { %>
+                    <a href="/zamena-notariusa?q=<%= encodeURIComponent(change.name || '') %>"><i class="bi bi-archive"></i> Найти держателя архива</a>
+                  <% } %>
+                </div>
+              </div>
+            </article>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <section class="registry-changes__notice">
+        <i class="bi bi-info-circle"></i>
+        <div><strong>Как правильно использовать эти сведения</strong><p>Страница показывает различия между выгрузками ЕНИС, а не юридическое решение о статусе нотариуса. Перед подачей документов перепроверьте карточку в ЕНИС и сведения территориальной нотариальной палаты.</p></div>
+      </section>
+
+      <section class="registry-changes__cta">
+        <div><span>Нотариус прекратил деятельность?</span><h2>Найдём, кому передан архив</h2><p>Введите ФИО нотариуса или отправьте документ специалисту ZakonExpert.</p></div>
+        <div>
+          <a href="/zamena-notariusa"><i class="bi bi-search"></i> Проверить архив</a>
+          <a href="https://wa.me/77003097566?text=<%= encodeURIComponent('Здравствуйте! Нотариус прекратил деятельность. Хочу узнать, кому передан архив и как отменить исполнительную надпись.') %>" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать в WhatsApp</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

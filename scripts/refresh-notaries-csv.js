@@ -3,9 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
-const { writeRegistrySource } = require('../modules/registry-source');
+const { readRegistrySource, writeRegistrySource } = require('../modules/registry-source');
 const { applyNotaryOverride } = require('../modules/notary-overrides');
 const { extractArchiveTransfer } = require('../modules/notary-archive');
+const { buildNotaryChanges, recordNotaryChanges } = require('../modules/notary-changes');
 
 const OUTPUT_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
 const STATUS_PATH = path.join(__dirname, '..', 'data', 'notaries-registry-status.json');
@@ -122,21 +123,40 @@ async function refreshNotariesRegistry() {
   if (rows.length < 5000 || active < 3000) {
     throw new Error(`Проверка полноты не пройдена: всего ${rows.length}, действующих ${active}`);
   }
-  writeRegistrySource(OUTPUT_PATH, 'notaries', toRegistryRows(rows), {
+  const checkedAt = new Date().toISOString();
+  const registryRows = toRegistryRows(rows);
+  let previousRows = [];
+  if (fs.existsSync(OUTPUT_PATH)) {
+    previousRows = readRegistrySource(OUTPUT_PATH, 'notaries').records;
+  }
+  const diff = buildNotaryChanges(previousRows, registryRows, checkedAt);
+  writeRegistrySource(OUTPUT_PATH, 'notaries', registryRows, {
     source: 'https://enis.kz/NotarySearch',
   });
+  const changeHistory = recordNotaryChanges(diff, checkedAt);
   fs.writeFileSync(STATUS_PATH, JSON.stringify({
     source: 'https://enis.kz/NotarySearch',
-    checkedAt: new Date().toISOString(),
+    checkedAt,
     chambers: CHAMBERS.length,
     total: rows.length,
     active,
     withPhone,
     withEmail,
     archiveTransfers,
+    changes: diff.summary,
+    publicChangesStored: diff.changes.length,
+    suspiciousDiffRejected: diff.suspicious,
+    changeBaselineCreated: diff.baseline,
   }, null, 2) + '\n', 'utf8');
-  console.log(`[Notaries] Saved ${rows.length}: active=${active}, phone=${withPhone}, email=${withEmail}, archiveTransfers=${archiveTransfers}`);
-  return { total: rows.length, active, withPhone, withEmail, archiveTransfers };
+  console.log(`[Notaries] Saved ${rows.length}: active=${active}, phone=${withPhone}, email=${withEmail}, archiveTransfers=${archiveTransfers}, changes=${diff.changes.length}`);
+  return {
+    total: rows.length, active, withPhone, withEmail, archiveTransfers,
+    changes: diff.summary,
+    publicChangesStored: diff.changes.length,
+    changeHistoryTotal: changeHistory.changes.length,
+    suspiciousDiffRejected: diff.suspicious,
+    changeBaselineCreated: diff.baseline,
+  };
 }
 
 if (require.main === module) {

@@ -65,6 +65,14 @@ var verifiedDate = catalog.lastUpdated
           <% if (catalog.analyticsEvent) { %>data-product-event="<%= catalog.analyticsEvent %>" data-event-target="catalog-whatsapp" data-event-cta="catalog_toolbar" data-source-entity-type="<%= catalog.type %>"<% } %>><i class="bi bi-whatsapp"></i> Бесплатная консультация</a>
       </section>
 
+      <% if (catalog.type === 'notary') { %>
+        <a class="professional-catalog__registry-pulse" href="/notaries/changes">
+          <span><i class="bi bi-arrow-repeat"></i></span>
+          <span><strong>Что изменилось в реестре нотариусов</strong><small>Новые записи, прекращение деятельности, контакты и передача архивов — автоматическая сверка с ЕНИС</small></span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      <% } %>
+
       <% if (!catalog.region) { %>
         <div class="professional-catalog__heading">
           <h2>Выберите регион</h2>

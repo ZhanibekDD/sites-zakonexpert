@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const ejs = require('ejs');
 const { buildNotaries, validEmail } = require('./import-notaries');
@@ -20,6 +21,11 @@ const {
   nameLikelyMatches,
   officialChamberUrl,
 } = require('../modules/notary-archive');
+const {
+  buildNotaryChanges,
+  readNotaryChanges,
+  recordNotaryChanges,
+} = require('../modules/notary-changes');
 
 const sample = `
 <table border="1">
@@ -63,6 +69,36 @@ assert.deepStrictEqual(
 assert.deepStrictEqual(extractArchiveTransfer('четверг — архивный день').names, [], 'archive workday must not become a transfer');
 assert.ok(nameLikelyMatches('Акбурушова Гульнара', 'Акбурушовой Гульнары Жалгасовны'), 'declined Russian names must match');
 assert.strictEqual(officialChamberUrl('Актюбинская область'), 'https://enis.kz/Notary/NotaryByChamber/2');
+
+const registryBefore = [
+  ['город Астана', '1', 'ИВАНОВ ИВАН ИВАНОВИЧ', '25000001', '01.01.2025', 'Астана, Кунаева, 1', '+7 700 000 00 01', 'ivanov@mail.kz', '09:00–18:00'],
+  ['город Астана', '2', 'СИДОРОВ СИДОР СИДОРОВИЧ', '25000002', '02.01.2025', 'Астана, Кунаева, 2', '+7 700 000 00 02', 'sidorov@mail.kz', '09:00–18:00'],
+];
+const registryAfter = [
+  ['город Астана', '1', 'ИВАНОВ ИВАН ИВАНОВИЧ', 'Деятельность прекращена', '01.01.2025', 'Астана, Кунаева, 1', '+7 700 000 00 01', 'ivanov@mail.kz', '09:00–18:00'],
+  ['город Астана', '2', 'ПЕТРОВ ПЕТР ПЕТРОВИЧ', '25000003', '03.01.2025', 'Астана, Кунаева, 3', '+7 700 000 00 03', 'petrov@mail.kz', '10:00–19:00'],
+];
+const registryDiff = buildNotaryChanges(registryBefore, registryAfter, '2026-08-24T03:15:00.000Z');
+assert.deepStrictEqual(registryDiff.summary, { added: 1, status: 1, updated: 0, removed: 1 });
+assert.strictEqual(registryDiff.suspicious, false, 'small legitimate registry diff must be publishable');
+assert.strictEqual(registryDiff.changes.length, 3);
+assert.ok(registryDiff.changes.some(change => change.type === 'status' && change.status === 'stopped'));
+const initialBaseline = buildNotaryChanges([], registryAfter, '2026-08-24T03:15:00.000Z');
+assert.strictEqual(initialBaseline.baseline, true, 'first complete snapshot must become a baseline');
+assert.strictEqual(initialBaseline.changes.length, 0, 'first snapshot must not publish every notary as newly added');
+const suspiciousRows = Array.from({ length: 250 }, (_, index) => [
+  'город Астана', String(index + 1), `ТЕСТОВЫЙ НОТАРИУС ${index + 1}`,
+  String(26000000 + index), '01.01.2026', 'Астана', '', '', '09:00–18:00',
+]);
+const suspiciousDiff = buildNotaryChanges(suspiciousRows, [], '2026-08-24T03:15:00.000Z');
+assert.strictEqual(suspiciousDiff.suspicious, true, 'mass structural churn must be rejected');
+assert.strictEqual(suspiciousDiff.changes.length, 0, 'rejected churn must never enter the public feed');
+const changesTempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ze-notary-changes-'));
+const changesTempFile = path.join(changesTempDir, 'history.json');
+const storedChanges = recordNotaryChanges(registryDiff, '2026-08-24T03:15:00.000Z', changesTempFile);
+assert.strictEqual(storedChanges.changes.length, 3, 'accepted registry changes must persist');
+assert.strictEqual(readNotaryChanges(changesTempFile).latestChangeAt, '2026-08-24T03:15:00.000Z');
+fs.rmSync(changesTempDir, { recursive: true, force: true });
 
 const publicDir = path.join(__dirname, '..', 'public');
 const registryNavFiles = fs.readdirSync(publicDir)
@@ -141,6 +177,7 @@ assert.strictEqual(
   assert.ok(catalogHtml.includes('/img/regions/ulytau.webp'));
   assert.ok(catalogHtml.includes('href="/notaries/astana"'), 'catalog must link to stable regional URLs');
   assert.ok(!catalogHtml.includes('/notaries?region='), 'known ENIS regions must not use query-parameter URLs');
+  assert.ok(catalogHtml.includes('href="/notaries/changes"'), 'notary catalog must expose the registry change feed');
 
   const astanaRegion = getNotaryRegionBySlug('astana');
   const astanaNotaries = notaries.filter(item => item.region === astanaRegion.sourceName);
@@ -203,6 +240,8 @@ assert.strictEqual(
   assert.ok(server.includes('if (requestedPage > totalPages) return sendNotFound(res)'),
     'out-of-range regional pagination must return a real 404 instead of looking like the last page');
   assert.ok(server.includes('return res.redirect(301, normalizedPath)'), 'non-canonical page parameters must redirect');
+  assert.ok(server.includes("app.get('/notaries/changes'"), 'registry changes page route is missing');
+  assert.ok(server.includes('<loc>https://zakonexpertt.kz/notaries/changes</loc>'), 'registry changes page must enter the notary sitemap after it has data');
   assert.ok(notariesDbSource.includes('.sort({ name: 1 }).skip(skip).limit(limit)'), 'database pagination must happen before rendering');
   assert.ok(server.includes('<loc>https://zakonexpertt.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
   assert.ok(regionalLanding.includes('href="${city.notaryPath}"'), 'regional arrest pages must link to clean notary URLs');
@@ -236,6 +275,33 @@ assert.strictEqual(
   assert.match(archiveHtml, /Обновление каждый день/);
   assert.match(archiveHtml, /Актуально/);
   assert.match(archiveHtml, /Перепроверить/);
+
+  const viewChanges = registryDiff.changes.map((change, index) => ({
+    ...change,
+    profileSlug: index === 0 ? 'petrov-petr-petrovich' : '',
+  }));
+  const changesHtml = await ejs.renderFile(
+    path.join(__dirname, '..', 'views', 'notary', 'changes.ejs'),
+    {
+      history: {
+        source: 'https://enis.kz/NotarySearch',
+        checkedAt: '2026-08-24T03:15:00.000Z',
+        latestChangeAt: '2026-08-24T03:15:00.000Z',
+        changes: viewChanges,
+      },
+      changes: viewChanges,
+      stats: registryDiff.summary,
+      filters: { type: '', region: '' },
+      regions: ['город Астана'],
+      noindex: false,
+    },
+  );
+  assert.match(changesHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/changes">/);
+  assert.match(changesHtml, /Автоматическая сверка ЕНИС/);
+  assert.match(changesHtml, /Сверка каждый день/);
+  assert.match(changesHtml, /Это не доказывает прекращение деятельности/);
+  assert.match(changesHtml, /href="\/zamena-notariusa\?q=/);
+  assert.doesNotMatch(changesHtml, /noindex,follow/, 'populated base change feed must be indexable');
 
   console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
 })().catch(error => {

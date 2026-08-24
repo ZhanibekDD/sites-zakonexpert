@@ -1,0 +1,41 @@
+<%
+const pageTitle = 'Изменения в реестре нотариусов Казахстана | ZakonExpert';
+const pageDesc = 'Автоматическая сверка реестра нотариусов ЕНИС: новые записи, изменения статуса, контактов, адресов, режима работы и передачи архивов.';
+const canonical = 'https://zakonexpertt.kz/notaries/changes';
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: pageTitle,
+  description: pageDesc,
+  url: canonical,
+  dateModified: history.latestChangeAt || history.checkedAt || undefined,
+  inLanguage: 'ru-KZ',
+  mainEntity: {
+    '@type': 'ItemList',
+    numberOfItems: changes.length,
+    itemListElement: changes.slice(0, 100).map(function(change, index) {
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: change.name + ' — ' + change.region,
+        url: change.profileSlug
+          ? 'https://zakonexpertt.kz/notary/' + change.profileSlug
+          : 'https://zakonexpertt.kz/zamena-notariusa?q=' + encodeURIComponent(change.name),
+      };
+    }),
+  },
+};
+const body = '<link rel="stylesheet" href="/css/notary-changes.css?v=20260824-1">'
+  + include('../partials/notary-changes-body', { history, changes, stats, filters, regions });
+%>
+<%- include('../news/layout', {
+  title: pageTitle,
+  description: pageDesc,
+  canonical,
+  ogType: 'website',
+  ogImage: null,
+  schema,
+  noindex,
+  enableAutoAds: false,
+  body,
+}) %>
