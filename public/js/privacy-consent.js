@@ -126,10 +126,43 @@
     footer.appendChild(button);
   }
 
+  // Keep the dedicated client reviews page visible in every legacy header
+  // that uses the shared ZakonExpert navigation markup.
+  function addReviewsNavLink() {
+    var nav = document.querySelector('[data-nav-links]');
+    if (!nav || nav.querySelector('[data-nav-reviews]')) return;
+
+    var item = document.createElement('li');
+    item.setAttribute('data-nav-reviews', '');
+    var link = document.createElement('a');
+    link.className = 'nav-link ze-reviews-nav-link';
+    link.href = '/reviews';
+    link.textContent = 'Отзывы';
+    if (window.location.pathname === '/reviews' || window.location.pathname === '/reviews.html') {
+      link.classList.add('active');
+    }
+    item.appendChild(link);
+
+    var resultItem = Array.prototype.find.call(nav.children, function (candidate) {
+      var candidateLink = candidate.querySelector(':scope > .nav-link');
+      return candidateLink && candidateLink.textContent.trim() === 'Результаты';
+    });
+    if (resultItem) resultItem.insertAdjacentElement('afterend', item);
+    else {
+      var contactItem = Array.prototype.find.call(nav.children, function (candidate) {
+        var candidateLink = candidate.querySelector(':scope > .nav-link');
+        return candidateLink && candidateLink.textContent.trim() === 'Контакты';
+      });
+      if (contactItem) nav.insertBefore(item, contactItem);
+      else nav.appendChild(item);
+    }
+  }
+
   var style = document.createElement('style');
   style.textContent = '#ze-privacy-banner{position:fixed;z-index:10050;left:18px;right:18px;bottom:18px;max-width:980px;margin:auto;padding:18px 20px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:#0d1f3c;color:#fff;box-shadow:0 18px 55px rgba(2,12,27,.38);display:flex;align-items:center;justify-content:space-between;gap:20px;font-family:Arial,sans-serif}'
     + '.ze-privacy-banner__copy{display:grid;gap:5px;line-height:1.45}.ze-privacy-banner__copy strong{font-size:1rem}.ze-privacy-banner__copy span{font-size:.84rem;color:rgba(255,255,255,.76)}.ze-privacy-banner__copy a{color:#f1c75b}'
     + '.ze-privacy-banner__actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.ze-privacy-banner__actions button,.ze-privacy-settings{border:1px solid rgba(255,255,255,.28);border-radius:9px;background:transparent;color:inherit;padding:9px 13px;font-weight:700;cursor:pointer}.ze-privacy-banner__actions .is-primary{background:#d7a742;border-color:#d7a742;color:#102033}.ze-privacy-settings{padding:0;border:0;text-decoration:underline;font-size:inherit;color:inherit;opacity:.75}'
+    + '.ze-reviews-nav-link{position:relative}.ze-reviews-nav-link::after{content:"";position:absolute;left:14px;right:14px;bottom:5px;height:2px;border-radius:999px;background:#d7a742;opacity:.9}'
     + '@media(max-width:720px){#ze-privacy-banner{align-items:stretch;flex-direction:column;left:10px;right:10px;bottom:10px;padding:16px}.ze-privacy-banner__actions{justify-content:stretch}.ze-privacy-banner__actions button{flex:1;min-width:130px}}';
   document.head.appendChild(style);
 
@@ -141,6 +174,7 @@
   };
 
   document.addEventListener('DOMContentLoaded', function () {
+    addReviewsNavLink();
     addSettingsButton();
     if (currentChoice) applyChoice();
     else showBanner();
