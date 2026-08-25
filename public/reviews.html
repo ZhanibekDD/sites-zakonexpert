@@ -14,7 +14,7 @@
   <meta property="og:url" content="https://zakonexpertt.kz/reviews">
   <meta property="og:title" content="Отзывы клиентов ZakonExpert — реальные кейсы">
   <meta property="og:description" content="Что было сделано по обращениям клиентов: документы, подача и реальные отзывы. Личные данные скрыты.">
-  <meta property="og:image" content="https://zakonexpertt.kz/img/reviews/credit-history-dispute-2026-08.webp">
+  <meta property="og:image" content="https://zakonexpertt.kz/img/reviews/pkb-dispute-screen.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -35,9 +35,12 @@
     .reviews-intro h2{font-size:clamp(1.6rem,3vw,2.35rem);font-weight:900;color:#0d1f3c;margin:0 0 8px}
     .reviews-intro p{margin:0;color:#667085;max-width:720px}
     .case-card{background:#fff;border:1px solid #e1e7ef;border-radius:24px;overflow:hidden;box-shadow:0 12px 35px rgba(13,31,60,.07)}
-    .case-card__grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(330px,.98fr)}
-    .case-card__media{background:#eef3f8;min-height:100%;display:flex;align-items:center}
-    .case-card__media img{width:100%;height:100%;object-fit:cover;display:block}
+    .case-card__grid{display:block}
+    .case-screenshots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;padding:0 34px 34px}
+    .case-screenshot{margin:0;border:1px solid #e1e7ef;border-radius:16px;overflow:hidden;background:#f8fafc}
+    .case-screenshot a{display:block;background:#eef3f8}
+    .case-screenshot img{display:block;width:100%;height:auto;object-fit:contain}
+    .case-screenshot figcaption{padding:10px 12px;color:#667085;font-size:.78rem;line-height:1.4}
     .case-card__body{padding:34px}
     .case-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
     .case-pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 11px;background:#eef4ff;color:#24558d;font-size:.78rem;font-weight:800}
@@ -58,8 +61,8 @@
     .reviews-cta h2{font-size:1.45rem;font-weight:900;margin:0 0 7px}
     .reviews-cta p{margin:0;color:rgba(255,255,255,.7)}
     .reviews-cta a{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;background:#25d366;color:#fff;text-decoration:none;font-weight:800;border-radius:12px;padding:12px 18px}
-    @media(max-width:900px){.case-card__grid{grid-template-columns:1fr}.case-card__media{max-height:none}.reviews-intro{align-items:start;flex-direction:column}.reviews-cta{align-items:flex-start;flex-direction:column}}
-    @media(max-width:600px){.reviews-hero{padding:54px 0 40px}.reviews-section{padding:38px 0 58px}.case-card__body{padding:24px 20px}.case-card{border-radius:18px}}
+    @media(max-width:900px){.case-screenshots{grid-template-columns:1fr}.reviews-intro{align-items:start;flex-direction:column}.reviews-cta{align-items:flex-start;flex-direction:column}}
+    @media(max-width:600px){.reviews-hero{padding:54px 0 40px}.reviews-section{padding:38px 0 58px}.case-card__body{padding:24px 20px}.case-screenshots{padding:0 20px 24px;gap:14px}.case-card{border-radius:18px}}
   </style>
 </head>
 <body>
@@ -120,11 +123,6 @@
 
       <article class="case-card" id="credit-history-dispute-2026-08">
         <div class="case-card__grid">
-          <div class="case-card__media">
-            <img src="/img/reviews/credit-history-dispute-2026-08.webp"
-                 alt="Обезличенный кейс ZakonExpert: оспаривание данных в кредитной истории, документы и отзыв клиента"
-                 width="720" height="900" loading="eager">
-          </div>
           <div class="case-card__body">
             <div class="case-meta">
               <span class="case-pill"><i class="bi bi-database-check"></i> Кредитная история / ПКБ</span>
@@ -148,7 +146,34 @@
               <small>Отзыв клиента после подготовки и подачи документов</small>
             </blockquote>
 
-            <p class="case-note">Статус на момент публикации: обращения поданы, ожидается официальный ответ и проверка сведений. Карточка будет обновлена после появления подтверждённого результата. Идентификаторы договора, ИИН и другие персональные данные на изображении скрыты.</p>
+            <p class="case-note">Статус на момент публикации: обращения поданы, ожидается официальный ответ и проверка сведений. Карточка будет обновлена после появления подтверждённого результата. Идентификаторы договора, ИИН и другие персональные данные на изображениях скрыты.</p>
+          </div>
+
+          <div class="case-screenshots">
+            <figure class="case-screenshot">
+              <a href="/img/reviews/pkb-dispute-screen.webp" target="_blank" rel="noopener">
+                <img src="/img/reviews/pkb-dispute-screen.webp" alt="Скриншот текста оспаривания в кредитном бюро" width="725" height="900" loading="eager">
+              </a>
+              <figcaption>Оспаривание в кредитном бюро</figcaption>
+            </figure>
+            <figure class="case-screenshot">
+              <a href="/img/reviews/personal-data-complaint-1.webp" target="_blank" rel="noopener">
+                <img src="/img/reviews/personal-data-complaint-1.webp" alt="Скриншот подготовленного обращения по персональным данным" width="900" height="584" loading="lazy">
+              </a>
+              <figcaption>Подготовленное официальное обращение</figcaption>
+            </figure>
+            <figure class="case-screenshot">
+              <a href="/img/reviews/personal-data-complaint-2.webp" target="_blank" rel="noopener">
+                <img src="/img/reviews/personal-data-complaint-2.webp" alt="Скриншот продолжения официального обращения" width="900" height="542" loading="lazy">
+              </a>
+              <figcaption>Продолжение обращения и приложения</figcaption>
+            </figure>
+            <figure class="case-screenshot">
+              <a href="/img/reviews/client-feedback-whatsapp.webp" target="_blank" rel="noopener">
+                <img src="/img/reviews/client-feedback-whatsapp.webp" alt="Скриншот отзыва клиента в WhatsApp после подачи" width="900" height="362" loading="lazy">
+              </a>
+              <figcaption>Отзыв клиента после подачи</figcaption>
+            </figure>
           </div>
         </div>
       </article>
