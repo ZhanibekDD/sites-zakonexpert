@@ -15,6 +15,16 @@
       ],
       "reason": "data_subject_correction_request",
       "effectiveDate": "2026-08-19"
+    },
+    "240840020011": {
+      "suppressFields": [
+        "leader"
+      ],
+      "suppressContacts": [
+        "77767200052"
+      ],
+      "reason": "data_subject_request",
+      "effectiveDate": "2026-08-26"
     }
   }
 }
