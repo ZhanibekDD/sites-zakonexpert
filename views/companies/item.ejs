@@ -202,6 +202,7 @@ const consultationText = encodeURIComponent(
 );
 const consultationHref = 'https://wa.me/77003097566?text=' + consultationText;
 const sourceNotice = official ? copy.officialNotice : copy.directoryNotice;
+const officialSourceHref = 'https://data.egov.kz/datasets/view?index=gbd_ul';
 const languageLinks = languages.map(function(language) {
   return { ...language, href: language.companyHref };
 });
@@ -216,7 +217,7 @@ const relatedHelpHtml = '<section style="background:#fff;border:1px solid #dbe4f
 
 const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb"><a href="/">' + esc(copy.home) + '</a><span class="npage-bc-sep">/</span><a href="' + companyCatalogPath + '">' + esc(copy.companies) + '</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
-  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(official ? copy.officialBadge : copy.directoryBadge) + '</span></div>'
+  + '<section class="npage-hero"><div class="npage-badges"><span class="npage-badge">' + esc(official ? 'Данные из официального источника' : copy.directoryBadge) + '</span></div>'
   + '<h1 class="npage-h1" style="max-width:1050px;">' + esc(name) + '</h1>'
   + (company.bin ? '<p style="font-size:1.08rem;color:#1a56db;font-weight:700;margin-top:10px;">' + esc(copy.bin) + ' ' + esc(company.bin) + '</p>' : '') + '</section>'
   + correctionHtml
@@ -224,6 +225,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<div><div class="company-info-card"><h2 class="company-info-card__title">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
   + contactHtml + addressesHtml + aliasesHtml + categoriesHtml + relatedHelpHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
+  + (official ? ' <a href="' + esc(officialSourceHref) + '" target="_blank" rel="noopener noreferrer" style="color:#1a56db;font-weight:650;">Источник: data.egov.kz — gbd_ul</a>.' : '')
   + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'
   + '<aside style="display:grid;gap:14px;">'
   + '<div style="background:' + statusStyle.bg + ';border:1px solid ' + statusStyle.border + ';border-radius:14px;padding:18px;"><h2 style="font-size:.96rem;color:#0d1f3c;">' + esc(copy.status) + '</h2>'
