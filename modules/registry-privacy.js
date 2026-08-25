@@ -14,17 +14,44 @@ function registryRule(registry, recordId) {
   return registryOverrides[String(recordId || '').trim()] || null;
 }
 
+function suppressedContacts(registry, recordId) {
+  const rule = registryRule(registry, recordId);
+  if (!rule || !Array.isArray(rule.suppressContacts)) return new Set();
+  return new Set(rule.suppressContacts.map(normalizeContact).filter(Boolean));
+}
+
 function isRegistryContactSuppressed(registry, recordId, value) {
   const normalized = normalizeContact(value);
   if (!normalized) return false;
-  const rule = registryRule(registry, recordId);
-  return Boolean(rule && Array.isArray(rule.suppressContacts)
-    && rule.suppressContacts.some(contact => normalizeContact(contact) === normalized));
+  return suppressedContacts(registry, recordId).has(normalized);
 }
 
 function hasRegistryContactSuppressions(registry, recordId) {
-  const rule = registryRule(registry, recordId);
-  return Boolean(rule && Array.isArray(rule.suppressContacts) && rule.suppressContacts.length);
+  return suppressedContacts(registry, recordId).size > 0;
+}
+
+function stripSuppressedContactsFromText(registry, recordId, value) {
+  if (value === null || value === undefined) return value;
+  const blocked = suppressedContacts(registry, recordId);
+  if (!blocked.size) return value;
+
+  let text = String(value).replace(/\+?\d[\d\s().-]{5,}\d/g, match => {
+    const normalized = normalizeContact(match);
+    return normalized && blocked.has(normalized) ? '' : match;
+  });
+
+  // Official/open-data address fields sometimes contain a phone suffix such
+  // as ", тел. +7(...)". Once the suppressed number is removed, do not leave
+  // a misleading empty contact label or broken punctuation behind.
+  text = text
+    .replace(/(?:,\s*)?(?:тел(?:ефон)?\.?|моб(?:ильный)?\.?)\s*:?\s*(?=$|[,;])/giu, '')
+    .replace(/\s+([,;])/g, '$1')
+    .replace(/([,;])(?:\s*[,;])+/g, '$1')
+    .replace(/[,;]\s*$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  return text;
 }
 
 function applyRegistryPrivacyOverride(registry, record) {
@@ -44,6 +71,11 @@ function applyRegistryPrivacyOverride(registry, record) {
       contact?.normalized || contact?.value
     ));
   }
+  for (const [field, value] of Object.entries(sanitized)) {
+    if (typeof value === 'string') {
+      sanitized[field] = stripSuppressedContactsFromText(registry, record.bin, value);
+    }
+  }
   return sanitized;
 }
 
@@ -51,4 +83,5 @@ module.exports = {
   applyRegistryPrivacyOverride,
   hasRegistryContactSuppressions,
   isRegistryContactSuppressed,
+  stripSuppressedContactsFromText,
 };
