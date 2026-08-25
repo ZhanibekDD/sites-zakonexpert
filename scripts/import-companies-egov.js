@@ -14,6 +14,7 @@ const { companySlug } = require('../modules/company-slug');
 const { detectRegion } = require('../modules/company-region');
 const { normalizeCompanyName } = require('../modules/company-name-normalize');
 const { buildSearchAliases } = require('../modules/company-transliterate');
+const { applyRegistryPrivacyOverride } = require('../modules/registry-privacy');
 const {
   currentRowsCanBeReconciled,
   qualityNeedsBackfill,
@@ -233,8 +234,12 @@ function insertRows(db, rows, importedAt) {
   db.exec('BEGIN');
   try {
     for (const raw of rows) {
-      const company = normalizeCompanyRow(raw);
-      if (!company) continue;
+      const normalized = normalizeCompanyRow(raw);
+      if (!normalized) continue;
+      // Apply data-subject/privacy overrides before persistence, not only at
+      // render time. This prevents a later targeted or full official import
+      // from re-storing a specifically suppressed leader/contact value.
+      const company = applyRegistryPrivacyOverride('companies', normalized);
       const withRegionSlug = withRegion(company);
       const quality = evaluateCompany(withRegionSlug);
       statement.run(
