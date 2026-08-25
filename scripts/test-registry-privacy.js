@@ -58,4 +58,26 @@ assert.deepStrictEqual(
 );
 assert.strictEqual(company.name, 'ДАН GRОUP COMPANY', 'company identity must be preserved');
 
+const VEGA_BIN = '240840020011';
+const vega = applyRegistryPrivacyOverride('companies', {
+  bin: VEGA_BIN,
+  name: 'Товарищество с ограниченной ответственностью "VEGA-M"',
+  leader: 'Disputed person',
+  address_ru: '110000, Костанайская область, город Костанай, ул. И.Алтынсарина, зд. 133, тел. +7(776)720-00-52',
+  activity_ru: 'Предоставление прочих индивидуальных услуг',
+  contacts: [
+    { type: 'mobile_phone', value: '+7 (776) 720-00-52', normalized: '+77767200052' },
+  ],
+});
+assert.strictEqual(vega.leader, '', 'VEGA-M leader must stay suppressed after future imports');
+assert.strictEqual(
+  vega.address_ru,
+  '110000, Костанайская область, город Костанай, ул. И.Алтынсарина, зд. 133',
+  'suppressed phone must also be removed when embedded in the legal address'
+);
+assert.deepStrictEqual(vega.contacts, [], 'VEGA-M disputed phone must not be returned as a contact');
+assert.strictEqual(vega.bin, VEGA_BIN, 'VEGA-M company identity must remain public');
+assert.match(vega.name, /VEGA-M/, 'VEGA-M company name must remain public');
+assert.match(vega.activity_ru, /индивидуальных услуг/, 'VEGA-M business activity must remain public');
+
 console.log('Registry privacy correction OK');
