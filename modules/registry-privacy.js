@@ -9,6 +9,10 @@ function normalizeContact(value) {
   return digits.length >= 7 && digits.length <= 15 ? digits : '';
 }
 
+function normalizeFieldValue(value) {
+  return String(value == null ? '' : value).replace(/\s+/g, ' ').trim().toUpperCase();
+}
+
 function registryRule(registry, recordId) {
   const registryOverrides = overrides[registry] || {};
   return registryOverrides[String(recordId || '').trim()] || null;
@@ -63,6 +67,11 @@ function applyRegistryPrivacyOverride(registry, record) {
   const sanitized = { ...record };
   for (const field of rule.suppressFields || []) {
     if (Object.prototype.hasOwnProperty.call(sanitized, field)) sanitized[field] = '';
+  }
+  for (const [field, values] of Object.entries(rule.suppressFieldValues || {})) {
+    if (!Object.prototype.hasOwnProperty.call(sanitized, field) || !Array.isArray(values)) continue;
+    const current = normalizeFieldValue(sanitized[field]);
+    if (current && values.some(value => normalizeFieldValue(value) === current)) sanitized[field] = '';
   }
   if (Array.isArray(sanitized.contacts)) {
     sanitized.contacts = sanitized.contacts.filter(contact => !isRegistryContactSuppressed(
