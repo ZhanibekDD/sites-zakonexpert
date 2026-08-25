@@ -17,9 +17,11 @@
       "effectiveDate": "2026-08-19"
     },
     "240840020011": {
-      "suppressFields": [
-        "leader"
-      ],
+      "suppressFieldValues": {
+        "leader": [
+          "МАЛАХОВА МАРИНА ВАЛЕРЬЕВНА"
+        ]
+      },
       "suppressContacts": [
         "77767200052"
       ],
