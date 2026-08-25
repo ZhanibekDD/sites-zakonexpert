@@ -3,6 +3,9 @@
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+const { DatabaseSync } = require('node:sqlite');
+const { createSchema } = require('../modules/companies-schema');
+const { insertRows } = require('./import-companies-egov');
 const {
   applyRegistryPrivacyOverride,
   isRegistryContactSuppressed,
@@ -91,5 +94,30 @@ assert.strictEqual(
   'САХАРОВА ТАТЬЯНА ЗАБИШАХОВНА',
   'a future different official leader must not be hidden by the current request'
 );
+
+const database = new DatabaseSync(':memory:');
+createSchema(database);
+insertRows(database, [{
+  id: '309373765',
+  bin: VEGA_BIN,
+  nameru: 'Товарищество с ограниченной ответственностью "VEGA-M"',
+  registerdate: '2024-08-16+05:00',
+  addressru: '110000, Костанайская область, город Костанай, ул. И.Алтынсарина, зд. 133, тел. +7(776)720-00-52',
+  okedru: 'ПРЕДОСТАВЛЕНИЕ ПРОЧИХ ИНДИВИДУАЛЬНЫХ УСЛУГ, НЕ ВКЛЮЧЕННЫХ В ДРУГИЕ ГРУППИРОВКИ',
+  fio: 'МАЛАХОВА МАРИНА ВАЛЕРЬЕВНА',
+  statusru: 'Зарегистрирован',
+}], 'privacy-test');
+const persistedVega = database.prepare(
+  'SELECT bin, name_ru, leader, address_ru FROM companies WHERE id = ?'
+).get(309373765);
+assert.strictEqual(persistedVega.bin, VEGA_BIN, 'VEGA-M BIN must still be persisted');
+assert.match(persistedVega.name_ru, /VEGA-M/, 'VEGA-M organization identity must still be persisted');
+assert.strictEqual(persistedVega.leader, '', 'suppressed leader must not be persisted by the eGov importer');
+assert.strictEqual(
+  persistedVega.address_ru,
+  '110000, Костанайская область, город Костанай, ул. И.Алтынсарина, зд. 133',
+  'suppressed embedded phone must not be persisted by the eGov importer'
+);
+database.close();
 
 console.log('Registry privacy correction OK');
