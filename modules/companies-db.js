@@ -6,6 +6,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { companySlug } = require('./company-slug');
 const { REGIONS, regionLabel } = require('./company-region');
 const { evaluateCompany, QUALITY_VERSION } = require('./company-quality');
+const { applyCompanyCorrection } = require('./company-corrections');
 const { isGenericLegalFormName } = require('./company-name-normalize');
 const { contactValues, normalizePhoneDigits } = require('./company-details-normalize');
 const { hydrateDetails: hydrateCompactDetails } = require('./company-details-store');
@@ -176,8 +177,9 @@ function sourceMetadata(company) {
 
 function decorateCompany(company) {
   if (!company) return null;
+  const corrected = applyCompanyCorrection(company);
   const sanitized = sanitizeCompanyContactFields(
-    applyRegistryPrivacyOverride('companies', company)
+    applyRegistryPrivacyOverride('companies', corrected)
   );
   const source = sourceMetadata(sanitized);
   return {
