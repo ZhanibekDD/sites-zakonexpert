@@ -1,0 +1,80 @@
+<% const isWaitlist = dataset.kind === 'housing_waitlist'; %>
+<% const dateLabel = isWaitlist ? 'Даты постановки на учёт' : 'Даты предоставления жилья'; %>
+<% const maxCategory = dataset.categories.length ? dataset.categories[0].count : 1; %>
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><a href="/zhilishchnye-spiski">Жилищные списки</a><span>/</span><a href="<%= isWaitlist ? '/zhilishchnye-spiski/ochered-na-zhile' : '/zhilishchnye-spiski/poluchili-zhile' %>"><%= isWaitlist ? 'Очередь' : 'Получили жильё' %></a><span>/</span><span><%= dataset.regionName %></span></nav>
+
+    <header class="od-detail-hero">
+      <div class="od-detail-hero__main">
+        <span class="od-eyebrow"><i class="bi bi-patch-check-fill"></i> Официальный набор · <%= dataset.updateFrequency %></span>
+        <h1><%= isWaitlist ? 'Очередь на жильё' : 'Список получивших жильё' %> в <%= dataset.regionPrepositional %></h1>
+        <p><%= dataset.description %> Фамилии не перепубликуются: ниже — категории, программы и населённые пункты без персональных записей.</p>
+      </div>
+      <div class="od-source-seal"><i class="bi bi-bank"></i><span>Источник</span><strong>data.egov.kz</strong></div>
+    </header>
+
+    <div class="od-kpi-grid">
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-list-ol"></i></span><strong><%= recordCountLabel(dataset) %></strong><small>записей в срезе</small></div>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-people"></i></span><strong><%= dataset.categories.length %></strong><small>категорий граждан</small></div>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-calendar3"></i></span><strong><%= formatDate(dataset.updatedAt) %></strong><small>обновление источника</small></div>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-shield-check"></i></span><strong>Без ФИО</strong><small>обезличенная публикация</small></div>
+    </div>
+
+    <% if (dataset.rowLimitReached) { %>
+      <div class="od-data-alert"><i class="bi bi-info-circle"></i><div><strong>В предоставленном файле достигнут лимит 100 строк.</strong><p>Поэтому это не утверждение о полном количестве граждан в регионе. Цифра обозначена как «не менее», а полный официальный список доступен по ссылке на источник.</p></div></div>
+    <% } %>
+
+    <div class="od-detail-grid">
+      <section class="od-chart-card" aria-labelledby="od-category-title">
+        <div class="od-card-heading"><div><span class="od-kicker">Распределение</span><h2 id="od-category-title">Категории граждан</h2></div><span><%= formatNumber(dataset.rowCount) %> записей</span></div>
+        <% dataset.categories.forEach(function(item) { %>
+          <div class="od-bar-row"><div class="od-bar-row__label"><span><%= item.label %></span><strong><%= formatNumber(item.count) %></strong></div><div class="od-bar"><i style="width:<%= Math.max(3, Math.round(item.count / maxCategory * 100)) %>%"></i></div></div>
+        <% }); %>
+      </section>
+
+      <aside class="od-source-card">
+        <span class="od-kicker">Источник и актуальность</span><h2>Паспорт набора</h2>
+        <dl>
+          <div><dt>Государственный орган</dt><dd><%= dataset.agency %></dd></div>
+          <div><dt>Дата размещения</dt><dd><%= formatDate(dataset.publishedAt) %></dd></div>
+          <div><dt>Дата обновления</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div>
+          <div><dt><%= dateLabel %></dt><dd><%= dataset.dateRange.from ? formatDate(dataset.dateRange.from) + ' — ' + formatDate(dataset.dateRange.to) : 'Не указаны' %></dd></div>
+          <div><dt>Актуализация</dt><dd><%= dataset.updateFrequency %></dd></div>
+        </dl>
+        <a class="od-btn od-btn--source" href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">Открыть официальный набор <i class="bi bi-box-arrow-up-right"></i></a>
+        <a class="od-meta-link" href="<%= dataset.metaUrl %>" target="_blank" rel="noopener noreferrer nofollow">Метаинформация API</a>
+      </aside>
+    </div>
+
+    <% if (!isWaitlist && dataset.programs.length) { const maxProgram = dataset.programs[0].count || 1; %>
+      <section class="od-section" aria-labelledby="od-programs-title">
+        <div class="od-section__heading"><div><span class="od-kicker">Программы</span><h2 id="od-programs-title">По каким программам предоставлено жильё</h2></div></div>
+        <div class="od-program-grid">
+          <% dataset.programs.forEach(function(item) { %><div class="od-program"><span><i style="width:<%= Math.max(4, Math.round(item.count / maxProgram * 100)) %>%"></i></span><strong><%= item.label %></strong><b><%= formatNumber(item.count) %></b></div><% }); %>
+        </div>
+      </section>
+    <% } %>
+
+    <% if (isWaitlist && dataset.localities.length) { %>
+      <section class="od-section" aria-labelledby="od-localities-title">
+        <div class="od-section__heading"><div><span class="od-kicker">География</span><h2 id="od-localities-title">Населённые пункты в срезе</h2></div></div>
+        <div class="od-chip-cloud"><% dataset.localities.forEach(function(item) { %><span><b><%= item.label %></b><small><%= formatNumber(item.count) %></small></span><% }); %></div>
+      </section>
+    <% } %>
+
+    <section class="od-section" aria-labelledby="od-check-title">
+      <div class="od-how-check">
+        <div><span class="od-kicker">Проверка записи</span><h2 id="od-check-title">Как проверить себя в официальном списке</h2><p>Перейдите на data.egov.kz, откройте вкладку данных и воспользуйтесь фильтром набора. ZakonExpert не принимает решения о постановке на учёт или предоставлении жилья.</p></div>
+        <ol><li><span>1</span>Откройте официальный набор</li><li><span>2</span>Используйте поиск или фильтры</li><li><span>3</span>За статусом решения обратитесь в Отбасы банк или акимат</li></ol>
+      </div>
+    </section>
+
+    <section class="od-related" aria-labelledby="od-related-title">
+      <div class="od-section__heading"><div><span class="od-kicker">Другие регионы</span><h2 id="od-related-title">Сравнить данные</h2></div><a class="od-switch-link" href="<%= isWaitlist ? '/zhilishchnye-spiski/ochered-na-zhile' : '/zhilishchnye-spiski/poluchili-zhile' %>">Все регионы →</a></div>
+      <div class="od-related__links"><% related.forEach(function(item) { %><a href="<%= item.path %>"><span><i class="bi bi-geo-alt"></i> <%= item.regionName %></span><b><%= recordCountLabel(item) %> →</b></a><% }); %></div>
+    </section>
+
+    <aside class="od-legal-cta"><div><span class="od-kicker">Нужна правовая оценка?</span><h2>Не согласны с решением по жилищному вопросу</h2><p>Разберём документы и подскажем возможный порядок обращения. Без обещаний результата до изучения ситуации.</p></div><a href="https://wa.me/77003097566?text=%D0%9D%D1%83%D0%B6%D0%BD%D0%B0%20%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8F%20%D0%BF%D0%BE%20%D0%B6%D0%B8%D0%BB%D0%B8%D1%89%D0%BD%D0%BE%D0%BC%D1%83%20%D0%B2%D0%BE%D0%BF%D1%80%D0%BE%D1%81%D1%83" target="_blank" rel="noopener" class="od-btn od-btn--gold"><i class="bi bi-whatsapp"></i> Написать юристу</a></aside>
+  </div>
+</section>

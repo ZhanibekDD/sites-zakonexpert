@@ -1,0 +1,37 @@
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><span>Государственный сектор</span></nav>
+    <header class="od-hero od-hero--compact">
+      <div class="od-hero__copy">
+        <span class="od-eyebrow"><i class="bi bi-bank2"></i> Категория data.egov.kz</span>
+        <h1>Открытые данные государственного сектора</h1>
+        <p>Автоматически обновляемый каталог официальных наборов: жилищные списки, аудит, земельные участки, проверки, лицензии, государственное имущество и другие сведения.</p>
+        <div class="od-stat-ribbon"><span><b><%= datasets.length %></b> наборов в каталоге</span><span><b><%= formatNumber(totalRows) %><% if (partial) { %>+<% } %></b> записей обработано</span><span><b><%= readyCount %></b> наборов с данными</span></div>
+      </div>
+    </header>
+
+    <div class="od-data-alert"><i class="bi bi-arrow-repeat"></i><div><strong>Каталог обновляется автоматически</strong><p>Система получает перечень опубликованных наборов из служебного JSON-endpoint портала, определяет текущую версию по паспорту и обходит все страницы официального API. Пустая или ограниченная первая страница не считается полным набором.</p></div></div>
+
+    <section class="od-section" aria-labelledby="od-sector-catalog">
+      <div class="od-section__heading"><div><span class="od-kicker">Все наборы</span><h2 id="od-sector-catalog">Каталог государственного сектора</h2></div><span class="od-freshness">Источник: data.egov.kz</span></div>
+      <div class="od-catalog-toolbar">
+        <label for="od-catalog-search">Найти набор по теме или государственному органу
+          <input id="od-catalog-search" type="search" placeholder="Например: жильё, аудит, земельные участки" autocomplete="off" data-od-catalog-search>
+        </label>
+        <output data-od-catalog-count><%= datasets.length %> из <%= datasets.length %> наборов</output>
+      </div>
+      <div class="od-dataset-grid">
+        <% datasets.forEach(function(dataset) { %>
+          <article class="od-dataset-card<% if (!dataset.hasData) { %> od-dataset-card--empty<% } %>" data-od-dataset-card data-od-search="<%= [dataset.title, dataset.description, dataset.agency].join(' ').toLocaleLowerCase('ru') %>">
+            <div class="od-dataset-card__top"><span class="od-source-badge"><i class="bi bi-patch-check-fill"></i> официальный</span><span class="od-status<% if (!dataset.hasData) { %> od-status--waiting<% } %>"><%= dataset.hasData ? recordCountLabel(dataset) + ' записей' : 'ожидается импорт' %></span></div>
+            <h3><a href="<%= dataset.path %>"><%= dataset.title %></a></h3>
+            <p><%= dataset.description %></p>
+            <dl class="od-meta-inline"><div><dt>Орган</dt><dd><%= dataset.agency %></dd></div><div><dt>Обновлено</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div></dl>
+            <a class="od-text-link" href="<%= dataset.path %>">Открыть набор <span>→</span></a>
+          </article>
+        <% }); %>
+      </div>
+      <p class="od-catalog-empty" data-od-catalog-empty hidden>По этому запросу наборов не найдено. Попробуйте более короткую формулировку.</p>
+    </section>
+  </div>
+</section>

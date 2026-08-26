@@ -1,0 +1,1118 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-26T00:48:58.678Z",
+  "source": "data.egov.kz",
+  "privacy": "aggregate-only-no-personal-records",
+  "datasets": {
+    "audit-commissions-2026-q2": {
+      "key": "audit-commissions-2026-q2",
+      "kind": "audit",
+      "rowCount": 14,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "indicators": [
+        {
+          "order": 1,
+          "title": "Количество аудиторских и экспертно-аналитических мероприятий",
+          "value": "110",
+          "unit": "ед."
+        },
+        {
+          "order": 2,
+          "title": "Количество объектов, охваченных государственным аудитом",
+          "value": "910",
+          "unit": "ед."
+        },
+        {
+          "order": 3,
+          "title": "Объем средств, охваченный государственным аудитом, в том числе:",
+          "value": "2025237805.7",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 4,
+          "title": "республиканский бюджет",
+          "value": "179762230.90000001",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 5,
+          "title": "местный бюджет",
+          "value": "1845475574.8",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 6,
+          "title": "Всего установленных нарушений норм законодательства РК, а также актов субъектов квазигосударственного сектора, в том числе:",
+          "value": "938567473.20000005",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 7,
+          "title": "финансовые нарушения, из них:",
+          "value": "192093007.09999999",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 8,
+          "title": "при ведении бухгалтерского учета",
+          "value": "157470378.40000001",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 9,
+          "title": "искажение финансовой отчетности",
+          "value": "347451150.30000001",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 10,
+          "title": "неэффективно использованные бюджетные средства, активы государства",
+          "value": "168408307.59999999",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 11,
+          "title": "неэффективное планирование",
+          "value": "230615008.19999999",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 12,
+          "title": "Объем восстановленных и возмещенных средств, в том числе:",
+          "value": "691315754.5",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 13,
+          "title": "подлежащих востановлению",
+          "value": "682153645.39999998",
+          "unit": "тыс.тенге"
+        },
+        {
+          "order": 14,
+          "title": "подлежащих возмещению",
+          "value": "9162109.0999999996",
+          "unit": "тыс.тенге"
+        }
+      ]
+    },
+    "children-rehabilitation-alatau-2026-h1": {
+      "key": "children-rehabilitation-alatau-2026-h1",
+      "kind": "rehabilitation",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false
+    },
+    "housing-received-akmola": {
+      "key": "housing-received-akmola",
+      "kind": "housing_received",
+      "rowCount": 58,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "categories": [
+        {
+          "label": "Многодетные семьи, имеющие 4 и более несовершеннолетних детей",
+          "count": 25
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 12
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 6
+        },
+        {
+          "label": "Неполная семья",
+          "count": 4
+        },
+        {
+          "label": "Без категории",
+          "count": 3
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 3
+        },
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 2
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 2
+        },
+        {
+          "label": "Ветераны, приравненные по льготам к ветеранам Великой Отечественной войны",
+          "count": 1
+        }
+      ],
+      "programs": [
+        {
+          "label": "МГП 2-10-20",
+          "count": 38
+        },
+        {
+          "label": "МГП 5-10-20",
+          "count": 19
+        },
+        {
+          "label": "Арендное жилье",
+          "count": 1
+        }
+      ],
+      "localities": [
+        {
+          "label": "Не указано",
+          "count": 58
+        }
+      ],
+      "dateRange": {
+        "from": "2026-04-01",
+        "to": "2026-06-24"
+      }
+    },
+    "housing-received-shymkent": {
+      "key": "housing-received-shymkent",
+      "kind": "housing_received",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "(РШЭП) Государственные служащие, работники бюджетных организаций, военнослужащие, кандидаты в космонавты, космонавты и лица, занимающие государственные выборные должности",
+          "count": 38
+        },
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 35
+        },
+        {
+          "label": "Неполная семья",
+          "count": 15
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 5
+        },
+        {
+          "label": "Вдовы (вдовцы)",
+          "count": 2
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 2
+        },
+        {
+          "label": "Ветераны, приравненные по льготам к ветеранам Великой Отечественной войны",
+          "count": 1
+        },
+        {
+          "label": "Военнослужащие",
+          "count": 1
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 1
+        }
+      ],
+      "programs": [
+        {
+          "label": "МГП 5-10-20",
+          "count": 92
+        },
+        {
+          "label": "МГП 2-10-20",
+          "count": 5
+        },
+        {
+          "label": "Арендное жилье",
+          "count": 3
+        }
+      ],
+      "localities": [
+        {
+          "label": "Не указано",
+          "count": 100
+        }
+      ],
+      "dateRange": {
+        "from": "2026-04-09",
+        "to": "2026-06-30"
+      }
+    },
+    "housing-received-mangystau": {
+      "key": "housing-received-mangystau",
+      "kind": "housing_received",
+      "rowCount": 19,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "categories": [
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 8
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 4
+        },
+        {
+          "label": "Неполная семья",
+          "count": 3
+        },
+        {
+          "label": "Многодетные семьи, имеющие 4 и более несовершеннолетних детей",
+          "count": 2
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 1
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 1
+        }
+      ],
+      "programs": [
+        {
+          "label": "Арендное жилье",
+          "count": 19
+        }
+      ],
+      "localities": [
+        {
+          "label": "Не указано",
+          "count": 19
+        }
+      ],
+      "dateRange": {
+        "from": "2026-05-12",
+        "to": "2026-05-25"
+      }
+    },
+    "housing-received-kyzylorda": {
+      "key": "housing-received-kyzylorda",
+      "kind": "housing_received",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "Неполная семья",
+          "count": 59
+        },
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 13
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 11
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 9
+        },
+        {
+          "label": "Вдовы (вдовцы)",
+          "count": 3
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 3
+        },
+        {
+          "label": "Ветераны, приравненные по льготам к ветеранам Великой Отечественной войны",
+          "count": 1
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 1
+        }
+      ],
+      "programs": [
+        {
+          "label": "Арендное жилье",
+          "count": 85
+        },
+        {
+          "label": "МГП 5-10-20",
+          "count": 15
+        }
+      ],
+      "localities": [
+        {
+          "label": "Не указано",
+          "count": 100
+        }
+      ],
+      "dateRange": {
+        "from": "2026-04-07",
+        "to": "2026-06-29"
+      }
+    },
+    "housing-waitlist-akmola": {
+      "key": "housing-waitlist-akmola",
+      "kind": "housing_waitlist",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "Многодетные семьи, имеющие 4 и более несовершеннолетних детей",
+          "count": 28
+        },
+        {
+          "label": "Неполная семья",
+          "count": 26
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 21
+        },
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 9
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 6
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 5
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 2
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 2
+        },
+        {
+          "label": "Граждане Республики Казахстан, единственное жилище которых признано аварийным в порядке, установленном законодательством Республики Казахстан",
+          "count": 1
+        }
+      ],
+      "localities": [
+        {
+          "label": "Кокшетау",
+          "count": 63
+        },
+        {
+          "label": "Ерейментауский Район",
+          "count": 8
+        },
+        {
+          "label": "Буландынский Район",
+          "count": 7
+        },
+        {
+          "label": "Степногорск",
+          "count": 6
+        },
+        {
+          "label": "Шортандинский Район",
+          "count": 5
+        },
+        {
+          "label": "Бурабайский Район",
+          "count": 4
+        },
+        {
+          "label": "Есильский Район",
+          "count": 3
+        },
+        {
+          "label": "Аршалынский Район",
+          "count": 2
+        },
+        {
+          "label": "Атбасарский Район",
+          "count": 1
+        },
+        {
+          "label": "Сандыктауский Район",
+          "count": 1
+        }
+      ],
+      "dateRange": {
+        "from": "1991-03-20",
+        "to": "2019-07-11"
+      }
+    },
+    "housing-waitlist-almaty": {
+      "key": "housing-waitlist-almaty",
+      "kind": "housing_waitlist",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 48
+        },
+        {
+          "label": "Неполная семья",
+          "count": 19
+        },
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 12
+        },
+        {
+          "label": "Многодетные семьи, имеющие 4 и более несовершеннолетних детей",
+          "count": 8
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 7
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 4
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 1
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 1
+        }
+      ],
+      "localities": [
+        {
+          "label": "Алматы",
+          "count": 100
+        }
+      ],
+      "dateRange": {
+        "from": "2008-02-18",
+        "to": "2019-06-15"
+      }
+    },
+    "housing-waitlist-kostanay": {
+      "key": "housing-waitlist-kostanay",
+      "kind": "housing_waitlist",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 28
+        },
+        {
+          "label": "Неполная семья",
+          "count": 27
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 22
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 11
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 7
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 2
+        },
+        {
+          "label": "(РШЭП) Государственные служащие, работники бюджетных организаций, военнослужащие, кандидаты в космонавты, космонавты и лица, занимающие государственные выборные должности",
+          "count": 1
+        },
+        {
+          "label": "Многодетные семьи, имеющие 4 и более несовершеннолетних детей",
+          "count": 1
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 1
+        }
+      ],
+      "localities": [
+        {
+          "label": "Костанай",
+          "count": 59
+        },
+        {
+          "label": "Костанайский Район",
+          "count": 18
+        },
+        {
+          "label": "Рудный",
+          "count": 8
+        },
+        {
+          "label": "Аулиекольский Район",
+          "count": 4
+        },
+        {
+          "label": "Житикаринский Район",
+          "count": 4
+        },
+        {
+          "label": "Карасуский Район",
+          "count": 2
+        },
+        {
+          "label": "Мендыкаринский Район",
+          "count": 2
+        },
+        {
+          "label": "Амангельдинский Район",
+          "count": 1
+        },
+        {
+          "label": "Аркалык",
+          "count": 1
+        },
+        {
+          "label": "Лисаковск",
+          "count": 1
+        }
+      ],
+      "dateRange": {
+        "from": "2002-10-29",
+        "to": "2016-11-16"
+      }
+    },
+    "housing-waitlist-ulytau": {
+      "key": "housing-waitlist-ulytau",
+      "kind": "housing_waitlist",
+      "rowCount": 100,
+      "hasData": true,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": true,
+      "categories": [
+        {
+          "label": "Работники бюджетных организаций",
+          "count": 27
+        },
+        {
+          "label": "Неполная семья",
+          "count": 24
+        },
+        {
+          "label": "Дети-сироты, дети, оставшиеся без попечения родителей",
+          "count": 18
+        },
+        {
+          "label": "Лица с инвалидностью первой и второй группы",
+          "count": 18
+        },
+        {
+          "label": "Пенсионеры по возрасту",
+          "count": 5
+        },
+        {
+          "label": "Государственный служащий",
+          "count": 3
+        },
+        {
+          "label": "Военнослужащие",
+          "count": 2
+        },
+        {
+          "label": "Семьи, имеющие или воспитывающие детей с инвалидностью",
+          "count": 2
+        },
+        {
+          "label": "Ветераны, приравненные по льготам к ветеранам Великой Отечественной войны",
+          "count": 1
+        }
+      ],
+      "localities": [
+        {
+          "label": "Сатпаев",
+          "count": 46
+        },
+        {
+          "label": "Жезказган",
+          "count": 42
+        },
+        {
+          "label": "Каражал",
+          "count": 8
+        },
+        {
+          "label": "Жанааркинский Район",
+          "count": 4
+        }
+      ],
+      "dateRange": {
+        "from": "2005-09-29",
+        "to": "2015-03-12"
+      }
+    },
+    "government-sector-opendata-api-uri1768549985464": {
+      "key": "government-sector-opendata-api-uri1768549985464",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-turkistan_oblysy_boiynsha_turg4": {
+      "key": "government-sector-turkistan_oblysy_boiynsha_turg4",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-inzhuotarbayevamailru": {
+      "key": "government-sector-inzhuotarbayevamailru",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1766583358239": {
+      "key": "government-sector-opendata-api-uri1766583358239",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1766570630780": {
+      "key": "government-sector-opendata-api-uri1766570630780",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1766564964464": {
+      "key": "government-sector-opendata-api-uri1766564964464",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-almaty_kalasy_boiynsha_kommuna": {
+      "key": "government-sector-almaty_kalasy_boiynsha_kommuna",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1759232493183": {
+      "key": "government-sector-opendata-api-uri1759232493183",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1759232238010": {
+      "key": "government-sector-opendata-api-uri1759232238010",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-turkistan_oblysy_boiynsha_komm": {
+      "key": "government-sector-turkistan_oblysy_boiynsha_komm",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-soltustik_kazakstan_oblysy_boi1": {
+      "key": "government-sector-soltustik_kazakstan_oblysy_boi1",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-pavlodar_oblysy_boiynsha_kommu": {
+      "key": "government-sector-pavlodar_oblysy_boiynsha_kommu",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-kostanai_oblysy_boiynsha_kommu": {
+      "key": "government-sector-kostanai_oblysy_boiynsha_kommu",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-karagandy_oblysy_boiynsha_komm": {
+      "key": "government-sector-karagandy_oblysy_boiynsha_komm",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-zhetisu_oblysy_boiynsha_kommun": {
+      "key": "government-sector-zhetisu_oblysy_boiynsha_kommun",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-shygys_kazakstan_oblysy_boiyns": {
+      "key": "government-sector-shygys_kazakstan_oblysy_boiyns",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-zhambyl_oblysy_boiynsha_kommun": {
+      "key": "government-sector-zhambyl_oblysy_boiynsha_kommun",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-batys_kazakstan_oblysy_boiynsh53": {
+      "key": "government-sector-batys_kazakstan_oblysy_boiynsh53",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri1000": {
+      "key": "government-sector-opendata-api-uri1000",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri999": {
+      "key": "government-sector-opendata-api-uri999",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri998": {
+      "key": "government-sector-opendata-api-uri998",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri997": {
+      "key": "government-sector-opendata-api-uri997",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri988": {
+      "key": "government-sector-opendata-api-uri988",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-kyzylorda_oblysy_boiynsha_turg": {
+      "key": "government-sector-kyzylorda_oblysy_boiynsha_turg",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-atyrau_oblysy_boiynsha_turgynz": {
+      "key": "government-sector-atyrau_oblysy_boiynsha_turgynz",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-soltustik_kazakstan_oblysy_boi": {
+      "key": "government-sector-soltustik_kazakstan_oblysy_boi",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri987": {
+      "key": "government-sector-opendata-api-uri987",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri986": {
+      "key": "government-sector-opendata-api-uri986",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-shymkent_kalasy_boiynsha_turgy": {
+      "key": "government-sector-shymkent_kalasy_boiynsha_turgy",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-batys_kazakstan_oblysy_boiynsh52": {
+      "key": "government-sector-batys_kazakstan_oblysy_boiynsh52",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri985": {
+      "key": "government-sector-opendata-api-uri985",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-mangystau_oblysy_boiynsha_turg3": {
+      "key": "government-sector-mangystau_oblysy_boiynsha_turg3",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-astana_kalasy_boiynsha_turgynz": {
+      "key": "government-sector-astana_kalasy_boiynsha_turgynz",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-almaty_oblysy_boiynsha_turgynz": {
+      "key": "government-sector-almaty_oblysy_boiynsha_turgynz",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-aktobe_oblysy_boiynsha_turgynz": {
+      "key": "government-sector-aktobe_oblysy_boiynsha_turgynz",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-zhambyl_oblysy_boiynsha_turgyn": {
+      "key": "government-sector-zhambyl_oblysy_boiynsha_turgyn",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-578_aktuariiler6": {
+      "key": "government-sector-578_aktuariiler6",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-problemalyk_kreditter_kory_a": {
+      "key": "government-sector-problemalyk_kreditter_kory_a",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-opendata-api-uri951": {
+      "key": "government-sector-opendata-api-uri951",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-zhobalar_men_zertteuler_turaly": {
+      "key": "government-sector-zhobalar_men_zertteuler_turaly",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    },
+    "government-sector-605_saktandyru_kaita_saktand": {
+      "key": "government-sector-605_saktandyru_kaita_saktand",
+      "kind": "government_sector",
+      "rowCount": 0,
+      "hasData": false,
+      "completeness": "provided_snapshot",
+      "rowLimitReached": false,
+      "columns": [],
+      "sampleRows": [],
+      "sensitiveColumns": []
+    }
+  },
+  "digest": "f92a003550726777"
+}

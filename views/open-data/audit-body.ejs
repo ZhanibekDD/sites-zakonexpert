@@ -1,0 +1,25 @@
+<% const scope = dataset.indicators.find(function(item){ return item.order === 3; }); %>
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><span>Ревизионные комиссии</span></nav>
+    <header class="od-hero od-hero--audit">
+      <div class="od-hero__copy"><span class="od-eyebrow"><i class="bi bi-clipboard-data"></i> Государственный аудит · 2 квартал 2026</span><h1>Основные показатели деятельности ревизионных комиссий</h1><p>Официальные показатели аудиторских и экспертно-аналитических мероприятий областей, городов республиканского значения и столицы.</p></div>
+      <div class="od-audit-stamp"><span>В срезе</span><strong><%= dataset.indicators.length %></strong><small>показателей</small></div>
+    </header>
+
+    <div class="od-kpi-grid od-kpi-grid--audit">
+      <% dataset.indicators.slice(0, 3).forEach(function(item) { %><div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-graph-up-arrow"></i></span><strong><%= formatNumber(item.value, 1) %></strong><small><%= item.title %> · <%= item.unit %></small></div><% }); %>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-calendar-check"></i></span><strong><%= formatDate(dataset.updatedAt) %></strong><small>обновление источника</small></div>
+    </div>
+
+    <div class="od-detail-grid">
+      <section class="od-table-card" aria-labelledby="od-audit-table-title">
+        <div class="od-card-heading"><div><span class="od-kicker">Все значения</span><h2 id="od-audit-table-title">Показатели за квартал</h2></div></div>
+        <div class="od-table-wrap"><table><thead><tr><th>№</th><th>Показатель</th><th>Значение</th><th>Единица</th></tr></thead><tbody><% dataset.indicators.forEach(function(item) { %><tr><td><%= item.order %></td><td><%= item.title %></td><td><strong><%= formatNumber(item.value, 1) %></strong></td><td><%= item.unit %></td></tr><% }); %></tbody></table></div>
+      </section>
+      <aside class="od-source-card"><span class="od-kicker">Источник и актуальность</span><h2>Паспорт набора</h2><dl><div><dt>Государственный орган</dt><dd><%= dataset.agency %></dd></div><div><dt>Категория</dt><dd><%= dataset.category %></dd></div><div><dt>Период</dt><dd>2 квартал 2026 года</dd></div><div><dt>Дата обновления</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div><div><dt>Актуализация</dt><dd><%= dataset.updateFrequency %></dd></div></dl><a class="od-btn od-btn--source" href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">Открыть официальный набор <i class="bi bi-box-arrow-up-right"></i></a><a class="od-meta-link" href="<%= dataset.metaUrl %>" target="_blank" rel="noopener noreferrer nofollow">Метаинформация API</a></aside>
+    </div>
+
+    <div class="od-data-alert"><i class="bi bi-info-circle"></i><div><strong>Как читать денежные показатели</strong><p>В официальном наборе денежные суммы указаны в тысячах тенге. Здесь единицы измерения сохранены без пересчёта, чтобы значения можно было сверить с первоисточником.</p></div></div>
+  </div>
+</section>

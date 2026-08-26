@@ -1,0 +1,13 @@
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><span><%= dataset.shortTitle %></span></nav>
+    <div class="od-empty">
+      <span class="od-empty__icon"><i class="bi bi-hourglass-split"></i></span>
+      <span class="od-eyebrow">Набор подключён · данные ожидаются</span>
+      <h1><%= dataset.title %></h1>
+      <p>Паспорт набора опубликован, но официальный API пока не вернул ни одной записи. Страница исключена из поисковой индексации до появления содержательных данных и будет обновлена автоматически.</p>
+      <dl><div><dt>Источник</dt><dd><%= dataset.agency %></dd></div><div><dt>Дата обновления паспорта</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div><div><dt>Периодичность</dt><dd><%= dataset.updateFrequency %></dd></div></dl>
+      <div class="od-empty__actions"><a class="od-btn od-btn--source" href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">Проверить источник <i class="bi bi-box-arrow-up-right"></i></a><a class="od-btn od-btn--ghost" href="/otkrytye-dannye">К другим наборам</a></div>
+    </div>
+  </div>
+</section>

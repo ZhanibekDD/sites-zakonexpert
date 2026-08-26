@@ -1,0 +1,73 @@
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><span>Открытые данные</span></nav>
+
+    <header class="od-hero od-hero--main">
+      <div class="od-hero__copy">
+        <span class="od-eyebrow"><i class="bi bi-database-check"></i> Официальные данные Казахстана</span>
+        <h1>Открытые данные — понятно, актуально и без публикации ФИО</h1>
+        <p>Преобразуем государственные наборы в наглядные региональные срезы: жильё, очередь, аудит и социальные показатели. На каждой странице указаны источник, дата обновления и границы данных.</p>
+        <div class="od-hero__actions">
+          <a class="od-btn od-btn--primary" href="/zhilishchnye-spiski">Смотреть жилищные списки</a>
+          <a class="od-btn od-btn--ghost" href="#datasets">Все наборы</a>
+        </div>
+      </div>
+      <div class="od-visual" aria-label="Сводка раздела">
+        <div class="od-visual__orb"><i class="bi bi-bar-chart-line"></i></div>
+        <div class="od-visual__stat"><strong><%= formatNumber(housingReceived.rowCount + housingWaitlist.rowCount) %><% if (housingReceived.partial || housingWaitlist.partial) { %>+<% } %></strong><span>записей в срезах</span></div>
+        <div class="od-visual__stat"><strong><%= housingReceived.datasets.length + housingWaitlist.datasets.length %></strong><span>региональных наборов</span></div>
+        <div class="od-visual__stat"><strong>0</strong><span>ФИО опубликовано</span></div>
+      </div>
+    </header>
+
+    <section class="od-section" aria-labelledby="od-directions-title">
+      <div class="od-section__heading">
+        <div><span class="od-kicker">Навигация</span><h2 id="od-directions-title">Главные направления</h2></div>
+        <span class="od-freshness">Снимок сформирован: <%= formatDate(snapshot.generatedAt) %></span>
+      </div>
+      <div class="od-feature-grid">
+        <a class="od-feature od-feature--housing" href="/zhilishchnye-spiski">
+          <span class="od-feature__icon"><i class="bi bi-house-check"></i></span>
+          <span class="od-feature__body"><strong>Жилищные списки</strong><small>Очередь и получившие жильё по регионам</small></span>
+          <span class="od-feature__metric"><%= housingReceived.datasets.length + housingWaitlist.datasets.length %> наборов</span>
+        </a>
+        <a class="od-feature od-feature--audit" href="<%= audit.path %>">
+          <span class="od-feature__icon"><i class="bi bi-clipboard-data"></i></span>
+          <span class="od-feature__body"><strong>Государственный аудит</strong><small>Показатели ревизионных комиссий</small></span>
+          <span class="od-feature__metric"><%= audit.indicators.length %> показателей</span>
+        </a>
+        <a class="od-feature od-feature--sector" href="/otkrytye-dannye/gosudarstvennyy-sektor">
+          <span class="od-feature__icon"><i class="bi bi-bank2"></i></span>
+          <span class="od-feature__body"><strong>Весь государственный сектор</strong><small>Автоматический каталог всех опубликованных наборов категории</small></span>
+          <span class="od-feature__metric"><%= governmentSector.length %> наборов</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="od-section" id="datasets" aria-labelledby="od-datasets-title">
+      <div class="od-section__heading"><div><span class="od-kicker">Каталог</span><h2 id="od-datasets-title">Подключённые наборы</h2></div></div>
+      <div class="od-dataset-grid">
+        <% datasets.forEach(function(dataset) { %>
+          <article class="od-dataset-card<% if (!dataset.hasData) { %> od-dataset-card--empty<% } %>">
+            <div class="od-dataset-card__top">
+              <span class="od-source-badge"><i class="bi bi-patch-check-fill"></i> data.egov.kz</span>
+              <span class="od-status<% if (!dataset.hasData) { %> od-status--waiting<% } %>"><%= dataset.hasData ? 'Данные получены' : 'Ожидаются данные' %></span>
+            </div>
+            <h3><a href="<%= dataset.path %>"><%= dataset.shortTitle || dataset.title %></a></h3>
+            <p><%= dataset.description %></p>
+            <dl class="od-meta-inline">
+              <div><dt>Орган</dt><dd><%= dataset.agency %></dd></div>
+              <div><dt>Обновлено</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div>
+            </dl>
+            <a class="od-text-link" href="<%= dataset.path %>"><%= dataset.hasData ? 'Открыть срез' : 'Посмотреть статус' %> <span>→</span></a>
+          </article>
+        <% }); %>
+      </div>
+    </section>
+
+    <aside class="od-privacy-note">
+      <span class="od-privacy-note__icon"><i class="bi bi-shield-lock"></i></span>
+      <div><strong>Персональные данные не дублируются</strong><p>Некоторые государственные наборы содержат ФИО. ZakonExpert сохраняет и показывает только агрегированную статистику. Для проверки конкретной записи используйте ссылку на официальный набор.</p></div>
+    </aside>
+  </div>
+</section>

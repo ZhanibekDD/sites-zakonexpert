@@ -15,6 +15,13 @@ logs/
 
 # NeDB database — stays on server
 data/
+# Two privacy-safe open-data files are deployment assets. Raw API responses,
+# local recon-out bundles and databases remain ignored.
+!data/
+data/*
+!data/open-data-government-sector-seed.json
+!data/open-data-snapshots.json
+recon-out/
 
 # OS files
 .DS_Store

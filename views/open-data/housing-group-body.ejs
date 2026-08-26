@@ -1,0 +1,52 @@
+<% const isWaitlist = group.kind === 'housing_waitlist'; %>
+<% const pageTitle = isWaitlist ? 'Очередь на жильё по регионам Казахстана' : 'Списки получивших жильё по регионам Казахстана'; %>
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><a href="/zhilishchnye-spiski">Жилищные списки</a><span>/</span><span><%= isWaitlist ? 'Очередь' : 'Получили жильё' %></span></nav>
+
+    <header class="od-hero od-hero--compact">
+      <div class="od-hero__copy">
+        <span class="od-eyebrow"><i class="bi <%= isWaitlist ? 'bi-person-lines-fill' : 'bi-house-check' %>"></i> Официальные региональные срезы</span>
+        <h1><%= pageTitle %></h1>
+        <p><%= isWaitlist ? 'Сводная статистика по гражданам, состоящим на учёте как нуждающиеся в жилище: категории, населённые пункты и даты постановки на учёт.' : 'Сводная статистика по гражданам, получившим жильё из коммунального жилищного фонда: категории, программы и даты предоставления.' %></p>
+        <div class="od-stat-ribbon">
+          <span><b><%= formatNumber(group.rowCount) %><% if (group.partial) { %>+<% } %></b> записей в срезах</span>
+          <span><b><%= group.datasets.length %></b> региона</span>
+          <span><b><%= group.categories.length %></b> категорий</span>
+        </div>
+      </div>
+    </header>
+
+    <% if (group.partial) { %>
+      <div class="od-data-alert"><i class="bi bi-info-circle"></i><div><strong>Часть файлов содержит первые 100 записей.</strong><p>Поэтому суммарное значение отмечено знаком «+» и не выдаётся за полный размер очереди. После автоматического обновления через API страница покажет полный доступный срез.</p></div></div>
+    <% } %>
+
+    <section class="od-section" aria-labelledby="od-regions-title">
+      <div class="od-section__heading"><div><span class="od-kicker">Регионы</span><h2 id="od-regions-title">Выберите регион</h2></div><a class="od-switch-link" href="<%= isWaitlist ? '/zhilishchnye-spiski/poluchili-zhile' : '/zhilishchnye-spiski/ochered-na-zhile' %>"><%= isWaitlist ? 'К получившим жильё' : 'К очереди на жильё' %> →</a></div>
+      <div class="od-region-grid">
+        <% group.datasets.forEach(function(dataset, index) { %>
+          <a class="od-region-card" href="<%= dataset.path %>">
+            <span class="od-region-card__index"><%= String(index + 1).padStart(2, '0') %></span>
+            <span class="od-region-card__icon"><i class="bi bi-geo-alt"></i></span>
+            <h3><%= dataset.regionName %></h3>
+            <p><strong><%= recordCountLabel(dataset) %></strong> записей в доступном срезе</p>
+            <div class="od-region-card__footer"><span>Обновлено <%= formatDate(dataset.updatedAt) %></span><b>Открыть →</b></div>
+          </a>
+        <% }); %>
+      </div>
+    </section>
+
+    <% if (group.categories.length) { const maxCategory = group.categories[0].count || 1; %>
+      <section class="od-section" aria-labelledby="od-summary-categories">
+        <div class="od-section__heading"><div><span class="od-kicker">Общий срез</span><h2 id="od-summary-categories">Категории в подключённых регионах</h2></div></div>
+        <div class="od-chart-card">
+          <% group.categories.slice(0, 10).forEach(function(item) { %>
+            <div class="od-bar-row"><div class="od-bar-row__label"><span><%= item.label %></span><strong><%= formatNumber(item.count) %></strong></div><div class="od-bar"><i style="width:<%= Math.max(3, Math.round(item.count / maxCategory * 100)) %>%"></i></div></div>
+          <% }); %>
+        </div>
+      </section>
+    <% } %>
+
+    <%- include('privacy-cta') %>
+  </div>
+</section>
