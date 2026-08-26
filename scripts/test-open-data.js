@@ -15,6 +15,7 @@ const {
   refreshOpenDataSnapshot,
 } = require('../modules/open-data-refresh');
 const { parseDatasetPassport } = require('../modules/open-data-catalog');
+const { fetchOpenDataRecords, latestMappingVersion } = require('../modules/open-data-records');
 const {
   fetchHousingRecordsPage,
   normalizeFullName,
@@ -22,6 +23,8 @@ const {
   validateFullName,
 } = require('../modules/open-data-housing-search');
 const openDataPages = require('../modules/open-data-pages');
+const { loadInventory } = require('../modules/open-data-inventory');
+const { syncOpenDataInventory } = require('./sync-open-data-inventory');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -38,9 +41,10 @@ async function run() {
   assert.strictEqual(normalizeFullName('  Касымова, Алия Ерлановна '), 'КАСЫМОВА АЛИЯ ЕРЛАНОВНА');
   assert.strictEqual(validateFullName('Касымова Алия Ерлановна'), 'КАСЫМОВА АЛИЯ ЕРЛАНОВНА');
   assert.strictEqual(validateFullName('Алия'), null);
+  assert.strictEqual(latestMappingVersion({ sample: { mappings: { v2: {}, v11: {}, v3: {} } } }, 'sample'), 'v11');
 
   const housingApiDataset = {
-    key: 'housing-api-test', kind: 'housing_waitlist', title: 'Список граждан, нуждающихся в жилище',
+    key: 'housing-api-test', index: 'housing-api-test', kind: 'housing_waitlist', title: 'Список граждан, нуждающихся в жилище',
     datasetUrl: 'https://data.egov.kz/datasets/view?index=housing-api-test',
     apiUrl: 'https://data.egov.kz/api/v4/housing-api-test/v1', updatedAt: '2026-08-25',
   };
@@ -67,6 +71,36 @@ async function run() {
   assert.strictEqual(housingLookup.results.length, 1);
   assert(housingLookup.results[0].details.some(field => field.label === 'Примечание' && field.value === '№ 42'));
   assert(apiCalls.some(call => JSON.parse(call.options.params.source).query), 'exact FIO search must be sent to the official API');
+
+  const genericRecords = await fetchOpenDataRecords({
+    dataset: {
+      key: 'generic-api-test', index: 'generic-api-test', title: 'Публичный реестр',
+      datasetUrl: 'https://data.egov.kz/datasets/view?index=generic-api-test',
+      apiUrl: 'https://data.egov.kz/api/v4/generic-api-test/v1',
+    },
+    apiKey: 'test-key', query: 'Касымова', limit: 50, http: housingHttp,
+  });
+  assert.strictEqual(genericRecords.rows[0].fio, 'Касымова Алия Ерлановна');
+  assert(!Object.prototype.hasOwnProperty.call(genericRecords.rows[0], 'apiKey'));
+  assert.strictEqual(genericRecords.columns.find(column => column.key === 'fio').label, 'ФИО');
+
+  const dynamicCalls = [];
+  const dynamicHttp = {
+    async get(url) {
+      dynamicCalls.push(url);
+      if (url.includes('/mapping/')) return { data: { 'dynamic-test': { mappings: { v1: {}, v4: {} } } } };
+      return { data: [{ id: 7, name: 'Актуальная запись' }] };
+    },
+  };
+  const dynamicRecords = await fetchOpenDataRecords({
+    dataset: {
+      key: 'catalog-dynamic-test', index: 'dynamic-test', title: 'Динамический набор',
+      datasetUrl: 'https://data.egov.kz/datasets/view?index=dynamic-test',
+    },
+    apiKey: 'test-key', http: dynamicHttp,
+  });
+  assert.strictEqual(dynamicRecords.dataset.version, 'v4');
+  assert(dynamicCalls.some(url => url.endsWith('/api/v4/dynamic-test/v4')), 'latest mapping version must be used for records');
 
   const housing = OPEN_DATA_DATASETS.find(dataset => dataset.key === 'housing-received-akmola');
   const housingSummary = aggregateDataset(housing, [
@@ -112,6 +146,23 @@ async function run() {
     const serialized = JSON.stringify(snapshot);
     assert(serialized.includes('new-public-dataset'));
     assert(!serialized.includes('Секретное Имя'), 'bundle import must not persist personal values');
+
+    const compactOutput = path.join(temporary, 'inventory.json.br');
+    const compact = await syncOpenDataInventory({
+      outputPath: compactOutput,
+      enrichHousing: false,
+      http: {
+        async get(url) {
+          if (url.includes('getdatasetsrecount')) return { data: { totalCount: 2 } };
+          return { data: { datasets: [
+            { apiUri: 'compact-a', nameRu: 'Первый набор', status: 'PUBLISHED', categories: [{ id: 'cat', nameRu: 'Экономика' }], govAgency: { id: 'org', nameRu: 'Орган' } },
+            { apiUri: 'compact-b', nameRu: 'Второй набор', status: 'PUBLISHED', categories: [{ id: 'cat', nameRu: 'Экономика' }], govAgency: { id: 'org', nameRu: 'Орган' } },
+          ] } };
+        },
+      },
+    });
+    assert.strictEqual(compact.processedCount, 2);
+    assert.strictEqual(loadInventory(compactOutput).datasets.length, 2, 'Brotli inventory must round-trip');
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
   }
@@ -122,8 +173,20 @@ async function run() {
   assert(!/"(?:fio|iin)"\s*:/i.test(JSON.stringify(snapshot)));
 
   const sitemap = openDataPages.sitemapEntries();
+  const inventory = openDataPages.loadInventory();
+  assert.strictEqual(inventory.processedCount, inventory.expectedCount, 'complete catalog must match the official count');
+  assert(inventory.processedCount >= 3900, 'complete catalog must include every published portal dataset');
+  assert.strictEqual(openDataPages.listDatasets().length, inventory.processedCount);
+  assert.strictEqual(new Set(openDataPages.listDatasets().map(dataset => dataset.path)).size, inventory.processedCount, 'every dataset path must be unique');
+  assert.strictEqual(openDataPages.categorySummaries().length, 18);
+  assert(openDataPages.agencySummaries().length >= 490);
+  assert.strictEqual(openDataPages.listDatasets('housing_waitlist').length, 20);
+  assert.strictEqual(openDataPages.listDatasets('housing_received').length, 20);
+  assert(openDataPages.officialDataSources().sources.some(source => source.id === 'data-egov' && source.status === 'connected'));
   assert(sitemap.some(entry => entry.path === '/otkrytye-dannye/gosudarstvennyy-sektor'));
-  assert(!sitemap.some(entry => entry.path.includes('reabilitaciya-detey')), 'empty dataset must stay out of sitemap');
+  assert(sitemap.length >= inventory.processedCount, 'every live dataset must have an indexable page');
+  assert(sitemap.some(entry => entry.path === '/zhilishchnye-spiski/poluchili-zhile/almaty'));
+  assert(sitemap.some(entry => entry.path === '/zhilishchnye-spiski/ochered-na-zhile/astana'));
 
   const audit = openDataPages.getDataset('audit-commissions-2026-q2');
   const body = await ejs.renderFile(path.join(ROOT, 'views', 'open-data', 'audit-body.ejs'), {
@@ -139,7 +202,18 @@ async function run() {
   assert(serverSource.includes("app.get('/otkrytye-dannye/gosudarstvennyy-sektor'"));
   assert(serverSource.includes("app.post('/api/open-data/housing-records'"));
   assert(serverSource.includes("app.post('/api/open-data/housing-search'"));
+  assert(serverSource.includes("app.post('/api/open-data/records'"));
+  assert(serverSource.includes("app.get('/otkrytye-dannye/kategorii'"));
+  assert(serverSource.includes("app.get('/otkrytye-dannye/organizacii'"));
+  assert(serverSource.includes("app.get('/otkrytye-dannye/istochniki'"));
+  assert(serverSource.includes("app.get('/download-document/:filename'"));
   assert(serverSource.includes("OPEN_DATA_AUTO_REFRESH"));
+
+  const housingView = fs.readFileSync(path.join(ROOT, 'views', 'open-data', 'housing-search.ejs'), 'utf8');
+  assert(!/Кияшев|Жанибек/i.test(housingView), 'public search placeholder must not contain the owner name');
+  const documentsPage = fs.readFileSync(path.join(ROOT, 'public', 'dokumenty.html'), 'utf8');
+  assert(documentsPage.includes('/download-document/zayavlenie-v-bank-o-grafike.pdf'));
+  assert(documentsPage.includes('/js/document-downloads.js'));
 
   console.log('Open-data tests passed');
 }

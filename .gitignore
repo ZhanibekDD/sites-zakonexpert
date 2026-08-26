@@ -20,7 +20,10 @@ data/
 !data/
 data/*
 !data/open-data-government-sector-seed.json
+!data/open-data-inventory.json.br
 !data/open-data-snapshots.json
+!data/open-data-pending.json
+!data/official-data-sources.json
 recon-out/
 
 # OS files

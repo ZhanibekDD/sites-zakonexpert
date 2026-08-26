@@ -15,7 +15,7 @@
     </header>
 
     <div class="od-kpi-grid">
-      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-list-ol"></i></span><strong><%= recordCountLabel(dataset) %></strong><small>записей в срезе</small></div>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-list-ol"></i></span><strong><%= recordCountLabel(dataset) %></strong><small>полный список через API</small></div>
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-people"></i></span><strong><%= dataset.categories.length %></strong><small>категорий граждан</small></div>
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-calendar3"></i></span><strong><%= formatDate(dataset.updatedAt) %></strong><small>обновление источника</small></div>
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-search"></i></span><strong>Поиск по ФИО</strong><small>в официальном списке</small></div>
@@ -45,7 +45,7 @@
           <div><dt>Актуализация</dt><dd><%= dataset.updateFrequency %></dd></div>
         </dl>
         <a class="od-btn od-btn--source" href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">Открыть официальный набор <i class="bi bi-box-arrow-up-right"></i></a>
-        <a class="od-meta-link" href="<%= dataset.metaUrl %>" target="_blank" rel="noopener noreferrer nofollow">Метаинформация API</a>
+        <% if (dataset.metaUrl) { %><a class="od-meta-link" href="<%= dataset.metaUrl %>" target="_blank" rel="noopener noreferrer nofollow">Метаинформация API</a><% } %>
       </aside>
     </div>
 

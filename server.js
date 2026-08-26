@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-26-open-data-hub-v1';
+const RELEASE_ID = '2026-08-26-complete-open-data-catalog-v2';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -80,6 +80,8 @@ const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const openDataPages = require('./modules/open-data-pages');
 const { refreshOpenDataSnapshot } = require('./modules/open-data-refresh');
 const { fetchHousingRecordsPage, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
+const { fetchOpenDataRecords } = require('./modules/open-data-records');
+const { syncOpenDataInventory } = require('./scripts/sync-open-data-inventory');
 const { normalizeRegionKey } = require('./modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
 const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
@@ -2767,7 +2769,7 @@ app.get('/sitemap-index.xml', (req, res) => {
     : '';
   const entries = [
     ['/sitemap-pages.xml', latestFileLastmod(['server.js', 'modules/bank-arrest-pages.js', 'modules/legal-intent-pages.js'])],
-    ['/sitemap-open-data.xml', latestFileLastmod(['data/open-data-snapshots.json', 'modules/open-data-config.js'])],
+    ['/sitemap-open-data.xml', latestFileLastmod(['data/open-data-inventory.json.br', 'data/open-data-snapshots.json', 'modules/open-data-config.js'])],
     ['/sitemap-news.xml', ''],
     ['/sitemap-notaries.xml', latestFileLastmod(['Нотариусы.csv', 'notaries.csv'])],
     ['/sitemap-bailiffs.xml', latestFileLastmod(['ЧСИ.csv', 'bailiffs.csv'])],
@@ -3086,20 +3088,37 @@ cron.schedule('15 3 * * *', async () => {
 });
 logger.info('Notary+Bailiff+Lawyer cron scheduled: daily 03:15');
 
-// Public data changes quarterly, but a weekly lightweight check keeps dates
-// and regional aggregates current. The updater writes only aggregate counts;
-// source rows containing names never become public files on this site.
-if (EGOV_API_KEY && process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
-  cron.schedule('35 4 * * 1', async () => {
-    logger.info('[Cron] Open-data aggregate refresh starting...');
+// The complete catalog is compact metadata (about 7 MB) and is refreshed
+// daily. Actual rows are read on demand from the official API, so thousands of
+// datasets do not consume the limited hosting disk and corrections appear
+// without waiting for a new deployment.
+if (process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
+  cron.schedule('20 4 * * *', async () => {
+    logger.info('[Cron] Complete open-data catalog sync starting...');
     try {
-      const snapshot = await refreshOpenDataSnapshot({ apiKey: EGOV_API_KEY });
-      logger.info(`[Cron] Open data refreshed: ${snapshot.digest}`);
+      const inventory = await syncOpenDataInventory();
+      logger.info(`[Cron] Open-data catalog synced: ${inventory.processedCount}/${inventory.expectedCount}, ${inventory.digest}`);
     } catch (error) {
-      logger.error('[Cron] Open-data refresh failed: ' + error.message);
+      logger.error('[Cron] Open-data catalog sync failed: ' + error.message);
     }
   });
-  logger.info('Open-data cron scheduled: Monday 04:35');
+  logger.info('Open-data catalog cron scheduled: daily 04:20');
+}
+
+// Optional materialized aggregates for a small curated set. Disabled by
+// default because the live-record browser makes a full 3923-set mirror both
+// unnecessary and unsafe for a 3 GB hosting account.
+if (EGOV_API_KEY && process.env.OPEN_DATA_AGGREGATE_REFRESH === 'true') {
+  cron.schedule('35 4 * * 1', async () => {
+    logger.info('[Cron] Curated open-data aggregate refresh starting...');
+    try {
+      const snapshot = await refreshOpenDataSnapshot({ apiKey: EGOV_API_KEY });
+      logger.info(`[Cron] Curated open data refreshed: ${snapshot.digest}`);
+    } catch (error) {
+      logger.error('[Cron] Curated open-data refresh failed: ' + error.message);
+    }
+  });
+  logger.info('Curated open-data aggregate cron scheduled: Monday 04:35');
 }
 
 // ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
@@ -3154,6 +3173,35 @@ app.post('/api/application', leadLimiter, asyncHandler(async (req, res) => {
 // ===== CLICK TRACKING =====
 let clicksDb = null;
 try { clicksDb = require('./modules/clicks-db'); } catch (e) { logger.warn('clicks-db not loaded: ' + e.message); }
+
+app.get('/api/document-download-counts', asyncHandler(async (req, res) => {
+  const counts = clicksDb ? await clicksDb.getDocumentDownloadCounts() : {};
+  res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
+  res.json({ counts });
+}));
+
+app.get('/download-document/:filename', asyncHandler(async (req, res) => {
+  const filename = String(req.params.filename || '');
+  if (!/^[a-z0-9_-]+\.(?:docx|pdf)$/i.test(filename)) return sendNotFound(res);
+  const downloadsRoot = path.resolve(__dirname, 'public', 'downloads');
+  const resolved = path.resolve(downloadsRoot, filename);
+  if (!resolved.startsWith(`${downloadsRoot}${path.sep}`) || !fs.existsSync(resolved)) return sendNotFound(res);
+  const documentId = filename.replace(/\.(?:docx|pdf)$/i, '');
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+  const ua = req.headers['user-agent'] || '';
+  if (clicksDb && !/bot|crawler|spider|slurp|headless/i.test(ua)) {
+    await clicksDb.recordClick({
+      type: 'document_download',
+      target: documentId,
+      page: '/dokumenty',
+      format: path.extname(filename).slice(1).toLowerCase(),
+      ip,
+      ua,
+    });
+  }
+  res.set('Cache-Control', 'private, no-store');
+  return res.download(resolved, filename);
+}));
 
 const TRACK_CLICK_TYPES = new Set(['phone', 'whatsapp']);
 const TRACK_CLICK_TARGETS = new Set(['main', 'advocate', 'mediator']);
@@ -3575,8 +3623,34 @@ app.post('/api/open-data/housing-records', housingRecordsLimiter, asyncHandler(a
   }
 }));
 
+app.post('/api/open-data/records', housingRecordsLimiter, asyncHandler(async (req, res) => {
+  const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 220));
+  if (!dataset || !dataset.liveAvailable) return res.status(404).json({ error: 'Набор данных не найден' });
+  try {
+    const result = await fetchOpenDataRecords({
+      dataset,
+      apiKey: EGOV_API_KEY,
+      offset: req.body?.offset,
+      limit: req.body?.limit,
+      query: req.body?.query,
+      http: axios,
+    });
+    res.set('Cache-Control', 'private, no-store');
+    return res.json(result);
+  } catch (error) {
+    const status = /должен|не найден/.test(error.message) ? 400 : 503;
+    logger.warn(`[Open data] Records request failed for ${dataset.index}: ${error.code || error.message}`);
+    return res.status(status).json({
+      error: status === 400 ? error.message : 'Официальный API временно не ответил. Повторите позже.',
+    });
+  }
+}));
+
 app.get('/otkrytye-dannye', (req, res, next) => {
   const snapshot = openDataPages.loadSnapshot();
+  const inventory = openDataPages.loadInventory();
+  const categories = openDataPages.categorySummaries();
+  const agencies = openDataPages.agencySummaries();
   const housingReceived = openDataPages.housingGroup('housing_received');
   const housingWaitlist = openDataPages.housingGroup('housing_waitlist');
   const audit = openDataPages.getDataset('audit-commissions-2026-q2');
@@ -3585,7 +3659,7 @@ app.get('/otkrytye-dannye', (req, res, next) => {
   const title = 'Открытые данные Казахстана — жильё, аудит и социальные показатели | ZakonExpert';
   const description = 'Понятные срезы официальных данных Казахстана: жилищные списки по регионам, очередь на жильё и государственный аудит. Источники и даты обновления.';
   renderOpenDataPage(req, res, next, 'open-data/hub-body', {
-    snapshot, housingReceived, housingWaitlist, audit, rehab, governmentSector,
+    snapshot, inventory, categories, agencies, housingReceived, housingWaitlist, audit, rehab, governmentSector,
     datasets: [audit, rehab],
   }, {
     title,
@@ -3648,7 +3722,7 @@ function renderHousingDataset(kind) {
     renderOpenDataPage(req, res, next, 'open-data/housing-detail-body', { dataset, related }, {
       title,
       description,
-      noindex: !dataset.hasData,
+      noindex: !(dataset.liveAvailable || dataset.hasData),
       schema: openDataPages.datasetSchema(dataset, [
         { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' },
         { name: 'Жилищные списки', path: '/zhilishchnye-spiski' },
@@ -3692,7 +3766,7 @@ app.get('/otkrytye-dannye/reabilitaciya-detey-alatau-2026', (req, res, next) => 
 app.get('/otkrytye-dannye/gosudarstvennyy-sektor', (req, res, next) => {
   const datasets = openDataPages.listDatasets().filter(dataset => dataset.category === 'Государственный сектор');
   const totalRows = datasets.reduce((sum, dataset) => sum + dataset.rowCount, 0);
-  const readyCount = datasets.filter(dataset => dataset.hasData).length;
+  const readyCount = datasets.filter(dataset => dataset.liveAvailable || dataset.hasData).length;
   const partial = datasets.some(dataset => dataset.rowLimitReached || dataset.completeness !== 'complete');
   const title = 'Открытые данные государственного сектора Казахстана — каталог наборов';
   const description = 'Все опубликованные наборы категории «Государственный сектор» на data.egov.kz: актуальные версии, число записей, структура и официальный источник.';
@@ -3706,23 +3780,98 @@ app.get('/otkrytye-dannye/gosudarstvennyy-sektor', (req, res, next) => {
   });
 });
 
-app.get('/otkrytye-dannye/gosudarstvennyy-sektor/:slug', (req, res, next) => {
-  const requestPath = `/otkrytye-dannye/gosudarstvennyy-sektor/${req.params.slug}`;
-  const dataset = openDataPages.getDatasetByPath(requestPath);
-  if (!dataset || dataset.kind !== 'government_sector') return sendNotFound(res);
+app.get('/otkrytye-dannye/kategorii', (req, res, next) => {
+  const categories = openDataPages.categorySummaries();
+  const totalDatasets = openDataPages.loadInventory().processedCount || openDataPages.listDatasets().length;
+  const title = 'Категории открытых данных Казахстана | ZakonExpert';
+  const description = `Все ${totalDatasets} опубликованных набора data.egov.kz по ${categories.length} категориям: поиск, записи, источники и даты обновления.`;
+  renderOpenDataPage(req, res, next, 'open-data/categories-body', { categories, totalDatasets }, {
+    title, description,
+    schema: openDataPages.pageSchema(title, description, req.path, [
+      { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' }, { name: 'Категории', path: req.path },
+    ]),
+  });
+});
+
+app.get('/otkrytye-dannye/organizacii', (req, res, next) => {
+  const agencies = openDataPages.agencySummaries();
+  const totalDatasets = openDataPages.loadInventory().processedCount || openDataPages.listDatasets().length;
+  const title = 'Госорганы, акиматы и квазисектор — открытые данные';
+  const description = `Официальные наборы ${agencies.length} министерств, агентств, акиматов и квазигосударственных организаций.`;
+  renderOpenDataPage(req, res, next, 'open-data/agencies-body', { agencies, totalDatasets }, {
+    title, description, extraScripts: ['/js/open-data.js?v=20260826-2'],
+    schema: openDataPages.pageSchema(title, description, req.path, [
+      { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' }, { name: 'Организации', path: req.path },
+    ]),
+  });
+});
+
+app.get('/otkrytye-dannye/istochniki', (req, res, next) => {
+  const { reviewedAt, sources } = openDataPages.officialDataSources();
+  const title = 'Официальные источники данных Казахстана | ZakonExpert';
+  const description = 'Открытые данные, государственные реестры и официальные API, подключённые к справочникам ZakonExpert.';
+  renderOpenDataPage(req, res, next, 'open-data/sources-body', { reviewedAt, sources }, {
+    title, description,
+    schema: openDataPages.pageSchema(title, description, req.path, [
+      { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' }, { name: 'Источники', path: req.path },
+    ]),
+  });
+});
+
+function renderOpenDataGroup(groupType) {
+  return (req, res, next) => {
+    const group = groupType === 'category' ? openDataPages.findCategory(req.params.slug) : openDataPages.findAgency(req.params.slug);
+    if (!group) return sendNotFound(res);
+    const result = openDataPages.paginatedDatasets({
+      [groupType === 'category' ? 'categoryId' : 'agencyId']: group.id,
+      query: req.query.q,
+      page: req.query.page,
+      pageSize: 48,
+    });
+    const title = `${group.name} — ${result.total} наборов открытых данных`;
+    const description = `Поиск и просмотр всех официальных записей: ${group.name}. Источник data.egov.kz.`;
+    renderOpenDataPage(req, res, next, 'open-data/catalog-group-body', { groupType, group, result }, {
+      title, description,
+      noindex: Boolean(result.query || result.page > 1),
+      schema: openDataPages.pageSchema(title, description, req.path, [
+        { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' },
+        { name: groupType === 'category' ? 'Категории' : 'Организации', path: groupType === 'category' ? '/otkrytye-dannye/kategorii' : '/otkrytye-dannye/organizacii' },
+        { name: group.name, path: req.path },
+      ]),
+    });
+  };
+}
+
+app.get('/otkrytye-dannye/kategoriya/:slug', renderOpenDataGroup('category'));
+app.get('/otkrytye-dannye/organizaciya/:slug', renderOpenDataGroup('agency'));
+
+function renderGenericOpenDataDataset(req, res, next, dataset) {
+  if (!dataset || !['government_sector', 'catalog_dataset'].includes(dataset.kind)) return sendNotFound(res);
   const title = `${dataset.title} — официальный набор данных | ZakonExpert`;
-  const description = `${dataset.description} Структура, количество записей, дата обновления и ссылка на официальный источник.`;
+  const description = `${dataset.description} Полные записи, поиск, дата обновления и ссылка на источник.`;
   const housingDataset = isHousingDataset(dataset);
   renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset, housingDataset }, {
     title,
     description,
-    noindex: !dataset.hasData,
+    noindex: !(dataset.liveAvailable || dataset.hasData),
+    extraScripts: housingDataset ? [] : ['/js/open-data-records.js?v=20260826-1'],
     schema: openDataPages.datasetSchema(dataset, [
       { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' },
-      { name: 'Государственный сектор', path: '/otkrytye-dannye/gosudarstvennyy-sektor' },
+      { name: dataset.category, path: dataset.category === 'Государственный сектор' ? '/otkrytye-dannye/gosudarstvennyy-sektor' : '/otkrytye-dannye/kategorii' },
       { name: dataset.title, path: dataset.path },
     ]),
   });
+}
+
+app.get('/otkrytye-dannye/gosudarstvennyy-sektor/:slug', (req, res, next) => {
+  const requestPath = `/otkrytye-dannye/gosudarstvennyy-sektor/${req.params.slug}`;
+  const dataset = openDataPages.getDatasetByPath(requestPath);
+  return renderGenericOpenDataDataset(req, res, next, dataset);
+});
+
+app.get('/otkrytye-dannye/nabor/:slug', (req, res, next) => {
+  const dataset = openDataPages.getDatasetByPath(`/otkrytye-dannye/nabor/${req.params.slug}`);
+  return renderGenericOpenDataDataset(req, res, next, dataset);
 });
 
 app.get('/tools', (req, res) => res.render('tools/index', { tools: TOOLS }));

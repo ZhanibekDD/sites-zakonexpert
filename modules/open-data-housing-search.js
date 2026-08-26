@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const { dateToIso } = require('./open-data-refresh');
+const { resolveLiveDataset } = require('./open-data-records');
 
 const SEARCH_PAGE_SIZE = 100;
 const MAX_RESULTS = 100;
@@ -72,7 +73,7 @@ function fieldLabel(key) {
 
 function publicFieldEntries(row) {
   const entries = Object.entries(row || {})
-    .filter(([key]) => key && key.length <= 120 && !NON_DATA_FIELD.test(key))
+    .filter(([key]) => key && !NON_DATA_FIELD.test(key))
     .map(([key, value]) => {
       const scalar = value && typeof value === 'object' ? JSON.stringify(value) : value;
       const cleaned = clean(scalar);
@@ -86,7 +87,7 @@ function publicFieldEntries(row) {
 }
 
 function isHousingDataset(dataset) {
-  if (!dataset?.apiUrl || !dataset?.datasetUrl) return false;
+  if (!dataset?.index || !dataset?.datasetUrl) return false;
   if (dataset.kind === 'housing_waitlist' || dataset.kind === 'housing_received') return true;
   const title = clean(dataset.title).toLowerCase();
   return /список граждан/.test(title) && /жилищ/.test(title);
@@ -129,6 +130,7 @@ function fullNameQuery(fullName) {
 }
 
 async function searchDataset(dataset, fullName, apiKey, http = axios) {
+  dataset = await resolveLiveDataset(dataset, http, apiKey);
   const source = {
     size: SEARCH_PAGE_SIZE,
     query: fullNameQuery(fullName),
@@ -145,7 +147,7 @@ async function searchDataset(dataset, fullName, apiKey, http = axios) {
 }
 
 async function fetchHousingRecordsPage(options = {}) {
-  const dataset = options.dataset;
+  let dataset = options.dataset;
   if (!isHousingDataset(dataset)) throw new Error('Жилищный набор не найден');
   const apiKey = clean(options.apiKey);
   if (!apiKey) throw new Error('Доступ к официальному API временно не настроен');
@@ -153,6 +155,7 @@ async function fetchHousingRecordsPage(options = {}) {
   const offset = /^\d+$/.test(cursor) ? Number.parseInt(cursor, 10) : 0;
   const requestedLimit = Number.parseInt(options.limit, 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(10, requestedLimit)) : 50;
+  dataset = await resolveLiveDataset(dataset, options.http || axios, apiKey);
   const source = { from: offset, size: limit };
   const fullName = options.fullName ? validateFullName(options.fullName) : '';
   if (options.fullName && !fullName) throw new Error('Введите ФИО полностью');

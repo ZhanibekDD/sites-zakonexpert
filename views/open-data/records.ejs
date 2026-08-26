@@ -1,0 +1,21 @@
+<section class="od-section od-live-records" aria-labelledby="od-live-records-title" data-od-records data-dataset-key="<%= dataset.key %>">
+  <div class="od-section__heading">
+    <div><span class="od-kicker">Полные официальные записи</span><h2 id="od-live-records-title">Данные из исходного набора</h2></div>
+    <span class="od-freshness"><i class="bi bi-arrow-repeat"></i> загружаются из API</span>
+  </div>
+  <form class="od-records-toolbar" data-od-records-form>
+    <label>Поиск по всем полям набора
+      <input type="search" name="query" minlength="2" maxlength="160" placeholder="Введите ФИО, название, адрес, БИН или другое значение" autocomplete="off">
+    </label>
+    <button class="od-btn od-btn--primary" type="submit"><i class="bi bi-search"></i> Найти</button>
+    <button class="od-btn od-btn--ghost" type="button" data-od-records-reset>Сбросить</button>
+  </form>
+  <p class="od-records-status" data-od-records-status aria-live="polite">Загружаем первые 50 записей…</p>
+  <div class="od-table-card" data-od-records-table hidden></div>
+  <div class="od-records-pagination" data-od-records-pagination hidden>
+    <button class="od-btn od-btn--ghost" type="button" data-od-records-prev><i class="bi bi-arrow-left"></i> Назад</button>
+    <span data-od-records-page></span>
+    <button class="od-btn od-btn--ghost" type="button" data-od-records-next>Следующие 50 <i class="bi bi-arrow-right"></i></button>
+  </div>
+  <p class="od-source-note"><i class="bi bi-patch-check-fill"></i> Показаны все поля в том виде, в котором их опубликовал владелец набора на <a href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">data.egov.kz</a>. ZakonExpert не изменяет факты и не хранит ключ API в браузере.</p>
+</section>

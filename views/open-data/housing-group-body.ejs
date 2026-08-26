@@ -8,11 +8,11 @@
       <div class="od-hero__copy">
         <span class="od-eyebrow"><i class="bi <%= isWaitlist ? 'bi-person-lines-fill' : 'bi-house-check' %>"></i> Официальные региональные срезы</span>
         <h1><%= pageTitle %></h1>
-        <p><%= isWaitlist ? 'Сводная статистика по гражданам, состоящим на учёте как нуждающиеся в жилище: категории, населённые пункты и даты постановки на учёт.' : 'Сводная статистика по гражданам, получившим жильё из коммунального жилищного фонда: категории, программы и даты предоставления.' %></p>
+        <p><%= isWaitlist ? 'Полные официальные списки граждан, состоящих на учёте как нуждающиеся в жилище: ФИО, категории, населённые пункты и даты постановки на учёт.' : 'Полные официальные списки граждан, получивших жильё из коммунального жилищного фонда: ФИО, категории, программы и даты предоставления.' %></p>
         <div class="od-stat-ribbon">
-          <span><b><%= formatNumber(group.rowCount) %><% if (group.partial) { %>+<% } %></b> записей в срезах</span>
-          <span><b><%= group.datasets.length %></b> региона</span>
-          <span><b><%= group.categories.length %></b> категорий</span>
+          <span><b><%= group.datasets.length %></b> региональных списков</span>
+          <span><b>Поиск</b> по полному ФИО</span>
+          <span><b>Все поля</b> исходного набора</span>
         </div>
       </div>
     </header>
@@ -31,7 +31,7 @@
             <span class="od-region-card__index"><%= String(index + 1).padStart(2, '0') %></span>
             <span class="od-region-card__icon"><i class="bi bi-geo-alt"></i></span>
             <h3><%= dataset.regionName %></h3>
-            <p><strong><%= recordCountLabel(dataset) %></strong> записей в доступном срезе</p>
+            <p><strong>Полный список</strong> загружается из официального API</p>
             <div class="od-region-card__footer"><span>Обновлено <%= formatDate(dataset.updatedAt) %></span><b>Открыть →</b></div>
           </a>
         <% }); %>

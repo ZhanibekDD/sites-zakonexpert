@@ -9,7 +9,7 @@
   };
 
   const formatValue = value => {
-    const raw = String(value || '').trim();
+    const raw = String(value === null || value === undefined ? '' : value).trim();
     if (!raw) return '—';
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
       const date = new Date(`${raw}T12:00:00+05:00`);

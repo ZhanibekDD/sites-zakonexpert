@@ -61,6 +61,16 @@ async function getEventStats(since) {
   return result;
 }
 
+async function getDocumentDownloadCounts() {
+  const clicks = await db.find({ type: 'document_download' });
+  const counts = {};
+  for (const click of clicks) {
+    const documentId = String(click.target || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 160);
+    if (documentId) counts[documentId] = (counts[documentId] || 0) + 1;
+  }
+  return counts;
+}
+
 function emptyFunnelBucket() {
   return { pageViews: 0, ctaImpressions: 0, whatsappClicks: 0 };
 }
@@ -216,6 +226,7 @@ async function purgeOlderThan(cutoff) {
 module.exports = {
   getArrestDiagnosticFunnelStats,
   getCompanyFunnelStats,
+  getDocumentDownloadCounts,
   getEventStats,
   getStats,
   recordClick,

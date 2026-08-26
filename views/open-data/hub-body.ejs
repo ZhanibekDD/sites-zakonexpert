@@ -5,18 +5,18 @@
     <header class="od-hero od-hero--main">
       <div class="od-hero__copy">
         <span class="od-eyebrow"><i class="bi bi-database-check"></i> Официальные данные Казахстана</span>
-        <h1>Открытые данные — понятно, актуально и с поиском по ФИО</h1>
-        <p>Преобразуем государственные наборы в наглядные региональные срезы: жильё, очередь, аудит и социальные показатели. На каждой странице указаны источник, дата обновления и границы данных.</p>
+        <h1>Все открытые данные Казахстана в одном справочнике</h1>
+        <p>Полный каталог data.egov.kz: <%= formatNumber(inventory.processedCount || governmentSector.length) %> наборов, поиск по записям и все поля официального источника, включая ФИО там, где оно опубликовано в исходном наборе.</p>
         <div class="od-hero__actions">
           <a class="od-btn od-btn--primary" href="/zhilishchnye-spiski#proverit-fio">Проверить себя по ФИО</a>
-          <a class="od-btn od-btn--ghost" href="#datasets">Все наборы</a>
+          <a class="od-btn od-btn--ghost" href="/otkrytye-dannye/kategorii">Все категории</a>
         </div>
       </div>
       <div class="od-visual" aria-label="Сводка раздела">
         <div class="od-visual__orb"><i class="bi bi-bar-chart-line"></i></div>
-        <div class="od-visual__stat"><strong><%= formatNumber(housingReceived.rowCount + housingWaitlist.rowCount) %><% if (housingReceived.partial || housingWaitlist.partial) { %>+<% } %></strong><span>записей в срезах</span></div>
-        <div class="od-visual__stat"><strong><%= housingReceived.datasets.length + housingWaitlist.datasets.length %></strong><span>региональных наборов</span></div>
-        <div class="od-visual__stat"><strong><i class="bi bi-search"></i></strong><span>поиск по жилищным спискам</span></div>
+        <div class="od-visual__stat"><strong><%= formatNumber(inventory.processedCount || governmentSector.length) %></strong><span>наборов в каталоге</span></div>
+        <div class="od-visual__stat"><strong><%= categories.length %></strong><span>категорий</span></div>
+        <div class="od-visual__stat"><strong><%= agencies.length %></strong><span>госорганов и организаций</span></div>
       </div>
     </header>
 
@@ -26,6 +26,8 @@
         <span class="od-freshness">Снимок сформирован: <%= formatDate(snapshot.generatedAt) %></span>
       </div>
       <div class="od-feature-grid">
+        <a class="od-feature od-feature--sector" href="/otkrytye-dannye/kategorii"><span class="od-feature__icon"><i class="bi bi-grid-3x3-gap"></i></span><span class="od-feature__body"><strong>Все категории</strong><small>От здравоохранения до энергетики</small></span><span class="od-feature__metric"><%= categories.length %> разделов</span></a>
+        <a class="od-feature od-feature--audit" href="/otkrytye-dannye/organizacii"><span class="od-feature__icon"><i class="bi bi-buildings"></i></span><span class="od-feature__body"><strong>Организации и госорганы</strong><small>Министерства, акиматы и квазисектор</small></span><span class="od-feature__metric"><%= agencies.length %> владельцев</span></a>
         <a class="od-feature od-feature--housing" href="/zhilishchnye-spiski">
           <span class="od-feature__icon"><i class="bi bi-house-check"></i></span>
           <span class="od-feature__body"><strong>Жилищные списки</strong><small>Очередь и получившие жильё по регионам</small></span>
@@ -41,6 +43,7 @@
           <span class="od-feature__body"><strong>Весь государственный сектор</strong><small>Автоматический каталог всех опубликованных наборов категории</small></span>
           <span class="od-feature__metric"><%= governmentSector.length %> наборов</span>
         </a>
+        <a class="od-feature od-feature--audit" href="/otkrytye-dannye/istochniki"><span class="od-feature__icon"><i class="bi bi-patch-check-fill"></i></span><span class="od-feature__body"><strong>Официальные источники</strong><small>data.egov.kz, госзакупки, Әділет, статистика и Национальный Банк</small></span><span class="od-feature__metric">Статус подключения</span></a>
       </div>
     </section>
 
@@ -67,7 +70,7 @@
 
     <aside class="od-privacy-note">
       <span class="od-privacy-note__icon"><i class="bi bi-patch-check-fill"></i></span>
-      <div><strong>Данные публикуются со ссылкой на первоисточник</strong><p>Для каждой страницы указаны официальный набор data.egov.kz, государственный орган, версия и дата обновления.</p></div>
+      <div><strong>Данные публикуются без изменения фактов</strong><p>Для каждой страницы указаны официальный набор data.egov.kz, владелец, версия и дата обновления.</p></div>
     </aside>
   </div>
 </section>

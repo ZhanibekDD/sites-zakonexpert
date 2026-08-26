@@ -1,0 +1,9 @@
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><span>Категории</span></nav>
+    <header class="od-hero od-hero--compact"><div class="od-hero__copy"><span class="od-eyebrow"><i class="bi bi-grid-3x3-gap"></i> Весь каталог data.egov.kz</span><h1>Открытые данные по категориям</h1><p>Здравоохранение, образование, финансы, жильё, транспорт и другие официальные наборы в одном справочнике.</p><div class="od-stat-ribbon"><span><b><%= categories.length %></b> категорий</span><span><b><%= formatNumber(totalDatasets) %></b> наборов</span><span><b>100%</b> каталога обработано</span></div></div></header>
+    <section class="od-section"><div class="od-section__heading"><div><span class="od-kicker">Разделы</span><h2>Выберите тему</h2></div><a class="od-text-link" href="/otkrytye-dannye/organizacii">Открыть по организациям →</a></div>
+      <div class="od-directory-grid"><% categories.forEach(function(category) { %><a class="od-directory-card" href="/otkrytye-dannye/kategoriya/<%= category.slug %>"><span class="od-directory-card__icon"><i class="bi bi-database"></i></span><span><strong><%= category.name %></strong><small><%= formatNumber(category.count) %> наборов</small></span><i class="bi bi-arrow-right"></i></a><% }); %></div>
+    </section>
+  </div>
+</section>

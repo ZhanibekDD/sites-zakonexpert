@@ -1,0 +1,9 @@
+<section class="od-page">
+  <div class="landing-container">
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><span>Организации</span></nav>
+    <header class="od-hero od-hero--compact"><div class="od-hero__copy"><span class="od-eyebrow"><i class="bi bi-buildings"></i> Госорганы, акиматы и квазисектор</span><h1>Открытые данные по организациям</h1><p>Министерства, агентства, акиматы, госучреждения и организации квазигосударственного сектора.</p><div class="od-stat-ribbon"><span><b><%= agencies.length %></b> владельцев данных</span><span><b><%= formatNumber(totalDatasets) %></b> наборов</span></div></div></header>
+    <section class="od-section"><div class="od-catalog-toolbar"><label for="od-agency-search">Найти госорган или организацию<input id="od-agency-search" type="search" placeholder="Например: Министерство финансов или Акимат Алматы" autocomplete="off" data-od-catalog-search></label><output data-od-catalog-count><%= agencies.length %> из <%= agencies.length %> организаций</output></div>
+      <div class="od-directory-grid"><% agencies.forEach(function(agency) { %><a class="od-directory-card" href="/otkrytye-dannye/organizaciya/<%= agency.slug %>" data-od-dataset-card data-od-search="<%= agency.name.toLocaleLowerCase('ru') %>"><span class="od-directory-card__icon"><i class="bi bi-bank"></i></span><span><strong><%= agency.name %></strong><small><%= formatNumber(agency.count) %> наборов</small></span><i class="bi bi-arrow-right"></i></a><% }); %></div><p class="od-catalog-empty" data-od-catalog-empty hidden>Организаций по запросу не найдено.</p>
+    </section>
+  </div>
+</section>

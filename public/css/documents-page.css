@@ -770,6 +770,22 @@ body {
   background: #f7f9fc;
 }
 
+.dok-download-count {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  min-height: 22px;
+  color: #6c8095;
+  font-size: .68rem;
+  font-weight: 750;
+}
+
+.dok-download-count i {
+  color: var(--dok-accent);
+}
+
 .dok-hint {
   position: relative;
   z-index: 1;

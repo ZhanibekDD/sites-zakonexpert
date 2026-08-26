@@ -9,8 +9,8 @@
         <p>Официальные региональные списки граждан, состоящих на учёте как нуждающиеся в жилье и получивших жильё из коммунального фонда. Ниже доступна проверка по ФИО.</p>
       </div>
       <div class="od-hero__metrics">
-        <div><strong><%= formatNumber(waitlist.rowCount) %><% if (waitlist.partial) { %>+<% } %></strong><span>в срезах очереди</span></div>
-        <div><strong><%= formatNumber(received.rowCount) %><% if (received.partial) { %>+<% } %></strong><span>в срезах получивших жильё</span></div>
+        <div><strong><%= waitlist.datasets.length %></strong><span>регионов очереди</span></div>
+        <div><strong><%= received.datasets.length %></strong><span>регионов получивших жильё</span></div>
         <div><strong><%= waitlist.datasets.length + received.datasets.length %></strong><span>региональных страниц</span></div>
       </div>
     </header>
@@ -23,12 +23,12 @@
         <a class="od-choice-card" href="/zhilishchnye-spiski/ochered-na-zhile">
           <span class="od-choice-card__number">01</span><span class="od-choice-card__icon"><i class="bi bi-person-lines-fill"></i></span>
           <h3>Очередь на жильё</h3><p>Категории нуждающихся, населённые пункты и диапазон дат постановки на учёт.</p>
-          <span class="od-text-link">Смотреть <%= waitlist.datasets.length %> региона <span>→</span></span>
+          <span class="od-text-link">Смотреть <%= waitlist.datasets.length %> региональных списков <span>→</span></span>
         </a>
         <a class="od-choice-card" href="/zhilishchnye-spiski/poluchili-zhile">
           <span class="od-choice-card__number">02</span><span class="od-choice-card__icon"><i class="bi bi-house-door"></i></span>
           <h3>Получили жильё</h3><p>Распределение по льготным категориям, программам и датам предоставления жилья.</p>
-          <span class="od-text-link">Смотреть <%= received.datasets.length %> региона <span>→</span></span>
+          <span class="od-text-link">Смотреть <%= received.datasets.length %> региональных списков <span>→</span></span>
         </a>
       </div>
     </section>
