@@ -3,6 +3,7 @@
 const axios = require('axios');
 const { dateToIso } = require('./open-data-refresh');
 const { resolveLiveDataset } = require('./open-data-records');
+const { cacheResponse, readMaterializedRecords } = require('./open-data-record-cache');
 
 const SEARCH_PAGE_SIZE = 100;
 const MAX_RESULTS = 100;
@@ -146,6 +147,19 @@ async function searchDataset(dataset, fullName, apiKey, http = axios) {
     .map(row => safeResult(dataset, row));
 }
 
+async function searchDatasetCached(dataset, fullName, apiKey, http = axios, cacheDir) {
+  const cached = await readMaterializedRecords({
+    dataset,
+    offset: 0,
+    limit: MAX_RESULTS,
+    query: fullName,
+    cacheDir,
+    matcher: (row, expected) => normalizeFullName(valueFrom(row, ['fio', 'full_name', 'fullname'])) === expected,
+  });
+  if (cached) return cached.rows.map(row => safeResult(dataset, row));
+  return searchDataset(dataset, fullName, apiKey, http);
+}
+
 async function fetchHousingRecordsPage(options = {}) {
   let dataset = options.dataset;
   if (!isHousingDataset(dataset)) throw new Error('Жилищный набор не найден');
@@ -189,6 +203,55 @@ async function fetchHousingRecordsPage(options = {}) {
   };
 }
 
+async function fetchHousingRecordsPageCached(options = {}) {
+  const dataset = options.dataset;
+  if (!isHousingDataset(dataset)) throw new Error('Жилищный набор не найден');
+  const cursor = clean(options.cursor);
+  const offset = /^\d+$/.test(cursor) ? Number.parseInt(cursor, 10) : 0;
+  const requestedLimit = Number.parseInt(options.limit, 10);
+  const limit = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(10, requestedLimit)) : 50;
+  const fullName = options.fullName ? validateFullName(options.fullName) : '';
+  if (options.fullName && !fullName) throw new Error('Введите ФИО полностью');
+  const materialized = await readMaterializedRecords({
+    dataset,
+    offset,
+    limit,
+    query: fullName,
+    cacheDir: options.cacheDir,
+    matcher: (row, expected) => normalizeFullName(valueFrom(row, ['fio', 'full_name', 'fullname'])) === expected,
+  });
+  if (materialized) {
+    const rows = materialized.rows.map(publicHousingRow);
+    return {
+      dataset: {
+        key: dataset.key,
+        title: dataset.title,
+        sourceUrl: dataset.datasetUrl,
+        updatedAt: dataset.updatedAt,
+      },
+      columns: publicColumns(rows),
+      rows,
+      nextCursor: !fullName && materialized.hasMore ? String(offset + rows.length) : '',
+      hasMore: !fullName && materialized.hasMore,
+      source: 'data.egov.kz',
+      delivery: materialized.delivery,
+      cachedAt: materialized.cachedAt,
+      cacheComplete: materialized.complete,
+    };
+  }
+
+  const cacheKey = JSON.stringify({
+    type: 'housing-records', index: dataset.index, version: dataset.version || 'latest', offset, limit, fullName,
+  });
+  return cacheResponse({
+    dataset,
+    cacheKey,
+    cacheDir: options.cacheDir,
+    ttlMs: options.cacheTtlMs,
+    fetcher: () => fetchHousingRecordsPage({ ...options, cursor: String(offset), limit, fullName }),
+  });
+}
+
 async function searchHousingRecords(options = {}) {
   const fullName = validateFullName(options.fullName);
   if (!fullName) throw new Error('Введите фамилию, имя и при наличии отчество полностью');
@@ -200,7 +263,7 @@ async function searchHousingRecords(options = {}) {
 
   for (let offset = 0; offset < datasets.length; offset += 5) {
     const chunk = datasets.slice(offset, offset + 5);
-    const settled = await Promise.allSettled(chunk.map(dataset => searchDataset(dataset, fullName, apiKey, options.http)));
+    const settled = await Promise.allSettled(chunk.map(dataset => searchDatasetCached(dataset, fullName, apiKey, options.http, options.cacheDir)));
     settled.forEach(item => {
       if (item.status === 'fulfilled') results.push(...item.value);
       else failedDatasets += 1;
@@ -229,9 +292,11 @@ async function searchHousingRecords(options = {}) {
 
 module.exports = {
   fetchHousingRecordsPage,
+  fetchHousingRecordsPageCached,
   isHousingDataset,
   normalizeFullName,
   searchDataset,
+  searchDatasetCached,
   searchHousingRecords,
   validateFullName,
 };

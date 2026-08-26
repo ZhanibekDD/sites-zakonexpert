@@ -15,7 +15,13 @@ const {
   refreshOpenDataSnapshot,
 } = require('../modules/open-data-refresh');
 const { parseDatasetPassport } = require('../modules/open-data-catalog');
-const { fetchOpenDataRecords, latestMappingVersion } = require('../modules/open-data-records');
+const { fetchOpenDataRecords, fetchOpenDataRecordsCached, latestMappingVersion } = require('../modules/open-data-records');
+const {
+  appendMaterializedChunk,
+  initializeMaterializedDataset,
+  readMaterializedRecords,
+} = require('../modules/open-data-record-cache');
+const { warmDataset } = require('../modules/open-data-cache-warmer');
 const {
   fetchHousingRecordsPage,
   normalizeFullName,
@@ -101,6 +107,47 @@ async function run() {
   });
   assert.strictEqual(dynamicRecords.dataset.version, 'v4');
   assert(dynamicCalls.some(url => url.endsWith('/api/v4/dynamic-test/v4')), 'latest mapping version must be used for records');
+
+  const cacheDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ze-open-data-cache-test-'));
+  try {
+    const cachedDataset = {
+      key: 'cached-test', index: 'cached-test', version: 'v1', title: 'Локальный набор', updatedAt: '2026-08-26',
+      datasetUrl: 'https://data.egov.kz/datasets/view?index=cached-test',
+    };
+    let manifest = await initializeMaterializedDataset({ dataset: cachedDataset, cacheDir: cacheDirectory, pagination: 'offset', pageSize: 500 });
+    ({ manifest } = await appendMaterializedChunk({
+      dataset: cachedDataset,
+      cacheDir: cacheDirectory,
+      manifest,
+      rows: [{ id: 1, fio: 'Касымова Алия Ерлановна', city: 'Астана' }, { id: 2, fio: 'Другой Человек', city: 'Алматы' }],
+      complete: true,
+    }));
+    assert.strictEqual(manifest.rowCount, 2);
+    const localSearch = await readMaterializedRecords({ dataset: cachedDataset, cacheDir: cacheDirectory, query: 'Касымова Алия', limit: 50 });
+    assert.strictEqual(localSearch.rows.length, 1, 'complete cache must support local search without API');
+    const localPage = await fetchOpenDataRecordsCached({ dataset: cachedDataset, cacheDir: cacheDirectory, offset: 0, limit: 50 });
+    assert.strictEqual(localPage.delivery, 'materialized-cache');
+    assert.strictEqual(localPage.rows.length, 2);
+    assert.strictEqual(localPage.columns.find(column => column.key === 'fio').label, 'ФИО');
+
+    const warmDatasetDefinition = {
+      key: 'warmer-test', index: 'warmer-test', version: 'v1', title: 'Прогреваемый набор', updatedAt: '2026-08-26',
+      datasetUrl: 'https://data.egov.kz/datasets/view?index=warmer-test',
+      apiUrl: 'https://data.egov.kz/api/v4/warmer-test/v1',
+    };
+    const warmed = await warmDataset({
+      dataset: warmDatasetDefinition,
+      apiKey: 'test-key',
+      cacheDir: cacheDirectory,
+      pageSize: 100,
+      http: { async get() { return { data: [{ id: 1, name: 'Первая' }, { id: 2, name: 'Вторая' }] }; } },
+    });
+    assert.strictEqual(warmed.manifest.complete, true);
+    const warmedPage = await readMaterializedRecords({ dataset: warmDatasetDefinition, cacheDir: cacheDirectory, limit: 50 });
+    assert.strictEqual(warmedPage.rows.length, 2, 'warmer must persist complete API rows');
+  } finally {
+    fs.rmSync(cacheDirectory, { recursive: true, force: true });
+  }
 
   const housing = OPEN_DATA_DATASETS.find(dataset => dataset.key === 'housing-received-akmola');
   const housingSummary = aggregateDataset(housing, [
@@ -193,6 +240,8 @@ async function run() {
   assert.strictEqual(rehabilitation.path, '/otkrytye-dannye/reabilitaciya-detey-alatau-2026');
   const hubView = fs.readFileSync(path.join(ROOT, 'views', 'open-data', 'hub-body.ejs'), 'utf8');
   assert(hubView.includes("dataset.liveAvailable ? 'API подключён'"), 'live datasets without cached rows must not be marked as permanently waiting');
+  const genericView = fs.readFileSync(path.join(ROOT, 'views', 'open-data', 'generic-body.ejs'), 'utf8');
+  assert(genericView.indexOf("include('records'") < genericView.indexOf('od-detail-grid'), 'record table must be placed before passport and field summaries');
 
   const audit = openDataPages.getDataset('audit-commissions-2026-q2');
   const body = await ejs.renderFile(path.join(ROOT, 'views', 'open-data', 'audit-body.ejs'), {
@@ -212,7 +261,8 @@ async function run() {
   assert(serverSource.includes("app.get('/otkrytye-dannye/kategorii'"));
   assert(serverSource.includes("app.get('/otkrytye-dannye/organizacii'"));
   assert(serverSource.includes("app.get('/otkrytye-dannye/istochniki'"));
-  assert(serverSource.includes("'/js/open-data-records.js?v=20260826-2'"), 'rehabilitation page must poll the official API instead of rendering a permanent placeholder');
+  assert(serverSource.includes("'/js/open-data-records.js?v=20260826-3'"), 'live datasets must load the cache-first records browser');
+  assert(serverSource.includes('warmOpenDataRecordCache'), 'server must materialise official records in the background');
   assert(serverSource.includes("app.get('/download-document/:filename'"));
   assert(serverSource.includes("OPEN_DATA_AUTO_REFRESH"));
 

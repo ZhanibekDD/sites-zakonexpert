@@ -86,7 +86,7 @@
   let columns = [];
 
   const load = async ({ append = false } = {}) => {
-    status.textContent = activeName ? 'Ищем ФИО в официальном списке…' : 'Загружаем записи из официального источника…';
+    status.textContent = activeName ? 'Ищем ФИО в сохранённом списке…' : 'Открываем сохранённые записи…';
     find.disabled = true;
     more.disabled = true;
     try {
@@ -115,8 +115,14 @@
       table.hidden = columns.length === 0;
       more.hidden = !payload.hasMore;
       reset.hidden = !activeName;
+      const delivery = payload.delivery === 'official-api'
+        ? ' Данные получены из API и сохранены.'
+        : payload.delivery === 'stale-cache'
+          ? ' Показана сохранённая копия; обновление идёт в фоне.'
+          : ' Показано из быстрой локальной копии.';
       status.textContent = payload.rows.length
         ? `${activeName ? 'Найдено' : append ? 'Добавлено' : 'Показано'} записей: ${payload.rows.length}.`
+        + delivery
         : activeName ? 'Точное совпадение по ФИО в этом наборе не найдено.' : 'В официальном наборе пока нет записей.';
     } catch (error) {
       status.textContent = error.message;

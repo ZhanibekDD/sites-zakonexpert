@@ -10,10 +10,10 @@
     <button class="od-btn od-btn--primary" type="button" data-od-records-find><i class="bi bi-search"></i> Найти</button>
     <button class="od-btn od-btn--ghost" type="button" data-od-records-reset hidden>Показать весь список</button>
   </div>
-  <p class="od-records__status" data-od-records-status aria-live="polite">Загружаем записи из официального источника…</p>
+  <p class="od-records__status" data-od-records-status aria-live="polite">Открываем сохранённые записи…</p>
   <div class="od-table-card od-records__table" data-od-records-table hidden><div class="od-table-wrap"><table><thead><tr data-od-records-head></tr></thead><tbody data-od-records-body></tbody></table></div></div>
   <div class="od-records__footer">
-    <p>Публикуется в составе исходного открытого набора. Источник: <a href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">data.egov.kz</a> · обновлено <%= formatDate(dataset.updatedAt) %>.</p>
+    <p>Сжатая локальная копия исходного открытого набора. Источник: <a href="<%= dataset.datasetUrl %>" target="_blank" rel="noopener noreferrer nofollow">data.egov.kz</a> · обновлено <%= formatDate(dataset.updatedAt) %>.</p>
     <button class="od-btn od-btn--ghost" type="button" data-od-records-more hidden>Показать следующие 50 записей</button>
   </div>
 </section>

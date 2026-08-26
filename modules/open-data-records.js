@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const { createCatalogClient, fetchDatasetPassport } = require('./open-data-catalog');
+const { cacheResponse, readMaterializedRecords } = require('./open-data-record-cache');
 
 const DATA_EGOV_ORIGIN = 'https://data.egov.kz';
 
@@ -142,8 +143,56 @@ async function fetchOpenDataRecords(options = {}) {
   };
 }
 
+async function fetchOpenDataRecordsCached(options = {}) {
+  const dataset = options.dataset;
+  const offset = Math.max(0, Math.min(10_000_000, Number.parseInt(options.offset, 10) || 0));
+  const limit = Math.max(10, Math.min(100, Number.parseInt(options.limit, 10) || 50));
+  const query = clean(options.query);
+  const materialized = await readMaterializedRecords({
+    dataset,
+    offset,
+    limit,
+    query,
+    cacheDir: options.cacheDir,
+  });
+  if (materialized) {
+    return {
+      dataset: {
+        key: dataset.key,
+        title: dataset.title,
+        index: dataset.index,
+        version: materialized.manifest.version || dataset.version,
+        sourceUrl: dataset.datasetUrl,
+        updatedAt: dataset.updatedAt,
+      },
+      columns: publicColumns(materialized.rows),
+      rows: materialized.rows,
+      offset,
+      nextOffset: materialized.hasMore ? offset + materialized.rows.length : null,
+      hasMore: materialized.hasMore,
+      query,
+      source: 'data.egov.kz',
+      delivery: materialized.delivery,
+      cachedAt: materialized.cachedAt,
+      cacheComplete: materialized.complete,
+    };
+  }
+
+  const cacheKey = JSON.stringify({
+    type: 'records', index: dataset.index, version: dataset.version || 'latest', offset, limit, query,
+  });
+  return cacheResponse({
+    dataset,
+    cacheKey,
+    cacheDir: options.cacheDir,
+    ttlMs: options.cacheTtlMs,
+    fetcher: () => fetchOpenDataRecords({ ...options, offset, limit, query }),
+  });
+}
+
 module.exports = {
   fetchOpenDataRecords,
+  fetchOpenDataRecordsCached,
   fieldLabel,
   latestMappingVersion,
   publicColumns,

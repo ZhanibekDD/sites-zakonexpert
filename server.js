@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-26-complete-open-data-catalog-v2';
+const RELEASE_ID = '2026-08-26-materialized-open-data-cache-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -79,8 +79,9 @@ const {
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const openDataPages = require('./modules/open-data-pages');
 const { refreshOpenDataSnapshot } = require('./modules/open-data-refresh');
-const { fetchHousingRecordsPage, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
-const { fetchOpenDataRecords } = require('./modules/open-data-records');
+const { fetchHousingRecordsPageCached, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
+const { fetchOpenDataRecordsCached } = require('./modules/open-data-records');
+const { warmOpenDataRecordCache } = require('./modules/open-data-cache-warmer');
 const { syncOpenDataInventory } = require('./scripts/sync-open-data-inventory');
 const { normalizeRegionKey } = require('./modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
@@ -3089,9 +3090,7 @@ cron.schedule('15 3 * * *', async () => {
 logger.info('Notary+Bailiff+Lawyer cron scheduled: daily 03:15');
 
 // The complete catalog is compact metadata (about 7 MB) and is refreshed
-// daily. Actual rows are read on demand from the official API, so thousands of
-// datasets do not consume the limited hosting disk and corrections appear
-// without waiting for a new deployment.
+// daily. Record materialisation starts after this metadata refresh.
 if (process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
   cron.schedule('20 4 * * *', async () => {
     logger.info('[Cron] Complete open-data catalog sync starting...');
@@ -3105,9 +3104,34 @@ if (process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
   logger.info('Open-data catalog cron scheduled: daily 04:20');
 }
 
-// Optional materialized aggregates for a small curated set. Disabled by
-// default because the live-record browser makes a full 3923-set mirror both
-// unnecessary and unsafe for a 3 GB hosting account.
+// Materialise official records as Brotli-compressed chunks. Visitors read the
+// local copy immediately; the official API is only used to fill or refresh the
+// cache. A hard ceiling and a free-space reserve protect the 3 GB hosting plan.
+if (EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false') {
+  const runOpenDataCacheWarm = async reason => {
+    logger.info(`[Open data cache] ${reason}: materialisation starting...`);
+    try {
+      const result = await warmOpenDataRecordCache({
+        apiKey: EGOV_API_KEY,
+        datasets: openDataPages.listDatasets(),
+        onProgress: progress => {
+          if (progress.processed % 250 === 0) {
+            logger.info(`[Open data cache] ${progress.phase}: ${progress.processed}/${progress.total}, ${Math.round(progress.bytes / 1024 / 1024)} MB`);
+          }
+        },
+      });
+      logger.info(`[Open data cache] finished: ${result.completed} complete, ${result.failures.length} errors, ${Math.round(result.bytes / 1024 / 1024)} MB${result.stoppedForSpace ? ', disk limit reached' : ''}`);
+    } catch (error) {
+      logger.error('[Open data cache] materialisation failed: ' + error.message);
+    }
+  };
+  cron.schedule('45 4 * * *', () => runOpenDataCacheWarm('daily'));
+  const startupCacheTimer = setTimeout(() => runOpenDataCacheWarm('startup'), 45_000);
+  startupCacheTimer.unref?.();
+  logger.info('Open-data record cache scheduled: startup + daily 04:45');
+}
+
+// Optional statistical aggregates for the older curated landing pages.
 if (EGOV_API_KEY && process.env.OPEN_DATA_AGGREGATE_REFRESH === 'true') {
   cron.schedule('35 4 * * 1', async () => {
     logger.info('[Cron] Curated open-data aggregate refresh starting...');
@@ -3578,8 +3602,8 @@ function renderOpenDataPage(req, res, next, bodyView, bodyData, meta) {
       ogType: 'website',
       enableAutoAds: false,
       activeNav: 'open-data',
-      extraStyles: ['/css/open-data.css?v=20260826-1'],
-      extraScripts: ['/js/open-data-housing.js?v=20260826-1', ...(Array.isArray(meta.extraScripts) ? meta.extraScripts : [])],
+      extraStyles: ['/css/open-data.css?v=20260826-2'],
+      extraScripts: ['/js/open-data-housing.js?v=20260826-2', ...(Array.isArray(meta.extraScripts) ? meta.extraScripts : [])],
       body,
     });
   });
@@ -3606,7 +3630,7 @@ app.post('/api/open-data/housing-records', housingRecordsLimiter, asyncHandler(a
   const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 180));
   if (!dataset || !isHousingDataset(dataset)) return res.status(404).json({ error: 'Жилищный набор не найден' });
   try {
-    const result = await fetchHousingRecordsPage({
+    const result = await fetchHousingRecordsPageCached({
       dataset,
       apiKey: EGOV_API_KEY,
       cursor: req.body?.cursor,
@@ -3627,7 +3651,7 @@ app.post('/api/open-data/records', housingRecordsLimiter, asyncHandler(async (re
   const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 220));
   if (!dataset || !dataset.liveAvailable) return res.status(404).json({ error: 'Набор данных не найден' });
   try {
-    const result = await fetchOpenDataRecords({
+    const result = await fetchOpenDataRecordsCached({
       dataset,
       apiKey: EGOV_API_KEY,
       offset: req.body?.offset,
@@ -3757,7 +3781,7 @@ app.get('/otkrytye-dannye/reabilitaciya-detey-alatau-2026', (req, res, next) => 
     title,
     description: `${dataset.description} Актуальные записи загружаются напрямую из официального API data.egov.kz.`,
     noindex: !(dataset.liveAvailable || dataset.hasData),
-    extraScripts: ['/js/open-data-records.js?v=20260826-2'],
+    extraScripts: ['/js/open-data-records.js?v=20260826-3'],
     schema: openDataPages.datasetSchema(dataset, [
       { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' }, { name: dataset.shortTitle, path: dataset.path },
     ]),
@@ -3855,7 +3879,7 @@ function renderGenericOpenDataDataset(req, res, next, dataset) {
     title,
     description,
     noindex: !(dataset.liveAvailable || dataset.hasData),
-    extraScripts: housingDataset ? [] : ['/js/open-data-records.js?v=20260826-1'],
+    extraScripts: housingDataset ? [] : ['/js/open-data-records.js?v=20260826-3'],
     schema: openDataPages.datasetSchema(dataset, [
       { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' },
       { name: dataset.category, path: dataset.category === 'Государственный сектор' ? '/otkrytye-dannye/gosudarstvennyy-sektor' : '/otkrytye-dannye/kategorii' },

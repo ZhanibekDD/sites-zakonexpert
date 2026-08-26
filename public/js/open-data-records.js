@@ -18,6 +18,7 @@
     var input = form && form.querySelector('[name="query"]');
     var reset = root.querySelector('[data-od-records-reset]');
     var status = root.querySelector('[data-od-records-status]');
+    var freshness = root.querySelector('[data-od-records-freshness]');
     var tableBox = root.querySelector('[data-od-records-table]');
     var pagination = root.querySelector('[data-od-records-pagination]');
     var prev = root.querySelector('[data-od-records-prev]');
@@ -50,7 +51,13 @@
         wrap.appendChild(table);
         tableBox.appendChild(wrap);
         tableBox.hidden = false;
-        status.textContent = 'Показаны записи ' + (payload.offset + 1) + '–' + (payload.offset + payload.rows.length) + (query ? ' по запросу «' + query + '»' : '') + '.';
+        var delivery = payload.delivery === 'official-api'
+          ? ' Получены из API и сохранены локально.'
+          : payload.delivery === 'stale-cache'
+            ? ' Показана сохранённая копия; обновление выполняется в фоне.'
+            : ' Показаны из быстрой локальной копии.';
+        status.textContent = 'Показаны записи ' + (payload.offset + 1) + '–' + (payload.offset + payload.rows.length) + (query ? ' по запросу «' + query + '»' : '') + '.' + delivery;
+        if (freshness) freshness.innerHTML = '<i class="bi bi-lightning-charge-fill"></i> ' + (payload.delivery === 'official-api' ? 'API синхронизирован' : 'локальная копия · быстро');
       }
       pagination.hidden = !payload.rows.length;
       prev.disabled = offset <= 0;
@@ -61,7 +68,7 @@
     async function load() {
       if (loading || !dataset) return;
       loading = true;
-      status.textContent = 'Загружаем данные из официального API…';
+      status.textContent = 'Открываем сохранённые данные…';
       if (form) Array.prototype.forEach.call(form.elements, function (element) { element.disabled = true; });
       try {
         var response = await fetch('/api/open-data/records', {
