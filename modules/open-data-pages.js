@@ -158,7 +158,11 @@ function listDatasets(kind) {
 }
 
 function getDataset(key) {
-  const dataset = OPEN_DATA_BY_KEY.get(key) || datasetDefinitions().find(item => item.key === key);
+  // Prefer the inventory-enriched definition. Curated definitions keep the
+  // readable URL and title, while the inventory adds live API availability.
+  // Falling back to OPEN_DATA_BY_KEY preserves manually configured datasets
+  // that have not appeared in the latest inventory yet.
+  const dataset = datasetDefinitions().find(item => item.key === key) || OPEN_DATA_BY_KEY.get(key);
   return dataset ? withSnapshot(dataset) : null;
 }
 

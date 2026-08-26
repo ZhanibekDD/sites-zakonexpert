@@ -3753,10 +3753,11 @@ app.get('/otkrytye-dannye/revizionnye-komissii-2-kvartal-2026', (req, res, next)
 app.get('/otkrytye-dannye/reabilitaciya-detey-alatau-2026', (req, res, next) => {
   const dataset = openDataPages.getDataset('children-rehabilitation-alatau-2026-h1');
   const title = 'Реабилитация детей в санатории «Алатау» — данные за 2026 год';
-  renderOpenDataPage(req, res, next, 'open-data/empty-body', { dataset }, {
+  renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset, housingDataset: false }, {
     title,
-    description: dataset.description,
-    noindex: !dataset.hasData,
+    description: `${dataset.description} Актуальные записи загружаются напрямую из официального API data.egov.kz.`,
+    noindex: !(dataset.liveAvailable || dataset.hasData),
+    extraScripts: ['/js/open-data-records.js?v=20260826-2'],
     schema: openDataPages.datasetSchema(dataset, [
       { name: 'Главная', path: '/' }, { name: 'Открытые данные', path: '/otkrytye-dannye' }, { name: dataset.shortTitle, path: dataset.path },
     ]),

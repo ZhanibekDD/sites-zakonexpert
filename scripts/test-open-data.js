@@ -188,6 +188,10 @@ async function run() {
   assert(sitemap.some(entry => entry.path === '/zhilishchnye-spiski/poluchili-zhile/almaty'));
   assert(sitemap.some(entry => entry.path === '/zhilishchnye-spiski/ochered-na-zhile/astana'));
 
+  const rehabilitation = openDataPages.getDataset('children-rehabilitation-alatau-2026-h1');
+  assert.strictEqual(rehabilitation.liveAvailable, true, 'curated datasets must inherit live API availability from the complete inventory');
+  assert.strictEqual(rehabilitation.path, '/otkrytye-dannye/reabilitaciya-detey-alatau-2026');
+
   const audit = openDataPages.getDataset('audit-commissions-2026-q2');
   const body = await ejs.renderFile(path.join(ROOT, 'views', 'open-data', 'audit-body.ejs'), {
     dataset: audit,
@@ -206,6 +210,7 @@ async function run() {
   assert(serverSource.includes("app.get('/otkrytye-dannye/kategorii'"));
   assert(serverSource.includes("app.get('/otkrytye-dannye/organizacii'"));
   assert(serverSource.includes("app.get('/otkrytye-dannye/istochniki'"));
+  assert(serverSource.includes("'/js/open-data-records.js?v=20260826-2'"), 'rehabilitation page must poll the official API instead of rendering a permanent placeholder');
   assert(serverSource.includes("app.get('/download-document/:filename'"));
   assert(serverSource.includes("OPEN_DATA_AUTO_REFRESH"));
 
