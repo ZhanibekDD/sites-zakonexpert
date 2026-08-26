@@ -120,9 +120,10 @@ function publicColumns(rows) {
 }
 
 function fullNameQuery(fullName) {
+  const surname = fullName.split(' ').filter(Boolean)[0];
   return {
     bool: {
-      must: fullName.split(' ').filter(Boolean).map(part => ({ match: { fio: part } })),
+      must: [{ match: { fio: surname } }],
     },
   };
 }
