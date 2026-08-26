@@ -15,6 +15,12 @@ const {
   refreshOpenDataSnapshot,
 } = require('../modules/open-data-refresh');
 const { parseDatasetPassport } = require('../modules/open-data-catalog');
+const {
+  fetchHousingRecordsPage,
+  normalizeFullName,
+  searchHousingRecords,
+  validateFullName,
+} = require('../modules/open-data-housing-search');
 const openDataPages = require('../modules/open-data-pages');
 
 const ROOT = path.join(__dirname, '..');
@@ -29,6 +35,38 @@ async function run() {
   assert.strictEqual(officialDataUrl('https://data.egov.kz/api/v4/test/v1?apiKey=secret'), 'https://data.egov.kz/api/v4/test/v1');
   assert.strictEqual(officialDataUrl('https://example.com/api/v4/test/v1'), '');
   assert.strictEqual(containsPersonalField([{ fio: 'Пример А.А.' }]), true);
+  assert.strictEqual(normalizeFullName('  Касымова, Алия Ерлановна '), 'КАСЫМОВА АЛИЯ ЕРЛАНОВНА');
+  assert.strictEqual(validateFullName('Касымова Алия Ерлановна'), 'КАСЫМОВА АЛИЯ ЕРЛАНОВНА');
+  assert.strictEqual(validateFullName('Алия'), null);
+
+  const housingApiDataset = {
+    key: 'housing-api-test', kind: 'housing_waitlist', title: 'Список граждан, нуждающихся в жилище',
+    datasetUrl: 'https://data.egov.kz/datasets/view?index=housing-api-test',
+    apiUrl: 'https://data.egov.kz/api/v4/housing-api-test/v1', updatedAt: '2026-08-25',
+  };
+  const apiCalls = [];
+  const housingHttp = {
+    async get(url, options) {
+      apiCalls.push({ url, options });
+      return { data: [
+        { id: 1, fio: 'Касымова Алия Ерлановна', region: 'Астана', subcategory: 'Многодетная семья', note: '№ 42', apiKey: 'must-not-render' },
+        { id: 2, fio: 'Другой Человек', region: 'Алматы', subcategory: 'Общая очередь' },
+      ] };
+    },
+  };
+  const recordsPage = await fetchHousingRecordsPage({
+    dataset: housingApiDataset, apiKey: 'test-key', limit: 50, http: housingHttp,
+  });
+  assert.strictEqual(recordsPage.rows[0].fio, 'Касымова Алия Ерлановна');
+  assert.strictEqual(recordsPage.rows[0].note, '№ 42', 'all official record fields must be returned');
+  assert(!Object.prototype.hasOwnProperty.call(recordsPage.rows[0], 'apiKey'), 'technical credentials must never be rendered');
+  assert(recordsPage.columns.some(column => column.label === 'ФИО'));
+  const housingLookup = await searchHousingRecords({
+    fullName: 'Касымова Алия Ерлановна', apiKey: 'test-key', datasets: [housingApiDataset], http: housingHttp,
+  });
+  assert.strictEqual(housingLookup.results.length, 1);
+  assert(housingLookup.results[0].details.some(field => field.label === 'Примечание' && field.value === '№ 42'));
+  assert(apiCalls.some(call => JSON.parse(call.options.params.source).query), 'exact FIO search must be sent to the official API');
 
   const housing = OPEN_DATA_DATASETS.find(dataset => dataset.key === 'housing-received-akmola');
   const housingSummary = aggregateDataset(housing, [
@@ -99,6 +137,8 @@ async function run() {
   const serverSource = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   assert(serverSource.includes("app.get('/sitemap-open-data.xml'"));
   assert(serverSource.includes("app.get('/otkrytye-dannye/gosudarstvennyy-sektor'"));
+  assert(serverSource.includes("app.post('/api/open-data/housing-records'"));
+  assert(serverSource.includes("app.post('/api/open-data/housing-search'"));
   assert(serverSource.includes("OPEN_DATA_AUTO_REFRESH"));
 
   console.log('Open-data tests passed');

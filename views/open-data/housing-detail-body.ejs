@@ -9,7 +9,7 @@
       <div class="od-detail-hero__main">
         <span class="od-eyebrow"><i class="bi bi-patch-check-fill"></i> Официальный набор · <%= dataset.updateFrequency %></span>
         <h1><%= isWaitlist ? 'Очередь на жильё' : 'Список получивших жильё' %> в <%= dataset.regionPrepositional %></h1>
-        <p><%= dataset.description %> Фамилии не перепубликуются: ниже — категории, программы и населённые пункты без персональных записей.</p>
+        <p><%= dataset.description %> Ниже опубликованы записи официального набора с поиском по ФИО, а также категории, программы и даты.</p>
       </div>
       <div class="od-source-seal"><i class="bi bi-bank"></i><span>Источник</span><strong>data.egov.kz</strong></div>
     </header>
@@ -18,8 +18,10 @@
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-list-ol"></i></span><strong><%= recordCountLabel(dataset) %></strong><small>записей в срезе</small></div>
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-people"></i></span><strong><%= dataset.categories.length %></strong><small>категорий граждан</small></div>
       <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-calendar3"></i></span><strong><%= formatDate(dataset.updatedAt) %></strong><small>обновление источника</small></div>
-      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-shield-check"></i></span><strong>Без ФИО</strong><small>обезличенная публикация</small></div>
+      <div class="od-kpi"><span class="od-kpi__icon"><i class="bi bi-search"></i></span><strong>Поиск по ФИО</strong><small>в официальном списке</small></div>
     </div>
+
+    <%- include('housing-records', { dataset: dataset }) %>
 
     <% if (dataset.rowLimitReached) { %>
       <div class="od-data-alert"><i class="bi bi-info-circle"></i><div><strong>В предоставленном файле достигнут лимит 100 строк.</strong><p>Поэтому это не утверждение о полном количестве граждан в регионе. Цифра обозначена как «не менее», а полный официальный список доступен по ссылке на источник.</p></div></div>
@@ -62,13 +64,6 @@
         <div class="od-chip-cloud"><% dataset.localities.forEach(function(item) { %><span><b><%= item.label %></b><small><%= formatNumber(item.count) %></small></span><% }); %></div>
       </section>
     <% } %>
-
-    <section class="od-section" aria-labelledby="od-check-title">
-      <div class="od-how-check">
-        <div><span class="od-kicker">Проверка записи</span><h2 id="od-check-title">Как проверить себя в официальном списке</h2><p>Перейдите на data.egov.kz, откройте вкладку данных и воспользуйтесь фильтром набора. ZakonExpert не принимает решения о постановке на учёт или предоставлении жилья.</p></div>
-        <ol><li><span>1</span>Откройте официальный набор</li><li><span>2</span>Используйте поиск или фильтры</li><li><span>3</span>За статусом решения обратитесь в Отбасы банк или акимат</li></ol>
-      </div>
-    </section>
 
     <section class="od-related" aria-labelledby="od-related-title">
       <div class="od-section__heading"><div><span class="od-kicker">Другие регионы</span><h2 id="od-related-title">Сравнить данные</h2></div><a class="od-switch-link" href="<%= isWaitlist ? '/zhilishchnye-spiski/ochered-na-zhile' : '/zhilishchnye-spiski/poluchili-zhile' %>">Все регионы →</a></div>

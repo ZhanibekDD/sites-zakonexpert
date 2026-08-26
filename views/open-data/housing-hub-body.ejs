@@ -6,7 +6,7 @@
       <div class="od-hero__copy">
         <span class="od-eyebrow"><i class="bi bi-buildings"></i> Данные АО «Отбасы банк»</span>
         <h1>Жилищные списки Казахстана</h1>
-        <p>Региональные срезы официальных списков: кто состоит на учёте как нуждающийся в жилье и сколько граждан получили жильё из коммунального фонда. Без перепубликации фамилий.</p>
+        <p>Официальные региональные списки граждан, состоящих на учёте как нуждающиеся в жилье и получивших жильё из коммунального фонда. Ниже доступна проверка по ФИО.</p>
       </div>
       <div class="od-hero__metrics">
         <div><strong><%= formatNumber(waitlist.rowCount) %><% if (waitlist.partial) { %>+<% } %></strong><span>в срезах очереди</span></div>
@@ -14,6 +14,8 @@
         <div><strong><%= waitlist.datasets.length + received.datasets.length %></strong><span>региональных страниц</span></div>
       </div>
     </header>
+
+    <%- include('housing-search') %>
 
     <section class="od-section" aria-labelledby="od-housing-directions">
       <div class="od-section__heading"><div><span class="od-kicker">Выберите раздел</span><h2 id="od-housing-directions">Два вида официальных списков</h2></div></div>
@@ -35,7 +37,7 @@
       <div class="od-section__heading"><div><span class="od-kicker">Как читать</span><h2 id="od-how-title">Что показывают эти страницы</h2></div></div>
       <div class="od-explainer-grid">
         <div><span>1</span><strong>Официальный источник</strong><p>Каждая цифра получена из набора на data.egov.kz; ссылка и дата обновления указаны на странице региона.</p></div>
-        <div><span>2</span><strong>Безопасный срез</strong><p>Показываем количество записей и распределения, но не копируем фамилии граждан в поисковую выдачу.</p></div>
+        <div><span>2</span><strong>Поиск по ФИО</strong><p>Можно проверить себя сразу по всем подключённым региональным наборам и открыть исходную запись.</p></div>
         <div><span>3</span><strong>Не решение госоргана</strong><p>Наличие записи не подтверждает право на жильё и не заменяет уведомление Отбасы банка или акимата.</p></div>
       </div>
     </section>

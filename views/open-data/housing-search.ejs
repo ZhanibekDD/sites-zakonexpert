@@ -1,0 +1,16 @@
+<section class="od-name-search" id="proverit-fio" aria-labelledby="od-name-search-title">
+  <div class="od-name-search__intro">
+    <span class="od-kicker">Поиск по всем подключённым регионам</span>
+    <h2 id="od-name-search-title">Проверьте себя по ФИО</h2>
+    <p>Введите фамилию, имя и отчество полностью. Мы проверим официальные жилищные наборы data.egov.kz и покажем найденные записи.</p>
+  </div>
+  <form class="od-name-search__form" data-od-housing-search novalidate>
+    <label>Фамилия, имя, отчество
+      <input type="text" name="fullName" maxlength="120" autocomplete="name" placeholder="Например: Кияшев Жанибек Даулетович" required>
+    </label>
+    <button class="od-btn od-btn--primary" type="submit"><i class="bi bi-search"></i> Найти в списках</button>
+  </form>
+  <p class="od-name-search__status" data-od-housing-search-status aria-live="polite"></p>
+  <div class="od-name-search__results" data-od-housing-search-results hidden></div>
+  <small class="od-name-search__source"><i class="bi bi-patch-check-fill"></i> Источник результатов: официальные открытые наборы <a href="https://data.egov.kz" target="_blank" rel="noopener noreferrer nofollow">data.egov.kz</a>. ФИО и сведения выводятся в составе исходных записей.</small>
+</section>

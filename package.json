@@ -18,7 +18,7 @@
     "test:smoke": "node scripts/smoke-test.js",
     "test:arrest-pillar": "node scripts/test-snyatie-aresta-pillar.js",
     "test:seo-indexing": "node scripts/test-seo-indexing.js",
-    "test:open-data": "node --check modules/open-data-catalog.js && node --check public/js/open-data.js && node scripts/test-open-data.js",
+    "test:open-data": "node --check modules/open-data-catalog.js && node --check modules/open-data-housing-search.js && node --check public/js/open-data.js && node --check public/js/open-data-housing.js && node scripts/test-open-data.js",
     "test:source-integrity": "node scripts/test-source-integrity.js",
     "test:notaries": "node scripts/test-notaries.js",
     "test:bailiffs": "node scripts/test-bailiffs.js",

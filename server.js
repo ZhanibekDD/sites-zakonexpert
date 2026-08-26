@@ -79,6 +79,7 @@ const {
 const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
 const openDataPages = require('./modules/open-data-pages');
 const { refreshOpenDataSnapshot } = require('./modules/open-data-refresh');
+const { fetchHousingRecordsPage, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
 const { normalizeRegionKey } = require('./modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
 const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
@@ -311,6 +312,8 @@ function createRateLimiter({ windowMs, max, name }) {
 }
 
 const externalApiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, name: 'внешнему реестру' });
+const housingSearchLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 12, name: 'поиску по жилищным спискам' });
+const housingRecordsLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'спискам открытых данных' });
 const companySuggestLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'поиску организаций' });
 const leadLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 10, name: 'форме' });
 const commentLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 8, name: 'комментариям' });
@@ -3528,11 +3531,49 @@ function renderOpenDataPage(req, res, next, bodyView, bodyData, meta) {
       enableAutoAds: false,
       activeNav: 'open-data',
       extraStyles: ['/css/open-data.css?v=20260826-1'],
-      extraScripts: Array.isArray(meta.extraScripts) ? meta.extraScripts : [],
+      extraScripts: ['/js/open-data-housing.js?v=20260826-1', ...(Array.isArray(meta.extraScripts) ? meta.extraScripts : [])],
       body,
     });
   });
 }
+
+app.post('/api/open-data/housing-search', housingSearchLimiter, asyncHandler(async (req, res) => {
+  try {
+    const result = await searchHousingRecords({
+      fullName: req.body?.fullName,
+      apiKey: EGOV_API_KEY,
+      datasets: openDataPages.listDatasets(),
+      http: axios,
+    });
+    res.set('Cache-Control', 'no-store');
+    return res.json(result);
+  } catch (error) {
+    const status = /Введите|Подтвердите/.test(error.message) ? 400 : 503;
+    logger.warn(`[Open data] Housing name lookup failed: ${error.code || error.message}`);
+    return res.status(status).json({ error: status === 400 ? error.message : 'Официальный источник временно не ответил. Повторите позже.' });
+  }
+}));
+
+app.post('/api/open-data/housing-records', housingRecordsLimiter, asyncHandler(async (req, res) => {
+  const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 180));
+  if (!dataset || !isHousingDataset(dataset)) return res.status(404).json({ error: 'Жилищный набор не найден' });
+  try {
+    const result = await fetchHousingRecordsPage({
+      dataset,
+      apiKey: EGOV_API_KEY,
+      cursor: req.body?.cursor,
+      fullName: req.body?.fullName,
+      limit: 50,
+      http: axios,
+    });
+    res.set('Cache-Control', 'private, no-store');
+    return res.json(result);
+  } catch (error) {
+    const status = /Введите|не найден/.test(error.message) ? 400 : 503;
+    logger.warn(`[Open data] Housing records request failed for ${dataset.key}: ${error.code || error.message}`);
+    return res.status(status).json({ error: status === 400 ? error.message : 'Не удалось получить записи из официального источника. Повторите позже.' });
+  }
+}));
 
 app.get('/otkrytye-dannye', (req, res, next) => {
   const snapshot = openDataPages.loadSnapshot();
@@ -3559,7 +3600,7 @@ app.get('/zhilishchnye-spiski', (req, res, next) => {
   const waitlist = openDataPages.housingGroup('housing_waitlist');
   const received = openDataPages.housingGroup('housing_received');
   const title = 'Жилищные списки Казахстана по регионам — очередь и получившие жильё';
-  const description = 'Официальные жилищные списки Казахстана в обезличенном виде: очередь на жильё, получившие коммунальное жильё, категории и регионы.';
+  const description = 'Официальные жилищные списки Казахстана: поиск по ФИО, очередь на жильё, получившие коммунальное жильё, категории и регионы.';
   renderOpenDataPage(req, res, next, 'open-data/housing-hub-body', { waitlist, received }, {
     title,
     description,
@@ -3577,8 +3618,8 @@ function renderHousingGroup(kind) {
       ? 'Очередь на жильё по регионам Казахстана — официальные списки 2026'
       : 'Списки получивших жильё по регионам Казахстана — данные 2026';
     const description = waitlist
-      ? 'Сводные данные очереди на жильё в Казахстане по регионам, категориям и датам постановки на учёт. Без публикации ФИО.'
-      : 'Региональные списки получивших коммунальное жильё: категории, программы и даты предоставления. Без публикации ФИО.';
+      ? 'Списки очереди на жильё в Казахстане по ФИО, регионам, категориям и датам постановки на учёт.'
+      : 'Региональные списки получивших коммунальное жильё по ФИО, категориям, программам и датам предоставления.';
     renderOpenDataPage(req, res, next, 'open-data/housing-group-body', { group }, {
       title,
       description,
@@ -3602,7 +3643,7 @@ function renderHousingDataset(kind) {
     const title = isWaitlist
       ? `Очередь на жильё в ${dataset.regionPrepositional} — список и статистика 2026`
       : `Список получивших жильё в ${dataset.regionPrepositional} — данные 2026`;
-    const description = `${dataset.description} Категории, даты, официальный источник и актуальность. ФИО не дублируются.`;
+    const description = `${dataset.description} Поиск по ФИО, полный список записей, категории, даты, официальный источник и актуальность.`;
     const related = openDataPages.listDatasets(kind).filter(item => item.key !== dataset.key);
     renderOpenDataPage(req, res, next, 'open-data/housing-detail-body', { dataset, related }, {
       title,
@@ -3671,7 +3712,8 @@ app.get('/otkrytye-dannye/gosudarstvennyy-sektor/:slug', (req, res, next) => {
   if (!dataset || dataset.kind !== 'government_sector') return sendNotFound(res);
   const title = `${dataset.title} — официальный набор данных | ZakonExpert`;
   const description = `${dataset.description} Структура, количество записей, дата обновления и ссылка на официальный источник.`;
-  renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset }, {
+  const housingDataset = isHousingDataset(dataset);
+  renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset, housingDataset }, {
     title,
     description,
     noindex: !dataset.hasData,

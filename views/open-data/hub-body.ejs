@@ -5,10 +5,10 @@
     <header class="od-hero od-hero--main">
       <div class="od-hero__copy">
         <span class="od-eyebrow"><i class="bi bi-database-check"></i> Официальные данные Казахстана</span>
-        <h1>Открытые данные — понятно, актуально и без публикации ФИО</h1>
+        <h1>Открытые данные — понятно, актуально и с поиском по ФИО</h1>
         <p>Преобразуем государственные наборы в наглядные региональные срезы: жильё, очередь, аудит и социальные показатели. На каждой странице указаны источник, дата обновления и границы данных.</p>
         <div class="od-hero__actions">
-          <a class="od-btn od-btn--primary" href="/zhilishchnye-spiski">Смотреть жилищные списки</a>
+          <a class="od-btn od-btn--primary" href="/zhilishchnye-spiski#proverit-fio">Проверить себя по ФИО</a>
           <a class="od-btn od-btn--ghost" href="#datasets">Все наборы</a>
         </div>
       </div>
@@ -16,7 +16,7 @@
         <div class="od-visual__orb"><i class="bi bi-bar-chart-line"></i></div>
         <div class="od-visual__stat"><strong><%= formatNumber(housingReceived.rowCount + housingWaitlist.rowCount) %><% if (housingReceived.partial || housingWaitlist.partial) { %>+<% } %></strong><span>записей в срезах</span></div>
         <div class="od-visual__stat"><strong><%= housingReceived.datasets.length + housingWaitlist.datasets.length %></strong><span>региональных наборов</span></div>
-        <div class="od-visual__stat"><strong>0</strong><span>ФИО опубликовано</span></div>
+        <div class="od-visual__stat"><strong><i class="bi bi-search"></i></strong><span>поиск по жилищным спискам</span></div>
       </div>
     </header>
 
@@ -66,8 +66,8 @@
     </section>
 
     <aside class="od-privacy-note">
-      <span class="od-privacy-note__icon"><i class="bi bi-shield-lock"></i></span>
-      <div><strong>Персональные данные не дублируются</strong><p>Некоторые государственные наборы содержат ФИО. ZakonExpert сохраняет и показывает только агрегированную статистику. Для проверки конкретной записи используйте ссылку на официальный набор.</p></div>
+      <span class="od-privacy-note__icon"><i class="bi bi-patch-check-fill"></i></span>
+      <div><strong>Данные публикуются со ссылкой на первоисточник</strong><p>Для каждой страницы указаны официальный набор data.egov.kz, государственный орган, версия и дата обновления.</p></div>
     </aside>
   </div>
 </section>
