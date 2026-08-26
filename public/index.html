@@ -110,7 +110,7 @@
   <link rel="stylesheet" href="css/landing.css?v=20260619-1">
   <link rel="stylesheet" href="css/style.css?v=20260823-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260816-13">
+  <link rel="stylesheet" href="css/home-hero-v2.css?v=20260826-14">
   <style>
     .problem-icon-card{transition:border-color .15s, box-shadow .15s;}
     .problem-icon-card:hover{border-color:#d7a742 !important;box-shadow:0 6px 20px rgba(15,42,78,0.08);}
@@ -195,7 +195,8 @@
             <li><a href="/collectors"><i class="bi bi-person-x"></i> Коллекторы РК</a></li>
             <li><a href="/lombards"><i class="bi bi-gem"></i> Ломбарды РК</a></li>
             <li class="nav-dropdown-divider"></li>
-            <li><a href="/otkrytye-dannye"><i class="bi bi-database-check"></i> Открытые данные</a></li>
+            <li><a href="/otkrytye-dannye"><i class="bi bi-database-check"></i> Все открытые данные — 3 923 набора</a></li>
+            <li><a href="/zhilishchnye-spiski"><i class="bi bi-house-check"></i> Жилищные списки</a></li>
           </ul>
         </li>
         <li data-nav-kgd><a class="nav-link" href="/proverka-kontragenta" title="Проверка организации по БИН">КГД</a></li>
@@ -429,6 +430,58 @@
             <span class="ze-service-card__link">Подробнее <b aria-hidden="true">→</b></span>
           </div>
         </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGISTRIES AND OPEN DATA -->
+  <section class="ze-home-registries" id="reestry" aria-labelledby="home-registries-title">
+    <div class="landing-container">
+      <div class="ze-section-heading">
+        <span>Реестры и справочники</span>
+        <h2 id="home-registries-title">Открытые данные Казахстана</h2>
+        <p>Все опубликованные наборы data.egov.kz собраны в одном каталоге: по темам, государственным органам и регионам.</p>
+      </div>
+
+      <div class="ze-registry-hub">
+        <article class="ze-registry-feature">
+          <span class="ze-registry-feature__eyebrow"><i class="bi bi-database-check"></i> Единый каталог</span>
+          <h3>Найдите нужные государственные данные в несколько кликов</h3>
+          <p>Открывайте наборы и официальные записи без скачивания файлов. Для списков с ФИО доступен поиск по опубликованным полям.</p>
+          <div class="ze-registry-feature__stats" role="group" aria-label="Состав каталога">
+            <span><b>3 923</b><small>набора данных</small></span>
+            <span><b>18</b><small>категорий</small></span>
+            <span><b>497</b><small>организаций</small></span>
+          </div>
+          <div class="ze-registry-feature__actions">
+            <a class="ze-registry-feature__primary" href="/otkrytye-dannye">Открыть весь каталог <i class="bi bi-arrow-right"></i></a>
+            <a class="ze-registry-feature__secondary" href="/zhilishchnye-spiski">Найти себя в жилищных списках</a>
+          </div>
+          <small class="ze-registry-feature__source"><i class="bi bi-patch-check-fill"></i> Источник: официальный портал открытых данных data.egov.kz</small>
+        </article>
+
+        <nav class="ze-registry-links" aria-label="Разделы открытых данных">
+          <a class="ze-registry-link" href="/otkrytye-dannye/kategorii">
+            <span class="ze-registry-link__icon"><i class="bi bi-grid-3x3-gap"></i></span>
+            <span><strong>Категории данных</strong><small>18 тематических разделов</small></span>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+          <a class="ze-registry-link" href="/otkrytye-dannye/organizacii">
+            <span class="ze-registry-link__icon"><i class="bi bi-buildings"></i></span>
+            <span><strong>Организации и госорганы</strong><small>497 владельцев данных</small></span>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+          <a class="ze-registry-link" href="/zhilishchnye-spiski/poluchili-zhile">
+            <span class="ze-registry-link__icon"><i class="bi bi-house-check"></i></span>
+            <span><strong>Кто получил жильё</strong><small>Списки по регионам и поиск по ФИО</small></span>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+          <a class="ze-registry-link" href="/zhilishchnye-spiski/ochered-na-zhile">
+            <span class="ze-registry-link__icon"><i class="bi bi-person-lines-fill"></i></span>
+            <span><strong>Очередь на жильё</strong><small>Опубликованные записи по регионам</small></span>
+            <i class="bi bi-arrow-up-right"></i>
+          </a>
+        </nav>
       </div>
     </div>
   </section>
@@ -1589,6 +1642,8 @@
           <a href="/zakony">Законы</a>
           <a href="/news">Новости</a>
           <a href="/otkrytye-dannye">Открытые данные</a>
+          <a href="/otkrytye-dannye/kategorii">Категории данных</a>
+          <a href="/otkrytye-dannye/organizacii">Организации и госорганы</a>
           <a href="/advocate">Адвокат</a>
           <a href="/contact">Контакты</a>
           <a href="/privacy">Конфиденциальность</a>
