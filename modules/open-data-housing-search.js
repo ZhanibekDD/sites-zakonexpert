@@ -119,19 +119,18 @@ function publicColumns(rows) {
   return preferred.concat(extra).map(key => ({ key, label: fieldLabel(key) }));
 }
 
+function fullNameQuery(fullName) {
+  return {
+    bool: {
+      must: fullName.split(' ').filter(Boolean).map(part => ({ match: { fio: part } })),
+    },
+  };
+}
+
 async function searchDataset(dataset, fullName, apiKey, http = axios) {
   const source = {
     size: SEARCH_PAGE_SIZE,
-    query: {
-      bool: {
-        should: [
-          { match_phrase: { fio: fullName } },
-          { match_phrase: { full_name: fullName } },
-          { match_phrase: { fullname: fullName } },
-        ],
-        minimum_should_match: 1,
-      },
-    },
+    query: fullNameQuery(fullName),
   };
   const response = await http.get(dataset.apiUrl, {
     timeout: 25000,
@@ -150,23 +149,14 @@ async function fetchHousingRecordsPage(options = {}) {
   const apiKey = clean(options.apiKey);
   if (!apiKey) throw new Error('Доступ к официальному API временно не настроен');
   const cursor = clean(options.cursor);
+  const offset = /^\d+$/.test(cursor) ? Number.parseInt(cursor, 10) : 0;
   const requestedLimit = Number.parseInt(options.limit, 10);
   const limit = Number.isFinite(requestedLimit) ? Math.min(100, Math.max(10, requestedLimit)) : 50;
-  const source = { size: limit, sort: [{ id: { order: 'asc' } }] };
-  if (cursor) source.search_after = [/^-?\d+(?:\.\d+)?$/.test(cursor) ? Number(cursor) : cursor];
+  const source = { from: offset, size: limit };
   const fullName = options.fullName ? validateFullName(options.fullName) : '';
   if (options.fullName && !fullName) throw new Error('Введите ФИО полностью');
   if (fullName) {
-    source.query = {
-      bool: {
-        should: [
-          { match_phrase: { fio: fullName } },
-          { match_phrase: { full_name: fullName } },
-          { match_phrase: { fullname: fullName } },
-        ],
-        minimum_should_match: 1,
-      },
-    };
+    source.query = fullNameQuery(fullName);
   }
 
   const response = await (options.http || axios).get(dataset.apiUrl, {
@@ -179,7 +169,7 @@ async function fetchHousingRecordsPage(options = {}) {
     rows = rows.filter(row => normalizeFullName(valueFrom(row, ['fio', 'full_name', 'fullname'])) === fullName);
   }
   const publicRows = rows.map(publicHousingRow);
-  const lastId = rows.length ? clean(valueFrom(rows[rows.length - 1], ['id'])) : '';
+  const nextOffset = offset + rows.length;
   return {
     dataset: {
       key: dataset.key,
@@ -189,8 +179,8 @@ async function fetchHousingRecordsPage(options = {}) {
     },
     columns: publicColumns(publicRows),
     rows: publicRows,
-    nextCursor: !fullName && rows.length === limit && lastId ? lastId : '',
-    hasMore: !fullName && rows.length === limit && Boolean(lastId),
+    nextCursor: !fullName && rows.length === limit ? String(nextOffset) : '',
+    hasMore: !fullName && rows.length === limit,
     source: 'data.egov.kz',
   };
 }
