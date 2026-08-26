@@ -1,6 +1,6 @@
 <section class="od-page">
   <div class="landing-container">
-    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><a href="/otkrytye-dannye/gosudarstvennyy-sektor">Государственный сектор</a><span>/</span><span><%= dataset.title %></span></nav>
+    <nav class="od-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span>/</span><a href="/otkrytye-dannye">Открытые данные</a><span>/</span><a href="<%= dataset.category === 'Государственный сектор' ? '/otkrytye-dannye/gosudarstvennyy-sektor' : '/otkrytye-dannye/kategorii' %>"><%= dataset.category %></a><span>/</span><span><%= dataset.title %></span></nav>
     <header class="od-detail-hero">
       <div class="od-detail-hero__main"><span class="od-eyebrow"><i class="bi bi-database-check"></i> Официальный набор данных</span><h1><%= dataset.title %></h1><p><%= dataset.description %></p></div>
       <div class="od-source-seal"><i class="bi bi-bank"></i><span>Источник</span><strong>data.egov.kz</strong></div>

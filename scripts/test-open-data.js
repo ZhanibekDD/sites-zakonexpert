@@ -191,6 +191,8 @@ async function run() {
   const rehabilitation = openDataPages.getDataset('children-rehabilitation-alatau-2026-h1');
   assert.strictEqual(rehabilitation.liveAvailable, true, 'curated datasets must inherit live API availability from the complete inventory');
   assert.strictEqual(rehabilitation.path, '/otkrytye-dannye/reabilitaciya-detey-alatau-2026');
+  const hubView = fs.readFileSync(path.join(ROOT, 'views', 'open-data', 'hub-body.ejs'), 'utf8');
+  assert(hubView.includes("dataset.liveAvailable ? 'API подключён'"), 'live datasets without cached rows must not be marked as permanently waiting');
 
   const audit = openDataPages.getDataset('audit-commissions-2026-q2');
   const body = await ejs.renderFile(path.join(ROOT, 'views', 'open-data', 'audit-body.ejs'), {

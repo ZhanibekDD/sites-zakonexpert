@@ -51,10 +51,10 @@
       <div class="od-section__heading"><div><span class="od-kicker">Каталог</span><h2 id="od-datasets-title">Подключённые наборы</h2></div></div>
       <div class="od-dataset-grid">
         <% datasets.forEach(function(dataset) { %>
-          <article class="od-dataset-card<% if (!dataset.hasData) { %> od-dataset-card--empty<% } %>">
+          <article class="od-dataset-card<% if (!dataset.liveAvailable && !dataset.hasData) { %> od-dataset-card--empty<% } %>">
             <div class="od-dataset-card__top">
               <span class="od-source-badge"><i class="bi bi-patch-check-fill"></i> data.egov.kz</span>
-              <span class="od-status<% if (!dataset.hasData) { %> od-status--waiting<% } %>"><%= dataset.hasData ? 'Данные получены' : 'Ожидаются данные' %></span>
+              <span class="od-status<% if (!dataset.liveAvailable && !dataset.hasData) { %> od-status--waiting<% } %>"><%= dataset.hasData ? 'Данные получены' : dataset.liveAvailable ? 'API подключён' : 'Только паспорт' %></span>
             </div>
             <h3><a href="<%= dataset.path %>"><%= dataset.shortTitle || dataset.title %></a></h3>
             <p><%= dataset.description %></p>
@@ -62,7 +62,7 @@
               <div><dt>Орган</dt><dd><%= dataset.agency %></dd></div>
               <div><dt>Обновлено</dt><dd><%= formatDate(dataset.updatedAt) %></dd></div>
             </dl>
-            <a class="od-text-link" href="<%= dataset.path %>"><%= dataset.hasData ? 'Открыть срез' : 'Посмотреть статус' %> <span>→</span></a>
+            <a class="od-text-link" href="<%= dataset.path %>"><%= dataset.liveAvailable || dataset.hasData ? 'Открыть набор' : 'Посмотреть паспорт' %> <span>→</span></a>
           </article>
         <% }); %>
       </div>
