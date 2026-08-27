@@ -21,7 +21,7 @@ const {
   initializeMaterializedDataset,
   readMaterializedRecords,
 } = require('../modules/open-data-record-cache');
-const { warmDataset } = require('../modules/open-data-cache-warmer');
+const { getOpenDataCacheJobStatus, warmDataset, warmOpenDataRecordCache } = require('../modules/open-data-cache-warmer');
 const {
   fetchHousingRecordsPage,
   normalizeFullName,
@@ -145,6 +145,46 @@ async function run() {
     assert.strictEqual(warmed.manifest.complete, true);
     const warmedPage = await readMaterializedRecords({ dataset: warmDatasetDefinition, cacheDir: cacheDirectory, limit: 50 });
     assert.strictEqual(warmedPage.rows.length, 2, 'warmer must persist complete API rows');
+
+    const fallbackSizes = [];
+    const fallbackDataset = {
+      key: 'fallback-test', index: 'fallback-test', version: 'v1', title: 'Набор с ограничением размера', updatedAt: '2026-08-26',
+      datasetUrl: 'https://data.egov.kz/datasets/view?index=fallback-test',
+      apiUrl: 'https://data.egov.kz/api/v4/fallback-test/v1',
+    };
+    const fallback = await warmDataset({
+      dataset: fallbackDataset,
+      apiKey: 'test-key',
+      cacheDir: cacheDirectory,
+      pageSize: 500,
+      http: { async get(_url, request) {
+        const size = JSON.parse(request.params.source).size;
+        fallbackSizes.push(size);
+        if (size > 50) throw new Error('batch too large');
+        return { data: [{ id: 1, name: 'Сохранено после уменьшения пакета' }] };
+      } },
+    });
+    assert.strictEqual(fallback.manifest.complete, true);
+    assert.strictEqual(fallback.manifest.pageSize, 50, 'warmer must reduce an unsupported API batch to 50 rows');
+    assert.deepStrictEqual(fallbackSizes, [500, 500, 100, 50]);
+
+    const observableDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'ze-open-data-status-test-'));
+    try {
+      await warmOpenDataRecordCache({
+        datasets: [warmDatasetDefinition],
+        apiKey: 'test-key',
+        cacheDir: observableDirectory,
+        pageSize: 100,
+        delayMs: 0,
+        http: { async get() { return { data: [{ id: 1, name: 'Статус виден' }] }; } },
+      });
+      const cacheStatus = getOpenDataCacheJobStatus(observableDirectory);
+      assert.strictEqual(cacheStatus.status, 'complete');
+      assert.strictEqual(cacheStatus.completed, 1);
+      assert.strictEqual(cacheStatus.cachedRows, 1);
+    } finally {
+      fs.rmSync(observableDirectory, { recursive: true, force: true });
+    }
   } finally {
     fs.rmSync(cacheDirectory, { recursive: true, force: true });
   }

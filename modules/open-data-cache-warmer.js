@@ -13,6 +13,7 @@ const {
 const { publicRow, resolveLiveDataset } = require('./open-data-records');
 
 const activeJobs = new Map();
+const jobStates = new Map();
 
 function clean(value) {
   return String(value === null || value === undefined ? '' : value).replace(/\s+/g, ' ').trim();
@@ -36,7 +37,7 @@ function datasetPriority(dataset) {
 }
 
 async function requestBatch(options) {
-  const source = { size: options.pageSize };
+  const source = { size: options.manifest.pageSize };
   if (options.manifest.pagination === 'search_after') {
     source.sort = [{ id: { order: 'asc' } }];
     if (options.manifest.cursor !== null && options.manifest.cursor !== undefined) source.search_after = [options.manifest.cursor];
@@ -49,6 +50,43 @@ async function requestBatch(options) {
     headers: { Accept: 'application/json', 'User-Agent': 'ZakonExpert materialized open-data cache/1.0' },
   });
   return unwrapRows(response.data);
+}
+
+function smallerPageSize(current) {
+  if (current > 100) return 100;
+  if (current > 50) return 50;
+  return 0;
+}
+
+async function requestBatchWithFallback(options) {
+  let manifest = options.manifest;
+  while (true) {
+    try {
+      const rawRows = await requestBatch({ ...options, manifest });
+      return { manifest, rawRows };
+    } catch (error) {
+      if (manifest.rowCount > 0) throw error;
+      if (manifest.pagination === 'search_after') {
+        manifest = await initializeMaterializedDataset({
+          dataset: options.dataset,
+          version: options.dataset.version,
+          pageSize: manifest.pageSize,
+          pagination: 'offset',
+          cacheDir: options.cacheDir,
+        });
+        continue;
+      }
+      const fallbackSize = smallerPageSize(manifest.pageSize);
+      if (!fallbackSize) throw error;
+      manifest = await initializeMaterializedDataset({
+        dataset: options.dataset,
+        version: options.dataset.version,
+        pageSize: fallbackSize,
+        pagination: 'offset',
+        cacheDir: options.cacheDir,
+      });
+    }
+  }
 }
 
 async function warmDataset(options = {}) {
@@ -88,32 +126,18 @@ async function warmDataset(options = {}) {
   const maximumChunks = options.firstPageOnly ? 1 : Number.MAX_SAFE_INTEGER;
   while (!manifest.complete && chunks < maximumChunks) {
     if (options.shouldStop?.()) break;
-    let rawRows;
-    try {
-      rawRows = await requestBatch({ ...options, dataset, manifest });
-    } catch (error) {
-      if (manifest.rowCount === 0 && manifest.pagination === 'search_after') {
-        manifest = await initializeMaterializedDataset({
-          dataset,
-          version: dataset.version,
-          pageSize: options.pageSize,
-          pagination: 'offset',
-          cacheDir: options.cacheDir,
-        });
-        rawRows = await requestBatch({ ...options, dataset, manifest });
-      } else {
-        throw error;
-      }
-    }
+    const batch = await requestBatchWithFallback({ ...options, dataset, manifest });
+    manifest = batch.manifest;
+    const rawRows = batch.rawRows;
 
-    if (manifest.pagination === 'search_after' && rawRows.length === options.pageSize) {
+    if (manifest.pagination === 'search_after' && rawRows.length === manifest.pageSize) {
       const nextCursor = rawRows.at(-1)?.id;
       if (nextCursor === undefined || nextCursor === null || String(nextCursor) === String(manifest.cursor)) {
         if (manifest.rowCount === 0) {
           manifest = await initializeMaterializedDataset({
             dataset,
             version: dataset.version,
-            pageSize: options.pageSize,
+            pageSize: manifest.pageSize,
             pagination: 'offset',
             cacheDir: options.cacheDir,
           });
@@ -173,6 +197,8 @@ async function runWarm(options = {}) {
   let stoppedForSpace = false;
   const failures = [];
   let processed = 0;
+  const completedIndexes = new Set();
+  const rowCounts = new Map();
   const shouldStop = () => {
     const atLimit = bytes >= limits.allowedBytes;
     if (atLimit) stoppedForSpace = true;
@@ -181,7 +207,7 @@ async function runWarm(options = {}) {
   const onBytes = count => { bytes += Number(count) || 0; shouldStop(); };
   const handle = phase => async dataset => {
     try {
-      await warmDataset({
+      const result = await warmDataset({
         dataset,
         apiKey,
         http: options.http || axios,
@@ -192,12 +218,24 @@ async function runWarm(options = {}) {
         shouldStop,
         onBytes,
       });
+      if (result.manifest) {
+        rowCounts.set(dataset.index, Number(result.manifest.rowCount) || 0);
+        if (result.manifest.complete) completedIndexes.add(dataset.index);
+      }
     } catch (error) {
       failures.push({ index: dataset.index, message: clean(error.message).slice(0, 240) });
     } finally {
       processed += 1;
       if (processed % 25 === 0 || processed === datasets.length * 2) {
-        options.onProgress?.({ phase, processed, total: datasets.length * 2, bytes, failures: failures.length });
+        options.onProgress?.({
+          phase,
+          processed,
+          total: datasets.length * 2,
+          bytes,
+          failures: failures.length,
+          completed: completedIndexes.size,
+          cachedRows: Array.from(rowCounts.values()).reduce((sum, count) => sum + count, 0),
+        });
       }
     }
   };
@@ -224,13 +262,69 @@ async function runWarm(options = {}) {
 function warmOpenDataRecordCache(options = {}) {
   const jobKey = options.cacheDir || 'default';
   if (activeJobs.has(jobKey)) return activeJobs.get(jobKey);
-  const job = runWarm(options).finally(() => activeJobs.delete(jobKey));
+  const startedAt = new Date().toISOString();
+  jobStates.set(jobKey, {
+    status: 'running',
+    phase: 'starting',
+    processed: 0,
+    total: (Array.isArray(options.datasets) ? options.datasets.length : 0) * 2,
+    completed: 0,
+    cachedRows: 0,
+    bytes: 0,
+    errors: 0,
+    startedAt,
+    finishedAt: '',
+  });
+  const userProgress = options.onProgress;
+  const job = runWarm({
+    ...options,
+    onProgress(progress) {
+      jobStates.set(jobKey, {
+        ...jobStates.get(jobKey),
+        status: 'running',
+        ...progress,
+        errors: progress.failures,
+      });
+      userProgress?.(progress);
+    },
+  }).then(result => {
+    jobStates.set(jobKey, {
+      ...jobStates.get(jobKey),
+      status: result.stoppedForSpace ? 'limit-reached' : 'complete',
+      phase: 'complete',
+      processed: result.processed,
+      completed: result.completed,
+      cachedRows: result.cachedRows,
+      bytes: result.bytes,
+      errors: result.failures.length,
+      stoppedForSpace: result.stoppedForSpace,
+      finishedAt: new Date().toISOString(),
+    });
+    return result;
+  }).catch(error => {
+    jobStates.set(jobKey, {
+      ...jobStates.get(jobKey),
+      status: 'failed',
+      errors: (jobStates.get(jobKey)?.errors || 0) + 1,
+      finishedAt: new Date().toISOString(),
+    });
+    throw error;
+  }).finally(() => activeJobs.delete(jobKey));
   activeJobs.set(jobKey, job);
   return job;
 }
 
+function getOpenDataCacheJobStatus(cacheDir) {
+  const state = jobStates.get(cacheDir || 'default');
+  return state ? { ...state } : {
+    status: 'idle', phase: 'idle', processed: 0, total: 0, completed: 0,
+    cachedRows: 0, bytes: 0, errors: 0, startedAt: '', finishedAt: '',
+  };
+}
+
 module.exports = {
   datasetPriority,
+  getOpenDataCacheJobStatus,
   runWarm,
   warmDataset,
   warmOpenDataRecordCache,

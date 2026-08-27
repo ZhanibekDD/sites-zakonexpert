@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-26-materialized-open-data-cache-v1';
+const RELEASE_ID = '2026-08-27-open-data-cache-observability-v2';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -81,7 +81,7 @@ const openDataPages = require('./modules/open-data-pages');
 const { refreshOpenDataSnapshot } = require('./modules/open-data-refresh');
 const { fetchHousingRecordsPageCached, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
 const { fetchOpenDataRecordsCached } = require('./modules/open-data-records');
-const { warmOpenDataRecordCache } = require('./modules/open-data-cache-warmer');
+const { getOpenDataCacheJobStatus, warmOpenDataRecordCache } = require('./modules/open-data-cache-warmer');
 const { syncOpenDataInventory } = require('./scripts/sync-open-data-inventory');
 const { normalizeRegionKey } = require('./modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
@@ -3440,6 +3440,8 @@ app.post('/api/telegram/setup', asyncHandler(async (req, res) => {
 // Health-check для мониторинга сервиса
 app.get('/health', (req, res) => {
     const companyStats = companiesDb ? companiesDb.stats() : null;
+    const openDataCacheEnabled = Boolean(EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false');
+    const openDataCache = getOpenDataCacheJobStatus();
     res.json({
         status: 'ok',
         service: 'ZakonExpert',
@@ -3447,6 +3449,19 @@ app.get('/health', (req, res) => {
         egovKey: EGOV_API_KEY ? 'configured' : 'missing',
         kgdApi: kgdCounterparty.configured ? 'configured' : 'missing',
         goszakupApi: goszakup.configured ? 'configured' : 'missing',
+        openDataCache: {
+            enabled: openDataCacheEnabled,
+            status: openDataCacheEnabled && openDataCache.status === 'idle' ? 'scheduled' : openDataCache.status,
+            phase: openDataCache.phase,
+            processed: openDataCache.processed,
+            total: openDataCache.total,
+            completed: openDataCache.completed,
+            cachedRows: openDataCache.cachedRows,
+            megabytes: Math.round((openDataCache.bytes || 0) / 1024 / 1024),
+            errors: openDataCache.errors,
+            startedAt: openDataCache.startedAt,
+            finishedAt: openDataCache.finishedAt
+        },
         companies: companyStats ? {
             available: companyStats.available,
             count: companyStats.count,
