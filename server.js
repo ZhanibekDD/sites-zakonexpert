@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-27-open-data-cache-observability-v2';
+const RELEASE_ID = '2026-08-27-reviews-cancellations-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -387,7 +387,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // ===== VISITOR TRACKING =====
 const TRACKED_PATHS = new Set([
   '/', '/index.html',
-  '/services.html', '/contact.html', '/zakony.html',
+  '/services.html', '/contact.html', '/zakony.html', '/reviews', '/reviews.html',
   '/advocate',
   '/arest-kaspi', '/arest-kaspi.html',
   '/arest-halyk-bank', '/arest-halyk-bank.html',
@@ -2488,6 +2488,7 @@ function getCorePages() {
     { url: '/chsi-refinansirovanie',   priority: '0.8', freq: 'monthly' },
     { url: '/otmena-resheniya-suda',   priority: '0.8', freq: 'monthly' },
     { url: '/dokumenty',               priority: '0.8', freq: 'monthly' },
+    { url: '/reviews',                  priority: '0.85', freq: 'weekly' },
     { url: '/rezultaty',             priority: '0.7', freq: 'monthly' },
     { url: '/privacy', priority: '0.3', freq: 'yearly' },
     // Законы — разделы
