@@ -116,21 +116,15 @@ async function expectCheck(payload, expectedStatus) {
     `/check ${JSON.stringify(payload)}: expected ${expectedStatus}, received ${response.status}`);
 }
 
-async function expectLawyerCatalog() {
-  const region = encodeURIComponent('г. Алматы');
-  const first = await fetch(`${origin}/lawyers?region=${region}`);
-  const firstBody = await first.text();
-  assert(first.status === 200, `/lawyers region returned ${first.status}`);
-  assert(firstBody.length < 200000, `/lawyers region is too heavy (${firstBody.length} chars)`);
-  assert(firstBody.includes('class="catalog-pagination"'), '/lawyers region pagination is missing');
-  assert(firstBody.includes('официальный публичный реестр'), '/lawyers official source note is missing');
-
-  const second = await fetch(`${origin}/lawyers?region=${region}&page=2`);
-  const secondBody = await second.text();
-  assert(second.status === 200, `/lawyers region page 2 returned ${second.status}`);
-  assert(secondBody.includes('page=2') && secondBody.includes('aria-current="page">2</a>'),
-    '/lawyers page 2 canonical or current-page marker is missing');
-  console.log(`Catalog /lawyers: ${(firstBody.length / 1024).toFixed(1)} KB after pagination`);
+async function expectRetiredLawyerRoutes() {
+  for (const retiredPath of ['/lawyers', '/lawyer-search', '/lawyer/profile-does-not-exist', '/sitemap-lawyers.xml']) {
+    const response = await fetch(`${origin}${retiredPath}`, { redirect: 'manual' });
+    const body = await response.text();
+    assert(response.status === 410, `${retiredPath}: expected 410, received ${response.status}`);
+    assert(!response.headers.has('location'), `${retiredPath}: retired page must not redirect`);
+    assert(body.includes('name="robots" content="noindex,follow"'),
+      `${retiredPath}: retired page is missing noindex`);
+  }
 }
 
 async function run() {
@@ -153,7 +147,6 @@ async function run() {
       '/rezultaty',
       '/notaries',
       '/bailiffs',
-      '/lawyers',
       '/banks',
       '/mfo',
       '/lombards',
@@ -190,7 +183,7 @@ async function run() {
     for (const catalog of ['/courts', '/mfo', '/lombards', '/collectors']) {
       await expectLeanCatalog(catalog);
     }
-    await expectLawyerCatalog();
+    await expectRetiredLawyerRoutes();
 
     const redirectCases = [
       ['/proverka-kontragenta?bin=260740044168', '/proverka-kontragenta#bin=260740044168'],
@@ -336,9 +329,6 @@ async function run() {
     const unsafeGet = await fetch(`${origin}/api/news/clear`);
     assert(unsafeGet.status === 405,
       `/api/news/clear GET: expected 405, received ${unsafeGet.status}`);
-    const unsafeLawyerRefresh = await fetch(`${origin}/api/lawyers/refresh`);
-    assert(unsafeLawyerRefresh.status === 405,
-      `/api/lawyers/refresh GET: expected 405, received ${unsafeLawyerRefresh.status}`);
     const unauthenticatedPost = await fetch(`${origin}/api/news/clear`, { method: 'POST' });
     assert(unauthenticatedPost.status === 503,
       `/api/news/clear POST without ADMIN_KEY: expected 503, received ${unauthenticatedPost.status}`);
@@ -346,7 +336,7 @@ async function run() {
     assert(commentsAdmin.status === 401,
       `/admin/comments without Basic auth: expected 401, received ${commentsAdmin.status}`);
 
-    for (const missingPath of ['/lawyer/profile-does-not-exist', '/news/article-does-not-exist', '/definitely-missing']) {
+    for (const missingPath of ['/news/article-does-not-exist', '/definitely-missing']) {
       const missing = await fetch(`${origin}${missingPath}`, { redirect: 'manual' });
       const missingBody = await missing.text();
       assert(missing.status === 404, `${missingPath}: expected real 404, received ${missing.status}`);

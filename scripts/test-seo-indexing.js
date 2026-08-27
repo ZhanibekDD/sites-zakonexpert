@@ -1,6 +1,8 @@
 'use strict';
 
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const { hydrateDetails } = require('../modules/company-details-store');
 const {
   inheritLegacySlugs,
@@ -61,5 +63,36 @@ assert.strictEqual(malformed.addresses.length, 1);
 assert.strictEqual(malformed.contacts.length, 1);
 assert.strictEqual(malformed.categories.length, 1);
 assert.strictEqual(malformed.attributes.length, 1);
+
+const root = path.join(__dirname, '..');
+const retiredLawyerFiles = [
+  'modules/lawyers-db.js',
+  'registry/lawyers.json.gz',
+  'scripts/import-lawyers.js',
+  'scripts/refresh-lawyers-registry.js',
+  'views/lawyer/catalog.ejs',
+  'views/lawyer/page.ejs',
+  'views/lawyer/search.ejs',
+];
+retiredLawyerFiles.forEach(file => {
+  assert(!fs.existsSync(path.join(root, file)), `retired lawyer registry file still exists: ${file}`);
+});
+
+function collectMarkup(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) return collectMarkup(fullPath);
+    return /\.(?:html|ejs)$/.test(entry.name) ? [fullPath] : [];
+  });
+}
+collectMarkup(path.join(root, 'public')).concat(collectMarkup(path.join(root, 'views'))).forEach(file => {
+  const markup = fs.readFileSync(file, 'utf8');
+  assert(!/href=["']\/(?:lawyers|lawyer-search)(?:[?"'])/.test(markup),
+    `retired lawyer registry link remains in ${path.relative(root, file)}`);
+});
+
+const serverSource = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+assert(serverSource.includes("'/sitemap-lawyers.xml'"), 'retired lawyer URLs must keep an explicit 410 route');
+assert(!serverSource.includes("'/api/lawyers/refresh'"), 'retired lawyer refresh endpoint must be removed');
 
 console.log('SEO indexing policy OK: aliases, ambiguity guards and malformed details');

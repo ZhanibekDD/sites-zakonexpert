@@ -10,7 +10,7 @@ const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',
-  '/notaries', '/bailiffs', '/lawyers', '/banks', '/mfo', '/collectors',
+  '/notaries', '/bailiffs', '/banks', '/mfo', '/collectors',
   '/lombards', '/companies', '/courts', '/chambers', '/zakony', '/statyi', '/tools',
   '/proverka-kontragenta', '/proverka-bankrotstva',
   '/kk/companies', '/en/companies', '/zh/companies', '/tr/companies',
@@ -18,7 +18,7 @@ const publicRoutes = [
   '/tools/payment-plan', '/tools/mrp', '/tools/state-duty', '/tools/deadline',
 ];
 const stabilityRoutes = [
-  '/health', '/notaries', '/bailiffs', '/lawyers',
+  '/health', '/notaries', '/bailiffs',
   '/companies', '/en/companies', '/zakony', '/statyi', '/tools', '/proverka-kontragenta', '/proverka-bankrotstva', '/marshrut-dolzhnika',
 ];
 

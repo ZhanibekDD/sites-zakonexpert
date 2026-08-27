@@ -13,7 +13,6 @@ const DATABASES = [
   'laws.db',
   'notaries.db',
   'bailiffs.db',
-  'lawyers.db',
   'comments.db',
   'leads.db',
   'clicks.db',

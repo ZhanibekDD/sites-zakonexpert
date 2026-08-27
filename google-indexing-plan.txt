@@ -13,7 +13,6 @@ Search Console → Индексирование → Файлы Sitemap → до�
   sitemap-news.xml        — новости
   sitemap-notaries.xml    — нотариусы (реестр + карточки)
   sitemap-bailiffs.xml    — ЧСИ (реестр + карточки)
-  sitemap-lawyers.xml     — адвокаты
   sitemap-laws.xml        — статьи законов
   sitemap-banks.xml       — банки
   sitemap-courts.xml      — суды

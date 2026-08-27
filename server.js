@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-27-reviews-cancellations-v1';
+const RELEASE_ID = '2026-08-27-remove-lawyer-registry-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -150,19 +150,6 @@ try {
   logger.info('Comments module loaded ✓');
 } catch (e) {
   logger.warn('Comments module not loaded: ' + e.message);
-}
-
-// Initialize lawyers DB
-let lawyersDb = null;
-let importLawyers = null;
-let refreshLawyersRegistry = null;
-try {
-  lawyersDb  = require('./modules/lawyers-db');
-  ({ importLawyers } = require('./scripts/import-lawyers'));
-  ({ refreshLawyersRegistry } = require('./scripts/refresh-lawyers-registry'));
-  logger.info('Lawyers module loaded ✓');
-} catch (e) {
-  logger.warn('Lawyers module not loaded: ' + e.message);
 }
 
 // Initialize the large Kazakhstan companies registry (SQLite, loaded on demand)
@@ -407,8 +394,8 @@ const TRACKED_PATHS = new Set([
   '/otmena-resheniya-suda.html',
   '/spornost-dolga',
   '/chsi-refinansirovanie',
-  '/notaries', '/zamena-notariusa', '/bailiffs', '/lawyers',
-  '/notary-search', '/bailiff-search', '/lawyer-search',
+  '/notaries', '/zamena-notariusa', '/bailiffs',
+  '/notary-search', '/bailiff-search',
   '/banks', '/mfo', '/courts', '/chambers', '/companies', '/collectors', '/lombards',
   '/gsi', '/insurance', '/credit-bureaus', '/regulators', '/emergency',
   '/news', '/statyi',
@@ -459,6 +446,13 @@ const asyncHandler = fn => (req, res, next) =>
 function sendNotFound(res) {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'), error => {
     if (error && !res.headersSent) res.status(404).send('Страница не найдена');
+  });
+}
+
+function sendGone(res) {
+  res.set('Cache-Control', 'no-store');
+  res.status(410).sendFile(path.join(__dirname, 'public', '404.html'), error => {
+    if (error && !res.headersSent) res.status(410).send('Раздел удалён');
   });
 }
 
@@ -977,37 +971,6 @@ app.get('/bailiffs/:regionSlug', asyncHandler(async (req, res) => {
     regionItems,
     lastUpdated,
     getRegionEmblem,
-  });
-}));
-
-app.get('/lawyers', asyncHandler(async (req, res) => {
-  const region = (req.query.region || '').trim();
-  if (!lawyersDb) return res.status(503).send('Lawyer module not available');
-  const requestedPage = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const [allRegions, lastUpdated] = await Promise.all([
-    lawyersDb.getRegions(),
-    lawyersDb.getLastUpdated(),
-  ]);
-  if (region) {
-    const total = await lawyersDb.countByRegion(region);
-    const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
-    const page = Math.min(requestedPage, totalPages);
-    const regionItems = await lawyersDb.findByRegion(
-      region,
-      CATALOG_PAGE_SIZE,
-      (page - 1) * CATALOG_PAGE_SIZE,
-    );
-    return res.render('lawyer/catalog', {
-      selectedRegion: region,
-      allRegions,
-      regionItems,
-      lastUpdated,
-      catalog: { page, pageSize: CATALOG_PAGE_SIZE, total, totalPages },
-    });
-  }
-  res.render('lawyer/catalog', {
-    selectedRegion: '', allRegions, regionItems: [], lastUpdated,
-    catalog: { page: 1, pageSize: CATALOG_PAGE_SIZE, total: 0, totalPages: 1 },
   });
 }));
 
@@ -1759,22 +1722,6 @@ app.get('/lombards/:slug', (req, res) => {
   res.render('lombards/item', { item, lowContentBoost });
 });
 
-// ===== LAWYER SEARCH =====
-app.get('/lawyer-search', asyncHandler(async (req, res) => {
-  const q = (req.query.q || '').trim();
-  let results = null;
-  let suggestion = null;
-  if (q.length >= 2 && lawyersDb) {
-    results = await lawyersDb.search(q);
-    if (results.length === 0) {
-      suggestion = await lawyersDb.fuzzySearch(q);
-    }
-  } else if (q.length >= 2) {
-    results = [];
-  }
-  res.render('lawyer/search', { query: q, results, suggestion });
-}));
-
 // ===== BAILIFF SEO PAGES =====
 
 app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
@@ -1823,37 +1770,6 @@ app.post('/api/bailiffs/import', asyncHandler(async (req, res) => {
   res.json({ ok: true, imported: count });
 }));
 
-// ===== LAWYER SEO PAGES =====
-
-app.get('/lawyer/:slug', asyncHandler(async (req, res) => {
-  if (!lawyersDb) return res.status(503).send('Lawyer module not available');
-  const lawyer = await lawyersDb.findBySlug(req.params.slug);
-  if (!lawyer) return sendNotFound(res);
-  if (lawyer.slug !== req.params.slug) return res.redirect(301, `/lawyer/${lawyer.slug}`);
-  res.render('lawyer/page', { lawyer });
-}));
-
-app.get('/sitemap-lawyers.xml', asyncHandler(async (req, res) => {
-  res.set('Content-Type', 'application/xml');
-  if (!lawyersDb) {
-    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-  const all = await lawyersDb.getAllSlugs();
-  const lastUpdated = await lawyersDb.getLastUpdated();
-  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const urls = all.map(l => `
-  <url>
-    <loc>https://zakonexpertt.kz/lawyer/${l.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>`).join('');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls}
-</urlset>`);
-}));
-
 let _lawsSitemapCache = null;
 let _lawsSitemapCacheAt = 0;
 app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
@@ -1881,22 +1797,12 @@ app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
   res.send(_lawsSitemapCache);
 }));
 
-app.post('/api/lawyers/import', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!importLawyers) return res.status(503).json({ error: 'Lawyer module not available' });
-  const count = await importLawyers();
-  res.json({ ok: true, imported: count });
-}));
-
-app.post('/api/lawyers/refresh', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!refreshLawyersRegistry || !importLawyers) {
-    return res.status(503).json({ error: 'Lawyer module not available' });
-  }
-  const registry = await refreshLawyersRegistry();
-  const count = await importLawyers();
-  res.json({ ok: true, registry, imported: count });
-}));
+// The public lawyer registry was deliberately retired. Return 410 so crawlers
+// remove the former catalog, search and profile URLs instead of treating them
+// as temporary failures or redirecting visitors to an unrelated service.
+app.get(['/lawyers', '/lawyer-search', '/lawyer/:slug', '/sitemap-lawyers.xml'], (req, res) => {
+  sendGone(res);
+});
 
 // ===== ADVOCATE PAGE =====
 app.get('/advocate', (req, res) => {
@@ -2455,10 +2361,8 @@ function getCorePages() {
     { url: '/notaries', priority: '0.85', freq: 'weekly' },
     { url: '/zamena-notariusa', priority: '0.85', freq: 'daily' },
     { url: '/bailiffs', priority: '0.85', freq: 'weekly' },
-    { url: '/lawyers', priority: '0.85', freq: 'weekly' },
     { url: '/notary-search', priority: '0.8', freq: 'weekly' },
     { url: '/bailiff-search', priority: '0.8', freq: 'weekly' },
-    { url: '/lawyer-search', priority: '0.8', freq: 'weekly' },
     { url: '/snyatie-aresta-so-scheta', priority: '0.9', freq: 'monthly' },
     { url: '/otmena-ispolnitelnoi-nadpisi', priority: '0.9', freq: 'monthly' },
     { url: '/vozrazhenie-na-ispolnitelnuyu-nadpis', priority: '0.85', freq: 'monthly' },
@@ -2775,7 +2679,6 @@ app.get('/sitemap-index.xml', (req, res) => {
     ['/sitemap-news.xml', ''],
     ['/sitemap-notaries.xml', latestFileLastmod(['Нотариусы.csv', 'notaries.csv'])],
     ['/sitemap-bailiffs.xml', latestFileLastmod(['ЧСИ.csv', 'bailiffs.csv'])],
-    ['/sitemap-lawyers.xml', latestFileLastmod(['Адвокаты.csv', 'lawyers.csv'])],
     ['/sitemap-laws.xml', ''],
     ['/sitemap-banks.xml', latestFileLastmod('Банки_Казахстана.csv')],
     ['/sitemap-courts.xml', latestFileLastmod('Суды_Казахстана.csv')],
@@ -2910,8 +2813,6 @@ const ADMIN_MUTATION_PATHS = [
   '/api/notaries/import',
   '/api/notaries/refresh',
   '/api/bailiffs/import',
-  '/api/lawyers/import',
-  '/api/lawyers/refresh',
   '/api/news/import',
   '/api/news/clear',
   '/api/news/reset',
@@ -3034,7 +2935,7 @@ app.get('/api/news/health', asyncHandler(async (_req, res) => {
   });
 }));
 
-// ===== NOTARY + BAILIFF + LAWYER DB: auto-import on startup if source is newer =====
+// ===== NOTARY + BAILIFF DB: auto-import on startup if source is newer =====
 // This is data initialization, not an optional background job. It must run even
 // when cron/Telegram polling are disabled in production.
 setTimeout(async () => {
@@ -3053,12 +2954,6 @@ setTimeout(async () => {
       if (count > 0) logger.info(`[Bailiffs] DB ready: ${count} bailiffs`);
     } catch (e) { logger.warn('[Bailiffs] Startup import failed: ' + e.message); }
   }
-  if (importLawyers) {
-    try {
-      const count = await importLawyers();
-      if (count > 0) logger.info(`[Lawyers] DB ready: ${count} lawyers`);
-    } catch (e) { logger.warn('[Lawyers] Startup import failed: ' + e.message); }
-  }
 }, 5000);
 
 if (BACKGROUND_JOBS_ENABLED) {
@@ -3066,7 +2961,7 @@ if (BACKGROUND_JOBS_ENABLED) {
 // Daily refresh from the official ENIS registry, followed by a validated import.
 // Archive-transfer notes are free text in ENIS and can change without notice.
 cron.schedule('15 3 * * *', async () => {
-  logger.info('[Cron] Daily notary+bailiff+lawyer re-import starting...');
+  logger.info('[Cron] Daily notary+bailiff re-import starting...');
   if (importNotaries) {
     try {
       if (refreshNotariesRegistry) await refreshNotariesRegistry();
@@ -3079,16 +2974,8 @@ cron.schedule('15 3 * * *', async () => {
     try { const n = await importBailiffs(); logger.info(`[Cron] Bailiffs: ${n}`); }
     catch (e) { logger.error('[Cron] Bailiff re-import failed: ' + e.message); }
   }
-  if (importLawyers) {
-    try {
-      if (refreshLawyersRegistry) await refreshLawyersRegistry();
-      const n = await importLawyers();
-      logger.info(`[Cron] Lawyers: ${n}`);
-    }
-    catch (e) { logger.error('[Cron] Lawyer re-import failed: ' + e.message); }
-  }
 });
-logger.info('Notary+Bailiff+Lawyer cron scheduled: daily 03:15');
+logger.info('Notary+Bailiff cron scheduled: daily 03:15');
 
 // The complete catalog is compact metadata (about 7 MB) and is refreshed
 // daily. Record materialisation starts after this metadata refresh.
