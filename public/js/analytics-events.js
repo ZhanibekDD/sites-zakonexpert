@@ -156,18 +156,57 @@
     });
   });
 
-  // ── external_campaign_visit: utm_source present on page load ─────────────
-  var params = new URLSearchParams(location.search);
-  var utmSource = params.get('utm_source');
-  if (utmSource) {
-    var utm = {
-      utm_source: utmSource,
-      utm_medium: params.get('utm_medium') || '',
-      utm_campaign: params.get('utm_campaign') || '',
-      utm_content: params.get('utm_content') || '',
-      utm_term: params.get('utm_term') || '',
-    };
-    try { sessionStorage.setItem('ze_utm', JSON.stringify(utm)); } catch (err) { /* noop */ }
-    send('external_campaign_visit', utmSource, { utm: JSON.stringify(utm) });
+  // ── Consent-aware first-touch attribution for actual leads ──────────────
+  // Store only a coarse channel and UTM labels. Personal data and search
+  // queries never enter this attribution object.
+  function referrerSource() {
+    if (!document.referrer) return 'direct';
+    try {
+      var host = new URL(document.referrer).hostname.toLowerCase();
+      if (host === location.hostname) return 'internal';
+      if (/google\./.test(host)) return 'google';
+      if (/yandex\./.test(host)) return 'yandex';
+      if (/threads\.net/.test(host)) return 'threads';
+      if (/instagram\./.test(host)) return 'instagram';
+      if (/facebook\.|fb\.com/.test(host)) return 'facebook';
+      if (/2gis|dgis/.test(host)) return '2gis';
+      if (/t\.me|telegram/.test(host)) return 'telegram';
+      return 'external';
+    } catch (err) { return 'direct'; }
   }
+
+  function captureAttribution() {
+    if (!window.ZEPrivacy || !window.ZEPrivacy.analyticsAllowed()) return;
+    try {
+      if (sessionStorage.getItem('ze_lead_attribution')) return;
+      var params = new URLSearchParams(location.search);
+      var utmSource = (params.get('utm_source') || '').slice(0, 120);
+      var attribution = {
+        source: utmSource || referrerSource(),
+        medium: (params.get('utm_medium') || '').slice(0, 120),
+        campaign: (params.get('utm_campaign') || '').slice(0, 160),
+      };
+      sessionStorage.setItem('ze_lead_attribution', JSON.stringify(attribution));
+      if (utmSource) {
+        var utm = {
+          utm_source: utmSource,
+          utm_medium: attribution.medium,
+          utm_campaign: attribution.campaign,
+          utm_content: (params.get('utm_content') || '').slice(0, 120),
+          utm_term: (params.get('utm_term') || '').slice(0, 120),
+        };
+        send('external_campaign_visit', utmSource, { utm: JSON.stringify(utm) });
+      }
+    } catch (err) { /* storage is optional */ }
+  }
+
+  window.ZE_getLeadAttribution = function () {
+    if (!window.ZEPrivacy || !window.ZEPrivacy.analyticsAllowed()) return {};
+    captureAttribution();
+    try { return JSON.parse(sessionStorage.getItem('ze_lead_attribution') || '{}'); }
+    catch (err) { return {}; }
+  };
+
+  captureAttribution();
+  window.addEventListener('ze:privacy-consent', captureAttribution);
 })();

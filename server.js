@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-28-conversion-recovery-v1';
+const RELEASE_ID = '2026-08-28-conversion-recovery-v2';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -3254,7 +3254,7 @@ let leadsDb = null;
 try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
 
 app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
-  const { name, phone, issue, question, page, consent } = req.body || {};
+  const { name, phone, issue, question, page, source, campaign, consent } = req.body || {};
   if (consent !== true) return res.status(400).json({ error: 'Необходимо согласие на обработку данных' });
   const safeName = String(name || '').trim().slice(0, 120);
   const safePhone = String(phone || '').trim().slice(0, 40);
@@ -3262,12 +3262,22 @@ app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
   const safeIssue = String(issue || 'other').trim().slice(0, 160);
   const safeQuestion = String(question || '').trim().slice(0, 2000);
   const safePage = String(page || '/').trim().slice(0, 300);
+  const safeSource = String(source || '').trim().slice(0, 120);
+  const safeCampaign = String(campaign || '').trim().slice(0, 160);
   if (phoneDigits.length < 10 || phoneDigits.length > 15) {
     return res.status(400).json({ error: 'Укажите корректный номер телефона' });
   }
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
-  const lead = { name: safeName, phone: safePhone, issue: safeIssue, question: safeQuestion, page: safePage };
+  const lead = {
+    name: safeName,
+    phone: safePhone,
+    issue: safeIssue,
+    question: safeQuestion,
+    page: safePage,
+    source: safeSource,
+    campaign: safeCampaign,
+  };
   if (leadsDb) {
     try {
       await leadsDb.recordLead({ ...lead, ip, ua });

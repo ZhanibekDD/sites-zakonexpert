@@ -296,10 +296,18 @@
     addMsg(phone, 'user');
     clearBtns();
     try {
+      const attribution = window.ZE_getLeadAttribution ? window.ZE_getLeadAttribution() : {};
       const response = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, issue: state.issue || 'other', page: location.pathname, consent: true }),
+        body: JSON.stringify({
+          phone,
+          issue: state.issue || 'other',
+          page: location.pathname,
+          source: attribution.source || '',
+          campaign: attribution.campaign || '',
+          consent: true,
+        }),
       });
       if (!response.ok) throw new Error('lead rejected');
       showTyping(() => {

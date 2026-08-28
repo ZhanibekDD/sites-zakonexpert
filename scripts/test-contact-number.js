@@ -40,6 +40,7 @@ if (rawCount < 1 || displayCount < 1) {
 }
 
 const siteScript = fs.readFileSync(path.join(ROOT, 'public', 'js', 'site.js'), 'utf8');
+const chatbotScript = fs.readFileSync(path.join(ROOT, 'public', 'js', 'chatbot.js'), 'utf8');
 const contactRu = fs.readFileSync(path.join(ROOT, 'public', 'contact.html'), 'utf8');
 const contactKk = fs.readFileSync(path.join(ROOT, 'public', 'contact_kz.html'), 'utf8');
 const qrPath = path.join(ROOT, 'public', 'img', 'contact', 'whatsapp-zakonexpert-qr.svg');
@@ -56,6 +57,9 @@ if (!fs.readFileSync(qrPath, 'utf8').includes(OFFICIAL_WHATSAPP_LINK)) {
 }
 if (!siteScript.includes("fetch('/api/lead'") || !siteScript.includes('consent: true')) {
   throw new Error('The contact form does not persist consented leads before offering WhatsApp.');
+}
+if (!siteScript.includes('ZE_getLeadAttribution') || !chatbotScript.includes('ZE_getLeadAttribution')) {
+  throw new Error('Lead forms do not preserve consented first-touch attribution.');
 }
 for (const [locale, source] of [['ru', contactRu], ['kk', contactKk]]) {
   if (!/name="phone"[^>]*required/.test(source)) {

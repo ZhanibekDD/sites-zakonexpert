@@ -92,7 +92,7 @@ async function run() {
   assert(bailiffHtml.includes('source=bailiff&amp;entry=bailiff_profile'), 'Rendered bailiff diagnostic link is invalid');
   assert(activeNotaryHtml.includes('source=notary&amp;entry=notary_profile'), 'Rendered notary diagnostic link is invalid');
   assert(!inactiveNotaryHtml.includes('data-event-cta="notary_profile"'), 'Inactive notary archive pages must not assume an executable writ');
-  assert(bailiffHtml.includes('analytics-events.js?v=20260824-2'), 'Registry analytics cache key is stale');
+  assert(bailiffHtml.includes('analytics-events.js?v=20260828-2'), 'Registry analytics cache key is stale');
   assert(css.includes('@media (max-width: 680px)'), 'Mobile design is missing');
   assert(css.includes('@media (prefers-reduced-motion: reduce)'), 'Reduced-motion support is missing');
 

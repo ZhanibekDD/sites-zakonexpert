@@ -6,7 +6,7 @@ const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS |
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));
 const COMPANY_RESPONSE_MS = Math.max(200, Number(process.env.AUDIT_COMPANY_RESPONSE_MS || 800));
 const EXPECTED_RELEASE = process.env.AUDIT_EXPECTED_RELEASE
-  || '2026-08-28-conversion-recovery-v1';
+  || '2026-08-28-conversion-recovery-v2';
 
 const publicRoutes = [
   '/', '/news', '/dokumenty', '/rezultaty', '/advocate', '/mediator', '/contact',

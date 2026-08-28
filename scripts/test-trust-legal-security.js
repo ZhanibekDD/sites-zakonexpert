@@ -98,6 +98,17 @@ const staleChatbotScriptRefs = userFacingFiles
 assert.deepStrictEqual(staleChatbotScriptRefs, [],
   `stale chatbot.js cache keys remain in: ${staleChatbotScriptRefs.join(', ')}`);
 
+const staleAnalyticsScriptRefs = userFacingFiles
+  .filter(filename => /\.(?:html|ejs)$/i.test(filename))
+  .filter(filename => {
+    const source = fs.readFileSync(filename, 'utf8');
+    return /(?:^|\/)js\/analytics-events\.js/.test(source)
+      && !/(?:^|\/)js\/analytics-events\.js\?v=20260828-2/.test(source);
+  })
+  .map(filename => path.relative(ROOT, filename));
+assert.deepStrictEqual(staleAnalyticsScriptRefs, [],
+  `stale analytics-events.js cache keys remain in: ${staleAnalyticsScriptRefs.join(', ')}`);
+
 const stalePrivacyScriptRefs = userFacingFiles
   .filter(filename => /\.(?:html|ejs)$/i.test(filename))
   .filter(filename => {

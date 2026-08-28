@@ -4,7 +4,9 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
-const { summarizeCompanyFunnel } = require('../modules/clicks-db');
+const { summarizeCompanyFunnel, summarizeContactActivity } = require('../modules/clicks-db');
+process.env.LEADS_DB_PATH = path.join('/tmp', `zke-leads-summary-${process.pid}.db`);
+const { summarizeLeads } = require('../modules/leads-db');
 
 const source = fs.readFileSync(
   path.join(__dirname, '..', 'public', 'js', 'company-conversion.js'),
@@ -84,6 +86,7 @@ const analyticsSource = fs.readFileSync(
 );
 const clickHandlers = [];
 const analyticsPayloads = [];
+const analyticsSession = new Map();
 const analyticsRoot = element({
   'data-company-offer-variant': 'b',
   'data-company-locale': 'en',
@@ -94,17 +97,22 @@ const analyticsContext = {
   Blob,
   document: {
     documentElement: analyticsRoot,
+    referrer: 'https://www.google.com/search?q=private-query',
     addEventListener(type, handler) { if (type === 'click') clickHandlers.push(handler); },
   },
   fetch(url, options) {
     analyticsPayloads.push(JSON.parse(options.body));
     return Promise.resolve({ ok: true });
   },
-  location: { pathname: '/en/company/7137221-alfa-pravo', search: '' },
+  location: { pathname: '/en/company/7137221-alfa-pravo', search: '', hostname: 'zakonexpertt.kz' },
   navigator: {},
-  sessionStorage: { getItem() { return null; }, setItem() {} },
+  sessionStorage: {
+    getItem(key) { return analyticsSession.get(key) || null; },
+    setItem(key, value) { analyticsSession.set(key, value); },
+  },
+  URL,
   URLSearchParams,
-  window: { ZEPrivacy: { analyticsAllowed() { return true; } } },
+  window: { ZEPrivacy: { analyticsAllowed() { return true; } }, addEventListener() {} },
   setTimeout,
 };
 vm.runInNewContext(analyticsSource, analyticsContext, { filename: 'public/js/analytics-events.js' });
@@ -114,6 +122,9 @@ assert.strictEqual(analyticsPayloads[0].page, '/en/company/7137221');
 assert(!JSON.stringify(analyticsPayloads[0]).includes('alfa-pravo'),
   'company names from URL slugs must not enter the conversion event');
 assert.strictEqual(analyticsPayloads[0].offer_variant, 'b');
+assert.strictEqual(analyticsContext.window.ZE_getLeadAttribution().source, 'google');
+assert(!analyticsSession.get('ze_lead_attribution').includes('private-query'),
+  'search query text must never enter lead attribution');
 
 const funnel = summarizeCompanyFunnel([
   { type: 'view_company_page', funnel_version: 'v2', offer_variant: 'a', device_type: 'desktop', page_locale: 'ru', page_type: 'company_card', page: '/company/1' },
@@ -149,5 +160,27 @@ assert.strictEqual(funnel.topPages.length, 4);
 const emptyFunnel = summarizeCompanyFunnel([]);
 assert.strictEqual(emptyFunnel.clicksPer1000Views, null);
 assert.strictEqual(emptyFunnel.ctaClickThroughRatePct, null);
+
+const contactActivity = summarizeContactActivity([
+  { type: 'phone', target: 'main', page: '/arest-kaspi' },
+  { type: 'whatsapp', target: 'main', page: '/arest-kaspi' },
+  { type: 'whatsapp', target: 'advocate', page: '/advocate' },
+  { type: 'view_company_page', page: '/company/1' },
+]);
+assert.strictEqual(contactActivity.total, 3, 'technical analytics events must not inflate contact totals');
+assert.strictEqual(contactActivity.phone, 1);
+assert.strictEqual(contactActivity.whatsapp, 2);
+assert.strictEqual(contactActivity.topPages[0].page, '/arest-kaspi');
+assert.strictEqual(contactActivity.topPages[0].total, 2);
+
+const leadSummary = summarizeLeads([
+  { page: '/arest-kaspi', issue: 'arrest', source: 'google' },
+  { page: '/arest-kaspi', issue: 'arrest', source: 'google' },
+  { page: '/contact', issue: 'debt', source: 'threads' },
+]);
+assert.strictEqual(leadSummary.total, 3);
+assert.strictEqual(leadSummary.byPage['/arest-kaspi'], 2);
+assert.strictEqual(leadSummary.byIssue.arrest, 2);
+assert.strictEqual(leadSummary.bySource.google, 2);
 
 console.log('Company conversion OK: A/B assignment, CTA impressions and funnel reporting');

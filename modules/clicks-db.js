@@ -32,16 +32,48 @@ async function getStats(since) {
   const query = since ? { ts: { $gte: since } } : {};
   const clicks = await db.find(query);
   const r = {
-    total: clicks.length,
+    total: 0,
     phone_advocate: 0, phone_mediator: 0, phone_main: 0,
     wa_advocate: 0,    wa_mediator: 0,    wa_main: 0,
   };
   for (const c of clicks) {
     const t = (c.type === 'whatsapp') ? 'wa' : c.type;
     const key = `${t}_${c.target}`;
-    if (key in r) r[key]++;
+    if (key in r) {
+      r[key]++;
+      r.total++;
+    }
   }
   return r;
+}
+
+function summarizeContactActivity(clicks) {
+  const summary = {
+    total: 0,
+    phone: 0,
+    whatsapp: 0,
+    byPage: {},
+  };
+  for (const click of clicks || []) {
+    const type = click.type === 'whatsapp' ? 'whatsapp' : click.type === 'phone' ? 'phone' : '';
+    if (!type) continue;
+    const page = String(click.page || '/').slice(0, 300);
+    if (!summary.byPage[page]) summary.byPage[page] = { total: 0, phone: 0, whatsapp: 0 };
+    summary.total += 1;
+    summary[type] += 1;
+    summary.byPage[page].total += 1;
+    summary.byPage[page][type] += 1;
+  }
+  summary.topPages = Object.entries(summary.byPage)
+    .map(([page, counts]) => ({ page, ...counts }))
+    .sort((left, right) => right.total - left.total || left.page.localeCompare(right.page))
+    .slice(0, 20);
+  return summary;
+}
+
+async function getContactActivity(since) {
+  const query = since ? { ts: { $gte: since } } : {};
+  return summarizeContactActivity(await db.find(query));
 }
 
 async function getEventStats(since) {
@@ -224,6 +256,7 @@ async function purgeOlderThan(cutoff) {
 }
 
 module.exports = {
+  getContactActivity,
   getArrestDiagnosticFunnelStats,
   getCompanyFunnelStats,
   getDocumentDownloadCounts,
@@ -232,5 +265,6 @@ module.exports = {
   recordClick,
   purgeOlderThan,
   summarizeArrestDiagnosticFunnel,
+  summarizeContactActivity,
   summarizeCompanyFunnel,
 };

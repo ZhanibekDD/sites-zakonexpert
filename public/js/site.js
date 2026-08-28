@@ -276,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
       if (submitButton) submitButton.disabled = true;
       if (resultNote) resultNote.textContent = lang === 'kk' ? 'Өтініш жіберілуде…' : 'Отправляем заявку…';
+      const attribution = window.ZE_getLeadAttribution ? window.ZE_getLeadAttribution() : {};
 
       try {
         const response = await fetch('/api/lead', {
@@ -287,6 +288,8 @@ document.addEventListener('DOMContentLoaded', () => {
             issue: topic || 'other',
             question: message,
             page: location.pathname,
+            source: attribution.source || '',
+            campaign: attribution.campaign || '',
             consent: true,
           }),
         });

@@ -250,6 +250,7 @@ function notifyLead(data, ip, ua) {
     `📌 Тема: ${esc(issue_label[data.issue] || data.issue || '—')}`,
     data.question ? `💬 Вопрос: ${esc(data.question)}` : null,
     data.page ? `📄 Страница: ${esc(pageLabel(data.page) || data.page)}` : null,
+    data.source ? `📡 Источник: ${esc(data.source)}${data.campaign ? ` / ${esc(data.campaign)}` : ''}` : null,
     ``,
     `⏰ ${now()}`,
     `🌐 IP: <code>${esc(String(ip || '').split(',')[0].trim())}</code>`,
@@ -305,9 +306,29 @@ function clicksDb() { if (!_clicksDb) _clicksDb = require('./clicks-db'); return
 function leadsDb()  { if (!_leadsDb)  _leadsDb  = require('./leads-db');  return _leadsDb;  }
 function chatDb()   { if (!_chatDb)   _chatDb   = require('./chat-db');   return _chatDb;   }
 
-function fmtStats(stats, leadsCount, period) {
-  const t = (n, s) => `${n} ${s}`;
-  return [
+function fmtStats(stats, leadSummary, contactActivity, period) {
+  const leadsCount = leadSummary.total || 0;
+  const pageTotals = {};
+  for (const [page, counts] of Object.entries(contactActivity.byPage || {})) {
+    pageTotals[page] = { contacts: counts.total || 0, leads: 0 };
+  }
+  for (const [page, count] of Object.entries(leadSummary.byPage || {})) {
+    if (!pageTotals[page]) pageTotals[page] = { contacts: 0, leads: 0 };
+    pageTotals[page].leads += count;
+  }
+  const topPages = Object.entries(pageTotals)
+    .map(([page, counts]) => ({ page, ...counts, total: counts.contacts + counts.leads }))
+    .sort((left, right) => right.total - left.total || left.page.localeCompare(right.page))
+    .slice(0, 5);
+  const issueLabels = {
+    arrest: 'Арест счёта', auto: 'Запрет на авто', debt: 'Долг / ЧСИ',
+    advocate: 'Адвокат', mediator: 'Медиатор', grafik: 'График', other: 'Другое',
+  };
+  const topIssues = Object.entries(leadSummary.byIssue || {})
+    .sort((left, right) => right[1] - left[1]).slice(0, 4);
+  const topSources = Object.entries(leadSummary.bySource || {})
+    .sort((left, right) => right[1] - left[1]).slice(0, 4);
+  const lines = [
     `📊 <b>Статистика — ${period}</b>`,
     ``,
     `<b>📞 Звонки:</b>`,
@@ -321,8 +342,21 @@ function fmtStats(stats, leadsCount, period) {
     `  📞 ZakonExpert: <b>${stats.wa_main}</b>`,
     ``,
     `<b>📩 Заявки (форма/чат-бот): ${leadsCount}</b>`,
-    `<b>🔢 Всего нажатий: ${stats.total}</b>`,
-  ].join('\n');
+    `<b>🎯 Всего целевых действий: ${stats.total + leadsCount}</b>`,
+  ];
+  if (topPages.length) {
+    lines.push('', '<b>🔝 Страницы, давшие обращения:</b>');
+    for (const item of topPages) {
+      lines.push(`  • ${esc(pageLabel(item.page))}: <b>${item.total}</b> (${item.contacts} контактов, ${item.leads} заявок)`);
+    }
+  }
+  if (topIssues.length) {
+    lines.push('', '<b>📌 Темы заявок:</b>', `  ${topIssues.map(([key, value]) => `${esc(issueLabels[key] || key)} — <b>${value}</b>`).join(' · ')}`);
+  }
+  if (topSources.length) {
+    lines.push('', '<b>📡 Источники заявок:</b>', `  ${topSources.map(([key, value]) => `${esc(key)} — <b>${value}</b>`).join(' · ')}`);
+  }
+  return lines.join('\n');
 }
 
 const STATS_KB = {
@@ -394,11 +428,12 @@ async function handleUpdate(update) {
     else if (data === 'stats_month') { since = now_ts - 30*86400000; period = '30 дней'; }
 
     if (data.startsWith('stats_')) {
-      const [stats, leadsCount] = await Promise.all([
+      const [stats, leadSummary, contactActivity] = await Promise.all([
         clicksDb().getStats(since || undefined),
-        leadsDb().getCount(since || undefined),
+        leadsDb().getSummary(since || undefined),
+        clicksDb().getContactActivity(since || undefined),
       ]);
-      await sendToChat(fromId, fmtStats(stats, leadsCount, period), { reply_markup: STATS_KB });
+      await sendToChat(fromId, fmtStats(stats, leadSummary, contactActivity, period), { reply_markup: STATS_KB });
     }
   }
 }
