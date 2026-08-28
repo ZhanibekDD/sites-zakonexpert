@@ -110,7 +110,7 @@ document.querySelectorAll('.sticky-wa, .company-desktop-cta').forEach(node => no
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-  const companyWhatsAppLink = 'https://wa.me/message/3EDJVE7JWAUPF1';
+  const companyWhatsAppLink = 'https://wa.me/77003097566';
   const companyPhoneRaw = '77003097566';
   const companyPhoneDisplay = '+7 (700) 309-75-66';
   const navToggle = document.querySelector('[data-nav-toggle]');
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultNote = contactForm.querySelector('.contact-result-note');
     const whatsappNumber = companyPhoneRaw;
 
-    contactForm.addEventListener('submit', (event) => {
+    contactForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!contactForm.checkValidity()) {
         contactForm.reportValidity();
@@ -254,6 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const phone = (formData.get('phone') || '').toString().trim();
       const topic = (formData.get('topic') || '').toString().trim();
       const message = (formData.get('message') || '').toString().trim();
+      const submitButton = contactForm.querySelector('button[type="submit"]');
 
       const lines = lang === 'kk'
         ? [
@@ -273,12 +274,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const text = lines.filter(Boolean).join('\n');
       const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank', 'noopener');
+      if (submitButton) submitButton.disabled = true;
+      if (resultNote) resultNote.textContent = lang === 'kk' ? 'Өтініш жіберілуде…' : 'Отправляем заявку…';
 
-      if (resultNote) {
-        resultNote.textContent = lang === 'kk'
-          ? 'Өтініш WhatsApp-қа дайындалды. Терезе ашылмаса — жоғарыдағы WhatsApp сілтемесін пайдаланыңыз.'
-          : 'Сообщение подготовлено для WhatsApp. Если окно не открылось — воспользуйтесь ссылкой WhatsApp выше.';
+      try {
+        const response = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            phone,
+            issue: topic || 'other',
+            question: message,
+            page: location.pathname,
+            consent: true,
+          }),
+        });
+        if (!response.ok) throw new Error('lead rejected');
+        contactForm.reset();
+        if (resultNote) {
+          resultNote.innerHTML = lang === 'kk'
+            ? `Өтініш қабылданды. Маман сізбен хабарласады. <a href="${url}" target="_blank" rel="noopener">WhatsApp-та құжаттарды жіберу</a>.`
+            : `Заявка принята. Специалист свяжется с вами. <a href="${url}" target="_blank" rel="noopener">Отправить документы в WhatsApp</a>.`;
+        }
+      } catch (_) {
+        if (resultNote) {
+          resultNote.innerHTML = lang === 'kk'
+            ? `Өтінішті сақтау мүмкін болмады. <a href="${url}" target="_blank" rel="noopener">WhatsApp-қа тікелей жазыңыз</a>.`
+            : `Не удалось сохранить заявку. <a href="${url}" target="_blank" rel="noopener">Напишите напрямую в WhatsApp</a>.`;
+        }
+      } finally {
+        if (submitButton) submitButton.disabled = false;
       }
     });
   }

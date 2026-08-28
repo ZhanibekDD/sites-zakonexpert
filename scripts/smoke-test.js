@@ -145,6 +145,7 @@ async function run() {
       '/sms-1414',
       '/dokumenty',
       '/rezultaty',
+      '/reviews',
       '/notaries',
       '/bailiffs',
       '/banks',
@@ -184,6 +185,10 @@ async function run() {
       await expectLeanCatalog(catalog);
     }
     await expectRetiredLawyerRoutes();
+
+    const reviewsAlias = await fetch(`${origin}/otzyvy`, { redirect: 'manual' });
+    assert(reviewsAlias.status === 301 && reviewsAlias.headers.get('location') === '/reviews',
+      '/otzyvy must permanently redirect to /reviews');
 
     const redirectCases = [
       ['/proverka-kontragenta?bin=260740044168', '/proverka-kontragenta#bin=260740044168'],
@@ -243,7 +248,7 @@ async function run() {
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
     assert(companyCheckPage.includes('/css/company-check.css?v=20260816-1')
       && companyCheckPage.includes('/js/company-check.js?v=20260816-1')
-      && companyCheckPage.includes('/js/site.js?v=20260823-1'),
+      && companyCheckPage.includes('/js/site.js?v=20260828-1'),
     'Counterparty page assets are missing');
     assert(companyCheckPage.includes('data-nav-kgd') && !companyCheckPage.includes('class="sticky-wa"'),
       'Counterparty page navigation or floating button state is incorrect');
@@ -322,6 +327,13 @@ async function run() {
     });
     assert((await invalidFunnelEvent.json()).ok === false,
       'Company funnel event from a non-company page must be rejected');
+
+    const invalidLead = await fetch(`${origin}/api/lead`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone: '123', consent: true }),
+    });
+    assert(invalidLead.status === 400, 'Lead API must reject an invalid phone number');
 
     const adminStatus = await fetch(`${origin}/api/news/status`);
     assert(adminStatus.status === 503,

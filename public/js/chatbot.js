@@ -35,14 +35,16 @@
     }
   }, true);
 
-  // Keep link analytics, but do not render the floating chat bubble.
-  const ENABLE_CHAT_WIDGET = false;
+  // Lead capture is available as a compact rectangular button. The legacy
+  // round WhatsApp bubble remains removed.
+  const ENABLE_CHAT_WIDGET = true;
   if (!ENABLE_CHAT_WIDGET) return;
 
   // ── Chatbot widget ────────────────────────────────────────────────────────
   const CSS = `
-  #zke-chat-btn{position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:none;cursor:pointer;box-shadow:0 4px 18px rgba(13,31,60,.35);z-index:9998;display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:22px;}
-  #zke-chat-btn:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(13,31,60,.45);}
+  #zke-chat-btn{position:fixed;bottom:18px;right:18px;width:auto;min-width:178px;height:52px;padding:0 18px;border-radius:14px;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;box-shadow:0 8px 24px rgba(13,31,60,.28);z-index:9998;display:flex;gap:9px;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:15px;font-weight:800;}
+  #zke-chat-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(13,31,60,.35);}
+  #zke-chat-btn .zke-label{white-space:nowrap;}
   #zke-chat-btn .zke-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:#ef4444;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;animation:zke-pulse 2s infinite;}
   @keyframes zke-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
   #zke-chat-box{position:fixed;bottom:88px;right:20px;width:330px;max-width:calc(100vw - 40px);background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9999;overflow:hidden;display:none;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
@@ -68,7 +70,7 @@
   .zke-send{background:#0d1f3c;color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:700;cursor:pointer;}
   .zke-send:hover{background:#1a3460;}
   .zke-success{padding:18px 16px;text-align:center;color:#0d1f3c;}
-  @media(max-width:600px){#zke-chat-btn{right:12px;bottom:14px;width:48px;height:48px}#zke-chat-box{right:10px;bottom:72px;max-width:calc(100vw - 20px)}}
+  @media(max-width:720px){#zke-chat-btn{right:10px;bottom:10px;left:10px;width:auto;min-width:0;height:50px;border-radius:12px}html.zke-has-page-cta #zke-chat-btn{display:none}#zke-chat-box{right:10px;bottom:70px;max-width:calc(100vw - 20px)}}
   .zke-success strong{display:block;font-size:16px;margin-bottom:6px;}
   .zke-success span{font-size:13px;color:#64748b;}
   .zke-consent{display:flex;align-items:flex-start;gap:7px;font-size:11px;line-height:1.35;color:#64748b;padding:0 2px;text-align:left;}.zke-consent input{margin-top:2px;flex:0 0 auto}.zke-consent a{color:#1a56db;}
@@ -108,6 +110,9 @@
   let state = { step: 'start', issue: null, name: null, phone: null };
 
   function buildWidget() {
+    if (document.querySelector('.ze-mobile-cta, .zg-mobile-actions, [data-cta-position="mobile-sticky"], .company-mobile-cta')) {
+      document.documentElement.classList.add('zke-has-page-cta');
+    }
     const style = document.createElement('style');
     style.textContent = CSS;
     document.head.appendChild(style);
@@ -115,7 +120,7 @@
     const btn = document.createElement('button');
     btn.id = 'zke-chat-btn';
     btn.title = 'Чат с консультантом';
-    btn.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-2 10H6V8h12v4z"/></svg><span class="zke-badge">!</span>`;
+    btn.innerHTML = `<svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-2 10H6V8h12v4z"/></svg><span class="zke-label">Оставить заявку</span><span class="zke-badge">!</span>`;
     document.body.appendChild(btn);
 
     const box = document.createElement('div');
@@ -172,7 +177,7 @@
   let _pollTimer = null;
   let _lastMsgTs = Number(localStorage.getItem('zke_chat_last_ts') || 0);
 
-  function sendLiveMessage() {
+  async function sendLiveMessage() {
     const input = document.getElementById('zke-live-input');
     const text = (input.value || '').trim();
     if (!text) return;
@@ -180,11 +185,16 @@
     if (!consent?.checked) { consent?.focus(); return; }
     addMsg(text, 'user');
     input.value = '';
-    fetch('/api/chat/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: getSessionId(), text, page: location.pathname, consent: true }),
-    }).catch(() => {});
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: getSessionId(), text, page: location.pathname, consent: true }),
+      });
+      if (!response.ok) throw new Error('chat rejected');
+    } catch (_) {
+      addMsg('Сообщение не доставлено. Оставьте телефон в форме ниже или напишите в WhatsApp: +7 700 309-75-66.', 'bot');
+    }
   }
 
   function pollChat() {
@@ -275,7 +285,7 @@
     });
   }
 
-  function submitPhone() {
+  async function submitPhone() {
     const phone = (document.getElementById('zke-phone')?.value || '').trim();
     if (phone.length < 6) {
       document.getElementById('zke-phone').style.borderColor = '#ef4444';
@@ -285,19 +295,29 @@
     if (!consent?.checked) { consent?.focus(); return; }
     addMsg(phone, 'user');
     clearBtns();
-    fetch('/api/lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, issue: state.issue, page: location.pathname, consent: true }),
-    }).catch(() => {});
-    showTyping(() => {
+    try {
+      const response = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, issue: state.issue || 'other', page: location.pathname, consent: true }),
+      });
+      if (!response.ok) throw new Error('lead rejected');
+      showTyping(() => {
+        const msgs = document.getElementById('zke-messages');
+        const s = document.createElement('div');
+        s.className = 'zke-success';
+        s.innerHTML = `<strong>✅ Заявка принята!</strong><span>Специалист свяжется с вами<br>в течение 30 минут.</span>`;
+        msgs.appendChild(s);
+        msgs.scrollTop = msgs.scrollHeight;
+      });
+    } catch (_) {
       const msgs = document.getElementById('zke-messages');
       const s = document.createElement('div');
       s.className = 'zke-success';
-      s.innerHTML = `<strong>✅ Заявка принята!</strong><span>Специалист свяжется с вами<br>в течение 30 минут.</span>`;
+      s.innerHTML = `<strong>Не удалось сохранить заявку</strong><span><a href="https://wa.me/77003097566" target="_blank" rel="noopener">Напишите в WhatsApp</a> или позвоните: +7 700 309-75-66.</span>`;
       msgs.appendChild(s);
       msgs.scrollTop = msgs.scrollHeight;
-    });
+    }
   }
 
   // Show badge after 8 seconds to attract attention

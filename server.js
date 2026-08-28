@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-28-web-uptime-v1';
+const RELEASE_ID = '2026-08-28-conversion-recovery-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -2114,6 +2114,10 @@ const servicePages = {
   '/nadpis-ili-list':                  'nadpis-ili-list.html',
 };
 
+app.get(['/otzyvy', '/otzyvy.html'], (req, res) => {
+  res.redirect(301, '/reviews');
+});
+
 for (const [route, file] of Object.entries(servicePages)) {
   app.get(route, (req, res) => {
     const filePath = path.join(__dirname, 'public', file);
@@ -3252,11 +3256,26 @@ try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-
 app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
   const { name, phone, issue, question, page, consent } = req.body || {};
   if (consent !== true) return res.status(400).json({ error: 'Необходимо согласие на обработку данных' });
-  if (!phone) return res.status(400).json({ error: 'Телефон обязателен' });
+  const safeName = String(name || '').trim().slice(0, 120);
+  const safePhone = String(phone || '').trim().slice(0, 40);
+  const phoneDigits = safePhone.replace(/\D/g, '');
+  const safeIssue = String(issue || 'other').trim().slice(0, 160);
+  const safeQuestion = String(question || '').trim().slice(0, 2000);
+  const safePage = String(page || '/').trim().slice(0, 300);
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+    return res.status(400).json({ error: 'Укажите корректный номер телефона' });
+  }
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
   const ua = req.headers['user-agent'] || '';
-  if (leadsDb) leadsDb.recordLead({ name, phone, issue, question, page, ip, ua }).catch(() => {});
-  telegram.notifyLead({ name, phone, issue, question, page }, ip, ua);
+  const lead = { name: safeName, phone: safePhone, issue: safeIssue, question: safeQuestion, page: safePage };
+  if (leadsDb) {
+    try {
+      await leadsDb.recordLead({ ...lead, ip, ua });
+    } catch (error) {
+      logger.warn('Lead storage failed: ' + error.message);
+    }
+  }
+  telegram.notifyLead(lead, ip, ua);
   res.json({ ok: true });
 }));
 

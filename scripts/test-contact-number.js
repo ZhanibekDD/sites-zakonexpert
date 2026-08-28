@@ -8,7 +8,7 @@ const SEARCH_ROOTS = ['public', 'views', 'modules', 'docs'];
 const TEXT_EXTENSIONS = new Set(['.css', '.ejs', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml']);
 const EXPECTED_RAW = '77003097566';
 const EXPECTED_DISPLAY = '+7 (700) 309-75-66';
-const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/message/3EDJVE7JWAUPF1';
+const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/77003097566';
 const RETIRED_NUMBER = /(?:\+?7[ ()-]*)?(?:747[ ()-]*995[ ()-]*76[ ()-]*35|775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38|700[ ()-]*030[ ()-]*00[ ()-]*24)/g;
 
 function listTextFiles(directory) {
@@ -50,6 +50,17 @@ if (!siteScript.includes(OFFICIAL_WHATSAPP_LINK)
 }
 if (!fs.existsSync(qrPath) || fs.statSync(qrPath).size < 1000) {
   throw new Error('The local WhatsApp QR asset is missing or invalid.');
+}
+if (!fs.readFileSync(qrPath, 'utf8').includes(OFFICIAL_WHATSAPP_LINK)) {
+  throw new Error('The local WhatsApp QR asset does not identify the current direct link.');
+}
+if (!siteScript.includes("fetch('/api/lead'") || !siteScript.includes('consent: true')) {
+  throw new Error('The contact form does not persist consented leads before offering WhatsApp.');
+}
+for (const [locale, source] of [['ru', contactRu], ['kk', contactKk]]) {
+  if (!/name="phone"[^>]*required/.test(source)) {
+    throw new Error(`${locale} contact form must require a callback phone number.`);
+  }
 }
 
 console.log(`Contact number and WhatsApp QR OK: ${rawCount} links/values and ${displayCount} formatted labels.`);

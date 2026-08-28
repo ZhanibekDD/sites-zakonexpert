@@ -46,6 +46,10 @@ assert.match(consentScript, /analyticsAllowed/);
 assert.doesNotMatch(consentScript, /data-ze-consent="ads"/);
 assert.doesNotMatch(consentScript, /реклам/iu);
 assert.match(consentScript, /Только необходимое/);
+assert.doesNotMatch(consentScript, /#ze-privacy-banner\{position:fixed/,
+  'privacy choices must not cover mobile conversion controls');
+assert.match(consentScript, /insertAdjacentElement\('afterend', banner\)/,
+  'privacy choices must render in the document flow after the header');
 
 const siteScript = fs.readFileSync(path.join(PUBLIC, 'js', 'site.js'), 'utf8');
 assert.doesNotMatch(siteScript, /stickyWa\.style\.position\s*=\s*['"]relative['"]/,
@@ -56,8 +60,10 @@ assert.doesNotMatch(siteScript, /announce-bar|guarantee-pill|article-cta-guarant
   'site.js must not inject promotional banners into pages or printed reports');
 
 const chatbotScript = fs.readFileSync(path.join(PUBLIC, 'js', 'chatbot.js'), 'utf8');
-assert.match(chatbotScript, /const ENABLE_CHAT_WIDGET = false/,
-  'the floating chat bubble must stay disabled');
+assert.match(chatbotScript, /const ENABLE_CHAT_WIDGET = true/,
+  'the compact lead-capture widget must stay enabled');
+assert.match(chatbotScript, /border-radius:14px/,
+  'the lead-capture launcher must remain rectangular, not a round bubble');
 
 const publicPages = fs.readdirSync(PUBLIC)
   .filter(name => name.endsWith('.html'))
@@ -75,7 +81,7 @@ const staleSiteScriptRefs = userFacingFiles
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
     return /(?:^|\/)js\/site\.js\?v=/.test(source)
-      && !/(?:^|\/)js\/site\.js\?v=20260823-1/.test(source);
+      && !/(?:^|\/)js\/site\.js\?v=20260828-1/.test(source);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleSiteScriptRefs, [],
@@ -86,11 +92,22 @@ const staleChatbotScriptRefs = userFacingFiles
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
     return /(?:^|\/)js\/chatbot\.js/.test(source)
-      && !/(?:^|\/)js\/chatbot\.js\?v=20260815-1/.test(source);
+      && !/(?:^|\/)js\/chatbot\.js\?v=20260828-1/.test(source);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleChatbotScriptRefs, [],
   `stale chatbot.js cache keys remain in: ${staleChatbotScriptRefs.join(', ')}`);
+
+const stalePrivacyScriptRefs = userFacingFiles
+  .filter(filename => /\.(?:html|ejs)$/i.test(filename))
+  .filter(filename => {
+    const source = fs.readFileSync(filename, 'utf8');
+    return /(?:^|\/)js\/privacy-consent\.js\?v=/.test(source)
+      && !/(?:^|\/)js\/privacy-consent\.js\?v=20260828-1/.test(source);
+  })
+  .map(filename => path.relative(ROOT, filename));
+assert.deepStrictEqual(stalePrivacyScriptRefs, [],
+  `stale privacy-consent.js cache keys remain in: ${stalePrivacyScriptRefs.join(', ')}`);
 
 const floatingButtonMarkup = userFacingFiles
   .filter(filename => /\.(?:html|ejs)$/i.test(filename))
@@ -111,7 +128,7 @@ assert.match(home, /data-nav-kgd><a class="nav-link" href="\/proverka-kontragent
   'homepage navigation must expose the KGD company check');
 assert.doesNotMatch(home, /class="sticky-wa"/,
   'homepage must not render a floating round WhatsApp button');
-assert.match(home, /home-hero-v2\.css\?v=20260816-13/,
+assert.match(home, /home-hero-v2\.css\?v=20260826-14/,
   'homepage company-check entry styles must use the current cache key');
 assert.match(home, /hero-woman-zakonexpert-v8\.webp[^>]*width="490"[^>]*height="1654"/,
   'homepage must use the approved high-resolution Kazakh lawyer portrait');

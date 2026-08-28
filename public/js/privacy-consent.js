@@ -95,12 +95,16 @@
     };
   }
 
-  function showBanner() {
-    if (document.getElementById('ze-privacy-banner')) return;
+  function showBanner(shouldFocus) {
+    var existing = document.getElementById('ze-privacy-banner');
+    if (existing) {
+      if (shouldFocus) existing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return existing;
+    }
     var copy = bannerCopy();
     var banner = document.createElement('section');
     banner.id = 'ze-privacy-banner';
-    banner.setAttribute('role', 'dialog');
+    banner.setAttribute('role', 'region');
     banner.setAttribute('aria-label', copy.title);
     banner.innerHTML = '<div class="ze-privacy-banner__copy"><strong>' + copy.title + '</strong><span>'
       + copy.text + ' <a href="/privacy">' + copy.policy + '</a></span></div>'
@@ -110,7 +114,11 @@
     banner.querySelectorAll('[data-ze-choice]').forEach(function (button) {
       button.addEventListener('click', function () { saveChoice(button.getAttribute('data-ze-choice')); });
     });
-    document.body.appendChild(banner);
+    var header = document.querySelector('.site-header, body > header');
+    if (header) header.insertAdjacentElement('afterend', banner);
+    else document.body.insertBefore(banner, document.body.firstChild);
+    if (shouldFocus) banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return banner;
   }
 
   function addSettingsButton() {
@@ -122,7 +130,7 @@
     button.className = 'ze-privacy-settings';
     button.setAttribute('data-ze-privacy-settings', '');
     button.textContent = copy.settings;
-    button.addEventListener('click', showBanner);
+    button.addEventListener('click', function () { showBanner(true); });
     footer.appendChild(button);
   }
 
@@ -159,11 +167,11 @@
   }
 
   var style = document.createElement('style');
-  style.textContent = '#ze-privacy-banner{position:fixed;z-index:10050;left:18px;right:18px;bottom:18px;max-width:980px;margin:auto;padding:18px 20px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:#0d1f3c;color:#fff;box-shadow:0 18px 55px rgba(2,12,27,.38);display:flex;align-items:center;justify-content:space-between;gap:20px;font-family:Arial,sans-serif}'
+  style.textContent = '#ze-privacy-banner{position:relative;z-index:2;width:calc(100% - 36px);max-width:980px;margin:14px auto;padding:14px 18px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:#0d1f3c;color:#fff;box-shadow:0 10px 30px rgba(2,12,27,.18);display:flex;align-items:center;justify-content:space-between;gap:18px;font-family:Arial,sans-serif}'
     + '.ze-privacy-banner__copy{display:grid;gap:5px;line-height:1.45}.ze-privacy-banner__copy strong{font-size:1rem}.ze-privacy-banner__copy span{font-size:.84rem;color:rgba(255,255,255,.76)}.ze-privacy-banner__copy a{color:#f1c75b}'
     + '.ze-privacy-banner__actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.ze-privacy-banner__actions button,.ze-privacy-settings{border:1px solid rgba(255,255,255,.28);border-radius:9px;background:transparent;color:inherit;padding:9px 13px;font-weight:700;cursor:pointer}.ze-privacy-banner__actions .is-primary{background:#d7a742;border-color:#d7a742;color:#102033}.ze-privacy-settings{padding:0;border:0;text-decoration:underline;font-size:inherit;color:inherit;opacity:.75}'
     + '.ze-reviews-nav-link{position:relative}.ze-reviews-nav-link::after{content:"";position:absolute;left:14px;right:14px;bottom:5px;height:2px;border-radius:999px;background:#d7a742;opacity:.9}'
-    + '@media(max-width:720px){#ze-privacy-banner{align-items:stretch;flex-direction:column;left:10px;right:10px;bottom:10px;padding:16px}.ze-privacy-banner__actions{justify-content:stretch}.ze-privacy-banner__actions button{flex:1;min-width:130px}}';
+    + '@media(max-width:720px){#ze-privacy-banner{width:calc(100% - 20px);align-items:stretch;flex-direction:column;margin:10px auto;padding:13px 14px;gap:11px}.ze-privacy-banner__copy strong{font-size:.92rem}.ze-privacy-banner__copy span{font-size:.78rem}.ze-privacy-banner__actions{justify-content:stretch;flex-wrap:nowrap}.ze-privacy-banner__actions button{flex:1;min-width:0;padding:8px 7px;font-size:.78rem}}';
   document.head.appendChild(style);
 
   window.ZEPrivacy = {
