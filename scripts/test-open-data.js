@@ -294,6 +294,8 @@ async function run() {
 
   const serverSource = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   assert(serverSource.includes("app.get('/sitemap-open-data.xml'"));
+  assert(serverSource.includes("process.env.OPEN_DATA_RECORD_CACHE_WARMER"), 'bulk cache warming must be explicitly enabled in the web process');
+  assert(serverSource.includes('bulk warmer delegated to an external scheduled task'), 'web process must delegate the bulk cache warmer by default');
   assert(serverSource.includes("app.get('/otkrytye-dannye/gosudarstvennyy-sektor'"));
   assert(serverSource.includes("app.post('/api/open-data/housing-records'"));
   assert(serverSource.includes("app.post('/api/open-data/housing-search'"));
