@@ -15,7 +15,7 @@ const winston = require('winston');
 
 const LOG_MAX_SIZE = 2 * 1024 * 1024;
 const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-27-remove-lawyer-registry-v1';
+const RELEASE_ID = '2026-08-28-web-uptime-v1';
 
 function fileLog(filename, level) {
   return new winston.transports.File({
@@ -459,6 +459,11 @@ function sendGone(res) {
 // Конфигурация для API eGov
 const EGOV_API_URL = "https://data.egov.kz/egov-opendata-ws/ODWebServiceImpl";
 const EGOV_API_KEY = process.env.EGOV_API_KEY;
+const OPEN_DATA_RECORD_CACHE_ENABLED = Boolean(EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false');
+const OPEN_DATA_RECORD_CACHE_WARMER_ENABLED = Boolean(
+  OPEN_DATA_RECORD_CACHE_ENABLED
+  && /^(1|true|yes)$/i.test(process.env.OPEN_DATA_RECORD_CACHE_WARMER || '')
+);
 
 // Проверка обязательных env-переменных при старте
 if (!EGOV_API_KEY) {
@@ -2992,10 +2997,13 @@ if (process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
   logger.info('Open-data catalog cron scheduled: daily 04:20');
 }
 
-// Materialise official records as Brotli-compressed chunks. Visitors read the
-// local copy immediately; the official API is only used to fill or refresh the
-// cache. A hard ceiling and a free-space reserve protect the 3 GB hosting plan.
-if (EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false') {
+// Materialise official records as Brotli-compressed chunks only when an
+// operator explicitly opts the web process into this heavy job. On shared
+// Passenger hosting, traversing and writing thousands of cache files inside
+// the request-serving process can starve the event loop and make Passenger
+// report that the application could not be started. Production should run
+// `npm run cache-open-data-records` as a separate Plesk scheduled task instead.
+if (OPEN_DATA_RECORD_CACHE_WARMER_ENABLED) {
   const runOpenDataCacheWarm = async reason => {
     logger.info(`[Open data cache] ${reason}: materialisation starting...`);
     try {
@@ -3016,7 +3024,9 @@ if (EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false') {
   cron.schedule('45 4 * * *', () => runOpenDataCacheWarm('daily'));
   const startupCacheTimer = setTimeout(() => runOpenDataCacheWarm('startup'), 45_000);
   startupCacheTimer.unref?.();
-  logger.info('Open-data record cache scheduled: startup + daily 04:45');
+  logger.info('Open-data record cache warmer scheduled in web process: startup + daily 04:45');
+} else if (OPEN_DATA_RECORD_CACHE_ENABLED) {
+  logger.info('Open-data record cache enabled; bulk warmer delegated to an external scheduled task');
 }
 
 // Optional statistical aggregates for the older curated landing pages.
@@ -3328,7 +3338,6 @@ app.post('/api/telegram/setup', asyncHandler(async (req, res) => {
 // Health-check для мониторинга сервиса
 app.get('/health', (req, res) => {
     const companyStats = companiesDb ? companiesDb.stats() : null;
-    const openDataCacheEnabled = Boolean(EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false');
     const openDataCache = getOpenDataCacheJobStatus();
     res.json({
         status: 'ok',
@@ -3338,8 +3347,11 @@ app.get('/health', (req, res) => {
         kgdApi: kgdCounterparty.configured ? 'configured' : 'missing',
         goszakupApi: goszakup.configured ? 'configured' : 'missing',
         openDataCache: {
-            enabled: openDataCacheEnabled,
-            status: openDataCacheEnabled && openDataCache.status === 'idle' ? 'scheduled' : openDataCache.status,
+            enabled: OPEN_DATA_RECORD_CACHE_ENABLED,
+            warmerEnabled: OPEN_DATA_RECORD_CACHE_WARMER_ENABLED,
+            status: OPEN_DATA_RECORD_CACHE_WARMER_ENABLED && openDataCache.status === 'idle'
+              ? 'scheduled'
+              : (OPEN_DATA_RECORD_CACHE_ENABLED && openDataCache.status === 'idle' ? 'external' : openDataCache.status),
             phase: openDataCache.phase,
             processed: openDataCache.processed,
             total: openDataCache.total,
