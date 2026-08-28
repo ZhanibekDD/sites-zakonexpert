@@ -13,6 +13,8 @@ async function run() {
   const result = await warmOpenDataRecordCache({
     apiKey: process.env.EGOV_API_KEY,
     datasets: openDataPages.listDatasets(),
+    concurrency: Number(process.env.OPEN_DATA_RECORD_CACHE_CONCURRENCY) || 1,
+    delayMs: Number(process.env.OPEN_DATA_RECORD_CACHE_DELAY_MS) || 250,
     onProgress: progress => {
       if (progress.processed % 100 === 0) {
         console.log(`${progress.phase}: ${progress.processed}/${progress.total}; cache ${megabytes(progress.bytes)}; errors ${progress.failures}`);
