@@ -1,3884 +1,49 @@
-require('dotenv').config(); // Ğ·Ğ°Ğ³Ñ€ÑƒĞ¶Ğ°ĞµÑ‚ .env Ğ´Ğ¾ Ğ²ÑĞµĞ³Ğ¾ Ğ¾ÑÑ‚Ğ°Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾
-
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const helmet = require('helmet');
-const compression = require('compression');
-const axios = require('axios');
-const xml2js = require('xml2js');
-const { v4: uuidv4 } = require('uuid');
-const cron = require('node-cron');
-const winston = require('winston');
-
-const LOG_MAX_SIZE = 2 * 1024 * 1024;
-const LOG_MAX_FILES = 2;
-const RELEASE_ID = '2026-08-28-conversion-recovery-v2';
-
-function fileLog(filename, level) {
-  return new winston.transports.File({
-    filename: path.join(__dirname, filename),
-    level,
-    maxsize: LOG_MAX_SIZE,
-    maxFiles: LOG_MAX_FILES,
-    tailable: true,
-  });
-}
-
-function consoleLog() {
-  return new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.printf(({ timestamp, level, message, stack }) => {
-        return `${timestamp} ${level}: ${stack || message}`;
-      })
-    ),
-    level: 'info',
-  });
-}
-
-// Plesk captures stdout/stderr. File logs are opt-in and always rotated, so
-// an unattended application can no longer fill the hosting disk.
-const FILE_LOGS_ENABLED = /^(1|true|yes)$/i.test(process.env.FILE_LOGS_ENABLED || '');
-
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    winston.format.printf(({ timestamp, level, message, stack }) => {
-      return `${timestamp} ${level}: ${stack || message}`;
-    })
-  ),
-  transports: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('app.log', 'info')] : [])],
-  exceptionHandlers: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('exceptions.log', 'error')] : [])],
-  rejectionHandlers: [consoleLog(), ...(FILE_LOGS_ENABLED ? [fileLog('rejections.log', 'error')] : [])],
-});
-
-// Telegram notifications
-const telegram = require('./modules/telegram');
-const { lowContentBoost } = require('./modules/seo-blocks');
-const { TOOLS, findTool } = require('./modules/tools-catalog');
-const { createKgdCounterpartyClient, validateBin } = require('./modules/kgd-counterparty');
-const { createGoszakupClient } = require('./modules/goszakup');
-const { createCompanyCheckService } = require('./modules/company-check-sources');
-const { getRegionEmblem } = require('./modules/region-emblems');
-const {
-  getBailiffRegionBySlug,
-  getBailiffRegionByName,
-  withBailiffRegionPaths,
-} = require('./modules/bailiff-regions');
-const {
-  getNotaryRegionBySlug,
-  getNotaryRegionByName,
-  withNotaryRegionPaths,
-} = require('./modules/notary-regions');
-const { applyRegistryPrivacyOverride } = require('./modules/registry-privacy');
-const openDataPages = require('./modules/open-data-pages');
-const { refreshOpenDataSnapshot } = require('./modules/open-data-refresh');
-const { fetchHousingRecordsPageCached, isHousingDataset, searchHousingRecords } = require('./modules/open-data-housing-search');
-const { fetchOpenDataRecordsCached } = require('./modules/open-data-records');
-const { getOpenDataCacheJobStatus, warmOpenDataRecordCache } = require('./modules/open-data-cache-warmer');
-const { syncOpenDataInventory } = require('./scripts/sync-open-data-inventory');
-const { normalizeRegionKey } = require('./modules/notary-archive');
-const { notaryKey, readNotaryChanges } = require('./modules/notary-changes');
-const { resolveLegacyCatalogItem } = require('./modules/seo-url-policy');
-const {
-  BANK_ARREST_HUB_PATH,
-  BANK_ARREST_PAGES,
-  BANK_ARREST_PATH_SET,
-  getBankArrestPageByPath,
-  findBankRecord,
-  getRelatedBankArrestPages,
-  getBankArrestPathForBank,
-} = require('./modules/bank-arrest-pages');
-const {
-  LEGAL_INTENT_PAGES,
-  LEGAL_INTENT_PATH_SET,
-  getLegalIntentPage,
-} = require('./modules/legal-intent-pages');
-const {
-  INDEXABLE_LOCALES: COMPANY_LOCALES,
-  catalogAlternates,
-  catalogPath: companyCatalogPathFor,
-  companyPath: companyPathFor,
-  getLocale: getCompanyLocale,
-} = require('./modules/company-i18n');
-
-// Initialize DB and news importer
-let newsDb = null;
-let newsImporter = null;
-try {
-  newsDb = require('./modules/db');
-  newsImporter = require('./modules/news_importer');
-  logger.info('News module loaded âœ“');
-} catch (e) {
-  logger.warn('News module not loaded: ' + e.message);
-}
-
-// Initialize notaries DB
-let notariesDb = null;
-let importNotaries = null;
-let refreshNotariesRegistry = null;
-try {
-  notariesDb  = require('./modules/notaries-db');
-  ({ importNotaries } = require('./scripts/import-notaries'));
-  ({ refreshNotariesRegistry } = require('./scripts/refresh-notaries-csv'));
-  logger.info('Notaries module loaded âœ“');
-} catch (e) {
-  logger.warn('Notaries module not loaded: ' + e.message);
-}
-
-// Initialize bailiffs DB
-let bailiffsDb = null;
-let importBailiffs = null;
-try {
-  bailiffsDb  = require('./modules/bailiffs-db');
-  ({ importBailiffs } = require('./scripts/import-bailiffs'));
-  logger.info('Bailiffs module loaded âœ“');
-} catch (e) {
-  logger.warn('Bailiffs module not loaded: ' + e.message);
-}
-
-// Initialize comments DB
-let commentsDb = null;
-try {
-  commentsDb = require('./modules/comments-db');
-  logger.info('Comments module loaded âœ“');
-} catch (e) {
-  logger.warn('Comments module not loaded: ' + e.message);
-}
-
-// Initialize the large Kazakhstan companies registry (SQLite, loaded on demand)
-let companiesDb = null;
-let regionLabel = () => null;
-try {
-  companiesDb = require('./modules/companies-db');
-  regionLabel = require('./modules/company-region').regionLabel;
-  logger.info('Companies module loaded âœ“');
-} catch (e) {
-  logger.warn('Companies module not loaded: ' + e.message);
-}
-
-// Initialize laws DB
-let lawsDb = null;
-try {
-  lawsDb = require('./modules/laws-db');
-  logger.info('Laws module loaded âœ“');
-} catch (e) {
-  logger.warn('Laws module not loaded: ' + e.message);
-}
-
-// ĞœĞ°ÑĞºĞ¸Ñ€Ğ¾Ğ²ĞºĞ° Ğ˜Ğ˜Ğ Ğ´Ğ»Ñ Ğ±ĞµĞ·Ğ¾Ğ¿Ğ°ÑĞ½Ğ¾Ğ³Ğ¾ Ğ»Ğ¾Ğ³Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ¸Ñ
-function maskIin(iin) {
-    const clean = String(iin || '').replace(/\D/g, '');
-    return clean.length >= 4 ? clean.slice(0, 4) + '********' : 'Ğ½ĞµĞ²Ğ°Ğ»Ğ¸Ğ´Ğ½Ñ‹Ğ¹';
-}
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-const BACKGROUND_JOBS_ENABLED = !/^(1|true|yes)$/i.test(process.env.DISABLE_BACKGROUND_JOBS || '');
-const KGD_API_TOKEN = String(process.env.KGD_API_TOKEN || '').trim();
-const KGD_API_BASE_URL = process.env.KGD_API_BASE_URL || 'https://portal.kgd.gov.kz';
-const kgdCounterparty = createKgdCounterpartyClient({
-  token: KGD_API_TOKEN,
-  baseUrl: KGD_API_BASE_URL,
-  http: axios,
-});
-const GOSZAKUP_API_TOKEN = String(process.env.GOSZAKUP_API_TOKEN || '').trim();
-const GOSZAKUP_API_BASE_URL = process.env.GOSZAKUP_API_BASE_URL || 'https://ows.goszakup.gov.kz';
-const goszakup = createGoszakupClient({
-  token: GOSZAKUP_API_TOKEN,
-  baseUrl: GOSZAKUP_API_BASE_URL,
-  http: axios,
-});
-const companyCheckService = createCompanyCheckService({
-  companiesDb,
-  kgdClient: kgdCounterparty,
-  goszakupClient: goszakup,
-});
-const COMPANY_CHECK_CACHE_TTL_MS = 30 * 60 * 1000;
-const COMPANY_CHECK_CACHE_LIMIT = 1000;
-const companyCheckCache = new Map();
-
-app.set('trust proxy', 1);
-app.disable('x-powered-by');
-
-// Template engine for news pages
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Middleware â€” Ğ¿Ğ¾Ñ€ÑĞ´Ğ¾Ğº Ğ²Ğ°Ğ¶ĞµĞ½: helmet â†’ compression â†’ cors â†’ body-parser â†’ static
-app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        baseUri: ["'self'"],
-        objectSrc: ["'none'"],
-        frameAncestors: ["'self'"],
-        formAction: ["'self'"],
-        scriptSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          'https://cdn.jsdelivr.net',
-          'https://mc.yandex.ru',
-          'https://yandex.ru',
-        ],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net', 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'https:'],
-        connectSrc: [
-          "'self'",
-          'https://cdn.jsdelivr.net',
-          'https://mc.yandex.ru',
-          'https://yandex.ru',
-        ],
-        frameSrc: [
-          "'self'",
-          'https://maps.google.com',
-          'https://www.google.com',
-          'https://yandex.ru',
-        ],
-        upgradeInsecureRequests: [],
-      },
-    },
-}));
-
-// Lock the two headers that are most often changed by Passenger/Express
-// response handling. The normal Helmet middleware sets the policy first;
-// this final writeHead guard restores it if a later middleware removes it and
-// strips the Express signature immediately before headers leave the app.
-app.use((req, res, next) => {
-  const contentSecurityPolicy = res.getHeader('Content-Security-Policy');
-  const originalWriteHead = res.writeHead;
-  const enforce = () => {
-    res.removeHeader('X-Powered-By');
-    if (contentSecurityPolicy) {
-      res.setHeader('Content-Security-Policy', contentSecurityPolicy);
-    }
-  };
-  res.writeHead = function lockedSecurityWriteHead(...args) {
-    enforce();
-    return originalWriteHead.apply(this, args);
-  };
-  enforce();
-  next();
-});
-app.use(compression());
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || false, // Ğ² production Ğ·Ğ°Ğ´Ğ°Ğ¹Ñ‚Ğµ CORS_ORIGIN=https://zakonexpertt.kz
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'X-Admin-Key'],
-}));
-app.use(express.json()); // Ğ·Ğ°Ğ¼ĞµĞ½ÑĞµÑ‚ bodyParser.json()
-
-function createRateLimiter({ windowMs, max, name }) {
-  const buckets = new Map();
-  let lastSweep = 0;
-  return (req, res, next) => {
-    const now = Date.now();
-    if (now - lastSweep > windowMs) {
-      for (const [key, value] of buckets) {
-        if (now - value.startedAt >= windowMs) buckets.delete(key);
-      }
-      lastSweep = now;
-    }
-    const key = req.ip || req.socket.remoteAddress || 'unknown';
-    let bucket = buckets.get(key);
-    if (!bucket || now - bucket.startedAt >= windowMs) {
-      bucket = { count: 0, startedAt: now };
-      buckets.set(key, bucket);
-    }
-    bucket.count += 1;
-    if (bucket.count > max) {
-      res.set('Retry-After', String(Math.ceil((windowMs - (now - bucket.startedAt)) / 1000)));
-      return res.status(429).json({ error: `Ğ¡Ğ»Ğ¸ÑˆĞºĞ¾Ğ¼ Ğ¼Ğ½Ğ¾Ğ³Ğ¾ Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ¾Ğ² Ğº ${name}. ĞŸĞ¾Ğ²Ñ‚Ğ¾Ñ€Ğ¸Ñ‚Ğµ Ğ¿Ğ¾Ğ·Ğ¶Ğµ.` });
-    }
-    next();
-  };
-}
-
-const externalApiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 20, name: 'Ğ²Ğ½ĞµÑˆĞ½ĞµĞ¼Ñƒ Ñ€ĞµĞµÑÑ‚Ñ€Ñƒ' });
-const housingSearchLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 12, name: 'Ğ¿Ğ¾Ğ¸ÑĞºÑƒ Ğ¿Ğ¾ Ğ¶Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğ¼ ÑĞ¿Ğ¸ÑĞºĞ°Ğ¼' });
-const housingRecordsLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'ÑĞ¿Ğ¸ÑĞºĞ°Ğ¼ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ñ… Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ…' });
-const companySuggestLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'Ğ¿Ğ¾Ğ¸ÑĞºÑƒ Ğ¾Ñ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ğ¹' });
-const leadLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 10, name: 'Ñ„Ğ¾Ñ€Ğ¼Ğµ' });
-const commentLimiter = createRateLimiter({ windowMs: 10 * 60 * 1000, max: 8, name: 'ĞºĞ¾Ğ¼Ğ¼ĞµĞ½Ñ‚Ğ°Ñ€Ğ¸ÑĞ¼' });
-
-// ===== LEGACY ALIAS URL â†’ CANONICAL URL 301 REDIRECTS =====
-// These filenames still exist as physical files (serving the canonical route
-// via servicePages below), but the old URL itself must not stay live as a
-// second indexable duplicate of the canonical page. Must be registered
-// before express.static, which would otherwise serve the file directly.
-const LEGACY_ALIAS_REDIRECTS = {
-  '/ispolnitelnaya-nadpis':           '/otmena-ispolnitelnoi-nadpisi',
-  '/spornost-dolga':                  '/vozrazhenie-na-ispolnitelnuyu-nadpis',
-  '/chsi-arest-schetov':              '/snyatie-ogranichenii-chsi',
-  '/zapret-registracionnyh-deystviy': '/snyatie-zapreta-registracionnyh-deistvii',
-  '/grafik-platezhey':                '/grafik-oplaty-zadolzhennosti',
-};
-for (const [oldPath, newPath] of Object.entries(LEGACY_ALIAS_REDIRECTS)) {
-  app.get([oldPath, oldPath + '.html'], (req, res) => res.redirect(301, newPath));
-}
-
-// Search terms belong in the client-side state, not in crawlable canonical
-// URLs. This route must precede express.static because notary-search.html is a
-// physical file and would otherwise be served before Express can normalize it.
-app.get('/notary-search', (req, res, next) => {
-  const entries = Object.entries(req.query || {}).flatMap(([key, value]) =>
-    (Array.isArray(value) ? value : [value]).map(item => [key, String(item || '')])
-  ).filter(([, value]) => value);
-  if (!entries.length) return next();
-  res.redirect(301, `/notary-search#${new URLSearchParams(entries).toString()}`);
-});
-
-// ===== GENERIC .html SUFFIX â†’ EXTENSIONLESS CANONICAL 301 REDIRECT =====
-// Real Yandex Webmaster data (2026-07-15 export) showed Yandex independently
-// indexing the .html-suffixed URL for several pages (e.g. /snyatie-aresta-so-scheta.html
-// at position 16, split away from its self-referencing canonical) â€” confirms
-// this is not a theoretical duplicate-content risk. Search-console verification
-// stub files must keep their literal .html URL and are excluded.
-const HTML_SUFFIX_REDIRECT_EXCLUDE = new Set([
-  '/googlerGbK9GM3kA42xzTzGMQs4VZju46dDdZjQdmOigQjnKY.html',
-  '/yandex_decc99fa3bf371ce.html',
-]);
-app.get(/^\/.+\.html$/, (req, res, next) => {
-  if (HTML_SUFFIX_REDIRECT_EXCLUDE.has(req.path)) return next();
-  const cleanPath = req.path === '/index.html' ? '/' : req.path.slice(0, -'.html'.length);
-  const filePath = path.join(__dirname, 'public', req.path);
-  if (!fs.existsSync(filePath)) return next();
-  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(301, cleanPath + qs);
-});
-
-// Working databases/exports must never be web-reachable, even if something
-// is dropped into public/data/ by mistake (found a stray .db-wal file there
-// during a storage audit â€” nothing in the app writes there, but express.static
-// would have served it to anyone who requested the URL directly).
-app.use('/data', (req, res) => res.status(404).end());
-
-app.use(express.static(path.join(__dirname, 'public'), {
-  extensions: ['html'],
-  setHeaders(res, filePath) {
-    if (/\.(?:avif|webp|png|jpe?g|gif|svg|ico|woff2?)$/i.test(filePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
-    } else if (/\.(?:css|js)$/i.test(filePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-    }
-  },
-}));
-
-// ===== VISITOR TRACKING =====
-const TRACKED_PATHS = new Set([
-  '/', '/index.html',
-  '/services.html', '/contact.html', '/zakony.html', '/reviews', '/reviews.html',
-  '/advocate',
-  '/arest-kaspi', '/arest-kaspi.html',
-  '/arest-halyk-bank', '/arest-halyk-bank.html',
-  '/arest-freedom-bank', '/arest-freedom-bank.html',
-  '/ispolnitelnaya-nadpis.html', '/otmena-ispolnitelnoi-nadpisi',
-  '/snyatie-zapreta-na-avto', '/snyatie-zapreta-na-avto.html',
-  '/zapret-registracionnyh-deystviy', '/zapret-registracionnyh-deystviy.html',
-  '/snyatie-aresta-so-scheta', '/snyatie-aresta-so-scheta.html',
-  '/grafik-platezhey.html', '/grafik-oplaty-zadolzhennosti', '/grafik-platezhey',
-  '/chsi-arest-schetov.html', '/chsi-arest-schetov',
-  '/ubrat-procenty-i-rashody-chsi',
-  '/besspornost-dolga.html', '/besspornost-dolga',
-  '/alimenty-i-aresty', '/alimenty-i-aresty.html',
-  '/shtrafy-i-aresty', '/shtrafy-i-aresty.html',
-  '/snyatie-ogranicheniya-na-imushchestvo',
-  '/snyatie-ogranichenii-u-notariusa',
-  '/otmena-resheniya-suda.html',
-  '/spornost-dolga',
-  '/chsi-refinansirovanie',
-  '/notaries', '/zamena-notariusa', '/bailiffs',
-  '/notary-search', '/bailiff-search',
-  '/banks', '/mfo', '/courts', '/chambers', '/companies', '/collectors', '/lombards',
-  '/gsi', '/insurance', '/credit-bureaus', '/regulators', '/emergency',
-  '/news', '/statyi',
-]);
-app.use((req, res, next) => {
-  const notifyVisits = /^(1|true|yes)$/i.test(process.env.TELEGRAM_VISIT_NOTIFICATIONS || '');
-  const growthTracked = req.path === BANK_ARREST_HUB_PATH
-    || BANK_ARREST_PATH_SET.has(req.path)
-    || LEGAL_INTENT_PATH_SET.has(req.path);
-  if (notifyVisits && req.method === 'GET' && (TRACKED_PATHS.has(req.path) || growthTracked)) {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    const ua = req.headers['user-agent'] || '';
-    const referer = req.headers['referer'] || req.headers['referrer'] || '';
-    telegram.notifyVisit(req.path, ip, ua, referer);
-  }
-  next();
-});
-
-// ĞĞµ Ğ´ĞµÑ€Ğ¶Ğ¸Ğ¼ Ğ¾Ğ±Ñ‹Ñ‡Ğ½Ñ‹Ğµ Ğ²ĞµĞ±-Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑÑ‹ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğ¼Ğ¸ 10 Ğ¼Ğ¸Ğ½ÑƒÑ‚: ÑÑ‚Ğ¾ Ñ€Ğ°ÑÑ…Ğ¾Ğ´ÑƒĞµÑ‚ Ğ²Ğ¾Ñ€ĞºĞµÑ€Ñ‹ Ğ¸
-// Ğ´ĞµĞ»Ğ°ĞµÑ‚ Ğ¿Ñ€Ğ¸Ğ»Ğ¾Ğ¶ĞµĞ½Ğ¸Ğµ ÑƒÑĞ·Ğ²Ğ¸Ğ¼ĞµĞµ Ğº Ğ¼ĞµĞ´Ğ»ĞµĞ½Ğ½Ñ‹Ğ¼ ÑĞ¾ĞµĞ´Ğ¸Ğ½ĞµĞ½Ğ¸ÑĞ¼. Ğ”Ğ¾Ğ»Ğ³Ğ¸Ğµ admin-Ğ·Ğ°Ğ´Ğ°Ñ‡Ğ¸
-// Ğ·Ğ°Ğ¿ÑƒÑĞºĞ°ÑÑ‚ÑÑ Ğ¾Ñ‚Ğ´ĞµĞ»ÑŒĞ½Ñ‹Ğ¼Ğ¸ POST-Ğ¼Ğ°Ñ€ÑˆÑ€ÑƒÑ‚Ğ°Ğ¼Ğ¸.
-app.use((req, res, next) => {
-    const timeoutMs = req.path.startsWith('/api/') ? 120000 : 30000;
-    req.setTimeout(timeoutMs);
-    res.setTimeout(timeoutMs);
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Keep-Alive', 'timeout=5');
-    next();
-});
-
-// ĞĞ±Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºĞ° Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ° favicon.ico
-app.get('/favicon.ico', (req, res) => {
-  res.status(204).end();
-});
-
-// ĞÑĞ½Ğ¾Ğ²Ğ½Ğ¾Ğ¹ Ğ¼Ğ°Ñ€ÑˆÑ€ÑƒÑ‚
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Ğ£Ñ‚Ğ¸Ğ»Ğ¸Ñ‚Ğ° Ğ´Ğ»Ñ Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºĞ¸ Ğ°ÑĞ¸Ğ½Ñ…Ñ€Ğ¾Ğ½Ğ½Ñ‹Ñ… Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ¾Ğ²
-const asyncHandler = fn => (req, res, next) =>
-  Promise.resolve(fn(req, res, next)).catch(err => {
-      logger.error('ĞÑˆĞ¸Ğ±ĞºĞ° Ğ² Ğ°ÑĞ¸Ğ½Ñ…Ñ€Ğ¾Ğ½Ğ½Ğ¾Ğ¼ Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸ĞºĞµ:', err); // Ğ›Ğ¾Ğ³Ğ¸Ñ€ÑƒĞµĞ¼ Ğ¾ÑˆĞ¸Ğ±ĞºÑƒ
-      next(err); // ĞŸĞµÑ€ĞµĞ´Ğ°ĞµĞ¼ Ğ¾ÑˆĞ¸Ğ±ĞºÑƒ Ğ´Ğ°Ğ»ÑŒÑˆĞµ ÑÑ‚Ğ°Ğ½Ğ´Ğ°Ñ€Ñ‚Ğ½Ğ¾Ğ¼Ñƒ Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸ĞºÑƒ Express
-  });
-
-function sendNotFound(res) {
-  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'), error => {
-    if (error && !res.headersSent) res.status(404).send('Ğ¡Ñ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ğ° Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ°');
-  });
-}
-
-function sendGone(res) {
-  res.set('Cache-Control', 'no-store');
-  res.status(410).sendFile(path.join(__dirname, 'public', '404.html'), error => {
-    if (error && !res.headersSent) res.status(410).send('Ğ Ğ°Ğ·Ğ´ĞµĞ» ÑƒĞ´Ğ°Ğ»Ñ‘Ğ½');
-  });
-}
-
-// ĞšĞ¾Ğ½Ñ„Ğ¸Ğ³ÑƒÑ€Ğ°Ñ†Ğ¸Ñ Ğ´Ğ»Ñ API eGov
-const EGOV_API_URL = "https://data.egov.kz/egov-opendata-ws/ODWebServiceImpl";
-const EGOV_API_KEY = process.env.EGOV_API_KEY;
-const OPEN_DATA_RECORD_CACHE_ENABLED = Boolean(EGOV_API_KEY && process.env.OPEN_DATA_RECORD_CACHE !== 'false');
-const OPEN_DATA_RECORD_CACHE_WARMER_ENABLED = Boolean(
-  OPEN_DATA_RECORD_CACHE_ENABLED
-  && /^(1|true|yes)$/i.test(process.env.OPEN_DATA_RECORD_CACHE_WARMER || '')
-);
-
-// ĞŸÑ€Ğ¾Ğ²ĞµÑ€ĞºĞ° Ğ¾Ğ±ÑĞ·Ğ°Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ñ… env-Ğ¿ĞµÑ€ĞµĞ¼ĞµĞ½Ğ½Ñ‹Ñ… Ğ¿Ñ€Ğ¸ ÑÑ‚Ğ°Ñ€Ñ‚Ğµ
-if (!EGOV_API_KEY) {
-    logger.error('ĞšĞ Ğ˜Ğ¢Ğ˜Ğ§ĞĞ: ĞŸĞµÑ€ĞµĞ¼ĞµĞ½Ğ½Ğ°Ñ Ğ¾ĞºÑ€ÑƒĞ¶ĞµĞ½Ğ¸Ñ EGOV_API_KEY Ğ½Ğµ Ğ·Ğ°Ğ´Ğ°Ğ½Ğ°. Ğ¤ÑƒĞ½ĞºÑ†Ğ¸Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ˜Ğ˜Ğ Ğ½Ğµ Ğ±ÑƒĞ´ĞµÑ‚ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°Ñ‚ÑŒ. Ğ—Ğ°Ğ´Ğ°Ğ¹Ñ‚Ğµ ĞµÑ‘ Ğ² .env Ñ„Ğ°Ğ¹Ğ»Ğµ Ğ¸Ğ»Ğ¸ Ğ² Ğ½Ğ°ÑÑ‚Ñ€Ğ¾Ğ¹ĞºĞ°Ñ… ÑĞµÑ€Ğ²ĞµÑ€Ğ°.');
-}
-
-// Ğ¤ÑƒĞ½ĞºÑ†Ğ¸Ñ Ğ´Ğ»Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ´Ğ¾Ğ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ñ… Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸Ğ¹.
-// Ğ˜ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… Ğ½Ğµ Ñ€ĞµĞ°Ğ»Ğ¸Ğ·Ğ¾Ğ²Ğ°Ğ½ â€” Ğ²Ğ¾Ğ·Ğ²Ñ€Ğ°Ñ‰Ğ°ĞµÑ‚ Ğ¿ÑƒÑÑ‚Ğ¾Ğ¹ Ğ¼Ğ°ÑÑĞ¸Ğ².
-// Ğ‘Ğ»Ğ¾Ğº "Ğ”Ğ¾Ğ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸Ñ" Ğ½Ğ° Ñ„Ñ€Ğ¾Ğ½Ñ‚Ğµ ÑĞºÑ€Ñ‹Ñ‚ Ğ¿Ğ¾ĞºĞ° Ğ¼Ğ°ÑÑĞ¸Ğ² Ğ¿ÑƒÑÑ‚.
-async function checkRestrictions(iin) {
-    return [];
-}
-
-// --- ĞĞĞ§ĞĞ›Ğ: ĞĞ¾Ğ²Ğ°Ñ Ñ„ÑƒĞ½ĞºÑ†Ğ¸Ñ Ğ´Ğ»Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ° Ñ‡ĞµÑ€ĞµĞ· API eGov ---
-async function checkDebtorViaApi(iin) {
-    const formattedIIN = String(iin).replace(/[^\d]/g, '');
-    if (formattedIIN.length !== 12) {
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.warn Ğ¸ Ğ¾ÑˆĞ¸Ğ±ĞºĞ°
-        const errorMsg = 'Ğ˜Ğ˜Ğ Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ°Ñ‚ÑŒ 12 Ñ†Ğ¸Ñ„Ñ€';
-        logger.warn(`ĞŸĞ¾Ğ¿Ñ‹Ñ‚ĞºĞ° Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€Ğ¸Ñ‚ÑŒ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ° Ñ Ğ½ĞµĞ²ĞµÑ€Ğ½Ñ‹Ğ¼ Ğ˜Ğ˜Ğ: ${maskIin(iin)}`);
-        throw new Error(errorMsg);
-    }
-
-    const messageId = uuidv4();
-    const messageDate = new Date().toISOString().replace(/Z$/, '+06:00');
-
-    const soapBody = `
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soap="http://soap.opendata.egov.nitec.kz/">
-   <soapenv:Header/>
-   <soapenv:Body>
-      <soap:request>
-         <request>
-            <requestInfo>
-               <messageId>${messageId}</messageId>
-               <messageDate>${messageDate}</messageDate>
-               <indexName>aisoip</indexName>
-               <apiKey>${EGOV_API_KEY}</apiKey>
-            </requestInfo>
-            <requestData>
-               <data xmlns:ns2pep="http://bip.bee.kz/SyncChannel/v10/Types/Request" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns2pep:RequestMessage">
-                  <iinOrBin>${formattedIIN}</iinOrBin>
-               </data>
-            </requestData>
-         </request>
-      </soap:request>
-   </soapenv:Body>
-</soapenv:Envelope>
-`;
-
-    const headers = {
-        "Content-Type": "text/xml;charset=UTF-8"
-    };
-
-    // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.info
-    if (!EGOV_API_KEY) {
-        throw new Error('Ğ¡ĞµÑ€Ğ²Ğ¸Ñ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿ĞµĞ½. EGOV_API_KEY Ğ½Ğµ Ğ½Ğ°ÑÑ‚Ñ€Ğ¾ĞµĞ½. ĞĞ±Ñ€Ğ°Ñ‚Ğ¸Ñ‚ĞµÑÑŒ Ñ‡ĞµÑ€ĞµĞ· WhatsApp.');
-    }
-
-    logger.info(`ĞÑ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ° SOAP Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ° Ğ´Ğ»Ñ Ğ˜Ğ˜Ğ ${maskIin(formattedIIN)} Ğ½Ğ° ${EGOV_API_URL}`);
-    try {
-        const response = await axios.post(EGOV_API_URL, soapBody, { headers, timeout: 30000 });
-        logger.info(`SOAP Ğ¾Ñ‚Ğ²ĞµÑ‚ Ğ¿Ğ¾Ğ»ÑƒÑ‡ĞµĞ½ Ğ´Ğ»Ñ Ğ˜Ğ˜Ğ ${maskIin(formattedIIN)}. Ğ¡Ñ‚Ğ°Ñ‚ÑƒÑ: ${response.status}`);
-
-        const parser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: true });
-        const result = await parser.parseStringPromise(response.data);
-
-        const responseInfo = result?.['soap:Envelope']?.['soap:Body']?.['ns1:requestResponse']?.['response']?.['responseInfo'];
-        const responseData = result?.['soap:Envelope']?.['soap:Body']?.['ns1:requestResponse']?.['response']?.['responseData']?.['data'];
-
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.debug Ğ´Ğ»Ñ Ğ´ĞµÑ‚Ğ°Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ° (Ğ¼Ğ¾Ğ¶Ğ½Ğ¾ Ğ¸Ğ·Ğ¼ĞµĞ½Ğ¸Ñ‚ÑŒ ÑƒÑ€Ğ¾Ğ²ĞµĞ½ÑŒ Ğ½Ğ° info Ğ¿Ñ€Ğ¸ Ğ¾Ñ‚Ğ»Ğ°Ğ´ĞºĞµ)
-        // logger.debug('Response Info:', JSON.stringify(responseInfo, null, 2));
-        // logger.debug('Response Data:', JSON.stringify(responseData, null, 2));
-
-        if (!responseInfo) {
-            // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.error
-            logger.error('ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ Ğ½Ğ°Ğ¹Ñ‚Ğ¸ responseInfo Ğ² Ğ¾Ñ‚Ğ²ĞµÑ‚Ğµ API eGov:', JSON.stringify(result, null, 2));
-            throw new Error('ĞĞµĞºĞ¾Ñ€Ñ€ĞµĞºÑ‚Ğ½Ñ‹Ğ¹ Ñ„Ğ¾Ñ€Ğ¼Ğ°Ñ‚ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ° Ğ¾Ñ‚ API eGov (Ğ¾Ñ‚ÑÑƒÑ‚ÑÑ‚Ğ²ÑƒĞµÑ‚ responseInfo)');
-        }
-
-        const debtorDataRows = responseData?.rows;
-        const isDebtor = !!debtorDataRows;
-
-        const statusCode = responseInfo?.status?.code;
-        const statusMessage = responseInfo?.status?.message;
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.info
-        logger.info(`Ğ ĞµĞ·ÑƒĞ»ÑŒÑ‚Ğ°Ñ‚ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ˜Ğ˜Ğ ${maskIin(formattedIIN)}: ÑÑ‚Ğ°Ñ‚ÑƒÑ '${statusCode}', Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸Ğº: ${isDebtor}`);
-
-        return {
-            isDebtor: isDebtor,
-            details: isDebtor ? debtorDataRows : null
-        };
-
-    } catch (error) {
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.error
-        logger.error(`ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¿Ñ€Ğ¸ Ğ²Ñ‹Ğ·Ğ¾Ğ²Ğµ API eGov Ğ¸Ğ»Ğ¸ Ğ¿Ğ°Ñ€ÑĞ¸Ğ½Ğ³Ğµ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ° Ğ´Ğ»Ñ Ğ˜Ğ˜Ğ ${maskIin(formattedIIN)}:`, error);
-        if (error.response) {
-            // Ğ›Ğ¾Ğ³Ğ¸Ñ€ÑƒĞµĞ¼ ÑÑ‚Ğ°Ñ‚ÑƒÑ Ğ¸ Ñ‚ĞµĞ»Ğ¾ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ°, ĞµÑĞ»Ğ¸ Ğ¾ÑˆĞ¸Ğ±ĞºĞ° Ğ¾Ñ‚ axios
-            logger.error(`Ğ¡Ñ‚Ğ°Ñ‚ÑƒÑ Ğ¾ÑˆĞ¸Ğ±ĞºĞ¸ Ğ¾Ñ‚ API: ${error.response.status}`);
-            logger.error('Ğ¢ĞµĞ»Ğ¾ Ğ¾ÑˆĞ¸Ğ±ĞºĞ¸ Ğ¾Ñ‚ API:', error.response.data);
-            // ĞŸĞµÑ€ĞµĞ±Ñ€Ğ°ÑÑ‹Ğ²Ğ°ĞµĞ¼ Ğ±Ğ¾Ğ»ĞµĞµ ĞºĞ¾Ğ½ĞºÑ€ĞµÑ‚Ğ½ÑƒÑ Ğ¾ÑˆĞ¸Ğ±ĞºÑƒ
-            throw new Error(`ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¾Ñ‚ API eGov: ${error.response.status} - ${error.response.statusText}. ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ Ñ‚ĞµĞ»Ğ¾ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ° Ğ² Ğ»Ğ¾Ğ³Ğ°Ñ….`);
-        } else if (error.request) {
-             // ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¾Ñ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ¸ Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ° (Ğ½ĞµÑ‚ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ°)
-             logger.error('ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¾Ñ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ¸ Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ° Ğº API eGov (Ğ½ĞµÑ‚ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ°):', error.message);
-             throw new Error('ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ ÑĞ²ÑĞ·Ğ°Ñ‚ÑŒÑÑ Ñ API eGov. ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ ÑĞµÑ‚ĞµĞ²Ğ¾Ğµ ÑĞ¾ĞµĞ´Ğ¸Ğ½ĞµĞ½Ğ¸Ğµ Ğ¸Ğ»Ğ¸ Ğ´Ğ¾ÑÑ‚ÑƒĞ¿Ğ½Ğ¾ÑÑ‚ÑŒ ÑĞµÑ€Ğ²Ğ¸ÑĞ°.');
-        } else {
-             // Ğ”Ñ€ÑƒĞ³Ğ°Ñ Ğ¾ÑˆĞ¸Ğ±ĞºĞ° (Ğ½Ğ°ÑÑ‚Ñ€Ğ¾Ğ¹ĞºĞ° Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ°, Ğ¿Ğ°Ñ€ÑĞ¸Ğ½Ğ³ Ğ¸ Ñ‚.Ğ´.)
-             throw new Error(`Ğ’Ğ½ÑƒÑ‚Ñ€ĞµĞ½Ğ½ÑÑ Ğ¾ÑˆĞ¸Ğ±ĞºĞ° Ğ¿Ñ€Ğ¸ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞµ Ñ‡ĞµÑ€ĞµĞ· API eGov: ${error.message}`);
-        }
-    }
-}
-// --- ĞšĞĞĞ•Ğ¦: ĞĞ¾Ğ²Ğ°Ñ Ñ„ÑƒĞ½ĞºÑ†Ğ¸Ñ Ğ´Ğ»Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ° Ñ‡ĞµÑ€ĞµĞ· API eGov ---
-
-
-// ĞœĞ°Ñ€ÑˆÑ€ÑƒÑ‚ Ğ´Ğ»Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ˜Ğ˜Ğ
-app.post('/check', externalApiLimiter, asyncHandler(async (req, res) => {
-    const iin = String(req.body?.iin || '').replace(/\D/g, '');
-    if (req.body?.consent !== true) {
-        return res.status(400).json({ error: 'ĞĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ğ¾ ÑĞ¾Ğ³Ğ»Ğ°ÑĞ¸Ğµ Ğ½Ğ° Ñ€Ğ°Ğ·Ğ¾Ğ²ÑƒÑ Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºÑƒ Ğ˜Ğ˜Ğ' });
-    }
-    // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.info
-    logger.info(`ĞŸĞ¾Ğ»ÑƒÑ‡ĞµĞ½ Ğ·Ğ°Ğ¿Ñ€Ğ¾Ñ Ğ½Ğ° Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºÑƒ Ğ˜Ğ˜Ğ: ${iin ? iin.substring(0, 4) + '********' : 'Ğ¿ÑƒÑÑ‚Ğ¾Ğ¹'}`); // ĞœĞ°ÑĞºĞ¸Ñ€ÑƒĞµĞ¼ Ğ˜Ğ˜Ğ Ğ² Ğ»Ğ¾Ğ³Ğ°Ñ…
-
-    if (!iin) {
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: logger.warn
-        logger.warn('Ğ—Ğ°Ğ¿Ñ€Ğ¾Ñ Ğ½Ğ° Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºÑƒ Ğ±ĞµĞ· Ğ˜Ğ˜Ğ.');
-        return res.status(400).json({ error: 'Ğ˜Ğ˜Ğ Ğ½Ğµ Ğ¿Ñ€ĞµĞ´Ğ¾ÑÑ‚Ğ°Ğ²Ğ»ĞµĞ½' });
-    }
-    if (iin.length !== 12) {
-        logger.warn(`Ğ—Ğ°Ğ¿Ñ€Ğ¾Ñ Ğ½Ğ° Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºÑƒ Ñ Ğ½ĞµĞ²ĞµÑ€Ğ½Ğ¾Ğ¹ Ğ´Ğ»Ğ¸Ğ½Ğ¾Ğ¹ Ğ˜Ğ˜Ğ: ${maskIin(iin)}`);
-        return res.status(400).json({ error: 'Ğ˜Ğ˜Ğ Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½ ÑĞ¾Ğ´ĞµÑ€Ğ¶Ğ°Ñ‚ÑŒ 12 Ñ†Ğ¸Ñ„Ñ€' });
-    }
-    if (!EGOV_API_KEY) {
-        logger.error('ĞŸÑ€Ğ¾Ğ²ĞµÑ€ĞºĞ° Ğ˜Ğ˜Ğ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿Ğ½Ğ°: EGOV_API_KEY Ğ½Ğµ Ğ½Ğ°ÑÑ‚Ñ€Ğ¾ĞµĞ½.');
-        return res.status(503).json({
-            error: 'Ğ¡ĞµÑ€Ğ²Ğ¸Ñ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿ĞµĞ½',
-            details: 'ĞĞ±Ñ€Ğ°Ñ‚Ğ¸Ñ‚ĞµÑÑŒ Ñ‡ĞµÑ€ĞµĞ· WhatsApp â€” ÑĞ¿ĞµÑ†Ğ¸Ğ°Ğ»Ğ¸ÑÑ‚ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€Ğ¸Ñ‚ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸Ñ Ğ²Ñ€ÑƒÑ‡Ğ½ÑƒÑ.'
-        });
-    }
-
-    try {
-        const debtorResult = await checkDebtorViaApi(iin);
-        const restrictionsResult = await checkRestrictions(iin); // Ğ’Ñ‹Ğ·Ñ‹Ğ²Ğ°ĞµĞ¼ Ğ·Ğ°Ğ³Ğ»ÑƒÑˆĞºÑƒ
-
-        res.json({
-            debtorInfo: debtorResult,
-            restrictions: restrictionsResult
-        });
-        logger.info(`Ğ£ÑĞ¿ĞµÑˆĞ½Ğ¾ Ğ¾Ñ‚Ğ¿Ñ€Ğ°Ğ²Ğ»ĞµĞ½ Ğ¾Ñ‚Ğ²ĞµÑ‚ Ğ´Ğ»Ñ Ğ˜Ğ˜Ğ ${iin.substring(0, 4)}********. Ğ”Ğ¾Ğ»Ğ¶Ğ½Ğ¸Ğº Ğ½Ğ°Ğ¹Ğ´ĞµĞ½: ${debtorResult.isDebtor}`);
-
-        // Telegram: ÑƒĞ²ĞµĞ´Ğ¾Ğ¼Ğ»ĞµĞ½Ğ¸Ğµ Ğ¾ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞµ Ğ˜Ğ˜Ğ
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-        const ua = req.headers['user-agent'] || '';
-        const details = debtorResult.details;
-        const count = Array.isArray(details) ? details.length : (details ? 1 : 0);
-        telegram.notifyIinCheck(ip, ua, debtorResult.isDebtor, count, iin);
-
-    } catch (error) {
-        // ĞÑˆĞ¸Ğ±ĞºĞ° ÑƒĞ¶Ğµ Ğ·Ğ°Ğ»Ğ¾Ğ³Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ° Ğ² checkDebtorViaApi Ğ¸Ğ»Ğ¸ asyncHandler
-        // Ğ˜Ğ—ĞœĞ•ĞĞ•ĞĞ: Ğ›Ğ¾Ğ³Ğ¸Ñ€ÑƒĞµĞ¼ Ñ„Ğ°ĞºÑ‚ Ğ¾Ñ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ¸ Ğ¾ÑˆĞ¸Ğ±ĞºĞ¸ ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ñƒ
-        logger.error(`ĞÑ‚Ğ¿Ñ€Ğ°Ğ²ĞºĞ° Ğ¾ÑˆĞ¸Ğ±ĞºĞ¸ 500 ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ñƒ Ğ´Ğ»Ñ Ğ˜Ğ˜Ğ ${iin ? iin.substring(0, 4) + '********' : 'Ğ¿ÑƒÑÑ‚Ğ¾Ğ¹'}: ${error.message}`);
-        res.status(500).json({ error: 'ĞÑˆĞ¸Ğ±ĞºĞ° ÑĞµÑ€Ğ²ĞµÑ€Ğ° Ğ¿Ñ€Ğ¸ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞµ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ° Ñ‡ĞµÑ€ĞµĞ· API', details: error.message });
-    }
-
-}));
-
-// ===== NOTARY SEARCH =====
-app.get('/notary-search', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'notary-search.html'));
-});
-
-app.get('/api/notary-search', externalApiLimiter, asyncHandler(async (req, res) => {
-  const cheerio = require('cheerio');
-  const { fio = '', phone = '', license = '', region = '0' } = req.query;
-  if (!fio && !phone && !license) {
-    return res.status(400).json({ error: 'Ğ£ĞºĞ°Ğ¶Ğ¸Ñ‚Ğµ Ğ¤Ğ˜Ğ, Ñ‚ĞµĞ»ĞµÑ„Ğ¾Ğ½ Ğ¸Ğ»Ğ¸ Ğ½Ğ¾Ğ¼ĞµÑ€ Ğ»Ğ¸Ñ†ĞµĞ½Ğ·Ğ¸Ğ¸' });
-  }
-  const params = new URLSearchParams({ fio, region, city: '', phoneNumber: phone, licenseNumber: license });
-  const url = `https://enis.kz/NotarySearch/Details/?${params}`;
-  try {
-    const resp = await axios.get(url, { timeout: 15000, headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(resp.data);
-    const countText = $('b').filter((i, el) => $(el).text().includes('ĞĞ°Ğ¹Ğ´ĞµĞ½Ğ¾ Ğ·Ğ°Ğ¿Ğ¸ÑĞµĞ¹')).first().text();
-    const total = parseInt(countText.match(/\d+/)?.[0] || '0');
-    const notaries = [];
-    $('font[face="Arial"]').each((i, el) => {
-      const font = $(el);
-      const nameEl = font.find('a').first();
-      const name = nameEl.text().trim();
-      if (!name) return;
-      const href = nameEl.attr('href') || '';
-      const id = href.match(/\/(\d+)$/)?.[1] || '';
-      const inner = font.html() || '';
-      const parts = inner.split(/<br\s*\/?>/i);
-      let address = '', phone2 = '', workHours = '', email = '';
-      for (const part of parts) {
-        const clean = part.replace(/<[^>]+>/g, '').trim();
-        if (clean.startsWith('ĞĞ´Ñ€ĞµÑ:')) address = clean.replace('ĞĞ´Ñ€ĞµÑ:', '').trim();
-        else if (clean.startsWith('Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½:')) phone2 = clean.replace('Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½:', '').trim();
-        else if (clean.startsWith('Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‹:')) workHours = clean.replace('Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‹:', '').trim();
-        else if (clean.startsWith('Ğ­Ğ»ĞµĞºÑ‚Ñ€Ğ¾Ğ½Ğ½Ñ‹Ğ¹ Ğ°Ğ´Ñ€ĞµÑ:')) email = clean.replace('Ğ­Ğ»ĞµĞºÑ‚Ñ€Ğ¾Ğ½Ğ½Ñ‹Ğ¹ Ğ°Ğ´Ñ€ĞµÑ:', '').trim();
-      }
-      notaries.push({ id, name, address, phone: phone2, workHours, email,
-        url: id ? `https://enis.kz/Notary/Details/${id}` : '' });
-    });
-    res.json({ total, notaries });
-  } catch (e) {
-    logger.error('Notary search error:', e.message);
-    res.status(500).json({ error: 'ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ñ‚ÑŒ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ Ñ enis.kz' });
-  }
-}));
-
-// ===== NOTARY SEO PAGES =====
-
-app.get('/zamena-notariusa.html', (req, res) => {
-  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-  res.redirect(301, '/zamena-notariusa' + qs);
-});
-
-app.get('/zamena-notariusa', asyncHandler(async (req, res) => {
-  if (!notariesDb) return res.status(503).send('Notary module not available');
-  const query = String(req.query.q || '').trim().slice(0, 160);
-  const [directory, lastUpdated] = await Promise.all([
-    notariesDb.getArchiveDirectory(query),
-    notariesDb.getLastUpdated(),
-  ]);
-  const regions = new Set();
-  directory.matchedNotaries.forEach(item => regions.add(normalizeRegionKey(item.region)));
-  directory.transfers.forEach(item => regions.add(normalizeRegionKey(item.holder.region)));
-  const chambers = getChambersData().filter(item => regions.has(normalizeRegionKey(item.region)));
-  res.render('notary/archive-search', { query, directory, lastUpdated, chambers });
-}));
-
-// Individual notary page
-app.get('/notary/:slug', asyncHandler(async (req, res) => {
-  if (!notariesDb) return res.status(503).send('Notary module not available');
-  const notary = await notariesDb.findBySlug(req.params.slug);
-  if (!notary) return sendNotFound(res);
-  if (notary.slug !== req.params.slug) return res.redirect(301, `/notary/${notary.slug}`);
-  const [comments, commentStats] = commentsDb
-    ? await Promise.all([commentsDb.getApproved('notary', req.params.slug), commentsDb.stats('notary', req.params.slug)])
-    : [[], null];
-  res.render('notary/page', { notary, comments, commentStats, commentSent: req.query.comment === 'sent' });
-}));
-
-// Sitemap for notary pages
-app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
-  res.set('Content-Type', 'application/xml');
-  if (!notariesDb) {
-    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-  const [all, regions] = await Promise.all([notariesDb.getAllSlugs(), notariesDb.getRegions()]);
-  const lastUpdated = await notariesDb.getLastUpdated();
-  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const changeHistory = readNotaryChanges();
-  const changeDate = new Date(changeHistory.latestChangeAt || changeHistory.checkedAt || lastmod);
-  const changeLastmod = Number.isNaN(changeDate.getTime()) ? lastmod : changeDate.toISOString().substring(0, 10);
-  const changesUrl = changeHistory.changes.length ? `
-  <url>
-    <loc>https://zakonexpertt.kz/notaries/changes</loc>
-    <lastmod>${changeLastmod}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>` : '';
-  const regionUrls = withNotaryRegionPaths(regions).map(r => `
-  <url>
-    <loc>https://zakonexpertt.kz${r.path}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
-  </url>`).join('');
-  const profileUrls = all.map(n => `
-  <url>
-    <loc>https://zakonexpertt.kz/notary/${n.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`).join('');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${changesUrl}
-  ${regionUrls}
-  ${profileUrls}
-</urlset>`);
-}));
-
-// Admin: manual notary import trigger
-app.post('/api/notaries/import', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!importNotaries) return res.status(503).json({ error: 'Notary module not available' });
-  const count = await importNotaries();
-  res.json({ ok: true, imported: count });
-}));
-
-app.post('/api/notaries/refresh', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!refreshNotariesRegistry || !importNotaries) return res.status(503).json({ error: 'Notary module not available' });
-  const refreshed = await refreshNotariesRegistry();
-  const imported = await importNotaries();
-  res.json({ ok: true, refreshed, imported });
-}));
-
-// ===== BAILIFF SEARCH =====
-app.get('/bailiff-search', asyncHandler(async (req, res) => {
-  const q = (req.query.q || '').trim();
-  let results = null;
-  let suggestion = null;
-  if (q.length >= 2 && bailiffsDb) {
-    results = await bailiffsDb.search(q);
-    if (results.length === 0) {
-      suggestion = await bailiffsDb.fuzzySearch(q);
-    }
-  } else if (q.length >= 2) {
-    results = [];
-  }
-  res.render('bailiff/search', { query: q, results, suggestion });
-}));
-
-// ===== CATALOG PAGES =====
-
-const NOTARY_PAGE_SIZE = 60;
-
-app.get('/notaries', asyncHandler(async (req, res) => {
-  const region = (req.query.region || '').trim();
-  if (!notariesDb) return res.status(503).send('Notary module not available');
-  if (region) {
-    const regionPage = getNotaryRegionByName(region);
-    return res.redirect(301, regionPage ? regionPage.path : '/notaries');
-  }
-  const [allRegions, lastUpdated] = await Promise.all([
-    notariesDb.getRegions(),
-    notariesDb.getLastUpdated(),
-  ]);
-  res.render('notary/catalog', {
-    selectedRegion: '', regionPage: null, allRegions: withNotaryRegionPaths(allRegions),
-    regionItems: [], lastUpdated, getRegionEmblem,
-    pagination: { page: 1, pageSize: NOTARY_PAGE_SIZE, total: 0, totalPages: 1 },
-  });
-}));
-
-app.get('/notaries/changes', asyncHandler(async (req, res) => {
-  const allowedTypes = new Set(['added', 'status', 'updated', 'removed']);
-  const type = allowedTypes.has(String(req.query.type || '')) ? String(req.query.type) : '';
-  const region = String(req.query.region || '').trim().slice(0, 100);
-  const history = readNotaryChanges();
-  const profiles = notariesDb ? await notariesDb.getAllSlugs() : [];
-  const profileByKey = new Map(profiles.map(profile => [notaryKey(profile), profile.slug]));
-  const allChanges = history.changes.map(change => ({
-    ...change,
-    profileSlug: profileByKey.get(notaryKey(change)) || '',
-  }));
-  const regions = [...new Set(allChanges.map(change => change.region).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, 'ru'));
-  const filteredChanges = allChanges.filter(change => {
-    if (type && change.type !== type) return false;
-    if (region && normalizeRegionKey(change.region) !== normalizeRegionKey(region)) return false;
-    return true;
-  }).slice(0, 200);
-  const stats = allChanges.reduce((result, change) => {
-    result[change.type] = (result[change.type] || 0) + 1;
-    return result;
-  }, { added: 0, status: 0, updated: 0, removed: 0 });
-  res.render('notary/changes', {
-    history,
-    changes: filteredChanges,
-    stats,
-    filters: { type, region },
-    regions,
-    noindex: Boolean(type || region || !history.changes.length),
-  });
-}));
-
-app.get('/notaries/:regionSlug', asyncHandler(async (req, res) => {
-  if (!notariesDb) return res.status(503).send('Notary module not available');
-  const regionPage = getNotaryRegionBySlug(req.params.regionSlug);
-  if (!regionPage) return sendNotFound(res);
-  const parsedPage = Number.parseInt(req.query.page, 10);
-  const requestedPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-  const [allRegions, total, lastUpdated] = await Promise.all([
-    notariesDb.getRegions(),
-    notariesDb.countByRegion(regionPage.sourceName),
-    notariesDb.getLastUpdated(),
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / NOTARY_PAGE_SIZE));
-  if (requestedPage > totalPages) return sendNotFound(res);
-  const page = requestedPage;
-  const normalizedPath = regionPage.path + (page > 1 ? `?page=${page}` : '');
-  if (req.query.page !== undefined && String(req.query.page) !== (page > 1 ? String(page) : '')) {
-    return res.redirect(301, normalizedPath);
-  }
-  const regionItems = await notariesDb.findByRegion(
-    regionPage.sourceName,
-    NOTARY_PAGE_SIZE,
-    (page - 1) * NOTARY_PAGE_SIZE,
-  );
-  res.render('notary/catalog', {
-    selectedRegion: regionPage.sourceName,
-    regionPage,
-    allRegions: withNotaryRegionPaths(allRegions),
-    regionItems,
-    lastUpdated,
-    getRegionEmblem,
-    pagination: { page, pageSize: NOTARY_PAGE_SIZE, total, totalPages },
-  });
-}));
-
-// ===== REGIONAL LANDING PAGES =====
-const REGIONAL_CITIES = {
-  'almaty': {
-    slug: 'almaty', name: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', prepIn: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', caseIn: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', caseByCity: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹',
-    bailiffRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', bailiffPath: '/bailiffs/almaty', notaryRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', notaryPath: '/notaries/almaty',
-    intro: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ â€” ĞºÑ€ÑƒĞ¿Ğ½ĞµĞ¹ÑˆĞ¸Ğ¹ Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° Ğ¸ Ğ»Ğ¸Ğ´ĞµÑ€ Ğ¿Ğ¾ ĞºĞ¾Ğ»Ğ¸Ñ‡ĞµÑÑ‚Ğ²Ñƒ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ñ… Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ². Ğ—Ğ´ĞµÑÑŒ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚ Ğ±Ğ¾Ğ»ÑŒÑˆĞµ Ğ²ÑĞµĞ³Ğ¾ Ğ§Ğ¡Ğ˜ Ğ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ¾Ğ² Ğ² ÑÑ‚Ñ€Ğ°Ğ½Ğµ, Ğ¿Ğ¾ÑÑ‚Ğ¾Ğ¼Ñƒ Ğ¸ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ² ÑÑ‡ĞµÑ‚Ğ¾Ğ² Kaspi, Halyk Ğ¸ Freedom Bank Ğ±Ğ¾Ğ»ÑŒÑˆĞµ, Ñ‡ĞµĞ¼ Ğ² Ğ»ÑĞ±Ğ¾Ğ¼ Ğ´Ñ€ÑƒĞ³Ğ¾Ğ¼ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğµ.',
-    faq: [
-      { q: 'ĞÑƒĞ¶Ğ½Ğ¾ Ğ»Ğ¸ Ğ¿Ñ€Ğ¸ĞµĞ·Ğ¶Ğ°Ñ‚ÑŒ Ğ² Ğ¾Ñ„Ğ¸Ñ Ğ² ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹?', a: 'ĞĞµÑ‚. ĞœÑ‹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµĞ¼ Ğ´Ğ¸ÑÑ‚Ğ°Ğ½Ñ†Ğ¸Ğ¾Ğ½Ğ½Ğ¾ Ğ¿Ğ¾ Ğ²ÑĞµĞ¼Ñƒ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ñƒ, Ğ²ĞºĞ»ÑÑ‡Ğ°Ñ ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ â€” Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ñ‹ Ğ¿ĞµÑ€ĞµĞ´Ğ°ÑÑ‚ÑÑ Ñ‡ĞµÑ€ĞµĞ· WhatsApp, Ğ»Ğ¸Ñ‡Ğ½Ñ‹Ğ¹ Ğ²Ğ¸Ğ·Ğ¸Ñ‚ Ğ½Ğµ Ğ¾Ğ±ÑĞ·Ğ°Ñ‚ĞµĞ»ĞµĞ½.' },
-      { q: 'ĞŸĞ¾Ñ‡ĞµĞ¼Ñƒ Ğ² ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ Ñ‚Ğ°Ğº Ğ¼Ğ½Ğ¾Ğ³Ğ¾ Ğ§Ğ¡Ğ˜?', a: 'ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ â€” ÑĞ°Ğ¼Ñ‹Ğ¹ Ğ½Ğ°ÑĞµĞ»Ñ‘Ğ½Ğ½Ñ‹Ğ¹ Ğ³Ğ¾Ñ€Ğ¾Ğ´ ÑÑ‚Ñ€Ğ°Ğ½Ñ‹ Ñ Ğ½Ğ°Ğ¸Ğ±Ğ¾Ğ»ÑŒÑˆĞ¸Ğ¼ Ñ‡Ğ¸ÑĞ»Ğ¾Ğ¼ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ñ… Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ², Ğ¿Ğ¾ÑÑ‚Ğ¾Ğ¼Ñƒ Ğ·Ğ´ĞµÑÑŒ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚ Ğ±Ğ¾Ğ»ÑŒÑˆĞµ Ñ‡Ğ°ÑÑ‚Ğ½Ñ‹Ñ… ÑÑƒĞ´ĞµĞ±Ğ½Ñ‹Ñ… Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ĞµĞ¹, Ñ‡ĞµĞ¼ Ğ² Ğ´Ñ€ÑƒĞ³Ğ¸Ñ… Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ñ….' },
-      { q: 'ĞšĞ°Ğº ÑƒĞ·Ğ½Ğ°Ñ‚ÑŒ, ĞºĞ°ĞºĞ¾Ğ¹ Ğ§Ğ¡Ğ˜ Ğ² ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ Ğ²ĞµĞ´Ñ‘Ñ‚ Ğ¼Ğ¾Ñ‘ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ¾?', a: 'ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ Ğ¿Ğ¾ Ğ˜Ğ˜Ğ Ğ½Ğ° Ğ½Ğ°ÑˆĞµĞ¼ ÑĞ°Ğ¹Ñ‚Ğµ â€” Ğ¿Ğ¾ĞºĞ°Ğ¶ĞµĞ¼ Ğ²ÑĞµ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ° Ğ¸ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»Ñ, ĞºĞ¾Ñ‚Ğ¾Ñ€Ñ‹Ğ¹ Ğ¸Ñ… Ğ²ĞµĞ´Ñ‘Ñ‚.' },
-    ],
-  },
-  'astana': {
-    slug: 'astana', name: 'ĞÑÑ‚Ğ°Ğ½Ğ°', prepIn: 'ĞÑÑ‚Ğ°Ğ½Ğµ', caseIn: 'ĞÑÑ‚Ğ°Ğ½Ğµ', caseByCity: 'ĞÑÑ‚Ğ°Ğ½Ğµ',
-    bailiffRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞÑÑ‚Ğ°Ğ½Ğ°', bailiffPath: '/bailiffs/astana', notaryRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞÑÑ‚Ğ°Ğ½Ğ°', notaryPath: '/notaries/astana',
-    intro: 'ĞÑÑ‚Ğ°Ğ½Ğ° â€” ÑÑ‚Ğ¾Ğ»Ğ¸Ñ†Ğ° ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° Ñ Ğ°ĞºÑ‚Ğ¸Ğ²Ğ½Ğ¾ Ñ€Ğ°ÑÑ‚ÑƒÑ‰Ğ¸Ğ¼ ĞºĞ¾Ğ»Ğ¸Ñ‡ĞµÑÑ‚Ğ²Ğ¾Ğ¼ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ñ… Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ². ĞšĞ»Ğ¸ĞµĞ½Ñ‚Ñ‹ Kaspi, Halyk Ğ¸ Freedom Bank Ğ² ĞÑÑ‚Ğ°Ğ½Ğµ Ñ‡Ğ°ÑÑ‚Ğ¾ ÑÑ‚Ğ°Ğ»ĞºĞ¸Ğ²Ğ°ÑÑ‚ÑÑ Ñ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ¼ ÑÑ‡Ñ‘Ñ‚Ğ° Ğ¸Ğ·-Ğ·Ğ° Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° Ğ¸Ğ»Ğ¸ Ğ¿Ğ¾ÑÑ‚Ğ°Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ñ Ğ§Ğ¡Ğ˜.',
-    faq: [
-      { q: 'Ğ Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚Ğµ Ğ»Ğ¸ Ğ²Ñ‹ Ñ ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ğ°Ğ¼Ğ¸ Ğ² ĞÑÑ‚Ğ°Ğ½Ğµ Ğ´Ğ¸ÑÑ‚Ğ°Ğ½Ñ†Ğ¸Ğ¾Ğ½Ğ½Ğ¾?', a: 'Ğ”Ğ°, Ğ¼Ñ‹ Ğ²ĞµĞ´Ñ‘Ğ¼ Ğ´ĞµĞ»Ğ° Ğ¿Ğ¾ Ğ²ÑĞµĞ¹ ĞÑÑ‚Ğ°Ğ½Ğµ ÑƒĞ´Ğ°Ğ»Ñ‘Ğ½Ğ½Ğ¾ â€” Ğ¿Ñ€Ğ¸ÑÑ‹Ğ»Ğ°ĞµÑ‚Ğµ Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ñ‹ Ğ² WhatsApp, Ğ¼Ñ‹ Ğ³Ğ¾Ñ‚Ğ¾Ğ²Ğ¸Ğ¼ Ğ¸ Ğ¿Ğ¾Ğ´Ğ°Ñ‘Ğ¼ Ğ²ÑÑ‘ ÑĞ°Ğ¼Ğ¸.' },
-      { q: 'ĞšĞ°ĞºĞ¾Ğ¹ Ğ±Ğ°Ğ½Ğº Ñ‡Ğ°Ñ‰Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ²Ñ‹Ğ²Ğ°ĞµÑ‚ ÑÑ‡ĞµÑ‚Ğ° Ğ² ĞÑÑ‚Ğ°Ğ½Ğµ?', a: 'Ğ§Ğ°Ñ‰Ğµ Ğ²ÑĞµĞ³Ğ¾ Ğº Ğ½Ğ°Ğ¼ Ğ¾Ğ±Ñ€Ğ°Ñ‰Ğ°ÑÑ‚ÑÑ ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ñ‹ Kaspi Ğ¸ Halyk Bank â€” Ğ±Ğ°Ğ½Ğº Ğ»Ğ¸ÑˆÑŒ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½ÑĞµÑ‚ Ğ¿Ğ¾ÑÑ‚Ğ°Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ğµ, Ğ° Ğ½Ğµ Ğ¿Ñ€Ğ¸Ğ½Ğ¸Ğ¼Ğ°ĞµÑ‚ Ñ€ĞµÑˆĞµĞ½Ğ¸Ğµ Ğ¾Ğ± Ğ°Ñ€ĞµÑÑ‚Ğµ ÑĞ°Ğ¼Ğ¾ÑÑ‚Ğ¾ÑÑ‚ĞµĞ»ÑŒĞ½Ğ¾.' },
-      { q: 'Ğ¡ĞºĞ¾Ğ»ÑŒĞºĞ¾ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ¸ Ğ·Ğ°Ğ½Ğ¸Ğ¼Ğ°ĞµÑ‚ ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° Ğ² ĞÑÑ‚Ğ°Ğ½Ğµ?', a: 'Ğ—Ğ°Ğ²Ğ¸ÑĞ¸Ñ‚ Ğ¾Ñ‚ Ğ¾ÑĞ½Ğ¾Ğ²Ğ°Ğ½Ğ¸Ñ: Ğ¿Ñ€Ğ¸ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸ â€” Ğ¾Ñ‚ Ğ½ĞµÑĞºĞ¾Ğ»ÑŒĞºĞ¸Ñ… Ğ´Ğ½ĞµĞ¹ Ğ´Ğ¾ 2â€“3 Ğ½ĞµĞ´ĞµĞ»ÑŒ Ğ¿Ğ¾ÑĞ»Ğµ Ğ¿Ğ¾Ğ´Ğ°Ñ‡Ğ¸ Ğ²Ğ¾Ğ·Ñ€Ğ°Ğ¶ĞµĞ½Ğ¸Ñ. Ğ¢Ğ¾Ñ‡Ğ½Ñ‹Ğ¹ ÑÑ€Ğ¾Ğº ÑĞºĞ°Ğ¶ĞµĞ¼ Ğ¿Ğ¾ÑĞ»Ğµ Ğ°Ğ½Ğ°Ğ»Ğ¸Ğ·Ğ° Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ğ¾Ğ².' },
-    ],
-  },
-  'shymkent': {
-    slug: 'shymkent', name: 'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚', prepIn: 'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ', caseIn: 'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ', caseByCity: 'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ñƒ',
-    bailiffRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚', bailiffPath: '/bailiffs/shymkent', notaryRegion: 'Ğ³Ğ¾Ñ€Ğ¾Ğ´ Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚', notaryPath: '/notaries/shymkent',
-    intro: 'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚ â€” Ñ‚Ñ€ĞµÑ‚Ğ¸Ğ¹ Ğ¿Ğ¾ Ğ²ĞµĞ»Ğ¸Ñ‡Ğ¸Ğ½Ğµ Ğ³Ğ¾Ñ€Ğ¾Ğ´ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° ÑĞ¾ ÑĞ²Ğ¾Ğ¸Ğ¼ Ğ¾Ñ‚Ğ´ĞµĞ»ÑŒĞ½Ñ‹Ğ¼ Ñ€ĞµĞµÑÑ‚Ñ€Ğ¾Ğ¼ Ğ§Ğ¡Ğ˜ Ğ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ¾Ğ². ĞÑ€ĞµÑÑ‚ ÑÑ‡Ñ‘Ñ‚Ğ° Ğ² Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ Ñ‡Ğ°Ñ‰Ğµ Ğ²ÑĞµĞ³Ğ¾ ÑĞ²ÑĞ·Ğ°Ğ½ Ñ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑÑŒÑ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° Ğ¿Ğ¾ ĞºÑ€ĞµĞ´Ğ¸Ñ‚Ñƒ Ğ¸Ğ»Ğ¸ ĞœĞ¤Ğ.',
-    faq: [
-      { q: 'Ğ•ÑÑ‚ÑŒ Ğ»Ğ¸ Ñƒ ZakonExpert Ğ¾Ñ„Ğ¸Ñ Ğ² Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ?', a: 'ĞœÑ‹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµĞ¼ Ğ¿Ğ¾ Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ñƒ Ğ´Ğ¸ÑÑ‚Ğ°Ğ½Ñ†Ğ¸Ğ¾Ğ½Ğ½Ğ¾ â€” Ğ²ĞµÑÑŒ Ğ¿Ñ€Ğ¾Ñ†ĞµÑÑ, Ğ¾Ñ‚ Ñ€Ğ°Ğ·Ğ±Ğ¾Ñ€Ğ° Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ğ¾Ğ² Ğ´Ğ¾ Ğ¿Ğ¾Ğ´Ğ°Ñ‡Ğ¸ Ğ²Ğ¾Ğ·Ñ€Ğ°Ğ¶ĞµĞ½Ğ¸Ñ, Ğ²ĞµĞ´Ñ‘Ñ‚ÑÑ ÑƒĞ´Ğ°Ğ»Ñ‘Ğ½Ğ½Ğ¾ Ñ‡ĞµÑ€ĞµĞ· WhatsApp.' },
-      { q: 'Ğ§Ğ¡Ğ˜ Ğ² Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ Ğ½Ğ°Ğ»Ğ¾Ğ¶Ğ¸Ğ» Ğ°Ñ€ĞµÑÑ‚ â€” Ñ‡Ñ‚Ğ¾ Ğ´ĞµĞ»Ğ°Ñ‚ÑŒ?', a: 'ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ Ğ¿Ğ¾ Ğ˜Ğ˜Ğ, ĞºĞ°ĞºĞ¾Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ¾ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ğ¾ Ğ¸ Ğ½Ğ° ĞºĞ°ĞºĞ¾Ğ¼ Ğ¾ÑĞ½Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğ¸. Ğ—Ğ°Ñ‚ĞµĞ¼ Ğ¼Ğ¾Ğ¶Ğ½Ğ¾ Ğ¿Ğ¾Ğ´Ğ³Ğ¾Ñ‚Ğ¾Ğ²Ğ¸Ñ‚ÑŒ Ğ²Ğ¾Ğ·Ñ€Ğ°Ğ¶ĞµĞ½Ğ¸Ğµ Ğ¸Ğ»Ğ¸ Ğ¶Ğ°Ğ»Ğ¾Ğ±Ñƒ Ğ² Ğ·Ğ°Ğ²Ğ¸ÑĞ¸Ğ¼Ğ¾ÑÑ‚Ğ¸ Ğ¾Ñ‚ ÑĞ¸Ñ‚ÑƒĞ°Ñ†Ğ¸Ğ¸.' },
-      { q: 'ĞœĞ¾Ğ¶Ğ½Ğ¾ Ğ»Ğ¸ Ğ¾ÑĞ¿Ğ¾Ñ€Ğ¸Ñ‚ÑŒ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½ÑƒÑ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑÑŒ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° Ğ² Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚Ğµ?', a: 'Ğ”Ğ°, ĞµÑĞ»Ğ¸ Ğ´Ğ¾Ğ»Ğ³ ÑĞ¿Ğ¾Ñ€Ğ½Ñ‹Ğ¹ Ğ¸Ğ»Ğ¸ Ğ½Ğ°Ñ€ÑƒÑˆĞµĞ½Ğ° Ğ¿Ñ€Ğ¾Ñ†ĞµĞ´ÑƒÑ€Ğ° ÑƒĞ²ĞµĞ´Ğ¾Ğ¼Ğ»ĞµĞ½Ğ¸Ñ â€” Ğ½Ğ° Ğ²Ğ¾Ğ·Ñ€Ğ°Ğ¶ĞµĞ½Ğ¸Ğµ ĞµÑÑ‚ÑŒ 10 Ñ€Ğ°Ğ±Ğ¾Ñ‡Ğ¸Ñ… Ğ´Ğ½ĞµĞ¹ Ñ Ğ¼Ğ¾Ğ¼ĞµĞ½Ñ‚Ğ°, ĞºĞ¾Ğ³Ğ´Ğ° Ğ²Ñ‹ ÑƒĞ·Ğ½Ğ°Ğ»Ğ¸ Ğ¾ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸.' },
-    ],
-  },
-  'taldykorgan': {
-    slug: 'taldykorgan', name: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½', prepIn: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½Ğµ', caseIn: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½Ğµ', caseByCity: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½Ñƒ',
-    bailiffRegion: 'Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ Ğ–ĞµÑ‚Ñ‹ÑÑƒ', bailiffPath: '/bailiffs/zhetisu', notaryRegion: 'Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ Ğ–ĞµÑ‚Ñ–ÑÑƒ', notaryPath: '/notaries/zhetisu',
-    intro: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½ â€” Ğ°Ğ´Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚Ñ€Ğ°Ñ‚Ğ¸Ğ²Ğ½Ñ‹Ğ¹ Ñ†ĞµĞ½Ñ‚Ñ€ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸ Ğ–ĞµÑ‚Ñ‹ÑÑƒ. Ğ˜ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ° Ğ¸ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸ Ğ¿Ğ¾ ĞºĞ»Ğ¸ĞµĞ½Ñ‚Ğ°Ğ¼ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ° Ğ²ĞµĞ´ÑƒÑ‚ÑÑ Ğ§Ğ¡Ğ˜ Ğ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ°Ğ¼Ğ¸, Ğ·Ğ°Ñ€ĞµĞ³Ğ¸ÑÑ‚Ñ€Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ğ¼Ğ¸ Ğ² Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸ Ğ–ĞµÑ‚Ñ‹ÑÑƒ.',
-    faq: [
-      { q: 'Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½ Ğ¾Ñ‚Ğ½Ğ¾ÑĞ¸Ñ‚ÑÑ Ğº ĞºĞ°ĞºĞ¾Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸ Ğ¿Ğ¾ Ñ€ĞµĞµÑÑ‚Ñ€Ñƒ Ğ§Ğ¡Ğ˜?', a: 'Ğš Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸ Ğ–ĞµÑ‚Ñ‹ÑÑƒ â€” Ğ°Ğ´Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚Ñ€Ğ°Ñ‚Ğ¸Ğ²Ğ½Ñ‹Ğ¼ Ñ†ĞµĞ½Ñ‚Ñ€Ğ¾Ğ¼ ĞºĞ¾Ñ‚Ğ¾Ñ€Ğ¾Ğ¹ ÑĞ²Ğ»ÑĞµÑ‚ÑÑ Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½. Ğ’ÑĞµ Ğ§Ğ¡Ğ˜ Ğ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑÑ‹ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ° Ğ·Ğ°Ñ€ĞµĞ³Ğ¸ÑÑ‚Ñ€Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ñ‹ Ğ¸Ğ¼ĞµĞ½Ğ½Ğ¾ Ñ‚Ğ°Ğ¼.' },
-      { q: 'ĞœĞ¾Ğ¶Ğ½Ğ¾ Ğ»Ğ¸ Ñ€ĞµÑˆĞ¸Ñ‚ÑŒ Ğ²Ğ¾Ğ¿Ñ€Ğ¾Ñ Ğ±ĞµĞ· Ğ²Ğ¸Ğ·Ğ¸Ñ‚Ğ° Ğ² Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½?', a: 'Ğ”Ğ°, Ğ¼Ñ‹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµĞ¼ Ğ´Ğ¸ÑÑ‚Ğ°Ğ½Ñ†Ğ¸Ğ¾Ğ½Ğ½Ğ¾ â€” Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ñ‹ Ğ¿Ñ€Ğ¸Ğ½Ğ¸Ğ¼Ğ°ĞµĞ¼ Ñ‡ĞµÑ€ĞµĞ· WhatsApp, ĞµÑ…Ğ°Ñ‚ÑŒ Ğ² Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½ Ğ½Ğµ Ğ½ÑƒĞ¶Ğ½Ğ¾.' },
-      { q: 'Ğ§Ñ‚Ğ¾ Ğ´ĞµĞ»Ğ°Ñ‚ÑŒ, ĞµÑĞ»Ğ¸ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ²Ğ°Ğ»Ğ¸ Ğ·Ğ°Ñ€Ğ¿Ğ»Ğ°Ñ‚Ğ½ÑƒÑ ĞºĞ°Ñ€Ñ‚Ñƒ Ğ² Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½Ğµ?', a: 'ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ Ğ¿Ğ¾ Ğ˜Ğ˜Ğ Ğ¾ÑĞ½Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ°. Ğ•ÑĞ»Ğ¸ ÑƒĞ´ĞµÑ€Ğ¶Ğ°Ğ½Ğ¸Ñ Ğ¿Ñ€ĞµĞ²Ñ‹ÑˆĞ°ÑÑ‚ ÑƒÑÑ‚Ğ°Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ½Ñ‹Ğ¹ Ğ·Ğ°ĞºĞ¾Ğ½Ğ¾Ğ¼ Ğ»Ğ¸Ğ¼Ğ¸Ñ‚ â€” ÑÑ‚Ğ¾ Ğ¿Ğ¾Ğ²Ğ¾Ğ´ Ğ´Ğ»Ñ Ğ¶Ğ°Ğ»Ğ¾Ğ±Ñ‹ Ğ½Ğ° Ğ§Ğ¡Ğ˜.' },
-    ],
-  },
-  'karaganda': {
-    slug: 'karaganda', name: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ°', prepIn: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ', caseIn: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ', caseByCity: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ',
-    bailiffRegion: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', bailiffPath: '/bailiffs/karagandinskaya-oblast', notaryRegion: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', notaryPath: '/notaries/karagandinskaya-oblast',
-    intro: 'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ° â€” ĞºÑ€ÑƒĞ¿Ğ½Ñ‹Ğ¹ Ğ¿Ñ€Ğ¾Ğ¼Ñ‹ÑˆĞ»ĞµĞ½Ğ½Ñ‹Ğ¹ Ñ†ĞµĞ½Ñ‚Ñ€ Ğ¸ Ğ°Ğ´Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚Ñ€Ğ°Ñ‚Ğ¸Ğ²Ğ½Ñ‹Ğ¹ Ñ†ĞµĞ½Ñ‚Ñ€ ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ¾Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸. Ğ˜ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ° Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ¾Ğ² Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ° Ğ²ĞµĞ´ÑƒÑ‚ Ğ§Ğ¡Ğ˜, Ğ·Ğ°Ñ€ĞµĞ³Ğ¸ÑÑ‚Ñ€Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ² ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ¾Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸.',
-    faq: [
-      { q: 'Ğ Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚ Ğ»Ğ¸ ZakonExpert Ñ Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ°Ğ¼Ğ¸ Ğ² ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ?', a: 'Ğ”Ğ°, Ğ¼Ñ‹ Ğ²ĞµĞ´Ñ‘Ğ¼ Ğ´ĞµĞ»Ğ° Ğ¿Ğ¾ Ğ²ÑĞµĞ¹ ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ¾Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ¸ Ğ´Ğ¸ÑÑ‚Ğ°Ğ½Ñ†Ğ¸Ğ¾Ğ½Ğ½Ğ¾ â€” Ğ¾Ñ‚ Ğ¿ĞµÑ€Ğ²Ğ¸Ñ‡Ğ½Ğ¾Ğ¹ Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ¸ Ğ¿Ğ¾ Ğ˜Ğ˜Ğ Ğ´Ğ¾ Ğ¿Ğ¾Ğ´Ğ°Ñ‡Ğ¸ Ğ´Ğ¾ĞºÑƒĞ¼ĞµĞ½Ñ‚Ğ¾Ğ².' },
-      { q: 'ĞšĞ°Ğº ÑƒĞ·Ğ½Ğ°Ñ‚ÑŒ ÑÑƒĞ¼Ğ¼Ñƒ Ğ´Ğ¾Ğ»Ğ³Ğ° Ğ¸ Ğ²Ğ·Ñ‹ÑĞºĞ°Ñ‚ĞµĞ»Ñ Ğ² ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ?', a: 'ĞŸÑ€Ğ¾Ğ²ĞµÑ€ÑŒÑ‚Ğµ Ğ¿Ğ¾ Ğ˜Ğ˜Ğ Ğ½Ğ° Ğ½Ğ°ÑˆĞµĞ¼ ÑĞ°Ğ¹Ñ‚Ğµ â€” Ğ¿Ğ¾ĞºĞ°Ğ¶ĞµĞ¼ Ğ²ÑĞµ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ°, Ğ²Ğ·Ñ‹ÑĞºĞ°Ñ‚ĞµĞ»Ñ Ğ¸ ÑÑƒĞ¼Ğ¼Ñƒ Ğ·Ğ°Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½Ğ½Ğ¾ÑÑ‚Ğ¸.' },
-      { q: 'ĞœĞ¾Ğ¶Ğ½Ğ¾ Ğ»Ğ¸ Ğ´Ğ¾Ğ³Ğ¾Ğ²Ğ¾Ñ€Ğ¸Ñ‚ÑŒÑÑ Ğ¾ Ñ€Ğ°ÑÑÑ€Ğ¾Ñ‡ĞºĞµ Ğ² ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğµ?', a: 'Ğ”Ğ°, Ğ¿Ñ€Ğ¸ Ğ¾Ğ¿Ñ€ĞµĞ´ĞµĞ»Ñ‘Ğ½Ğ½Ñ‹Ñ… ÑƒÑĞ»Ğ¾Ğ²Ğ¸ÑÑ… Ğ¼Ğ¾Ğ¶Ğ½Ğ¾ Ğ¾Ñ„Ğ¾Ñ€Ğ¼Ğ¸Ñ‚ÑŒ Ğ³Ñ€Ğ°Ñ„Ğ¸Ğº Ğ¿Ğ»Ğ°Ñ‚ĞµĞ¶ĞµĞ¹ Ğ¸Ğ»Ğ¸ Ğ¾Ñ‚ÑÑ€Ğ¾Ñ‡ĞºÑƒ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½ĞµĞ½Ğ¸Ñ â€” Ñ€Ğ°Ğ·Ğ±ĞµÑ€Ñ‘Ğ¼ Ğ²Ğ°ÑˆÑƒ ÑĞ¸Ñ‚ÑƒĞ°Ñ†Ğ¸Ñ Ğ±ĞµÑĞ¿Ğ»Ğ°Ñ‚Ğ½Ğ¾.' },
-    ],
-  },
-};
-const REGIONAL_CITY_LIST = Object.values(REGIONAL_CITIES).map(c => ({ slug: c.slug, name: c.name }));
-
-app.get('/snyatie-aresta-:city', asyncHandler(async (req, res, next) => {
-  const city = REGIONAL_CITIES[req.params.city];
-  if (!city) return next();
-  let bailiffCount = 0, notaryCount = 0;
-  if (bailiffsDb) {
-    const regions = await bailiffsDb.getRegions();
-    const found = regions.find(r => r.region === city.bailiffRegion);
-    bailiffCount = found ? found.count : 0;
-  }
-  if (notariesDb) {
-    const regions = await notariesDb.getRegions();
-    const found = regions.find(r => r.region === city.notaryRegion);
-    notaryCount = found ? found.count : 0;
-  }
-  const otherCities = REGIONAL_CITY_LIST.filter(c => c.slug !== city.slug);
-  res.render('regional/page', { city, bailiffCount, notaryCount, otherCities });
-}));
-
-app.get('/bailiffs', asyncHandler(async (req, res) => {
-  const region = (req.query.region || '').trim();
-  if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
-  if (region) {
-    const regionPage = getBailiffRegionByName(region);
-    return res.redirect(301, regionPage ? regionPage.path : '/bailiffs');
-  }
-  const [allRegions, lastUpdated] = await Promise.all([
-    bailiffsDb.getRegions(),
-    bailiffsDb.getLastUpdated(),
-  ]);
-  res.render('bailiff/catalog', {
-    selectedRegion: '', regionPage: null, allRegions: withBailiffRegionPaths(allRegions),
-    regionItems: [], lastUpdated, getRegionEmblem,
-  });
-}));
-
-app.get('/bailiffs/:regionSlug', asyncHandler(async (req, res) => {
-  if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
-  const regionPage = getBailiffRegionBySlug(req.params.regionSlug);
-  if (!regionPage) return sendNotFound(res);
-  const [allRegions, regionItems, lastUpdated] = await Promise.all([
-    bailiffsDb.getRegions(),
-    bailiffsDb.findByRegion(regionPage.sourceName),
-    bailiffsDb.getLastUpdated(),
-  ]);
-  res.render('bailiff/catalog', {
-    selectedRegion: regionPage.sourceName,
-    regionPage,
-    allRegions: withBailiffRegionPaths(allRegions),
-    regionItems,
-    lastUpdated,
-    getRegionEmblem,
-  });
-}));
-
-// ===== SLUGIFY =====
-function slugify(s) {
-  const cyr = {
-    'Ğ°':'a','Ğ±':'b','Ğ²':'v','Ğ³':'g','Ğ´':'d','Ğµ':'e','Ñ‘':'yo','Ğ¶':'zh','Ğ·':'z',
-    'Ğ¸':'i','Ğ¹':'y','Ğº':'k','Ğ»':'l','Ğ¼':'m','Ğ½':'n','Ğ¾':'o','Ğ¿':'p','Ñ€':'r',
-    'Ñ':'s','Ñ‚':'t','Ñƒ':'u','Ñ„':'f','Ñ…':'kh','Ñ†':'ts','Ñ‡':'ch','Ñˆ':'sh',
-    'Ñ‰':'shch','ÑŠ':'','Ñ‹':'y','ÑŒ':'','Ñ':'e','Ñ':'yu','Ñ':'ya',
-    'Ò›':'k','Ò£':'n','Ò“':'g','Ò¯':'u','Ò±':'u','Ó©':'o','Ò»':'h','Ñ–':'i','Ó™':'a',
-  };
-  return String(s).toLowerCase()
-    .replace(/./g, ch => (cyr[ch] !== undefined ? cyr[ch] : ch))
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .substring(0, 80);
-}
-
-// ===== BANKS DATA =====
-const BANKS_DATA = [
-  { slug:'halyk-bank', name:'ĞĞ°Ñ€Ğ¾Ğ´Ğ½Ñ‹Ğ¹ Ğ‘Ğ°Ğ½Ğº ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°', shortName:'Halyk Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ»ÑŒ-Ğ¤Ğ°Ñ€Ğ°Ğ±Ğ¸, 40', phone:'+7 (727) 259-07-77', phoneRaw:'+77272590777', phoneShort:'7111 (Ñ„Ğ¸Ğ·.) Â· 9595 (ÑÑ€.)', email:'info@halykbank.kz', web:'halykbank.kz', bin:'940140000385', chairman:'Ğ¨Ğ°ÑÑ…Ğ¼ĞµÑ‚Ğ¾Ğ²Ğ° Ğ£Ğ¼ÑƒÑ‚ Ğ‘Ğ¾Ğ»Ğ°Ñ‚Ğ¾Ğ²Ğ½Ğ°', note:'ĞšÑ€ÑƒĞ¿Ğ½ĞµĞ¹ÑˆĞ¸Ğ¹ Ñ‡Ğ°ÑÑ‚Ğ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°' },
-  { slug:'kaspi-bank', name:'Kaspi Bank', shortName:'Kaspi Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». ĞĞ°ÑƒÑ€Ñ‹Ğ·Ğ±Ğ°Ğ¹ Ğ±Ğ°Ñ‚Ñ‹Ñ€Ğ°, 154Ğ', phone:'+7 (727) 258-59-55', phoneRaw:'+77272585955', phoneShort:'9999 (Ğ¼Ğ¾Ğ±.) Â· 8-800-080-18-00', email:'office@kaspi.kz', web:'kaspibank.kz', bin:'971240001315', chairman:'ĞœĞ¸Ñ€Ğ¾Ğ½Ğ¾Ğ² ĞŸĞ°Ğ²ĞµĞ» Ğ’Ğ»Ğ°Ğ´Ğ¸Ğ¼Ğ¸Ñ€Ğ¾Ğ²Ğ¸Ñ‡', note:'ĞĞ½Ğ»Ğ°Ğ¹Ğ½-Ğ±Ğ°Ğ½ĞºĞ¸Ğ½Ğ³, Ñ€Ğ°ÑÑÑ€Ğ¾Ñ‡ĞºĞ°, ĞºÑ€ĞµĞ´Ğ¸Ñ‚Ñ‹, e-commerce' },
-  { slug:'bank-centercredit', name:'Ğ‘Ğ°Ğ½Ğº Ğ¦ĞµĞ½Ñ‚Ñ€ĞšÑ€ĞµĞ´Ğ¸Ñ‚', shortName:'Bank CenterCredit (Ğ‘Ğ¦Ğš)', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ»ÑŒ-Ğ¤Ğ°Ñ€Ğ°Ğ±Ğ¸, 38', phone:'505 (Ñ„Ğ¸Ğ·.) Â· 605 (Ğ±Ğ¸Ğ·Ğ½ĞµÑ)', phoneRaw:'', phoneShort:'', email:'info@bcc.kz', web:'bcc.kz', bin:'980640000093', chairman:'Ğ’Ğ»Ğ°Ğ´Ğ¸Ğ¼Ğ¸Ñ€Ğ¾Ğ² Ğ ÑƒÑĞ»Ğ°Ğ½ Ğ’Ğ»Ğ°Ğ´Ğ¸Ğ¼Ğ¸Ñ€Ğ¾Ğ²Ğ¸Ñ‡', note:'Ğ£Ğ½Ğ¸Ğ²ĞµÑ€ÑĞ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº, ĞºÑ€ĞµĞ´Ğ¸Ñ‚Ñ‹ Ğ¸ Ğ´ĞµĞ¿Ğ¾Ğ·Ğ¸Ñ‚Ñ‹' },
-  { slug:'otbasy-bank', name:'ĞÑ‚Ğ±Ğ°ÑÑ‹ Ğ±Ğ°Ğ½Ğº', shortName:'Otbasy Bank', tag:'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', address:'Ğ¿Ñ€. ĞœÓ™Ò£Ğ³Ñ–Ğ»Ñ–Ğº Ğ•Ğ», 55Ğ', phone:'+7 (727) 330-93-00', phoneRaw:'+77273309300', phoneShort:'300 (Ğ¼Ğ¾Ğ±.) Â· 8-8000-801-880', email:'mail@hcsbk.kz', web:'hcsbk.kz', bin:'030740001404', chairman:'Ğ˜Ğ±Ñ€Ğ°Ğ³Ğ¸Ğ¼Ğ¾Ğ²Ğ° Ğ›ÑĞ·Ğ·Ğ°Ñ‚ Ğ•Ñ€ĞºĞµĞ½Ğ¾Ğ²Ğ½Ğ°', note:'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğ¹ ÑÑ‚Ñ€Ğ¾Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğ¹ ÑĞ±ĞµÑ€ĞµĞ³Ğ°Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº (Ğ–Ğ¡Ğ¡Ğ‘)' },
-  { slug:'fortebank', name:'ForteBank', shortName:'ForteBank', tag:'', city:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', address:'ÑƒĞ». Ğ”Ğ¾ÑÑ‚Ñ‹Ğº, 8/1', phone:'+7 (727) 258-40-40', phoneRaw:'+77272584040', phoneShort:'7575 (Ñ„Ğ¸Ğ·.) Â· 55575 (Ğ±Ğ¸Ğ·Ğ½ĞµÑ)', email:'info@fortebank.com', web:'forte.kz', bin:'990740000683', chairman:'ĞšÑƒĞ°Ğ½Ñ‹ÑˆĞµĞ² Ğ¢Ğ°Ğ»Ğ³Ğ°Ñ‚ Ğ–ÑƒĞ¼Ğ°Ğ½Ğ¾Ğ²Ğ¸Ñ‡', note:'ĞšÑ€ĞµĞ´Ğ¸Ñ‚Ñ‹ Ğ¸ Ğ±Ğ°Ğ½ĞºĞ¾Ğ²ÑĞºĞ¾Ğµ Ğ¾Ğ±ÑĞ»ÑƒĞ¶Ğ¸Ğ²Ğ°Ğ½Ğ¸Ğµ' },
-  { slug:'bank-razvitiya-kazakhstana', name:'Ğ‘Ğ°Ğ½Ğº Ğ Ğ°Ğ·Ğ²Ğ¸Ñ‚Ğ¸Ñ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°', shortName:'Ğ‘Ğ Ğš', tag:'Ğ‘Ğ°Ğ½Ğº Ñ€Ğ°Ğ·Ğ²Ğ¸Ñ‚Ğ¸Ñ', city:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', address:'Ğ¿Ñ€. ĞœÓ™Ò£Ğ³Ñ–Ğ»Ñ–Ğº Ğ•Ğ», 55Ğ', phone:'+7 (7172) 79-26-00', phoneRaw:'+77172792600', phoneShort:'1408', email:'info@kdb.kz', web:'kdb.kz', bin:'010540001007', chairman:'Ğ•Ğ»Ğ¸Ğ±Ğ°ĞµĞ² ĞœĞ°Ñ€Ğ°Ñ‚ Ğ¢Ğ°Ğ»Ğ³Ğ°Ñ‚Ğ¾Ğ²Ğ¸Ñ‡', note:'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº Ñ€Ğ°Ğ·Ğ²Ğ¸Ñ‚Ğ¸Ñ. Ğ¤Ğ¸Ğ½Ğ°Ğ½ÑĞ¸Ñ€ÑƒĞµÑ‚ Ğ¸Ğ½Ñ„Ñ€Ğ°ÑÑ‚Ñ€ÑƒĞºÑ‚ÑƒÑ€Ñƒ Ğ¸ Ğ¸Ğ½Ğ´ÑƒÑÑ‚Ñ€Ğ¸Ñ. Ğ¤Ğ¸Ğ·Ğ¸Ñ‡ĞµÑĞºĞ¸Ñ… Ğ»Ğ¸Ñ† Ğ½Ğµ Ğ¾Ğ±ÑĞ»ÑƒĞ¶Ğ¸Ğ²Ğ°ĞµÑ‚.' },
-  { slug:'eurasian-bank', name:'Ğ•Ğ²Ñ€Ğ°Ğ·Ğ¸Ğ¹ÑĞºĞ¸Ğ¹ Ğ‘Ğ°Ğ½Ğº', shortName:'Eurasian Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». ĞšÑƒĞ½Ğ°ĞµĞ²Ğ°, 56', phone:'+7 (727) 332-77-22', phoneRaw:'+77273327722', phoneShort:'+7 (771) 000-77-22', email:'info@eubank.kz', web:'eubank.kz', bin:'950240000112', chairman:'Ğ¡Ğ°Ñ‚Ğ¸ĞµĞ²Ğ° Ğ›ÑĞ·Ğ·Ğ°Ñ‚ ĞĞ´Ñ‹Ğ»Ğ¾Ğ²Ğ½Ğ°', note:'Ğ£Ğ½Ğ¸Ğ²ĞµÑ€ÑĞ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº, Ğ¿Ğ¾Ñ‚Ñ€ĞµĞ±Ğ¸Ñ‚ĞµĞ»ÑŒÑĞºĞ¾Ğµ ĞºÑ€ĞµĞ´Ğ¸Ñ‚Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğµ' },
-  { slug:'alatau-city-bank', name:'Alatau City Bank', shortName:'Alatau City Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞÑƒÑ€ÑÑƒĞ»Ñ‚Ğ°Ğ½ ĞĞ°Ğ·Ğ°Ñ€Ğ±Ğ°ĞµĞ², 242', phone:'+7 (727) 258-77-11', phoneRaw:'+77272587711', phoneShort:'7711', email:'info@alataucitybank.kz', web:'alataucitybank.kz', bin:'920140000084', chairman:'ĞšÑƒĞ°Ğ½Ğ´Ñ‹ĞºĞ¾Ğ² ĞĞ½ÑƒĞ°Ñ€', note:'Ğ‘Ñ‹Ğ²ÑˆĞ¸Ğ¹ Jusan Bank (Ñ€Ğ°Ğ½ĞµĞµ ĞĞ¢Ğ¤ Ğ‘Ğ°Ğ½Ğº). ĞŸĞµÑ€ĞµĞ¸Ğ¼ĞµĞ½Ğ¾Ğ²Ğ°Ğ½ 16.06.2025' },
-  { slug:'bank-rbk', name:'Bank RBK', shortName:'Bank RBK', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ğ». Ğ ĞµÑĞ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ¸, 15', phone:'+7 (727) 330-90-30', phoneRaw:'+77273309030', phoneShort:'7888 (Ñ„Ğ¸Ğ·.) Â· 7222 (ÑÑ€.)', email:'info@bankrbk.kz', web:'bankrbk.kz', bin:'920440001102', chairman:'ĞĞºĞµĞ½Ñ‚ÑŒĞµĞ²Ğ° ĞĞ°Ñ‚Ğ°Ğ»ÑŒÑ Ğ•Ğ²Ğ³ĞµĞ½ÑŒĞµĞ²Ğ½Ğ°', note:'ĞšĞ¾Ñ€Ğ¿Ğ¾Ñ€Ğ°Ñ‚Ğ¸Ğ²Ğ½Ğ¾Ğµ Ğ¸ Ñ€Ğ¾Ğ·Ğ½Ğ¸Ñ‡Ğ½Ğ¾Ğµ Ğ¾Ğ±ÑĞ»ÑƒĞ¶Ğ¸Ğ²Ğ°Ğ½Ğ¸Ğµ' },
-  { slug:'bereke-bank', name:'Bereke Bank', shortName:'Bereke Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ»ÑŒ-Ğ¤Ğ°Ñ€Ğ°Ğ±Ğ¸, 13/1', phone:'5030 (Ñ„Ğ¸Ğ·.) Â· 7744 (Ğ±Ğ¸Ğ·Ğ½ĞµÑ)', phoneRaw:'', phoneShort:'8-8000-80-60-60', email:'post@berekebank.kz', web:'berekebank.kz', bin:'930740000137', chairman:'Ğ¢Ğ¸Ğ¼Ñ‡ĞµĞ½ĞºĞ¾ ĞĞ½Ğ´Ñ€ĞµĞ¹ Ğ˜Ğ³Ğ¾Ñ€ĞµĞ²Ğ¸Ñ‡', note:'Ğ‘Ñ‹Ğ²ÑˆĞ¸Ğ¹ Ğ¡Ğ±ĞµÑ€Ğ±Ğ°Ğ½Ğº ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½' },
-  { slug:'freedom-bank', name:'Freedom Bank Kazakhstan', shortName:'Freedom Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». ĞšÑƒÑ€Ğ¼Ğ°Ğ½Ğ³Ğ°Ğ·Ñ‹, 61Ğ', phone:'595 (ĞºĞ¾Ñ€Ğ¾Ñ‚ĞºĞ¸Ğ¹)', phoneRaw:'', phoneShort:'WhatsApp: +7 (776) 159-55-95', email:'', web:'bankffin.kz', bin:'090740019001', chairman:'ĞÑ…Ğ¼ĞµÑ‚Ğ¾Ğ²Ğ° Ğ“ÑƒĞ»ÑŒÑ„Ğ°Ğ¹Ñ€ÑƒĞ·', note:'Ğ‘Ñ‹Ğ²ÑˆĞ¸Ğ¹ Bank Kassa Nova / Ğ‘Ğ°Ğ½Ğº Ğ¤Ñ€Ğ¸Ğ´Ğ¾Ğ¼ Ğ¤Ğ¸Ğ½Ğ°Ğ½Ñ. ĞŸĞµÑ€ĞµĞ¸Ğ¼ĞµĞ½Ğ¾Ğ²Ğ°Ğ½ 20.05.2024' },
-  { slug:'altyn-bank', name:'Altyn Bank', shortName:'Altyn Bank', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ±Ğ°Ñ, 109Ğ’', phone:'+7 (727) 356-57-77', phoneRaw:'+77273565777', phoneShort:'+7 (727) 259-69-22 (ÑÑ€.)', email:'info@altynbank.kz', web:'altynbank.kz', bin:'980740000057', chairman:'Ğ‘Ğ°Ğ¹ÑÑ‹Ğ½Ğ¾Ğ² ĞœÑƒÑ€Ğ°Ñ‚', note:'Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº China CITIC Bank Corporation' },
-  { slug:'home-credit-bank', name:'Home Credit Bank', shortName:'Home Credit Bank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». Ğ—ĞµĞ¸Ğ½Ğ° Ğ¨Ğ°ÑˆĞºĞ¸Ğ½Ğ°, 1/1', phone:'+7 (727) 244-54-84', phoneRaw:'+77272445484', phoneShort:'7979', email:'info@homecredit.kz', web:'home.kz', bin:'930540000147', chairman:'ĞÑƒÑ€ÑƒĞ¼Ğ±ĞµÑ‚ Ğ¨Ğ¾Ğ»Ğ¿Ğ°Ğ½', note:'ĞŸĞ¾Ñ‚Ñ€ĞµĞ±Ğ¸Ñ‚ĞµĞ»ÑŒÑĞºĞ¸Ğµ ĞºÑ€ĞµĞ´Ğ¸Ñ‚Ñ‹ Ğ¸ Ñ€Ğ°ÑÑÑ€Ğ¾Ñ‡ĞºĞ°. Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº ForteBank' },
-  { slug:'nurbank', name:'ĞÑƒÑ€Ğ±Ğ°Ğ½Ğº', shortName:'Nurbank', tag:'', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ±Ğ°Ñ, 10Ğ’', phone:'+7 (727) 244-44-44', phoneRaw:'+77272444444', phoneShort:'2552', email:'info_nur@nurbank.kz', web:'nurbank.kz', bin:'930940000164', chairman:'ĞœĞ°Ğ¶ÑƒĞ³Ğ° ĞĞ»ĞµĞºÑĞµĞ¹ ĞĞ¸ĞºĞ¾Ğ»Ğ°ĞµĞ²Ğ¸Ñ‡', note:'ĞšÑ€ĞµĞ´Ğ¸Ñ‚Ñ‹ Ğ¸ Ğ²ĞºĞ»Ğ°Ğ´Ñ‹ Ğ´Ğ»Ñ Ñ„Ğ¸Ğ·Ğ¸Ñ‡ĞµÑĞºĞ¸Ñ… Ğ¸ ÑÑ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ¸Ñ… Ğ»Ğ¸Ñ†' },
-  { slug:'shinhan-bank', name:'Shinhan Bank ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½', shortName:'Shinhan Bank', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. Ğ”Ğ¾ÑÑ‚Ñ‹Ğº, 38', phone:'+7 (727) 356-96-00', phoneRaw:'+77273569600', phoneShort:'', email:'infokz@shinhan.com', web:'shinhan.kz', bin:'080240019735', chairman:'Ğ§Ğ¶Ğ¾ ĞĞ½Ğ³ Ğ«Ğ½', note:'Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº Shinhan Financial Group (Ğ ĞµÑĞ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ° ĞšĞ¾Ñ€ĞµÑ)' },
-  { slug:'bank-of-china', name:'Ğ‘Ğ°Ğ½Ğº ĞšĞ¸Ñ‚Ğ°Ñ Ğ² ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğµ', shortName:'Bank of China', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¼ĞºÑ€-Ğ½ Ğ–ĞµÑ‚Ñ‹ÑÑƒ-2, 71Ğ‘', phone:'+7 (727) 258-55-10', phoneRaw:'+77272585510', phoneShort:'', email:'', web:'boc.kz', bin:'930440000156', chairman:'Ğ¥Ğ¾Ñƒ Ğ®Ğ°Ğ½ÑŒĞ¼Ğ¸Ğ½', note:'Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº Bank of China Limited' },
-  { slug:'icbc-kazakhstan', name:'ICBC ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½', shortName:'ICBC Kazakhstan', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ±Ğ°Ñ, 150/230', phone:'+7 (727) 237-70-72', phoneRaw:'+77272377072', phoneShort:'+7 (727) 237-70-83 (ÑÑ€.)', email:'office@kz.icbc.com.cn', web:'kz.icbc.com.cn', bin:'930340001235', chairman:'Ğ›ÑĞ¹ Ğ¥ÑƒĞ½Ñ…Ğ°Ğ¹', note:'Ğ¢Ğ¾Ñ€Ğ³Ğ¾Ğ²Ğ¾-Ğ¿Ñ€Ğ¾Ğ¼Ñ‹ÑˆĞ»ĞµĞ½Ğ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº ĞšĞ¸Ñ‚Ğ°Ñ Ğ² Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹' },
-  { slug:'vtb-bank', name:'Ğ’Ğ¢Ğ‘ (ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½)', shortName:'VTB Bank', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». Ğ¢Ğ¸Ğ¼Ğ¸Ñ€ÑĞ·ĞµĞ²Ğ°, 26/29', phone:'+7 (727) 330-50-50', phoneRaw:'+77273305050', phoneShort:'5050', email:'info@vtb-bank.kz', web:'vtb-bank.kz', bin:'080940010300', chairman:'Ğ—Ğ°Ğ±ĞµĞ»Ğ»Ğ¾ Ğ”Ğ¼Ğ¸Ñ‚Ñ€Ğ¸Ğ¹ ĞĞ»ĞµĞºÑĞ°Ğ½Ğ´Ñ€Ğ¾Ğ²Ğ¸Ñ‡', note:'Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº Ğ’Ğ¢Ğ‘ (Ğ Ğ¾ÑÑĞ¸Ñ)' },
-  { slug:'adcb-kazakhstan', name:'Ğ˜ÑĞ»Ğ°Ğ¼ÑĞºĞ¸Ğ¹ Ğ±Ğ°Ğ½Ğº ADCB', shortName:'ADCB Kazakhstan', tag:'Ğ˜ÑĞ»Ğ°Ğ¼ÑĞºĞ¸Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞĞ»ÑŒ-Ğ¤Ğ°Ñ€Ğ°Ğ±Ğ¸, 77/7, Ğ‘Ğ¦ Esentai Tower', phone:'+7 (727) 233-00-00', phoneRaw:'+77272330000', phoneShort:'', email:'adcbk.reception@adcb.com', web:'adcb.com/kazakhstan', bin:'100140011772', chairman:'Ğ“Ğ¾Ñ€Ğ´Ğ¾Ğ½ Ğ”Ğ¶ĞµĞ¹Ğ¼Ñ Ğ¥Ğ°ÑĞºĞ¸Ğ½Ñ', note:'Ğ˜ÑĞ»Ğ°Ğ¼ÑĞºĞ¸Ğ¹ Ğ±Ğ°Ğ½ĞºĞ¸Ğ½Ğ³. Ğ‘Ñ‹Ğ²ÑˆĞ¸Ğ¹ Al Hilal Bank, Ğ¿ĞµÑ€ĞµĞ¸Ğ¼ĞµĞ½Ğ¾Ğ²Ğ°Ğ½ 21.10.2024' },
-  { slug:'zaman-bank', name:'Ğ—Ğ°Ğ¼Ğ°Ğ½-Ğ‘Ğ°Ğ½Ğº', shortName:'Zaman Bank', tag:'Ğ˜ÑĞ»Ğ°Ğ¼ÑĞºĞ¸Ğ¹', city:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', address:'Ğ¿Ñ€. Ğ Ğ°Ò›Ñ‹Ğ¼Ğ¶Ğ°Ğ½ ÒšĞ¾ÑˆÒ›Ğ°Ñ€Ğ±Ğ°ĞµĞ², 1Ğ°', phone:'+7 (7172) 26-20-26', phoneRaw:'+77172262026', phoneShort:'+7 (727) 355-65-75 (ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹) Â· 4077', email:'info@zamanbank.kz', web:'zamanbank.kz', bin:'910640000060', chairman:'ĞÑĞ°ĞµĞ²Ğ° Ğ“ÑƒĞ»ÑŒÑ„Ğ°Ğ¹Ñ€ÑƒĞ· Ğ•Ñ€Ğ»Ğ°Ğ½Ğ¾Ğ²Ğ½Ğ°', note:'Ğ˜ÑĞ»Ğ°Ğ¼ÑĞºĞ¸Ğ¹ Ğ±Ğ°Ğ½Ğº, Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°ĞµÑ‚ Ğ¿Ğ¾ Ğ¿Ñ€Ğ¸Ğ½Ñ†Ğ¸Ğ¿Ğ°Ğ¼ ÑˆĞ°Ñ€Ğ¸Ğ°Ñ‚Ğ°' },
-  { slug:'kmf-bank', name:'KMF Ğ‘Ğ°Ğ½Ğº', shortName:'KMF Bank', tag:'Ğ¡Ğ¿ĞµÑ†Ğ¸Ğ°Ğ»Ğ¸Ğ·Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'Ğ¿Ñ€. ĞÒ±Ñ€ÑÒ±Ğ»Ñ‚Ğ°Ğ½ ĞĞ°Ğ·Ğ°Ñ€Ğ±Ğ°ĞµĞ², 50', phone:'+7 (727) 331-74-74', phoneRaw:'+77273317474', phoneShort:'', email:'info@kmf.kz', web:'kmf.kz', bin:'061240001583', chairman:'Ğ–ÑƒÑÑƒĞ¿Ğ¾Ğ² Ğ¨Ğ°Ğ»ĞºĞ°Ñ€ ĞĞ¼Ğ°Ğ½Ğ³Ğ¾ÑĞ¾Ğ²Ğ¸Ñ‡', note:'Ğ‘Ñ‹Ğ²ÑˆĞ°Ñ ĞœĞ¤Ğ KMF. ĞšĞ¾Ğ½Ğ²ĞµÑ€Ñ‚Ğ¸Ñ€Ğ¾Ğ²Ğ°Ğ½Ğ° Ğ² Ğ±Ğ°Ğ½Ğº 12.08.2025. ĞšÑ€ĞµĞ´Ğ¸Ñ‚Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğµ ĞœĞ¡Ğ‘ Ğ¸ Ñ„Ğ¸Ğ·Ğ»Ğ¸Ñ†' },
-  { slug:'kzi-bank', name:'ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½-Ğ—Ğ¸Ñ€Ğ°Ğ°Ñ‚ Ğ˜Ğ½Ñ‚ĞµÑ€Ğ½ĞµÑˆĞ½Ğ» Ğ‘Ğ°Ğ½Ğº', shortName:'KZI Bank', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». ĞĞ°ÑƒÑ€Ñ‹Ğ·Ğ±Ğ°Ğ¹ Ğ±Ğ°Ñ‚Ñ‹Ñ€Ğ°, 17Ğ', phone:'+7 (727) 244-19-93', phoneRaw:'+77272441993', phoneShort:'9193 Â· +7 (727) 244-40-00', email:'kzibank@kzibank.kz', web:'kzibank.kz', bin:'930140000323', chairman:'', note:'Ğ”Ğ¾Ñ‡ĞµÑ€Ğ½Ğ¸Ğ¹ Ğ±Ğ°Ğ½Ğº Ziraat BankasÄ±. ĞĞ±ÑĞ»ÑƒĞ¶Ğ¸Ğ²Ğ°ĞµÑ‚ Ñ„Ğ¸Ğ·Ğ¸Ñ‡ĞµÑĞºĞ¸Ñ… Ğ¸ ÑÑ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ¸Ñ… Ğ»Ğ¸Ñ†' },
-  { slug:'bnk-commercial-bank', name:'ĞšĞ¾Ğ¼Ğ¼ĞµÑ€Ñ‡ĞµÑĞºĞ¸Ğ¹ Ğ‘Ğ°Ğ½Ğº Ğ‘Ğ¸Ğ­Ğ½ĞšĞµĞ¹', shortName:'BNK Commercial Bank', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». ĞÑƒÑĞ·Ğ¾Ğ²Ğ°, 60', phone:'5210', phoneRaw:'', phoneShort:'Ğ‘ĞµÑĞ¿Ğ»Ğ°Ñ‚Ğ½Ñ‹Ğ¹ Ğ·Ğ²Ğ¾Ğ½Ğ¾Ğº Ğ¿Ğ¾ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ñƒ', email:'info@bnkcommercialbank.kz', web:'bnkcommercialbank.kz', bin:'180640000680', chairman:'ĞšĞ¸Ğ¼ Ğ¡Ğ¾Ğ½Ğ³Ñ…Ñ‘Ğ½', note:'Ğ‘Ğ°Ğ½ĞºĞ¾Ğ²ÑĞºĞ°Ñ Ğ»Ğ¸Ñ†ĞµĞ½Ğ·Ğ¸Ñ â„– 1.1.118 Ğ¾Ñ‚ 25.06.2025' },
-  { slug:'citibank-kazakhstan', name:'Ğ¡Ğ¸Ñ‚Ğ¸Ğ±Ğ°Ğ½Ğº ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½', shortName:'Citibank Kazakhstan', tag:'Ğ˜Ğ½Ğ¾ÑÑ‚Ñ€Ğ°Ğ½Ğ½Ñ‹Ğ¹', city:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', address:'ÑƒĞ». Ğ—ĞµĞ½ĞºĞ¾Ğ²Ğ°, 26/41', phone:'+7 (727) 332-14-00', phoneRaw:'+77273321400', phoneShort:'+7 (717) 255-76-00 (ĞÑÑ‚Ğ°Ğ½Ğ°)', email:'citibank.kazakhstan@citi.com', web:'citibank.com/kazakhstan', bin:'980540003232', chairman:'Ğ–Ğ°ĞºĞ°ĞµĞ²Ğ° Ğ¡Ğ°ÑƒĞ»Ğµ', note:'ĞœĞµĞ¶Ğ´ÑƒĞ½Ğ°Ñ€Ğ¾Ğ´Ğ½Ñ‹Ğ¹ Ğ±Ğ°Ğ½Ğº Citigroup, ĞºĞ¾Ñ€Ğ¿Ğ¾Ñ€Ğ°Ñ‚Ğ¸Ğ²Ğ½Ğ¾Ğµ Ğ¾Ğ±ÑĞ»ÑƒĞ¶Ğ¸Ğ²Ğ°Ğ½Ğ¸Ğµ' },
-];
-
-// ===== COURTS DATA =====
-const COURTS_DATA = [
-  { slug:'verkhovny-sud', region:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', level:'Ğ’ĞµÑ€Ñ…Ğ¾Ğ²Ğ½Ñ‹Ğ¹ ÑÑƒĞ´', name:'Ğ’ĞµÑ€Ñ…Ğ¾Ğ²Ğ½Ñ‹Ğ¹ ÑÑƒĞ´ Ğ ĞµÑĞ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ¸ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½', address:'Ğ¿Ñ€. ĞœĞ°Ğ½Ğ³Ğ¸Ğ»Ğ¸Ğº Ğ•Ğ», 55', phone:'+7 (7172) 75-31-97', phoneRaw:'+77172753197', email:'vsrk@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'astana', region:'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ¡ÑƒĞ´ Ğ³Ğ¾Ñ€Ğ¾Ğ´Ğ° ĞÑÑ‚Ğ°Ğ½Ğ°', address:'ÑƒĞ». Ğ‘ĞµĞ¹Ğ±Ñ–Ñ‚ÑˆÑ–Ğ»Ñ–Ğº, 6', phone:'+7 (7172) 22-00-00', phoneRaw:'+77172220000', email:'astana@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'almaty', region:'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞĞ»Ğ¼Ğ°Ñ‚Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ³Ğ¾Ñ€Ğ¾Ğ´ÑĞºĞ¾Ğ¹ ÑÑƒĞ´', address:'Ğ¿Ñ€. ĞĞ±Ğ°Ñ, 14', phone:'+7 (727) 261-88-00', phoneRaw:'+77272618800', email:'almaty@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'shymkent', region:'Ğ³. Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚ÑĞºĞ¸Ğ¹ Ğ³Ğ¾Ñ€Ğ¾Ğ´ÑĞºĞ¾Ğ¹ ÑÑƒĞ´', address:'ÑƒĞ». Ğ‘Ğ°Ğ¹Ñ‚ÑƒÑ€ÑÑ‹Ğ½Ğ¾Ğ²Ğ°, 7', phone:'+7 (725) 253-12-00', phoneRaw:'+77252531200', email:'shymkent@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'akmola', region:'ĞĞºĞ¼Ğ¾Ğ»Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞĞºĞ¼Ğ¾Ğ»Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞšĞ¾ĞºÑˆĞµÑ‚Ğ°Ñƒ, ÑƒĞ». ĞĞ±Ğ°Ñ, 83', phone:'+7 (716) 230-50-00', phoneRaw:'+77162305000', email:'akmola@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'aktobe', region:'ĞĞºÑ‚ÑĞ±Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞĞºÑ‚ÑĞ±Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞĞºÑ‚Ğ¾Ğ±Ğµ, ÑƒĞ». ĞĞ»Ñ‚Ñ‹Ğ½ÑĞ°Ñ€Ğ¸Ğ½Ğ°, 22', phone:'+7 (713) 215-50-00', phoneRaw:'+77132155000', email:'aktobe@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'almaty-obl', region:'ĞĞ»Ğ¼Ğ°Ñ‚Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞĞ»Ğ¼Ğ°Ñ‚Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½, ÑƒĞ». Ğ¢Ğ°Ğ¹Ğ¼Ğ°Ğ½Ğ¾Ğ²Ğ°, 58', phone:'+7 (728) 222-34-00', phoneRaw:'+77282223400', email:'almaty_obl@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'atyrau', region:'ĞÑ‚Ñ‹Ñ€Ğ°ÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞÑ‚Ñ‹Ñ€Ğ°ÑƒÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞÑ‚Ñ‹Ñ€Ğ°Ñƒ, ÑƒĞ». Ğ•ÑĞµÑ‚ Ğ‘Ğ°Ñ‚Ñ‹Ñ€Ğ°, 11', phone:'+7 (712) 222-05-00', phoneRaw:'+77122220500', email:'atyrau@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'vko', region:'Ğ’Ğ¾ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ’ĞšĞ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ£ÑÑ‚ÑŒ-ĞšĞ°Ğ¼ĞµĞ½Ğ¾Ğ³Ğ¾Ñ€ÑĞº, ÑƒĞ». ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½, 131', phone:'+7 (723) 222-46-00', phoneRaw:'+77232224600', email:'vko@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'zhambyl', region:'Ğ–Ğ°Ğ¼Ğ±Ñ‹Ğ»ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ–Ğ°Ğ¼Ğ±Ñ‹Ğ»ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ¢Ğ°Ñ€Ğ°Ğ·, ÑƒĞ». Ğ¢Ğ¾Ğ»ÑÑ‚Ğ¾Ğ³Ğ¾, 112', phone:'+7 (726) 243-70-00', phoneRaw:'+77262437000', email:'zhambyl@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'zko', region:'Ğ—ĞšĞ (Ğ£Ñ€Ğ°Ğ»ÑŒÑĞº)', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ—Ğ°Ğ¿Ğ°Ğ´Ğ½Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ£Ñ€Ğ°Ğ»ÑŒÑĞº, ÑƒĞ». Ğ”Ñ€ÑƒĞ¶Ğ±Ñ‹, 177', phone:'+7 (711) 222-31-00', phoneRaw:'+77112223100', email:'zko@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'karaganda', region:'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞšĞ°pĞ°Ğ³Ğ°Ğ½Ğ´Ğ°, ÑƒĞ». Ğ•Ñ€ÑƒĞ±Ğ°ĞµĞ²Ğ°, 47', phone:'+7 (721) 242-53-00', phoneRaw:'+77212425300', email:'karaganda@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'kostanay', region:'ĞšĞ¾ÑÑ‚Ğ°Ğ½Ğ°Ğ¹ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞšĞ¾ÑÑ‚Ğ°Ğ½Ğ°Ğ¹ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞšĞ¾ÑÑ‚Ğ°Ğ½Ğ°Ğ¹, ÑƒĞ». Ğ‘Ğ°Ğ¹Ñ‚ÑƒÑ€ÑÑ‹Ğ½Ğ¾Ğ²Ğ°, 70', phone:'+7 (714) 254-07-00', phoneRaw:'+77142540700', email:'kostanay@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'kyzylorda', region:'ĞšÑ‹Ğ·Ñ‹Ğ»Ğ¾Ñ€Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞšÑ‹Ğ·Ñ‹Ğ»Ğ¾Ñ€Ğ´Ğ¸Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞšÑ‹Ğ·Ñ‹Ğ»Ğ¾Ñ€Ğ´Ğ°, Ğ¿Ñ€. Ğ‘ĞµĞ¹Ğ±Ğ°Ñ€Ñ‹ÑĞ°, 39', phone:'+7 (724) 226-40-00', phoneRaw:'+77242264000', email:'kyzylorda@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'mangistau', region:'ĞœĞ°Ğ½Ğ³Ğ¸ÑÑ‚Ğ°ÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞœĞ°Ğ½Ğ³Ğ¸ÑÑ‚Ğ°ÑƒÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞĞºÑ‚Ğ°Ñƒ, 13-Ğ¹ Ğ¼ĞºÑ€.', phone:'+7 (729) 232-32-00', phoneRaw:'+77292323200', email:'mangistau@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'pavlodar', region:'ĞŸĞ°Ğ²Ğ»Ğ¾Ğ´Ğ°Ñ€ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞŸĞ°Ğ²Ğ»Ğ¾Ğ´Ğ°Ñ€ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞŸĞ°Ğ²Ğ»Ğ¾Ğ´Ğ°Ñ€, ÑƒĞ». ĞĞºĞ°Ğ´ĞµĞ¼Ğ¸ĞºĞ° Ğ¡Ğ°Ñ‚Ğ¿Ğ°ĞµĞ²Ğ°, 28', phone:'+7 (718) 232-62-00', phoneRaw:'+77182326200', email:'pavlodar@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'sko', region:'Ğ¡ĞšĞ (ĞŸĞµÑ‚Ñ€Ğ¾Ğ¿Ğ°Ğ²Ğ»Ğ¾Ğ²ÑĞº)', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ¡ĞµĞ²ĞµÑ€Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. ĞŸĞµÑ‚Ñ€Ğ¾Ğ¿Ğ°Ğ²Ğ»Ğ¾Ğ²ÑĞº, ÑƒĞ». ĞšĞ¾Ğ½ÑÑ‚Ğ¸Ñ‚ÑƒÑ†Ğ¸Ğ¸ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°, 25', phone:'+7 (715) 246-40-00', phoneRaw:'+77152464000', email:'sko@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'turkestan', region:'Ğ¢ÑƒÑ€ĞºĞµÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ¢ÑƒÑ€ĞºĞµÑÑ‚Ğ°Ğ½ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ¢ÑƒÑ€ĞºĞµÑÑ‚Ğ°Ğ½, ÑƒĞ». Ğ–Ğ¸Ğ±ĞµĞº Ğ¶Ğ¾Ğ»Ñ‹, 2', phone:'+7 (725) 333-22-00', phoneRaw:'+77253332200', email:'turkestan@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'abay', region:'ĞĞ±Ğ°Ğ¹ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'ĞĞ±Ğ°Ğ¹ÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ¡ĞµĞ¼ĞµĞ¹, ÑƒĞ». Ğ”ÑƒĞ»Ğ°Ñ‚Ğ¾Ğ²Ğ°, 57', phone:'+7 (722) 252-52-00', phoneRaw:'+77222525200', email:'abay@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'zhetisu', region:'Ğ–ĞµÑ‚Ñ‹ÑÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ–ĞµÑ‚Ñ‹ÑÑƒÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ¢Ğ°Ğ»Ğ´Ñ‹ĞºĞ¾Ñ€Ğ³Ğ°Ğ½, ÑƒĞ». Ğ–Ğ°Ğ½ÑÑƒĞ³ÑƒÑ€Ğ¾Ğ²Ğ°, 131', phone:'+7 (728) 225-09-00', phoneRaw:'+77282250900', email:'zhetisu@sud.gov.kz', web:'sud.gov.kz' },
-  { slug:'ulytau', region:'Ğ£Ğ»Ñ‹Ñ‚Ğ°ÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ', level:'ĞĞ¿ĞµĞ»Ğ»ÑÑ†Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğ¹', name:'Ğ£Ğ»Ñ‹Ñ‚Ğ°ÑƒÑĞºĞ¸Ğ¹ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚Ğ½Ğ¾Ğ¹ ÑÑƒĞ´', address:'Ğ³. Ğ–ĞµĞ·ĞºĞ°Ğ·Ğ³Ğ°Ğ½, ÑƒĞ». Ğ–Ğ°Ğ½Ğ³ĞµĞ»ÑŒĞ´Ğ¸Ğ½Ğ°, 1', phone:'+7 (710) 260-20-00', phoneRaw:'+77102602000', email:'ulytau@sud.gov.kz', web:'sud.gov.kz' },
-];
-
-// ===== CSV-BACKED: BANKS =====
-let _banksCache = null;
-function getBanksData() {
-  if (_banksCache) return _banksCache;
-  const staticByBin = {};
-  BANKS_DATA.forEach(b => { staticByBin[b.bin] = b; });
-  const rows = parseSemicolonCSV(path.join(__dirname, 'Ğ‘Ğ°Ğ½ĞºĞ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-  _banksCache = rows.map(r => {
-    const fullName = r['Ğ‘Ğ°Ğ½Ğº (Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ğ¾Ğµ Ğ½Ğ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ)'] || '';
-    const bin = (r['Ğ‘Ğ˜Ğ'] || '').trim();
-    if (!bin) return null;
-    const existing = staticByBin[bin] || {};
-    // Extract shortName from trailing parentheses
-    const parenM = fullName.match(/\(([^)]+)\)$/);
-    let shortName = parenM ? parenM[1].trim() : '';
-    if (/^Ğ±Ñ‹Ğ²Ñˆ\.|^Ğ³Ğ¾Ñ\.|^Ğ½Ğµ Ğ±Ğ²Ñƒ/i.test(shortName)) shortName = '';
-    if (!shortName) {
-      const aoM = fullName.match(/(?:ĞĞ|Ğ”Ğ‘ ĞĞ|Ğ”Ğ ĞĞ|ĞĞ Ğ”Ğ‘)\s+"([^"]+)"/);
-      shortName = aoM ? aoM[1].trim() : fullName.replace(/^ĞĞ\s+/, '').replace(/^"|"$/g,'').trim();
-    }
-    const name = fullName.replace(/^(?:ĞĞ|Ğ”Ğ‘ ĞĞ|Ğ”Ğ ĞĞ|ĞĞ Ğ”Ğ‘)\s+"/, '').replace(/"[^"]*$/, '').replace(/\s*\([^)]*\)$/, '').replace(/^"|"$/g,'').trim() || existing.name;
-    const emailM = (r['Email'] || '').match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-    const phone = (r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || '').trim();
-    const phoneRawM = phone.match(/\+7[\s\d\-\(\)]{8,}/);
-    let phoneRaw = '';
-    if (phoneRawM) {
-      const raw = '+7' + phoneRawM[0].slice(2).replace(/[^\d]/g, '');
-      if (raw.length === 12) phoneRaw = raw;
-    }
-    const address = (r['ĞĞ´Ñ€ĞµÑ Ğ³Ğ¾Ğ»Ğ¾Ğ²Ğ½Ğ¾Ğ³Ğ¾ Ğ¾Ñ„Ğ¸ÑĞ°'] || '').trim();
-    const ci = address.indexOf(',');
-    return {
-      slug: existing.slug || slugify(shortName || name) || 'bank-' + bin,
-      name, shortName: shortName || name,
-      tag: existing.tag || '',
-      city: ci > -1 ? address.substring(0, ci).trim() : address,
-      address: ci > -1 ? address.substring(ci + 1).trim() : address,
-      phone,
-      phoneRaw: phoneRaw || existing.phoneRaw || '',
-      email: emailM ? emailM[0] : '',
-      web: (r['Ğ¡Ğ°Ğ¹Ñ‚'] || existing.web || '').trim(),
-      bin,
-      chairman: (r['ĞŸÑ€ĞµĞ´ÑĞµĞ´Ğ°Ñ‚ĞµĞ»ÑŒ ĞŸÑ€Ğ°Ğ²Ğ»ĞµĞ½Ğ¸Ñ (Ğ¤Ğ˜Ğ)'] || existing.chairman || '').trim(),
-      note: cleanScrapedNote(r['ĞŸÑ€Ğ¸Ğ¼ĞµÑ‡Ğ°Ğ½Ğ¸Ğµ']) || existing.note || '',
-    };
-  }).filter(Boolean);
-  return _banksCache;
-}
-
-// ===== CSV-BACKED: COURTS =====
-let _courtsCache = null;
-function getCourtsData() {
-  if (_courtsCache) return _courtsCache;
-  const rows = parseSemicolonCSV(path.join(__dirname, 'Ğ¡ÑƒĞ´Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-  const seen = {};
-  _courtsCache = rows.map(r => {
-    const name = (r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ ÑÑƒĞ´Ğ°'] || '').trim();
-    if (!name) return null;
-    let base = slugify(name) || 'court';
-    if (!seen[base]) { seen[base] = 1; } else { seen[base]++; base += '-' + seen[base]; }
-    const phoneStr = (r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½Ñ‹'] || '').split(/[,;]/)[0].trim();
-    const digits = phoneStr.replace(/[^\d]/g, '');
-    let phoneRaw = '';
-    if (digits.length === 11) phoneRaw = '+7' + digits.slice(1);
-    else if (digits.length === 10) phoneRaw = '+7' + digits;
-    return {
-      slug: base, name,
-      level: (r['ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ñ'] || '').trim(),
-      region: (r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'] || '').trim(),
-      chairman: (r['ĞŸÑ€ĞµĞ´ÑĞµĞ´Ğ°Ñ‚ĞµĞ»ÑŒ/Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ'] || '').trim(),
-      address: (r['ĞĞ´Ñ€ĞµÑ'] || '').trim(),
-      phone: phoneStr,
-      phoneRaw,
-      email: (r['E-mail'] || '').trim().replace(/,(?=[a-z])/, '.'),
-      schedule: (r['Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‹'] || '').trim(),
-      web: 'sud.gov.kz',
-    };
-  }).filter(Boolean);
-  return _courtsCache;
-}
-
-// ===== CHAMBERS DATA =====
-let _chambersCache = null;
-function getChambersData() {
-  if (_chambersCache) return _chambersCache;
-
-  const REGION_SLUG = {
-    'ĞĞºĞ¼Ğ¾Ğ»Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'akmola',
-    'ĞĞºÑ‚ÑĞ±Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'aktobe',
-    'Ğ³. ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹': 'almaty',
-    'ĞĞ»Ğ¼Ğ°Ñ‚Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'almaty-obl',
-    'Ğ³. ĞÑÑ‚Ğ°Ğ½Ğ°': 'astana',
-    'ĞÑ‚Ñ‹Ñ€Ğ°ÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'atyrau',
-    'ĞĞ±Ğ»Ğ°ÑÑ‚ÑŒ ĞĞ±Ğ°Ğ¹': 'abay',
-    'Ğ’Ğ¾ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'vko',
-    'Ğ–Ğ°Ğ¼Ğ±Ñ‹Ğ»ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'zhambyl',
-    'Ğ—Ğ°Ğ¿Ğ°Ğ´Ğ½Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'zko',
-    'ĞšĞ°Ñ€Ğ°Ğ³Ğ°Ğ½Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'karaganda',
-    'ĞšĞ¾ÑÑ‚Ğ°Ğ½Ğ°Ğ¹ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'kostanay',
-    'ĞšÑ‹Ğ·Ñ‹Ğ»Ğ¾Ñ€Ğ´Ğ¸Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'kyzylorda',
-    'ĞœĞ°Ğ½Ğ³Ğ¸ÑÑ‚Ğ°ÑƒÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'mangistau',
-    'ĞŸĞ°Ğ²Ğ»Ğ¾Ğ´Ğ°Ñ€ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'pavlodar',
-    'Ğ¡ĞµĞ²ĞµÑ€Ğ¾-ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'sko',
-    'Ğ¢ÑƒÑ€ĞºĞµÑÑ‚Ğ°Ğ½ÑĞºĞ°Ñ Ğ¾Ğ±Ğ»Ğ°ÑÑ‚ÑŒ': 'turkestan',
-    'ĞĞ±Ğ»Ğ°ÑÑ‚ÑŒ Ò°Ğ»Ñ‹Ñ‚Ğ°Ñƒ': 'ulytau',
-    'Ğ³. Ğ¨Ñ‹Ğ¼ĞºĞµĞ½Ñ‚': 'shymkent',
-    'ĞĞ±Ğ»Ğ°ÑÑ‚ÑŒ Ğ–ĞµÑ‚Ñ–ÑÑƒ': 'zhetisu',
-  };
-
-  function chFirstPhoneRaw(str) {
-    if (!str) return '';
-    const m = str.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
-    if (!m) return '';
-    const d = m[0].replace(/\D/g, '').slice(0, 11);
-    if (d.length === 11) return '+7' + d.slice(1);
-    if (d.length === 10) return '+7' + d;
-    return '';
-  }
-
-  function chFirstEmail(str) {
-    if (!str || str.includes('Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ¾')) return '';
-    const m = str.match(/[\w._%+\-]+@[\w.\-]+\.[a-zA-Z]{2,}/);
-    return m ? m[0] : '';
-  }
-
-  function chCleanLeader(str) {
-    return (str || '').replace(/\s*\([^)]*\)/g, '').trim();
-  }
-
-  const notaryRows = parseSemicolonCSV(path.join(__dirname, 'ĞĞ¾Ñ‚Ğ°Ñ€Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ_Ğ¿Ğ°Ğ»Ğ°Ñ‚Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-  const chsiRows   = parseSemicolonCSV(path.join(__dirname, 'ĞŸĞ°Ğ»Ğ°Ñ‚Ñ‹_Ğ§Ğ¡Ğ˜_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-
-  const chsiByRegion = {};
-  chsiRows.forEach(r => {
-    const region = (r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'] || '').trim();
-    if (region && !region.startsWith('Ğ ĞµÑĞ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ°Ğ½ÑĞºĞ°Ñ')) chsiByRegion[region] = r;
-  });
-
-  _chambersCache = notaryRows
-    .filter(r => {
-      const region = (r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'] || '').trim();
-      return region && !region.startsWith('Ğ ĞµÑĞ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ°');
-    })
-    .map(r => {
-      const region = r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'].trim();
-      const slug   = REGION_SLUG[region] || slugify(region);
-      const chsi   = chsiByRegion[region] || {};
-      return {
-        slug, region,
-        notary_name:     (r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ Ğ¿Ğ°Ğ»Ğ°Ñ‚Ñ‹'] || '').trim(),
-        notary_phone:    (r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || '').trim(),
-        notary_phoneRaw: chFirstPhoneRaw(r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || ''),
-        notary_email:    chFirstEmail(r['Email'] || ''),
-        notary_web:      '',
-        notary_address:  (r['ĞĞ´Ñ€ĞµÑ'] || '').trim(),
-        notary_leader:   chCleanLeader(r['Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ'] || ''),
-        chsi_name:       (chsi['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ Ğ¿Ğ°Ğ»Ğ°Ñ‚Ñ‹'] || '').trim(),
-        chsi_phone:      (chsi['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || '').trim(),
-        chsi_phoneRaw:   chFirstPhoneRaw(chsi['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || ''),
-        chsi_email:      chFirstEmail(chsi['Email'] || ''),
-        chsi_web:        '',
-        chsi_address:    (chsi['ĞĞ´Ñ€ĞµÑ'] || '').trim(),
-        chsi_leader:     chCleanLeader(chsi['Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ'] || ''),
-      };
-    });
-
-  return _chambersCache;
-}
-
-// ===== CSV-BACKED: GSI (Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğµ ÑÑƒĞ´ĞµĞ±Ğ½Ñ‹Ğµ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»Ğ¸) =====
-let _gsiCache = null;
-function getGsiData() {
-  if (_gsiCache) return _gsiCache;
-  const rows = parseSemicolonCSV(path.join(__dirname, 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğµ_ÑÑƒĞ´ĞµĞ±Ğ½Ñ‹Ğµ_Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»Ğ¸_Ğ”ĞµĞ¿Ğ°Ñ€Ñ‚Ğ°Ğ¼ĞµĞ½Ñ‚Ñ‹_ÑÑÑ‚Ğ¸Ñ†Ğ¸Ğ¸.csv'));
-  _gsiCache = rows.filter(r => (r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'] || '').trim()).map(r => {
-    const phone = (r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || '').replace('Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ¾', '').trim();
-    const m = phone.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
-    const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
-    return {
-      region:   r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'].trim(),
-      name:     (r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ Ğ´ĞµĞ¿Ğ°Ñ€Ñ‚Ğ°Ğ¼ĞµĞ½Ñ‚Ğ°'] || '').trim(),
-      address:  (r['ĞĞ´Ñ€ĞµÑ'] || '').trim(),
-      phone,
-      phoneRaw,
-      email:    (r['Email'] || '').replace('Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ¾', '').trim(),
-      leader:   (r['Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ'] || '').replace('Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ¾', '').trim(),
-      slug:     slugify(r['Ğ ĞµĞ³Ğ¸Ğ¾Ğ½'].trim()),
-    };
-  });
-  return _gsiCache;
-}
-
-// ===== CSV-BACKED: INSURANCE (Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ñ‹Ğµ ĞºĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ğ¸) =====
-let _insuranceCache = null;
-function getInsuranceData() {
-  if (_insuranceCache) return _insuranceCache;
-  const rows = parseSemicolonCSV(path.join(__dirname, 'Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ñ‹Ğµ_ĞºĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ğ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-  _insuranceCache = rows.filter(r => (r['ĞšĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ñ'] || '').trim()).map(r => {
-    const phone = (r['Ğ¢ĞµĞ»ĞµÑ„Ğ¾Ğ½'] || '').trim();
-    const m = phone.match(/(?:\+7|8|\(\d)[\d\s\-\(\)]{6,}/);
-    const phoneRaw = m ? '+7' + m[0].replace(/\D/g, '').slice(1) : '';
-    const name = (r['ĞšĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ñ'] || '').trim();
-    const parenMatches = name.match(/\(([^)]+)\)/g) || [];
-    let shortName;
-    if (parenMatches.length) {
-      shortName = parenMatches[parenMatches.length - 1].replace(/[()]/g, '').trim();
-    } else {
-      // Many names use an unbalanced-quote convention, e.g. ĞĞ "Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ğ°Ñ ĞºĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ñ "Amanat
-      // â€” the real brand name is whatever follows the LAST quote character.
-      const lastQuoteIdx = name.lastIndexOf('"');
-      const afterQuote = lastQuoteIdx >= 0 ? name.slice(lastQuoteIdx + 1).trim() : '';
-      shortName = afterQuote || name.replace(/^ĞĞ\s+"[^"]+"\s+/i, '').replace(/^Â«|Â»$/g, '').trim();
-    }
-    return {
-      name, shortName,
-      bin:     (r['Ğ‘Ğ˜Ğ'] || '').trim(),
-      web:     (r['Ğ¡Ğ°Ğ¹Ñ‚'] || '').trim(),
-      phone,   phoneRaw,
-      email:   (r['Email'] || '').trim(),
-      address: (r['ĞĞ´Ñ€ĞµÑ'] || '').replace(/^\d+,\s*/, '').trim(),
-      leader:  (r['ĞŸÑ€ĞµĞ´ÑĞµĞ´Ğ°Ñ‚ĞµĞ»ÑŒ ĞŸÑ€Ğ°Ğ²Ğ»ĞµĞ½Ğ¸Ñ'] || '').trim(),
-      slug:    slugify(shortName || name),
-    };
-  });
-  return _insuranceCache;
-}
-
-// ===== NEW CATALOGS: BANKS / MFO / COURTS / CHAMBERS =====
-app.get('/banks',     (req, res) => res.render('banks/catalog', { banks: getBanksData(), lowContentBoost }));
-
-const CATALOG_PAGE_SIZE = 60;
-function paginateCatalog(items, req, searchText) {
-  const query = String(req.query.q || '').trim().slice(0, 100);
-  const needle = query.toLocaleLowerCase('ru-RU');
-  const filtered = needle
-    ? items.filter(item => String(searchText(item) || '').toLocaleLowerCase('ru-RU').includes(needle))
-    : items;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / CATALOG_PAGE_SIZE));
-  const requestedPage = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const page = Math.min(requestedPage, totalPages);
-  const offset = (page - 1) * CATALOG_PAGE_SIZE;
-  return {
-    items: filtered.slice(offset, offset + CATALOG_PAGE_SIZE),
-    query,
-    page,
-    pageSize: CATALOG_PAGE_SIZE,
-    total: items.length,
-    filteredTotal: filtered.length,
-    totalPages,
-  };
-}
-
-app.get('/courts', (req, res) => {
-  const catalog = paginateCatalog(getCourtsData(), req, court => [
-    court.name, court.region, court.level, court.address, court.chairman, court.email,
-  ].join(' '));
-  res.render('courts/catalog', { courts: catalog.items, catalog });
-});
-app.get('/chambers',  (req, res) => res.render('chambers/catalog', { chambers: getChambersData() }));
-function companyLanguageLinks(companySlug = null) {
-  return COMPANY_LOCALES.map(code => {
-    const language = getCompanyLocale(code);
-    return {
-      code,
-      nativeName: language.nativeName,
-      href: companyCatalogPathFor(code),
-      companyHref: companySlug
-        ? (code === 'ru' ? companyPathFor('ru', companySlug) : companyCatalogPathFor(code))
-        : companyCatalogPathFor(code),
-    };
-  });
-}
-
-function setCompanyCache(res, cacheable, maxAge = 300) {
-  if (!cacheable) {
-    res.set('Cache-Control', 'private, no-store');
-    return;
-  }
-  res.set(
-    'Cache-Control',
-    `public, max-age=${maxAge}, s-maxage=${Math.max(maxAge, 900)}, stale-while-revalidate=86400`
-  );
-}
-
-function setCompanyDbTiming(res, started) {
-  const durationMs = Number(process.hrtime.bigint() - started) / 1e6;
-  res.set('Server-Timing', `company-db;dur=${durationMs.toFixed(1)}`);
-}
-
-function renderCompaniesCatalog(req, res, localeCode = 'ru') {
-  const started = process.hrtime.bigint();
-  const locale = getCompanyLocale(localeCode);
-  const query = String(req.query.q || '').trim().slice(0, 120);
-  const page = Number.parseInt(req.query.page, 10) || 1;
-  const stats = companiesDb
-    ? companiesDb.stats()
-    : {
-      available: false, count: 0, updatedAt: null, source: null,
-      officialCount: 0, directoryOnlyCount: 0, withContactsCount: 0,
-    };
-  const results = companiesDb
-    ? (query ? companiesDb.search(query, page, 30) : companiesDb.browse(page, 30))
-    : { items: [], page: 1, hasMore: false };
-  setCompanyCache(res, !query, 120);
-  setCompanyDbTiming(res, started);
-  res.render('companies/catalog', {
-    query,
-    results,
-    stats,
-    locale,
-    copy: locale,
-    alternates: catalogAlternates(),
-    languages: companyLanguageLinks(),
-    companyCatalogPath: companyCatalogPathFor(locale.code),
-    companyItemPrefix: '/company/',
-  });
-}
-
-function renderCompanyItem(req, res, localeCode = 'ru') {
-  const started = process.hrtime.bigint();
-  if (!companiesDb || !companiesDb.available()) return sendNotFound(res);
-  const locale = getCompanyLocale(localeCode);
-  const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
-  let company = id ? companiesDb.findById(id) : null;
-  if (!company) {
-    const redirect = companiesDb.redirectByOldSlug(req.params.slug);
-    if (redirect) return res.redirect(301, companyPathFor(locale.code, redirect.slug));
-    return sendNotFound(res);
-  }
-  if (company.slug !== req.params.slug) {
-    return res.redirect(301, companyPathFor(locale.code, company.slug));
-  }
-  const sourceUpdatedAt = companiesDb.stats().updatedAt;
-  const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
-  const companyQuality = companiesDb.quality(company);
-  setCompanyCache(res, true, 300);
-  setCompanyDbTiming(res, started);
-  return res.render('companies/item', {
-    company,
-    sourceUpdatedAt,
-    regionName,
-    companyQuality,
-    localized: locale.code !== 'ru',
-    locale,
-    copy: locale,
-    languages: companyLanguageLinks(company.slug),
-    companyCatalogPath: companyCatalogPathFor(locale.code),
-  });
-}
-
-app.get('/companies', (req, res) => renderCompaniesCatalog(req, res, 'ru'));
-app.get('/api/company-suggest', companySuggestLimiter, (req, res) => {
-  res.set('Cache-Control', 'private, no-store');
-  const query = String(req.query.q || '').trim().slice(0, 120);
-  if (!companiesDb || !companiesDb.available() || query.length < 2) {
-    return res.json({ items: [] });
-  }
-  const cleanSummary = (value, limit = 180) => {
-    const text = String(value || '').replace(/\s+/g, ' ').trim();
-    return text ? text.slice(0, limit) : null;
-  };
-  const items = companiesDb.search(query, 1, 14).items.map(company => ({
-    bin: company.bin,
-    name: company.name_ru || company.name_kk,
-    activity: cleanSummary(company.activity_ru),
-    status: cleanSummary(company.status_ru, 90),
-    leader: cleanSummary(company.leader, 140),
-    address: cleanSummary(company.address_ru, 220),
-    phone: cleanSummary(company.mobile_phone || company.phone, 90),
-    email: cleanSummary(company.email, 120),
-    website: cleanSummary(company.website, 160),
-    url: `/company/${company.slug}`,
-  }));
-  return res.json({ items });
-});
-app.get('/:locale(kk|en|zh|tr)/companies', (req, res) => {
-  renderCompaniesCatalog(req, res, req.params.locale);
-});
-
-app.get('/companies/regions', (req, res) => {
-  if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
-  const started = process.hrtime.bigint();
-  const regions = companiesDb.regionStats();
-  const stats = companiesDb.stats();
-  setCompanyCache(res, true, 300);
-  setCompanyDbTiming(res, started);
-  res.render('companies/regions', { regions, stats });
-});
-
-app.get('/companies/region/:slug', (req, res) => {
-  if (!companiesDb || !companiesDb.available()) return res.redirect('/companies');
-  const started = process.hrtime.bigint();
-  const page = Number.parseInt(req.query.page, 10) || 1;
-  const results = companiesDb.byRegion(req.params.slug, page, 30);
-  if (!results.label) return sendNotFound(res);
-  setCompanyCache(res, true, 300);
-  setCompanyDbTiming(res, started);
-  res.render('companies/region', { slug: req.params.slug, results });
-});
-
-app.get('/:locale(kk|en|zh|tr)/company/:slug', (req, res) => {
-  let canonicalSlug = req.params.slug;
-  if (companiesDb && companiesDb.available()) {
-    const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
-    const company = id ? companiesDb.findById(id) : null;
-    const redirect = company ? null : companiesDb.redirectByOldSlug(req.params.slug);
-    canonicalSlug = company?.slug || redirect?.slug || canonicalSlug;
-  }
-  res.redirect(301, `/company/${canonicalSlug}`);
-});
-app.get('/company/:slug', (req, res) => renderCompanyItem(req, res, 'ru'));
-app.get('/gsi',           (req, res) => res.render('gsi/catalog', { items: getGsiData() }));
-app.get('/gsi/:slug',     (req, res) => {
-  const item = getGsiData().find(g => g.slug === req.params.slug);
-  if (!item) return sendNotFound(res);
-  res.render('gsi/item', { item, lowContentBoost });
-});
-app.get('/insurance',     (req, res) => res.render('insurance/catalog', { items: getInsuranceData() }));
-app.get('/insurance/:slug', (req, res) => {
-  const items = getInsuranceData();
-  const item = items.find(c => c.slug === req.params.slug);
-  if (!item) {
-    const alias = resolveLegacyCatalogItem(items, req.params.slug);
-    if (alias) return res.redirect(301, `/insurance/${alias.slug}`);
-  }
-  if (!item) return sendNotFound(res);
-  res.render('insurance/item', { item, lowContentBoost });
-});
-app.get('/credit-bureaus',(req, res) => res.render('credit-bureaus/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'ĞšÑ€ĞµĞ´Ğ¸Ñ‚Ğ½Ñ‹Ğµ_Ğ±ÑÑ€Ğ¾_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')) }));
-app.get('/regulators',    (req, res) => res.render('regulators/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Ğ¤Ğ¸Ğ½Ğ°Ğ½ÑĞ¾Ğ²Ñ‹Ğµ_Ñ€ĞµĞ³ÑƒĞ»ÑÑ‚Ğ¾Ñ€Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')) }));
-app.get('/emergency',     (req, res) => res.render('emergency/catalog', { items: parseSemicolonCSV(path.join(__dirname, 'Ğ­ĞºÑÑ‚Ñ€ĞµĞ½Ğ½Ñ‹Ğµ_Ğ¸_ÑĞ¿Ñ€Ğ°Ğ²Ğ¾Ñ‡Ğ½Ñ‹Ğµ_Ğ½Ğ¾Ğ¼ĞµÑ€Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')) }));
-
-// ITEM PAGES: BANKS
-app.get('/banks/:slug', (req, res) => {
-  const bank = getBanksData().find(b => b.slug === req.params.slug);
-  if (!bank) return sendNotFound(res);
-  res.render('banks/item', {
-    bank,
-    lowContentBoost,
-    bankArrestPath: getBankArrestPathForBank(bank),
-  });
-});
-
-app.get(BANK_ARREST_HUB_PATH, (req, res) => {
-  res.render('bank-arrest/hub', {
-    pages: BANK_ARREST_PAGES,
-    legalPages: LEGAL_INTENT_PAGES,
-    reviewedAt: BANK_ARREST_PAGES[0]?.reviewedAt || '2026-08-24',
-  });
-});
-
-BANK_ARREST_PAGES.filter(page => !page.legacyStatic).forEach(page => {
-  app.get(page.path, (req, res) => {
-    const bank = findBankRecord(page, getBanksData());
-    res.render('bank-arrest/page', {
-      page,
-      bank,
-      relatedPages: getRelatedBankArrestPages(page),
-    });
-  });
-});
-
-const RELATED_GROWTH_LABELS = Object.freeze({
-  '/snyatie-aresta-so-scheta': 'ĞšĞ°Ğº ÑĞ½ÑÑ‚ÑŒ Ğ°Ñ€ĞµÑÑ‚ ÑĞ¾ ÑÑ‡Ñ‘Ñ‚Ğ° Ğ¸Ğ»Ğ¸ ĞºĞ°Ñ€Ñ‚Ñ‹',
-  '/snyatie-ogranichenii-chsi': 'Ğ§Ñ‚Ğ¾ Ğ´ĞµĞ»Ğ°Ñ‚ÑŒ Ñ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸ÑĞ¼Ğ¸ Ğ§Ğ¡Ğ˜',
-  '/chsi-ne-snimaet-arest-posle-oplaty': 'Ğ§Ğ¡Ğ˜ Ğ½Ğµ ÑĞ½Ğ¸Ğ¼Ğ°ĞµÑ‚ Ğ°Ñ€ĞµÑÑ‚ Ğ¿Ğ¾ÑĞ»Ğµ Ğ¾Ğ¿Ğ»Ğ°Ñ‚Ñ‹',
-  '/arest-zarplatnoy-karty': 'ĞÑ€ĞµÑÑ‚ Ğ·Ğ°Ñ€Ğ¿Ğ»Ğ°Ñ‚Ğ½Ğ¾Ğ¹ ĞºĞ°Ñ€Ñ‚Ñ‹',
-  '/otmena-ispolnitelnoi-nadpisi': 'ĞšĞ°Ğº Ğ¾Ñ‚Ğ¼ĞµĞ½Ğ¸Ñ‚ÑŒ Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½ÑƒÑ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑÑŒ',
-  '/arest-scheta-v-bankah-kazahstana': 'ĞÑ€ĞµÑÑ‚Ñ‹ ÑÑ‡ĞµÑ‚Ğ¾Ğ² Ğ¿Ğ¾ Ğ±Ğ°Ğ½ĞºĞ°Ğ¼ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°',
-});
-
-LEGAL_INTENT_PAGES.forEach(page => {
-  app.get(page.path, (req, res) => {
-    const relatedPages = (page.related || []).map(relatedPath => {
-      const configured = getLegalIntentPage(relatedPath);
-      return configured || {
-        path: relatedPath,
-        h1: RELATED_GROWTH_LABELS[relatedPath] || 'Ğ¡Ğ²ÑĞ·Ğ°Ğ½Ğ½Ñ‹Ğ¹ Ğ¿Ñ€Ğ°Ğ²Ğ¾Ğ²Ğ¾Ğ¹ Ğ¼Ğ°Ñ€ÑˆÑ€ÑƒÑ‚',
-      };
-    });
-    res.render('legal-intent/page', { page, relatedPages });
-  });
-});
-
-// ITEM PAGES: COURTS
-app.get('/courts/:slug', (req, res) => {
-  const court = getCourtsData().find(c => c.slug === req.params.slug);
-  if (!court) return sendNotFound(res);
-  res.render('courts/item', { court });
-});
-
-// ITEM PAGES: CHAMBERS
-app.get('/chambers/:slug', (req, res) => {
-  const chamber = getChambersData().find(c => c.slug === req.params.slug);
-  if (!chamber) return sendNotFound(res);
-  res.render('chambers/item', { chamber });
-});
-
-// ===== CSV-BACKED CATALOGS: COLLECTORS / LOMBARDS =====
-// Some source CSVs were built by scrapers that, on failure, wrote the raw
-// error message into a data column (e.g. "Ğ¾ÑˆĞ¸Ğ±ĞºĞ° Ğ¿Ñ€Ğ¸ ÑĞ±Ğ¾Ñ€Ğµ: HTTP Error 404:
-// Not Found") instead of leaving it blank. Strip those out so visitors never
-// see internal scraper errors, and so pages don't accidentally read as a
-// soft-404 to crawlers.
-function cleanScrapedNote(note) {
-  const s = (note || '').trim();
-  if (/Ğ¾ÑˆĞ¸Ğ±ĞºĞ° Ğ¿Ñ€Ğ¸ ÑĞ±Ğ¾Ñ€Ğµ|HTTP Error|Not Found|404/i.test(s)) return '';
-  return s;
-}
-
-function parseSemicolonCSV(filePath) {
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    const lines = raw.split(/\r?\n/);
-    const headers = lines[0].split(';').map(h => h.replace(/^"|"$/g, '').trim());
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      // Quoted-field parser for semicolon delimiter. A field only enters
-      // "quoted mode" if it STARTS with a quote (right after a delimiter or
-      // at line start) â€” quotes appearing mid-field (e.g. ĞšĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ñ "Name")
-      // are treated as literal characters, not togglers. This matches how
-      // real-world exports (Excel/Sheets) actually escape fields, where
-      // company names often contain unescaped inner quotes.
-      const fields = [];
-      let cur = '', inQ = false, fieldStart = true;
-      for (let c = 0; c < line.length; c++) {
-        const ch = line[c];
-        if (ch === '"' && fieldStart && cur === '') {
-          inQ = true; fieldStart = false; continue;
-        }
-        if (ch === '"' && inQ) {
-          if (line[c + 1] === '"') { cur += '"'; c++; continue; }
-          if (line[c + 1] === ';' || c === line.length - 1) { inQ = false; continue; }
-          cur += ch; continue;
-        }
-        if (ch === ';' && !inQ) {
-          fields.push(cur.trim()); cur = ''; fieldStart = true; continue;
-        }
-        cur += ch; fieldStart = false;
-      }
-      fields.push(cur.trim());
-      const obj = {};
-      headers.forEach((h, idx) => { obj[h] = (fields[idx] || '').replace(/^"+|"+$/g, '').trim(); });
-      rows.push(obj);
-    }
-    return rows;
-  } catch (e) { return []; }
-}
-
-function parseContacts(raw) {
-  const parts = raw.split(/[,;\s]+(?=[\w+])/);
-  const phones = [], emails = [], sites = [];
-  const rawTokens = raw.split(/,\s*|;\s*|\s{2,}/);
-  rawTokens.forEach(t => {
-    t = t.trim().replace(/^["]+|["]+$/g, '');
-    if (!t) return;
-    if (t.includes('@')) emails.push(t);
-    else if (/^https?:\/\//i.test(t) || /^www\./i.test(t)) sites.push(t.replace(/^https?:\/\//i,'').replace(/^www\./i,'').split('/')[0]);
-    else if (/[\d\-\(\)\+]/.test(t) && t.replace(/[^\d]/g,'').length >= 7) phones.push(t);
-  });
-  return { phones: [...new Set(phones)], emails: [...new Set(emails)], sites: [...new Set(sites)] };
-}
-
-let _collectorsCache = null;
-function getCollectors() {
-  if (!_collectorsCache) {
-    const rows = parseSemicolonCSV(path.join(__dirname, 'ĞšĞ¾Ğ»Ğ»ĞµĞºÑ‚Ğ¾Ñ€ÑĞºĞ¸Ğµ_Ğ°Ğ³ĞµĞ½Ñ‚ÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-    const seen = {};
-    _collectorsCache = rows
-      .filter(r => (r['Ğ¡Ñ‚Ğ°Ñ‚ÑƒÑ'] || '').toLowerCase().includes('Ğ´ĞµĞ¹ÑÑ‚Ğ²Ñƒ'))
-      .map(r => {
-        const contacts = parseContacts(r['ĞšĞ¾Ğ½Ñ‚Ğ°ĞºÑ‚Ñ‹ (Ñ‚ĞµĞ»./email/ÑĞ°Ğ¹Ñ‚)'] || '');
-        const bin = r['Ğ‘Ğ˜Ğ'] || '';
-        const name = (r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ'] || '').replace(/^Ğ¢ĞĞ\s+"*|"*$/g, '').replace(/Ğ¢ĞĞ\s+/g,'').replace(/^"|"$/g,'').trim();
-        let baseSlug = slugify(name) || 'kca-' + bin;
-        if (!seen[baseSlug]) { seen[baseSlug] = 1; }
-        else { seen[baseSlug]++; baseSlug = baseSlug + '-' + seen[baseSlug]; }
-        return applyRegistryPrivacyOverride('collectors', {
-          slug: baseSlug,
-          bin, name,
-          nameFull: r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ'] || '',
-          regNum: r['Ğ ĞµĞ³. Ğ½Ğ¾Ğ¼ĞµÑ€ (Ğ»Ğ¸Ñ†ĞµĞ½Ğ·Ğ¸Ñ)'] || '',
-          leader: r['Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ (Ğ¤Ğ˜Ğ)'] || '',
-          address: r['ĞĞ´Ñ€ĞµÑ'] || '',
-          phones: contacts.phones,
-          emails: contacts.emails,
-          sites: contacts.sites,
-          dateAdded: r['Ğ”Ğ°Ñ‚Ğ° Ğ²ĞºĞ»ÑÑ‡ĞµĞ½Ğ¸Ñ Ğ² Ñ€ĞµĞµÑÑ‚Ñ€'] || '',
-        });
-      });
-  }
-  return _collectorsCache;
-}
-
-let _mfoCache = null;
-function getMfoData() {
-  if (!_mfoCache) {
-    const rows = parseSemicolonCSV(path.join(__dirname, 'ĞœĞ¤Ğ_Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´Ñ‹_ĞšÑ€ĞµĞ´Ğ¢Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-    _mfoCache = { mfo: [], lombards: [], kredTov: [] };
-    rows.forEach(r => {
-      const cat = (r['ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ñ'] || '').trim();
-      const entryName = (r['ĞĞ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ (Ñ€ĞµĞµÑÑ‚Ñ€ ĞĞ Ğ Ğ¤Ğ )'] || '')
-        .trim()
-        .replace(/^[Â«Â»"'â€œâ€]+/, '')
-        .replace(/^(Ñ‚Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ¾ Ñ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ½Ğ¾Ğ¹ Ğ¾Ñ‚Ğ²ĞµÑ‚ÑÑ‚Ğ²ĞµĞ½Ğ½Ğ¾ÑÑ‚ÑŒÑ|Ñ‚Ğ¾Ğ¾)\s+/i, '')
-        .replace(/^[Â«Â»"'â€œâ€]+/, '')
-        .replace(/[Â«Â»"'â€œâ€]+$/, '')
-        .trim();
-      const entry = {
-        name: entryName,
-        slug: slugify(entryName) || 'bin-' + (r['Ğ‘Ğ˜Ğ'] || ''),
-        nameFull: r['ĞŸĞ¾Ğ»Ğ½Ğ¾Ğµ Ğ½Ğ°Ğ·Ğ²Ğ°Ğ½Ğ¸Ğµ (Ğ³Ğ¾Ñ. Ñ€ĞµĞ³Ğ¸ÑÑ‚Ñ€)'] || '',
-        bin: r['Ğ‘Ğ˜Ğ'] || '',
-        address: r['Ğ®Ñ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ¸Ğ¹ Ğ°Ğ´Ñ€ĞµÑ'] || '',
-        leader: r['Ğ ÑƒĞºĞ¾Ğ²Ğ¾Ğ´Ğ¸Ñ‚ĞµĞ»ÑŒ'] || '',
-        note: cleanScrapedNote(r['ĞŸÑ€Ğ¸Ğ¼ĞµÑ‡Ğ°Ğ½Ğ¸Ğµ']),
-      };
-      if (cat === 'ĞœĞ¤Ğ') _mfoCache.mfo.push(entry);
-      else if (cat === 'Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´') _mfoCache.lombards.push(entry);
-      else if (cat === 'ĞšÑ€ĞµĞ´Ğ¸Ñ‚Ğ½Ğ¾Ğµ Ñ‚Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ¾') _mfoCache.kredTov.push(entry);
-    });
-  }
-  return _mfoCache;
-}
-
-app.get('/collectors', (req, res) => {
-  const catalog = paginateCatalog(getCollectors(), req, item => [
-    item.name, item.nameFull, item.bin, item.regNum, item.leader, item.address,
-    ...(item.phones || []), ...(item.emails || []), ...(item.sites || []),
-  ].join(' '));
-  res.render('collectors/catalog', { items: catalog.items, catalog, lowContentBoost });
-});
-
-app.get('/collectors/:slug', (req, res) => {
-  const item = getCollectors().find(c => c.slug === req.params.slug);
-  if (!item) return sendNotFound(res);
-  res.render('collectors/item', { item, lowContentBoost });
-});
-
-app.get('/mfo', (req, res) => {
-  const { mfo } = getMfoData();
-  const catalog = paginateCatalog(mfo, req, item => [
-    item.name, item.nameFull, item.bin, item.address, item.leader,
-  ].join(' '));
-  res.render('mfo/catalog', { mfo: catalog.items, catalog, lowContentBoost });
-});
-
-app.get('/mfo/:slug', (req, res) => {
-  const { mfo } = getMfoData();
-  const item = mfo.find(m => m.slug === req.params.slug);
-  if (!item) {
-    const alias = resolveLegacyCatalogItem(mfo, req.params.slug);
-    if (alias) return res.redirect(301, `/mfo/${alias.slug}`);
-  }
-  if (!item) return sendNotFound(res);
-  res.render('mfo/item', { item, lowContentBoost });
-});
-
-app.get('/lombards', (req, res) => {
-  const { lombards } = getMfoData();
-  const catalog = paginateCatalog(lombards, req, item => [
-    item.name, item.nameFull, item.bin, item.address, item.leader,
-  ].join(' '));
-  res.render('lombards/catalog', { items: catalog.items, catalog, lowContentBoost });
-});
-
-app.get('/lombards/:slug', (req, res) => {
-  const { lombards } = getMfoData();
-  const item = lombards.find(l => l.slug === req.params.slug);
-  if (!item) {
-    const alias = resolveLegacyCatalogItem(lombards, req.params.slug);
-    if (alias) return res.redirect(301, `/lombards/${alias.slug}`);
-  }
-  if (!item) return sendNotFound(res);
-  res.render('lombards/item', { item, lowContentBoost });
-});
-
-// ===== BAILIFF SEO PAGES =====
-
-app.get('/bailiff/:slug', asyncHandler(async (req, res) => {
-  if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
-  const bailiff = await bailiffsDb.findBySlug(req.params.slug);
-  if (!bailiff) return sendNotFound(res);
-  const [comments, commentStats] = commentsDb
-    ? await Promise.all([commentsDb.getApproved('bailiff', req.params.slug), commentsDb.stats('bailiff', req.params.slug)])
-    : [[], null];
-  res.render('bailiff/page', { bailiff, comments, commentStats, commentSent: req.query.comment === 'sent' });
-}));
-
-app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
-  res.set('Content-Type', 'application/xml');
-  if (!bailiffsDb) {
-    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-  const [all, regions] = await Promise.all([bailiffsDb.getAllSlugs(), bailiffsDb.getRegions()]);
-  const lastUpdated = await bailiffsDb.getLastUpdated();
-  const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
-  const regionUrls = regions.map(r => getBailiffRegionByName(r.region)).filter(Boolean).map(region => `
-  <url>
-    <loc>https://zakonexpertt.kz${region.path}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>`).join('');
-  const profileUrls = all.map(b => `
-  <url>
-    <loc>https://zakonexpertt.kz/bailiff/${b.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`).join('');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${regionUrls}
-  ${profileUrls}
-</urlset>`);
-}));
-
-app.post('/api/bailiffs/import', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!importBailiffs) return res.status(503).json({ error: 'Bailiff module not available' });
-  const count = await importBailiffs();
-  res.json({ ok: true, imported: count });
-}));
-
-let _lawsSitemapCache = null;
-let _lawsSitemapCacheAt = 0;
-app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
-  res.set('Content-Type', 'application/xml');
-  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-  if (!lawsDb) {
-    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-  if (!_lawsSitemapCache || Date.now() - _lawsSitemapCacheAt > 15 * 60 * 1000) {
-    const all = await lawsDb.getAllSlugs();
-    const today = new Date().toISOString().substring(0, 10);
-    const urls = all.map(a => `
-  <url>
-    <loc>https://zakonexpertt.kz/statya/${a.slug}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>`).join('');
-    _lawsSitemapCache = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls}
-</urlset>`;
-    _lawsSitemapCacheAt = Date.now();
-  }
-  res.send(_lawsSitemapCache);
-}));
-
-// The public lawyer registry was deliberately retired. Return 410 so crawlers
-// remove the former catalog, search and profile URLs instead of treating them
-// as temporary failures or redirecting visitors to an unrelated service.
-app.get(['/lawyers', '/lawyer-search', '/lawyer/:slug', '/sitemap-lawyers.xml'], (req, res) => {
-  sendGone(res);
-});
-
-// ===== ADVOCATE PAGE =====
-app.get('/advocate', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'advocate.html'));
-});
-
-// ===== LAWS PAGES =====
-
-// Search API (JSON)
-app.get('/api/statyi/search', asyncHandler(async (req, res) => {
-  if (!lawsDb) return res.json({ results: [] });
-  const q    = (req.query.q    || '').trim();
-  const code = (req.query.code || '').trim();
-  const results = await lawsDb.search(q, code, 30);
-  res.json({ results });
-}));
-
-// List / search page
-app.get('/statyi', asyncHandler(async (req, res) => {
-  if (!lawsDb) return res.redirect('/zakony.html');
-  const q    = (req.query.q    || '').trim();
-  const code = (req.query.code || '').trim();
-  const requestedPage = Math.max(1, Math.min(10000, Number.parseInt(req.query.page, 10) || 1));
-  const page = code && !q ? requestedPage : 1;
-  const pageSize = 30;
-  const [articles, codes, total] = await Promise.all([
-    code && !q ? lawsDb.findByCodePage(code, pageSize, (page - 1) * pageSize)
-    : q        ? lawsDb.search(q, code, 60)
-    :            Promise.resolve([]),
-    lawsDb.getCodes(),
-    code && !q ? lawsDb.count({ code }) : Promise.resolve(0),
-  ]);
-  const pages = code && !q ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  if (page > pages && code && !q) {
-    return res.redirect(302, `/statyi?code=${encodeURIComponent(code)}&page=${pages}`);
-  }
-  res.render('laws/list', {
-    q,
-    code,
-    articles,
-    codes,
-    total: code && !q ? total : articles.length,
-    page,
-    pages,
-  });
-}));
-
-// Individual article page
-app.get('/statya/:slug', asyncHandler(async (req, res) => {
-  if (!lawsDb) return res.redirect('/statyi');
-  const article = await lawsDb.findBySlug(req.params.slug);
-  if (!article) return sendNotFound(res);
-  const [adjacent, related, codes] = await Promise.all([
-    lawsDb.adjacent(article.code, article.numInt),
-    lawsDb.findByCode(article.code, 6).then(all =>
-      all.filter(a => a.slug !== article.slug && Math.abs(a.numInt - article.numInt) <= 5).slice(0, 4)
-    ),
-    lawsDb.getCodes(),
-  ]);
-  res.render('laws/article', { article, adjacent, related, codes });
-}));
-
-// ===== BANKRUPTCY CHECK (tazalau.qoldau.kz) =====
-const handleBankruptcyCheck = asyncHandler(async (req, res) => {
-  res.set('Cache-Control', 'private, no-store');
-  const submittedIin = req.method === 'POST' ? req.body?.iin : req.query.iin;
-  const iin = String(submittedIin || '').replace(/\D/g, '');
-  if (iin.length !== 12) return res.status(400).json({ error: 'Ğ£ĞºĞ°Ğ¶Ğ¸Ñ‚Ğµ ĞºĞ¾Ñ€Ñ€ĞµĞºÑ‚Ğ½Ñ‹Ğ¹ Ğ˜Ğ˜Ğ (12 Ñ†Ğ¸Ñ„Ñ€)' });
-
-  const cheerio = require('cheerio');
-  const HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml',
-    'Accept-Language': 'ru-RU,ru;q=0.9',
-    'Referer': 'https://tazalau.qoldau.kz/',
-  };
-
-  function parseHtmlTable(html) {
-    try {
-      const $ = cheerio.load(html);
-      const headers = [];
-      // Try thead th first, fallback to first tr > th
-      const headCells = $('table thead th').length
-        ? $('table thead th')
-        : $('table tr:first-child th');
-      headCells.each((i, th) => {
-        headers.push($(th).text().trim().replace(/\s+/g, ' '));
-      });
-      const rows = [];
-      $('table tbody tr').each((i, tr) => {
-        const cells = [];
-        $(tr).find('td').each((j, td) => {
-          cells.push($(td).text().trim().replace(/\s+/g, ' '));
-        });
-        if (cells.some(c => c)) rows.push(cells);
-      });
-      const totalText = $('small').filter((i, el) => $(el).text().includes('Ğ’ÑĞµĞ³Ğ¾')).parent().text();
-      const total = parseInt(totalText.match(/\d+/)?.[0] || '0');
-      return { headers, rows, total };
-    } catch (e) { return { headers: [], rows: [], total: 0 }; }
-  }
-
-  const [r1, r2, r3] = await Promise.allSettled([
-    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy-and-insolvent?flApplicantIin=${iin}`, { headers: HEADERS, timeout: 15000 }),
-    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy/judicial?flApplicantXin=${iin}`, { headers: HEADERS, timeout: 15000 }),
-    axios.get(`https://tazalau.qoldau.kz/ru/list/bankruptcy/recovery?flApplicantXin=${iin}`, { headers: HEADERS, timeout: 15000 }),
-  ]);
-
-  function publicResult(settled) {
-    if (settled.status !== 'fulfilled') return { ok: false, rows: [], total: 0, error: 'SOURCE_UNAVAILABLE' };
-    return { ok: true, ...parseHtmlTable(settled.value.data) };
-  }
-
-  const results = {
-    outOfCourt: publicResult(r1),
-    judicial: publicResult(r2),
-    recovery: publicResult(r3),
-  };
-  const availableSources = Object.values(results).filter(source => source.ok).length;
-  res.json({
-    ...results,
-    meta: {
-      checkedAt: new Date().toISOString(),
-      availableSources,
-      totalSources: 3,
-      complete: availableSources === 3,
-    },
-  });
-});
-app.get('/api/bankruptcy-check', externalApiLimiter, handleBankruptcyCheck);
-app.post('/api/bankruptcy-check', externalApiLimiter, handleBankruptcyCheck);
-
-// ===== ERDR CHECK (service.prosecutor.kz) =====
-app.get('/api/erdr-check', externalApiLimiter, asyncHandler(async (req, res) => {
-  const erdr = (req.query.erdr || '').trim();
-  const iin  = (req.query.iin  || '').replace(/\D/g, '');
-  if (!erdr && iin.length !== 12) {
-    return res.status(400).json({ error: 'Ğ£ĞºĞ°Ğ¶Ğ¸Ñ‚Ğµ Ğ½Ğ¾Ğ¼ĞµÑ€ Ğ•Ğ Ğ”Ğ  Ğ¸Ğ»Ğ¸ Ğ˜Ğ˜Ğ (12 Ñ†Ğ¸Ñ„Ñ€)' });
-  }
-
-  const cheerio = require('cheerio');
-  const HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'ru-RU,ru;q=0.9,kk;q=0.8',
-    'Referer': 'https://service.prosecutor.kz/ru/service/erd',
-  };
-
-  function parseErdrTable(html) {
-    const $ = cheerio.load(html);
-    const headers = [];
-    $('table thead th, table tr:first-child th').each((i, th) => {
-      headers.push($(th).text().trim().replace(/\s+/g, ' '));
-    });
-    const rows = [];
-    $('table tbody tr').each((i, tr) => {
-      const cells = [];
-      $(tr).find('td').each((j, td) => cells.push($(td).text().trim().replace(/\s+/g, ' ')));
-      if (cells.some(c => c)) rows.push(cells);
-    });
-    return { headers, rows };
-  }
-
-  try {
-    let url;
-    if (erdr) {
-      url = `https://service.prosecutor.kz/ru/service/erd?regNumber=${encodeURIComponent(erdr)}`;
-    } else {
-      url = `https://service.prosecutor.kz/ru/service/erd?iin=${iin}`;
-    }
-    const r = await axios.get(url, { headers: HEADERS, timeout: 20000 });
-    const { headers, rows } = parseErdrTable(r.data);
-    return res.json({ headers, rows, query: erdr || iin });
-  } catch (e) {
-    return res.status(502).json({ error: 'ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ñ‚ÑŒ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ¾Ñ‚ service.prosecutor.kz: ' + e.message });
-  }
-}));
-
-// ===== EXECUTIVE INSCRIPTION CAPTCHA (enis.kz) =====
-const inscriptionSessions = new Map(); // sid â†’ { cookie, captchaUrl }
-
-app.get('/api/inscription-session', externalApiLimiter, asyncHandler(async (req, res) => {
-  const cheerio = require('cheerio');
-  const PAGE_URL = 'https://enis.kz/CheckExecutiveInscription';
-  try {
-    const r = await axios.get(PAGE_URL, {
-      timeout: 15000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-      },
-      maxRedirects: 5,
-    });
-    const setCookie = r.headers['set-cookie'];
-    const cookie = setCookie ? setCookie.map(c => c.split(';')[0]).join('; ') : '';
-    const $ = cheerio.load(r.data);
-    const captchaImg = $('img[src*="aptcha"], img[src*="captcha"], img[id*="captcha"], img[id*="Captcha"]').first().attr('src')
-      || $('img').filter((i, el) => /captcha/i.test($(el).attr('src') || '')).first().attr('src')
-      || $('img').filter((i, el) => /captcha/i.test($(el).attr('id') || '')).first().attr('src');
-    const token = $('input[name="__RequestVerificationToken"]').val() || '';
-    const sid = Math.random().toString(36).slice(2);
-    inscriptionSessions.set(sid, { cookie, captchaUrl: captchaImg ? new URL(captchaImg, PAGE_URL).href : null, token });
-    setTimeout(() => inscriptionSessions.delete(sid), 5 * 60 * 1000);
-    res.json({ sid, hasCaptcha: !!captchaImg, captchaUrl: captchaImg });
-  } catch (e) {
-    logger.error('[Inscription] Session fetch error:', e.message);
-    res.status(502).json({ error: 'ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ñ‚ÑŒ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñƒ enis.kz: ' + e.message });
-  }
-}));
-
-app.get('/api/inscription-captcha', externalApiLimiter, asyncHandler(async (req, res) => {
-  const { sid } = req.query;
-  const sess = inscriptionSessions.get(sid);
-  if (!sess || !sess.captchaUrl) return res.status(404).send('Ğ¡ĞµÑÑĞ¸Ñ Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ°');
-  try {
-    const r = await axios.get(sess.captchaUrl, {
-      responseType: 'arraybuffer', timeout: 10000,
-      headers: { 'Cookie': sess.cookie, 'Referer': 'https://enis.kz/CheckExecutiveInscription',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-    });
-    res.set('Content-Type', r.headers['content-type'] || 'image/png');
-    res.set('Cache-Control', 'no-store');
-    res.send(r.data);
-  } catch (e) {
-    res.status(502).send('ĞÑˆĞ¸Ğ±ĞºĞ° Ğ¿Ğ¾Ğ»ÑƒÑ‡ĞµĞ½Ğ¸Ñ ĞºĞ°Ğ¿Ñ‡Ğ¸');
-  }
-}));
-
-app.post('/api/inscription-check', externalApiLimiter, asyncHandler(async (req, res) => {
-  const { sid, iin, captcha } = req.body;
-  const sess = sid ? inscriptionSessions.get(sid) : null;
-  const formData = new URLSearchParams();
-  formData.append('ClientIIN', iin || '');
-  formData.append('Captcha', captcha || '');
-  formData.append('Check', 'ĞŸÑ€Ğ¾Ğ²ĞµÑ€Ğ¸Ñ‚ÑŒ');
-  if (sess?.token) formData.append('__RequestVerificationToken', sess.token);
-
-  const reqHeaders = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Referer': 'https://enis.kz/CheckExecutiveInscription',
-    'Origin': 'https://enis.kz',
-  };
-  if (sess?.cookie) reqHeaders['Cookie'] = sess.cookie;
-
-  try {
-    const r = await axios.post('https://enis.kz/CheckExecutiveInscription', formData.toString(), {
-      headers: reqHeaders, timeout: 15000, maxRedirects: 5,
-    });
-    const cheerio = require('cheerio');
-    const $ = cheerio.load(r.data);
-    const resultBlock = $('h3').filter((i, el) => $(el).text().includes('Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸')).parent();
-    const html = resultBlock.html() || r.data;
-    const text = $('body').text();
-    const hasResult = /Ğ”Ğ°Ñ‚Ğ° ÑĞ¾Ğ²ĞµÑ€ÑˆĞµĞ½Ğ¸Ñ|ĞĞ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑ|Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½/i.test(text);
-    const wrongCaptcha = /Ğ½ĞµĞ²ĞµÑ€Ğ½|ĞºĞ°Ğ¿Ñ‡Ğ°|captcha|wrong/i.test(text);
-    if (wrongCaptcha) return res.json({ ok: false, error: 'ĞĞµĞ²ĞµÑ€Ğ½Ğ°Ñ ĞºĞ°Ğ¿Ñ‡Ğ°. ĞŸĞ¾Ğ¿Ñ€Ğ¾Ğ±ÑƒĞ¹Ñ‚Ğµ ÑĞ½Ğ¾Ğ²Ğ°.' });
-    if (!hasResult) return res.json({ ok: false, error: 'Ğ˜ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ°Ñ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑÑŒ Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ° Ğ¸Ğ»Ğ¸ Ğ˜Ğ˜Ğ Ğ½ĞµĞ²ĞµÑ€ĞµĞ½.', raw: text.substring(0, 500) });
-    const parsed = {};
-    html.replace(/<b>([^<]+):<\/b>\s*([^<\n]+)/g, (m, key, val) => { parsed[key.trim()] = val.trim(); });
-    res.json({ ok: true, parsed, html });
-  } catch (e) {
-    logger.error('[Inscription] Check error:', e.message);
-    res.status(502).json({ error: 'ĞÑˆĞ¸Ğ±ĞºĞ° Ğ·Ğ°Ğ¿Ñ€Ğ¾ÑĞ° Ğº enis.kz: ' + e.message });
-  }
-}));
-
-// Gallery page
-app.get('/gallery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gallery.html')));
-
-// ===== SERVICE PAGE CLEAN URLS =====
-const servicePages = {
-  '/snyatie-aresta-so-scheta':        'snyatie-aresta-so-scheta.html',
-  '/otmena-ispolnitelnoi-nadpisi':     'ispolnitelnaya-nadpis.html',
-  '/vozrazhenie-na-ispolnitelnuyu-nadpis': 'spornost-dolga.html',
-  '/snyatie-ogranichenii-chsi':        'chsi-arest-schetov.html',
-  '/snyatie-zapreta-na-avto':          'snyatie-zapreta-na-avto.html',
-  '/snyatie-ogranicheniya-na-imushchestvo': 'snyatie-ogranicheniya-na-imushchestvo.html',
-  '/snyatie-zapreta-registracionnyh-deistvii': 'zapret-registracionnyh-deystviy.html',
-  '/snyatie-ogranichenii-u-notariusa': 'snyatie-ogranichenii-u-notariusa.html',
-  '/grafik-oplaty-zadolzhennosti':     'grafik-platezhey.html',
-  '/ubrat-procenty-i-rashody-chsi':    'ubrat-procenty-i-rashody-chsi.html',
-  '/arest-kaspi':                      'arest-kaspi.html',
-  '/arest-halyk-bank':                 'arest-halyk-bank.html',
-  '/arest-freedom-bank':               'arest-freedom-bank.html',
-  '/zakony':                           'zakony.html',
-  '/besspornost-dolga':                'besspornost-dolga.html',
-  '/alimenty-i-aresty':                'alimenty-i-aresty.html',
-  '/shtrafy-i-aresty':                 'shtrafy-i-aresty.html',
-  '/chsi-refinansirovanie':            'chsi-refinansirovanie.html',
-  '/otmena-resheniya-suda':            'otmena-resheniya-suda.html',
-  '/dokumenty':                        'dokumenty.html',
-  '/rezultaty':                        'rezultaty.html',
-  '/mediator':                         'mediator.html',
-  '/privacy':                          'privacy.html',
-  '/services':                         'services.html',
-  '/contact':                          'contact.html',
-  '/sms-1414':                         'sms-1414.html',
-  '/zapret-na-vyezd-iz-kazahstana':    'zapret-na-vyezd-iz-kazahstana.html',
-  '/zhaloba-na-chsi':                  'zhaloba-na-chsi.html',
-  '/chsi-ne-snimaet-arest-posle-oplaty': 'chsi-ne-snimaet-arest-posle-oplaty.html',
-  '/arest-zarplatnoy-karty':           'arest-zarplatnoy-karty.html',
-  '/snyat-arest-s-nedvizhimosti':      'snyat-arest-s-nedvizhimosti.html',
-  '/nadpis-ili-list':                  'nadpis-ili-list.html',
-};
-
-app.get(['/otzyvy', '/otzyvy.html'], (req, res) => {
-  res.redirect(301, '/reviews');
-});
-
-for (const [route, file] of Object.entries(servicePages)) {
-  app.get(route, (req, res) => {
-    const filePath = path.join(__dirname, 'public', file);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
-    }
-  });
-}
-
-// ===== NEWS ROUTES =====
-const NEWS_PER_PAGE = 20;
-
-function cleanNewsText(value = '') {
-  return String(value)
-    .replace(/[\u00a0\u2007\u202f]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/\s+(?:[\w-]+\.)+(?:kz|ru|com|org|net)$/iu, '')
-    .trim();
-}
-
-function newsDisplayTitle(article) {
-  return cleanNewsText(article.original_title || article.title || 'ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ ZakonExpert');
-}
-
-function newsDisplayExcerpt(article) {
-  const value = cleanNewsText(article.excerpt || article.original_excerpt || '');
-  return value.length >= 45
-    ? value
-    : 'Ğ Ğ°Ğ·Ğ±Ğ¸Ñ€Ğ°ĞµĞ¼ ÑĞ¾Ğ±Ñ‹Ñ‚Ğ¸Ğµ, Ğ¾Ğ±ÑŠÑÑĞ½ÑĞµĞ¼ Ğ¿Ñ€Ğ°Ğ²Ğ¾Ğ²Ñ‹Ğµ Ğ¿Ğ¾ÑĞ»ĞµĞ´ÑÑ‚Ğ²Ğ¸Ñ Ğ¸ Ğ´Ğ°Ñ‘Ğ¼ Ğ¿Ğ¾Ğ½ÑÑ‚Ğ½Ñ‹Ğ¹ Ğ°Ğ»Ğ³Ğ¾Ñ€Ğ¸Ñ‚Ğ¼ Ğ´ĞµĞ¹ÑÑ‚Ğ²Ğ¸Ğ¹.';
-}
-
-function xmlCdata(value = '') {
-  return String(value).replace(/\]\]>/g, ']]]]><![CDATA[>');
-}
-
-function xmlEscape(value = '') {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function newsCoverLines(value, maxChars = 34, maxLines = 3) {
-  const words = cleanNewsText(value).split(' ').filter(Boolean);
-  const lines = [];
-  let line = '';
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (next.length > maxChars && line) {
-      lines.push(line);
-      line = word;
-      if (lines.length === maxLines - 1) break;
-    } else {
-      line = next;
-    }
-  }
-  if (line && lines.length < maxLines) lines.push(line);
-  const used = lines.join(' ').length;
-  if (used < cleanNewsText(value).length && lines.length) {
-    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/[.,:;!?â€”-]+$/u, '')}â€¦`;
-  }
-  return lines;
-}
-
-function newsCoverTheme(article) {
-  const text = `${article.category || ''} ${article.tags || ''} ${newsDisplayTitle(article)}`.toLowerCase();
-  if (/Ñ‡ÑĞ¸|Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»/.test(text)) return { label: 'Ğ§Ğ¡Ğ˜ Ğ˜ Ğ’Ğ—Ğ«Ğ¡ĞšĞĞĞ˜Ğ•', accent: '#e4b64d', symbol: 'Â§' };
-  if (/Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸|Ğ½Ğ°Ğ´Ğ¿Ğ¸Ñ/.test(text)) return { label: 'ĞĞĞ¢ĞĞ Ğ˜ĞĞ¢', accent: '#77b7ff', symbol: 'N' };
-  if (/Ğ°Ğ²Ñ‚Ğ¾|Ñ‚Ñ€Ğ°Ğ½ÑĞ¿Ğ¾Ñ€Ñ‚/.test(text)) return { label: 'ĞĞ’Ğ¢Ğ Ğ˜ ĞĞ“Ğ ĞĞĞ˜Ğ§Ğ•ĞĞ˜Ğ¯', accent: '#65d1b4', symbol: 'A' };
-  if (/ÑÑƒĞ´|Ğ°Ğ¿ĞµĞ»Ğ»ÑÑ†/.test(text)) return { label: 'Ğ¡Ğ£Ğ”Ğ•Ğ‘ĞĞĞ¯ ĞŸĞ ĞĞšĞ¢Ğ˜ĞšĞ', accent: '#caa7ff', symbol: 'âš–' };
-  if (/Ğ±Ğ°Ğ½Ğº|ĞºÑ€ĞµĞ´Ğ¸Ñ‚|Ğ¼Ñ„Ğ¾|Ğ´Ğ¾Ğ»Ğ³/.test(text)) return { label: 'Ğ¤Ğ˜ĞĞĞĞ¡Ğ« Ğ˜ Ğ”ĞĞ›Ğ“Ğ˜', accent: '#e4b64d', symbol: 'â‚¸' };
-  return { label: 'ĞĞĞ’ĞĞ¡Ğ¢Ğ˜ Ğ˜ ĞŸĞ ĞĞ’Ğ', accent: '#e4b64d', symbol: 'ZE' };
-}
-
-function buildNewsCoverSvg(article) {
-  const title = newsDisplayTitle(article);
-  const theme = newsCoverTheme(article);
-  const lines = newsCoverLines(title);
-  const tspans = lines.map((line, index) =>
-    `<tspan x="88" dy="${index === 0 ? 0 : 67}">${xmlEscape(line)}</tspan>`
-  ).join('');
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">${xmlEscape(title)}</title>
-  <desc id="desc">Ğ ĞµĞ´Ğ°ĞºÑ†Ğ¸Ğ¾Ğ½Ğ½Ğ°Ñ Ğ¾Ğ±Ğ»Ğ¾Ğ¶ĞºĞ° ZakonExpert</desc>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#06172d"/><stop offset="0.58" stop-color="#0d2f58"/><stop offset="1" stop-color="#174e7d"/></linearGradient>
-    <radialGradient id="glow" cx="80%" cy="20%" r="70%"><stop stop-color="${theme.accent}" stop-opacity=".24"/><stop offset="1" stop-color="${theme.accent}" stop-opacity="0"/></radialGradient>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
-  <g fill="none" stroke="${theme.accent}" stroke-opacity=".16"><circle cx="1010" cy="205" r="178" stroke-width="2"/><circle cx="1010" cy="205" r="132"/><path d="M1010 58l126 70v142l-126 76-126-76V128z" stroke-width="3"/></g>
-  <g transform="translate(910 105)"><rect width="200" height="200" rx="100" fill="#06172d" fill-opacity=".58" stroke="${theme.accent}" stroke-width="3"/><text x="100" y="125" text-anchor="middle" fill="${theme.accent}" font-family="Arial, sans-serif" font-size="72" font-weight="700">${xmlEscape(theme.symbol)}</text></g>
-  <rect x="88" y="72" width="74" height="4" rx="2" fill="${theme.accent}"/>
-  <text x="88" y="113" fill="${theme.accent}" font-family="Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="2">${xmlEscape(theme.label)}</text>
-  <text x="88" y="218" fill="#ffffff" font-family="Arial, sans-serif" font-size="53" font-weight="700">${tspans}</text>
-  <line x1="88" y1="525" x2="1112" y2="525" stroke="#ffffff" stroke-opacity=".18"/>
-  <text x="88" y="574" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700" letter-spacing="2">ZAKONEXPERT</text>
-  <text x="1112" y="574" text-anchor="end" fill="#ffffff" fill-opacity=".62" font-family="Arial, sans-serif" font-size="19">Ğ®Ñ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ¸Ğ¹ Ñ€Ğ°Ğ·Ğ±Ğ¾Ñ€ Â· ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½</text>
-</svg>`;
-}
-
-const NEWS_CATEGORY_SLUGS = new Set([
-  'Ğ°Ñ€ĞµÑÑ‚Ñ‹', 'finance', 'chsi', 'notarius', 'sud', 'alimenty', 'shtrafy', 'avto', 'laws',
-]);
-
-function newsCategoryPath(category, page = 1) {
-  const base = category ? `/news/category/${encodeURIComponent(category)}` : '/news';
-  return page > 1 ? `${base}?page=${page}` : base;
-}
-
-async function renderNewsList(req, res, category = null) {
-  if (!newsDb) return res.status(503).send('News module not available');
-  const page = Math.max(1, parseInt(req.query.page) || 1);
-  const offset = (page - 1) * NEWS_PER_PAGE;
-
-  const [articles, total] = await Promise.all([
-    category ? newsDb.getByCategory(category, NEWS_PER_PAGE, offset) : newsDb.getPublished(NEWS_PER_PAGE, offset),
-    category ? newsDb.countByCategory(category) : newsDb.countPublished(),
-  ]);
-  const totalPages = Math.ceil(total / NEWS_PER_PAGE);
-
-  const canonical = `https://zakonexpertt.kz${newsCategoryPath(category, page)}`;
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: category ? `ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ ZakonExpert: ${category}` : 'ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ ZakonExpert',
-    url: `https://zakonexpertt.kz${newsCategoryPath(category)}`,
-    numberOfItems: total,
-    itemListElement: articles.slice(0, 10).map((a, i) => ({
-      '@type': 'ListItem',
-      position: offset + i + 1,
-      url: `https://zakonexpertt.kz/news/${a.slug}`
-    }))
-  };
-
-  res.render('news/list', {
-    title: category
-      ? `ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ Ğ¿Ğ¾ Ñ‚ĞµĞ¼Ğµ Â«${category}Â» | ZakonExpert`
-      : 'ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ Ğ¿Ğ¾ Ğ°Ñ€ĞµÑÑ‚Ğ°Ğ¼ ÑÑ‡ĞµÑ‚Ğ¾Ğ² Ğ¸ Ğ§Ğ¡Ğ˜ | ZakonExpert',
-    description: 'ĞĞºÑ‚ÑƒĞ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ½Ğ¾Ğ²Ğ¾ÑÑ‚Ğ¸ Ğ¾ Ğ±Ğ°Ğ½ĞºĞ°Ñ…, Ğ°Ñ€ĞµÑÑ‚Ğ°Ñ… ÑÑ‡ĞµÑ‚Ğ¾Ğ², Ğ§Ğ¡Ğ˜, Ğ´Ğ¾Ğ»Ğ¶Ğ½Ğ¸ĞºĞ°Ñ… Ğ¸ Ğ·Ğ°ĞºĞ¾Ğ½Ğ°Ñ… ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°. Ğ®Ñ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ¸Ğµ ĞºĞ¾Ğ¼Ğ¼ĞµĞ½Ñ‚Ğ°Ñ€Ğ¸Ğ¸.',
-    canonical,
-    articles,
-    currentPage: page,
-    totalPages,
-    currentCategory: category,
-    allowSourceImages: process.env.NEWS_USE_SOURCE_IMAGES !== 'false',
-    schema,
-  });
-}
-
-// NEWS LIST
-app.get('/news', asyncHandler(async (req, res) => {
-  const category = String(req.query.cat || '').trim();
-  if (category === 'ĞĞ´Ğ²Ğ¾ĞºĞ°Ñ‚') return res.redirect(301, '/advocate');
-  if (category) {
-    if (!NEWS_CATEGORY_SLUGS.has(category)) return res.redirect(301, '/news');
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    return res.redirect(301, newsCategoryPath(category, page));
-  }
-  return renderNewsList(req, res);
-}));
-
-// NEWS CATEGORY
-app.get('/news/category/:category', asyncHandler(async (req, res) => {
-  if (!newsDb) return res.status(503).send('News module not available');
-  const category = String(req.params.category || '').trim();
-  if (!NEWS_CATEGORY_SLUGS.has(category)) return sendNotFound(res);
-  return renderNewsList(req, res, category);
-}));
-
-// NEWS RSS FEED
-app.get('/news/feed.xml', asyncHandler(async (req, res) => {
-  if (!newsDb) return res.status(503).send('News module not available');
-  const articles = await newsDb.getPublished(20, 0);
-  const items = articles.map(a => `
-    <item>
-      <title><![CDATA[${xmlCdata(newsDisplayTitle(a))}]]></title>
-      <link>https://zakonexpertt.kz/news/${a.slug}</link>
-      <guid isPermaLink="true">https://zakonexpertt.kz/news/${a.slug}</guid>
-      <pubDate>${new Date(a.published_at_source || a.published_at_site || a.created_at).toUTCString()}</pubDate>
-      <description><![CDATA[${xmlCdata(newsDisplayExcerpt(a))}]]></description>
-      <category><![CDATA[${xmlCdata(a.category || 'general')}]]></category>
-    </item>`).join('');
-
-  res.set('Content-Type', 'application/rss+xml; charset=utf-8');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>ZakonExpert â€” ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸</title>
-    <link>https://zakonexpertt.kz/news</link>
-    <description>ĞĞ¾Ğ²Ğ¾ÑÑ‚Ğ¸ Ğ¾Ğ± Ğ°Ñ€ĞµÑÑ‚Ğ°Ñ… ÑÑ‡ĞµÑ‚Ğ¾Ğ², Ğ§Ğ¡Ğ˜ Ğ¸ Ğ·Ğ°ĞºĞ¾Ğ½Ğ¾Ğ´Ğ°Ñ‚ĞµĞ»ÑŒÑÑ‚Ğ²Ğµ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°</description>
-    <language>ru</language>
-    <atom:link href="https://zakonexpertt.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
-    ${items}
-  </channel>
-</rss>`);
-}));
-
-// MAIN RSS FEED
-app.get('/feed.xml', (req, res) => res.redirect(301, '/news/feed.xml'));
-
-// SITEMAP-NEWS.XML
-app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
-  if (!newsDb) {
-    res.set('Content-Type', 'application/xml');
-    return res.send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-  }
-  const cutoff = Date.now() - (2 * 24 * 60 * 60 * 1000);
-  const articles = (await newsDb.getAllForSitemap()).filter(article => {
-    const publishedAt = article.published_at_source || article.published_at_site;
-    return publishedAt && Date.parse(publishedAt) >= cutoff;
-  });
-  const urls = articles.map(a => {
-    const publishedAt = a.published_at_source || a.published_at_site;
-    return `
-  <url>
-    <loc>https://zakonexpertt.kz/news/${xmlEscape(a.slug)}</loc>
-    <lastmod>${(a.updatedAt || a.published_at_source || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
-    <news:news>
-      <news:publication>
-        <news:name>ZakonExpert</news:name>
-        <news:language>ru</news:language>
-      </news:publication>
-      <news:publication_date>${xmlEscape(new Date(publishedAt).toISOString())}</news:publication_date>
-      <news:title>${xmlEscape(newsDisplayTitle(a))}</news:title>
-    </news:news>
-  </url>`;
-  }).join('');
-
-  res.set('Content-Type', 'application/xml');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
-  ${urls}
-</urlset>`);
-}));
-
-// SITEMAP-PAGES.XML
-function getCorePages() {
-  const pages = [
-    { url: '/', priority: '1.0', freq: 'weekly' },
-    { url: '/services', priority: '0.9', freq: 'monthly' },
-    { url: '/contact', priority: '0.8', freq: 'monthly' },
-    { url: '/news', priority: '0.9', freq: 'daily' },
-    { url: '/notaries', priority: '0.85', freq: 'weekly' },
-    { url: '/zamena-notariusa', priority: '0.85', freq: 'daily' },
-    { url: '/bailiffs', priority: '0.85', freq: 'weekly' },
-    { url: '/notary-search', priority: '0.8', freq: 'weekly' },
-    { url: '/bailiff-search', priority: '0.8', freq: 'weekly' },
-    { url: '/snyatie-aresta-so-scheta', priority: '0.9', freq: 'monthly' },
-    { url: '/otmena-ispolnitelnoi-nadpisi', priority: '0.9', freq: 'monthly' },
-    { url: '/vozrazhenie-na-ispolnitelnuyu-nadpis', priority: '0.85', freq: 'monthly' },
-    { url: '/snyatie-ogranichenii-chsi', priority: '0.85', freq: 'monthly' },
-    { url: '/snyatie-zapreta-na-avto', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-ogranicheniya-na-imushchestvo', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-zapreta-registracionnyh-deistvii', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-ogranichenii-u-notariusa', priority: '0.8', freq: 'monthly' },
-    { url: '/grafik-oplaty-zadolzhennosti', priority: '0.8', freq: 'monthly' },
-    { url: '/ubrat-procenty-i-rashody-chsi', priority: '0.8', freq: 'monthly' },
-    { url: '/arest-kaspi', priority: '0.85', freq: 'monthly' },
-    { url: '/arest-halyk-bank', priority: '0.85', freq: 'monthly' },
-    { url: '/arest-freedom-bank', priority: '0.85', freq: 'monthly' },
-    // Ğ ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñ‹
-    { url: '/snyatie-aresta-almaty', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-aresta-astana', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-aresta-shymkent', priority: '0.8', freq: 'monthly' },
-    { url: '/snyatie-aresta-taldykorgan', priority: '0.75', freq: 'monthly' },
-    { url: '/snyatie-aresta-karaganda', priority: '0.75', freq: 'monthly' },
-    // Ğ”Ğ¾Ğ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ñ‹Ğµ ÑĞµÑ€Ğ²Ğ¸ÑĞ½Ñ‹Ğµ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñ‹
-    { url: '/besspornost-dolga', priority: '0.8', freq: 'monthly' },
-    { url: '/alimenty-i-aresty', priority: '0.8', freq: 'monthly' },
-    { url: '/shtrafy-i-aresty', priority: '0.8', freq: 'monthly' },
-    { url: '/zakony', priority: '0.85', freq: 'weekly' },
-    { url: '/advocate', priority: '0.85', freq: 'monthly' },
-    { url: '/mediator', priority: '0.8', freq: 'monthly' },
-    { url: '/chsi-refinansirovanie',   priority: '0.8', freq: 'monthly' },
-    { url: '/otmena-resheniya-suda',   priority: '0.8', freq: 'monthly' },
-    { url: '/dokumenty',               priority: '0.8', freq: 'monthly' },
-    { url: '/reviews',                  priority: '0.85', freq: 'weekly' },
-    { url: '/rezultaty',             priority: '0.7', freq: 'monthly' },
-    { url: '/privacy', priority: '0.3', freq: 'yearly' },
-    // Ğ—Ğ°ĞºĞ¾Ğ½Ñ‹ â€” Ñ€Ğ°Ğ·Ğ´ĞµĞ»Ñ‹
-    { url: '/statyi', priority: '0.85', freq: 'weekly' },
-    { url: '/statyi?code=uk', priority: '0.8', freq: 'monthly' },
-    { url: '/statyi?code=koap', priority: '0.8', freq: 'monthly' },
-    { url: '/statyi?code=gk', priority: '0.8', freq: 'monthly' },
-    { url: '/statyi?code=tk', priority: '0.8', freq: 'monthly' },
-    { url: '/statyi?code=sk', priority: '0.8', freq: 'monthly' },
-    { url: '/statyi?code=upk', priority: '0.75', freq: 'monthly' },
-    // ĞšĞ°Ñ‚Ğ°Ğ»Ğ¾Ğ³Ğ¸ Ñ„Ğ¸Ğ½Ğ°Ğ½ÑĞ¾Ğ²Ñ‹Ñ… Ğ¾Ñ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ğ¹
-    { url: '/banks',          priority: '0.85', freq: 'weekly' },
-    { url: '/mfo',            priority: '0.85', freq: 'weekly' },
-    { url: '/lombards',       priority: '0.8',  freq: 'weekly' },
-    { url: '/courts',         priority: '0.8',  freq: 'weekly' },
-    { url: '/chambers',       priority: '0.8',  freq: 'weekly' },
-    { url: '/collectors',     priority: '0.8',  freq: 'weekly' },
-    { url: '/companies',      priority: '0.9',  freq: 'weekly' },
-    { url: '/proverka-kontragenta', priority: '0.95', freq: 'weekly' },
-    { url: '/proverka-bankrotstva', priority: '0.95', freq: 'weekly' },
-    { url: '/kk/companies',   priority: '0.75', freq: 'weekly' },
-    { url: '/en/companies',   priority: '0.75', freq: 'weekly' },
-    { url: '/zh/companies',   priority: '0.7',  freq: 'weekly' },
-    { url: '/tr/companies',   priority: '0.7',  freq: 'weekly' },
-    { url: '/companies/regions', priority: '0.8', freq: 'weekly' },
-    { url: '/gsi',            priority: '0.8',  freq: 'weekly' },
-    { url: '/insurance',      priority: '0.75', freq: 'weekly' },
-    { url: '/credit-bureaus', priority: '0.7',  freq: 'monthly' },
-    { url: '/regulators',     priority: '0.65', freq: 'monthly' },
-    { url: '/emergency',      priority: '0.6',  freq: 'monthly' },
-    // Ğ˜Ğ½ÑÑ‚Ñ€ÑƒĞ¼ĞµĞ½Ñ‚Ñ‹
-    { url: '/calculator',     priority: '0.85', freq: 'monthly' },
-    { url: '/marshrut-dolzhnika', priority: '0.9', freq: 'monthly' },
-    { url: '/diagnostika-aresta', priority: '0.95', freq: 'monthly', lastmod: '2026-08-24' },
-    { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
-    { url: '/gallery',        priority: '0.85', freq: 'monthly' },
-    { url: '/press',          priority: '0.7',  freq: 'monthly' },
-    { url: '/sms-1414',       priority: '0.9',  freq: 'monthly' },
-    // ĞĞ¾Ğ²Ñ‹Ğµ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñ‹ Ğ¸Ğ· Ğ¿Ğ»Ğ°Ğ½Ğ° x1000
-    { url: '/zapret-na-vyezd-iz-kazahstana',    priority: '0.85', freq: 'monthly' },
-    { url: '/zhaloba-na-chsi',                  priority: '0.85', freq: 'monthly' },
-    { url: '/chsi-ne-snimaet-arest-posle-oplaty', priority: '0.85', freq: 'monthly' },
-    { url: '/arest-zarplatnoy-karty',           priority: '0.85', freq: 'monthly' },
-    { url: '/snyat-arest-s-nedvizhimosti',      priority: '0.85', freq: 'monthly' },
-    { url: '/nadpis-ili-list',                  priority: '0.9',  freq: 'monthly' },
-  ];
-  const growthPages = [
-    { url: BANK_ARREST_HUB_PATH, priority: '0.95', freq: 'weekly', lastmod: '2026-08-24' },
-    ...BANK_ARREST_PAGES.map(page => ({ url: page.path, priority: page.priority >= 95 ? '0.9' : '0.82', freq: 'monthly', lastmod: page.reviewedAt })),
-    ...LEGAL_INTENT_PAGES.map(page => ({ url: page.path, priority: page.priority >= 94 ? '0.9' : '0.85', freq: 'monthly', lastmod: page.reviewedAt })),
-  ];
-  NEWS_CATEGORY_SLUGS.forEach(category => pages.push({
-    url: newsCategoryPath(category), priority: '0.75', freq: 'daily',
-  }));
-  growthPages.forEach(growthPage => {
-    const existing = pages.find(page => page.url === growthPage.url);
-    if (existing) Object.assign(existing, growthPage);
-    else pages.push(growthPage);
-  });
-  TOOLS.forEach(tool => {
-    if (!pages.some(page => page.url === tool.href)) {
-      pages.push({ url: tool.href, priority: '0.82', freq: 'monthly' });
-    }
-  });
-  if (companiesDb) {
-    companiesDb.regionStats().forEach(region => {
-      pages.push({ url: `/companies/region/${region.slug}`, priority: '0.6', freq: 'weekly' });
-    });
-  }
-  return pages;
-}
-
-function latestFileLastmod(relativePaths) {
-  const timestamps = (Array.isArray(relativePaths) ? relativePaths : [relativePaths])
-    .map(relativePath => {
-      try { return fs.statSync(path.join(__dirname, relativePath)).mtime; }
-      catch (_) { return null; }
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.getTime() - a.getTime());
-  return timestamps.length ? timestamps[0].toISOString().substring(0, 10) : '';
-}
-
-function corePageLastmod(page) {
-  if (page.lastmod) return String(page.lastmod).substring(0, 10);
-  const cleanPath = String(page.url || '').split('?', 1)[0];
-  if (!cleanPath || cleanPath === '/') return latestFileLastmod('public/index.html');
-  const candidates = [
-    'public' + cleanPath + '.html',
-    'public' + cleanPath + '/index.html',
-  ];
-  return latestFileLastmod(candidates);
-}
-
-app.get('/sitemap-pages.xml', (req, res) => {
-  const pages = getCorePages();
-  const urls = pages.map(page => {
-    const lastmod = corePageLastmod(page);
-    return `
-  <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(page.url)}</loc>${lastmod ? `
-    <lastmod>${lastmod}</lastmod>` : ''}
-    <changefreq>${page.freq}</changefreq>
-    <priority>${page.priority}</priority>
-  </url>`;
-  }).join('');
-
-  res.set('Content-Type', 'application/xml');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls}
-</urlset>`);
-});
-
-// SITEMAP.TXT â€” plain URL list for AI crawlers (GPTBot, PerplexityBot, ClaudeBot, etc.)
-// that prefer a lightweight format over parsing XML.
-app.get('/sitemap.txt', asyncHandler(async (req, res) => {
-  const urls = getCorePages().map(p => `https://zakonexpertt.kz${p.url}`);
-  openDataPages.sitemapEntries().forEach(entry => urls.push(`https://zakonexpertt.kz${entry.path}`));
-  if (newsDb) {
-    const articles = await newsDb.getAllForSitemap();
-    articles.forEach(a => urls.push(`https://zakonexpertt.kz/news/${a.slug}`));
-  }
-  res.set('Content-Type', 'text/plain; charset=utf-8');
-  res.send(urls.join('\n'));
-}));
-
-// SITEMAPS: CSV-backed catalogs (banks, courts, mfo, lombards, gsi, insurance, collectors, chambers)
-function csvSitemap(res, items, prefix, sourceFiles) {
-  const lastmod = latestFileLastmod(sourceFiles || []);
-  const urls = items.filter(item => item.slug).map(item => `
-  <url>
-    <loc>https://zakonexpertt.kz/${prefix}/${item.slug}</loc>${lastmod ? `
-    <lastmod>${lastmod}</lastmod>` : ''}
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>`).join('');
-  res.set('Content-Type', 'application/xml');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`);
-}
-
-app.get('/sitemap-banks.xml',      (req, res) => csvSitemap(res, getBanksData(),      'banks', 'Ğ‘Ğ°Ğ½ĞºĞ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-app.get('/sitemap-courts.xml',     (req, res) => csvSitemap(res, getCourtsData(),     'courts', 'Ğ¡ÑƒĞ´Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-app.get('/sitemap-chambers.xml',   (req, res) => csvSitemap(res, getChambersData(),   'chambers', ['ĞĞ¾Ñ‚Ğ°Ñ€Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ_Ğ¿Ğ°Ğ»Ğ°Ñ‚Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv', 'ĞŸĞ°Ğ»Ğ°Ñ‚Ñ‹_Ğ§Ğ¡Ğ˜_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv']));
-app.get('/sitemap-collectors.xml', (req, res) => csvSitemap(res, getCollectors(),     'collectors', 'ĞšĞ¾Ğ»Ğ»ĞµĞºÑ‚Ğ¾Ñ€ÑĞºĞ¸Ğµ_Ğ°Ğ³ĞµĞ½Ñ‚ÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-app.get('/sitemap-gsi.xml',        (req, res) => csvSitemap(res, getGsiData(),        'gsi', 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğµ_ÑÑƒĞ´ĞµĞ±Ğ½Ñ‹Ğµ_Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»Ğ¸_Ğ”ĞµĞ¿Ğ°Ñ€Ñ‚Ğ°Ğ¼ĞµĞ½Ñ‚Ñ‹_ÑÑÑ‚Ğ¸Ñ†Ğ¸Ğ¸.csv'));
-app.get('/sitemap-insurance.xml',  (req, res) => csvSitemap(res, getInsuranceData(),  'insurance', 'Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ñ‹Ğµ_ĞºĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ğ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'));
-app.get('/sitemap-mfo.xml', (req, res) => {
-  const { mfo } = getMfoData();
-  csvSitemap(res, mfo, 'mfo', 'ĞœĞ¤Ğ_Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´Ñ‹_ĞšÑ€ĞµĞ´Ğ¢Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv');
-});
-app.get('/sitemap-lombards.xml', (req, res) => {
-  const { lombards } = getMfoData();
-  csvSitemap(res, lombards, 'lombards', 'ĞœĞ¤Ğ_Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´Ñ‹_ĞšÑ€ĞµĞ´Ğ¢Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv');
-});
-
-app.get('/sitemap-open-data.xml', (req, res) => {
-  const urls = openDataPages.sitemapEntries().map(entry => `
-  <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(entry.path)}</loc>${entry.lastmod ? `
-    <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}
-    <changefreq>weekly</changefreq>
-    <priority>${entry.priority}</priority>
-  </url>`).join('');
-  res.set('Content-Type', 'application/xml');
-  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`);
-});
-
-// COMPANY SITEMAPS â€” bounded LRU cache. Caching every company sitemap caused a
-// memory leak: 81 chunks Ã— ~2.4 MB could retain roughly 190 MB in a 1 GB hosting
-// account. Two recent chunks are enough to absorb crawler retries.
-const _companiesSitemapCache = new Map();
-const COMPANIES_SITEMAP_CACHE_MAX = 2;
-function buildCompaniesSitemapChunk(chunk) {
-  let xml = _companiesSitemapCache.get(chunk);
-  if (xml) {
-    _companiesSitemapCache.delete(chunk);
-    _companiesSitemapCache.set(chunk, xml);
-    return xml;
-  }
-  const sourceDate = String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || new Date().toISOString()).substring(0, 10);
-  const urls = companiesDb.sitemapChunk(chunk).map(company => `
-  <url>
-    <loc>https://zakonexpertt.kz/company/${company.slug}</loc>
-    <lastmod>${sourceDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.55</priority>
-  </url>`).join('');
-  xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}
-</urlset>`;
-  _companiesSitemapCache.set(chunk, xml);
-  while (_companiesSitemapCache.size > COMPANIES_SITEMAP_CACHE_MAX) {
-    _companiesSitemapCache.delete(_companiesSitemapCache.keys().next().value);
-  }
-  return xml;
-}
-app.get(/^\/sitemap-companies-(\d+)\.xml$/, (req, res) => {
-  const chunk = Number.parseInt(req.params[0], 10);
-  const totalChunks = companiesDb ? companiesDb.sitemapChunkCount() : 0;
-  if (!chunk || chunk > totalChunks) return res.status(404).send('Sitemap chunk not found');
-
-  res.set('Content-Type', 'application/xml');
-  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-  res.send(buildCompaniesSitemapChunk(chunk));
-});
-
-// IMAGE SITEMAP â€” key SEO images (gallery + hero images on money pages)
-app.get('/sitemap-image.xml', (req, res) => {
-  const galleryImages = [
-    ['snyatie-aresta-scheta-zakonexpert.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ÑĞ¾ ÑÑ‡Ñ‘Ñ‚Ğ° ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert ÑÑ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ°Ñ Ğ¿Ğ¾Ğ¼Ğ¾Ñ‰ÑŒ'],
-    ['kak-snyat-arest-scheta-kazakhstan.svg', 'ĞšĞ°Ğº ÑĞ½ÑÑ‚ÑŒ Ğ°Ñ€ĞµÑÑ‚ ÑĞ¾ ÑÑ‡Ñ‘Ñ‚Ğ° Ğ² ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğµ â€” Ğ¿Ğ¾ÑˆĞ°Ğ³Ğ¾Ğ²Ğ°Ñ Ğ¸Ğ½ÑÑ‚Ñ€ÑƒĞºÑ†Ğ¸Ñ ZakonExpert'],
-    ['snyt-arest-kazakhstan-zakonexpert.svg', 'Ğ¡Ğ½ÑÑ‚ÑŒ Ğ°Ñ€ĞµÑÑ‚ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” Kaspi Halyk ĞœĞ¤Ğ Ğ§Ğ¡Ğ˜ ZakonExpert'],
-    ['arest-kaspi-halyk-bank-kazakhstan.svg', 'ĞÑ€ĞµÑÑ‚ Kaspi Ğ¸ Halyk Bank ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ZakonExpert'],
-    ['snyatie-aresta-zarplaty-chsi.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° Ñ Ğ·Ğ°Ñ€Ğ¿Ğ»Ğ°Ñ‚Ñ‹ Ğ§Ğ¡Ğ˜ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['mfo-arest-scheta-dolg-kazakhstan.svg', 'ĞœĞ¤Ğ Ğ°Ñ€ĞµÑÑ‚ ÑÑ‡Ñ‘Ñ‚Ğ° Ğ·Ğ° Ğ´Ğ¾Ğ»Ğ³ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['otmena-ispolnitelnoy-nadpisi-notariusa.svg', 'ĞÑ‚Ğ¼ĞµĞ½Ğ° Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° â€” ZakonExpert'],
-    ['besporno-dolg-mfo-bank-osporit.svg', 'Ğ¡Ğ¿Ğ¾Ñ€Ğ½Ğ¾ÑÑ‚ÑŒ Ğ´Ğ¾Ğ»Ğ³Ğ° ĞœĞ¤Ğ Ğ¸ Ğ±Ğ°Ğ½ĞºĞ° â€” ĞºĞ°Ğº Ğ¾ÑĞ¿Ğ¾Ñ€Ğ¸Ñ‚ÑŒ â€” ZakonExpert'],
-    ['snyatie-zapreta-na-avto-kazakhstan.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ·Ğ°Ğ¿Ñ€ĞµÑ‚Ğ° Ğ½Ğ° Ğ°Ğ²Ñ‚Ğ¾ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['snyatie-zapreta-vyezd-rubezh-kazakhstan.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ·Ğ°Ğ¿Ñ€ĞµÑ‚Ğ° Ğ½Ğ° Ğ²Ñ‹ĞµĞ·Ğ´ Ğ·Ğ° Ñ€ÑƒĞ±ĞµĞ¶ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['snyatie-aresta-imushchestvo-kazakhstan.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° Ñ Ğ¸Ğ¼ÑƒÑ‰ĞµÑÑ‚Ğ²Ğ° ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['pomosh-chsi-aresty-schetov-kazakhstan.svg', 'ĞŸĞ¾Ğ¼Ğ¾Ñ‰ÑŒ Ğ¿Ñ€Ğ¸ Ğ°Ñ€ĞµÑÑ‚Ğµ ÑÑ‡ĞµÑ‚Ğ¾Ğ² Ğ§Ğ¡Ğ˜ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ZakonExpert'],
-    ['grafik-platezhey-chsi-mfo-bank.svg', 'Ğ“Ñ€Ğ°Ñ„Ğ¸Ğº Ğ¿Ğ»Ğ°Ñ‚ĞµĞ¶ĞµĞ¹ Ğ§Ğ¡Ğ˜, ĞœĞ¤Ğ, Ğ±Ğ°Ğ½Ğº â€” ZakonExpert'],
-    ['snyatie-ogranicheniy-chsi-notarius.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸Ğ¹ Ğ§Ğ¡Ğ˜ Ğ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° â€” ZakonExpert'],
-    ['yurist-snyatie-arestov-almaty-kazakhstan.svg', 'Ğ®Ñ€Ğ¸ÑÑ‚ Ğ¿Ğ¾ ÑĞ½ÑÑ‚Ğ¸Ñ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ² Ğ² ĞĞ»Ğ¼Ğ°Ñ‚Ñ‹ â€” ZakonExpert'],
-    ['uslugi-zakonexpert-kazakhstan.svg', 'Ğ£ÑĞ»ÑƒĞ³Ğ¸ ZakonExpert ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ², Ğ§Ğ¡Ğ˜, ĞœĞ¤Ğ, Ğ°Ğ´Ğ²Ğ¾ĞºĞ°Ñ‚'],
-  ];
-  const heroImages = [
-    ['/arest-kaspi', 'arest-kaspi-halyk-bank-kazakhstan.svg', 'ĞÑ€ĞµÑÑ‚ ĞºĞ°Ñ€Ñ‚Ñ‹ Kaspi Bank ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ZakonExpert'],
-    ['/arest-halyk-bank', 'arest-kaspi-halyk-bank-kazakhstan.svg', 'ĞÑ€ĞµÑÑ‚ ÑÑ‡Ñ‘Ñ‚Ğ° Halyk Bank ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ZakonExpert'],
-    ['/snyatie-aresta-so-scheta', 'snyatie-aresta-scheta-zakonexpert.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ÑĞ¾ ÑÑ‡Ñ‘Ñ‚Ğ° ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” Ğ¿Ğ¾Ğ¼Ğ¾Ñ‰ÑŒ ÑÑ€Ğ¸ÑÑ‚Ğ° ZakonExpert'],
-    ['/snyatie-zapreta-na-avto', 'snyatie-zapreta-na-avto-kazakhstan.svg', 'Ğ¡Ğ½ÑÑ‚Ğ¸Ğµ Ğ·Ğ°Ğ¿Ñ€ĞµÑ‚Ğ° Ğ½Ğ° Ğ°Ğ²Ñ‚Ğ¾Ğ¼Ğ¾Ğ±Ğ¸Ğ»ÑŒ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑÑ€Ğ¸Ğ´Ğ¸Ñ‡ĞµÑĞºĞ°Ñ Ğ¿Ğ¾Ğ¼Ğ¾Ñ‰ÑŒ ZakonExpert'],
-    ['/snyatie-ogranichenii-chsi', 'pomosh-chsi-aresty-schetov-kazakhstan.svg', 'Ğ§Ğ¡Ğ˜ Ğ½Ğ°Ğ»Ğ¾Ğ¶Ğ¸Ğ» Ğ°Ñ€ĞµÑÑ‚ Ğ½Ğ° ÑÑ‡Ñ‘Ñ‚ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ¾Ğ³Ñ€Ğ°Ğ½Ğ¸Ñ‡ĞµĞ½Ğ¸Ğ¹ ZakonExpert ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½'],
-    ['/otmena-ispolnitelnoi-nadpisi', 'otmena-ispolnitelnoy-nadpisi-notariusa.svg', 'ĞÑ‚Ğ¼ĞµĞ½Ğ° Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸ Ğ½Ğ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑĞ° Ğ¾ Ğ²Ğ·Ñ‹ÑĞºĞ°Ğ½Ğ¸Ğ¸ Ğ·Ğ°Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½Ğ½Ğ¾ÑÑ‚Ğ¸ â€” ZakonExpert'],
-    ['/vozrazhenie-na-ispolnitelnuyu-nadpis', 'infographic-spornost-dolga.svg', 'Ğ¡Ğ¿Ğ¾Ñ€Ğ½Ğ¾ÑÑ‚ÑŒ Ğ´Ğ¾Ğ»Ğ³Ğ° Ğ¸ Ğ¾Ñ‚Ğ¼ĞµĞ½Ğ° Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğ¹ Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸'],
-    ['/zakony', 'infographic-osnovanie-aresta.svg', 'ĞÑĞ½Ğ¾Ğ²Ğ°Ğ½Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ° ÑÑ‡Ñ‘Ñ‚Ğ° Ñ‡ĞµÑ€ĞµĞ· Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»ÑŒĞ½Ğ¾Ğµ Ğ¿Ñ€Ğ¾Ğ¸Ğ·Ğ²Ğ¾Ğ´ÑÑ‚Ğ²Ğ¾'],
-    ['/services', 'uslugi-zakonexpert-kazakhstan.svg', 'Ğ£ÑĞ»ÑƒĞ³Ğ¸ ZakonExpert ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½ â€” ÑĞ½ÑÑ‚Ğ¸Ğµ Ğ°Ñ€ĞµÑÑ‚Ğ¾Ğ², Ğ¾Ñ‚Ğ¼ĞµĞ½Ğ° Ğ½Ğ°Ğ´Ğ¿Ğ¸ÑĞ¸, Ğ§Ğ¡Ğ˜, ĞœĞ¤Ğ, Ğ°Ğ´Ğ²Ğ¾ĞºĞ°Ñ‚'],
-  ];
-
-  let urls = `  <url>
-    <loc>https://zakonexpertt.kz/gallery</loc>
-${galleryImages.map(([file, caption]) => `    <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
-      <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
-    </image:image>`).join('\n')}
-  </url>`;
-
-  urls += heroImages.map(([page, file, caption]) => `
-  <url>
-    <loc>https://zakonexpertt.kz${page}</loc>
-    <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
-      <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
-    </image:image>
-  </url>`).join('');
-
-  res.set('Content-Type', 'application/xml');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-${urls}
-</urlset>`);
-});
-
-// Legacy static index (frozen 2026-06-19, only 6 of the current 32 sitemaps)
-// â€” redirect so it doesn't sit in Search Console as a separate stale entry.
-app.get('/sitemap.xml', (req, res) => res.redirect(301, '/sitemap-index.xml'));
-
-// SITEMAP INDEX
-function sitemapIndexEntry(sitemapPath, lastmod) {
-  return `  <sitemap>
-    <loc>https://zakonexpertt.kz${sitemapPath}</loc>${lastmod ? `
-    <lastmod>${lastmod}</lastmod>` : ''}
-  </sitemap>`;
-}
-
-app.get('/sitemap-index.xml', (req, res) => {
-  const companyLastmod = companiesDb
-    ? String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || '').substring(0, 10)
-    : '';
-  const entries = [
-    ['/sitemap-pages.xml', latestFileLastmod(['server.js', 'modules/bank-arrest-pages.js', 'modules/legal-intent-pages.js'])],
-    ['/sitemap-open-data.xml', latestFileLastmod(['data/open-data-inventory.json.br', 'data/open-data-snapshots.json', 'modules/open-data-config.js'])],
-    ['/sitemap-news.xml', ''],
-    ['/sitemap-notaries.xml', latestFileLastmod(['ĞĞ¾Ñ‚Ğ°Ñ€Ğ¸ÑƒÑÑ‹.csv', 'notaries.csv'])],
-    ['/sitemap-bailiffs.xml', latestFileLastmod(['Ğ§Ğ¡Ğ˜.csv', 'bailiffs.csv'])],
-    ['/sitemap-laws.xml', ''],
-    ['/sitemap-banks.xml', latestFileLastmod('Ğ‘Ğ°Ğ½ĞºĞ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-    ['/sitemap-courts.xml', latestFileLastmod('Ğ¡ÑƒĞ´Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-    ['/sitemap-chambers.xml', latestFileLastmod(['ĞĞ¾Ñ‚Ğ°Ñ€Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ_Ğ¿Ğ°Ğ»Ğ°Ñ‚Ñ‹_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv', 'ĞŸĞ°Ğ»Ğ°Ñ‚Ñ‹_Ğ§Ğ¡Ğ˜_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv'])],
-    ['/sitemap-collectors.xml', latestFileLastmod('ĞšĞ¾Ğ»Ğ»ĞµĞºÑ‚Ğ¾Ñ€ÑĞºĞ¸Ğµ_Ğ°Ğ³ĞµĞ½Ñ‚ÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-    ['/sitemap-gsi.xml', latestFileLastmod('Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğµ_ÑÑƒĞ´ĞµĞ±Ğ½Ñ‹Ğµ_Ğ¸ÑĞ¿Ğ¾Ğ»Ğ½Ğ¸Ñ‚ĞµĞ»Ğ¸_Ğ”ĞµĞ¿Ğ°Ñ€Ñ‚Ğ°Ğ¼ĞµĞ½Ñ‚Ñ‹_ÑÑÑ‚Ğ¸Ñ†Ğ¸Ğ¸.csv')],
-    ['/sitemap-insurance.xml', latestFileLastmod('Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ñ‹Ğµ_ĞºĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ğ¸_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-    ['/sitemap-mfo.xml', latestFileLastmod('ĞœĞ¤Ğ_Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´Ñ‹_ĞšÑ€ĞµĞ´Ğ¢Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-    ['/sitemap-image.xml', latestFileLastmod(['server.js', 'public/img/seo'])],
-    ['/sitemap-lombards.xml', latestFileLastmod('ĞœĞ¤Ğ_Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´Ñ‹_ĞšÑ€ĞµĞ´Ğ¢Ğ¾Ğ²Ğ°Ñ€Ğ¸Ñ‰ĞµÑÑ‚Ğ²Ğ°_ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°.csv')],
-  ];
-  const companyEntries = companiesDb
-    ? Array.from({ length: companiesDb.sitemapChunkCount() }, (_, index) => [`/sitemap-companies-${index + 1}.xml`, companyLastmod])
-    : [];
-  res.set('Content-Type', 'application/xml');
-  res.set('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
-  res.send(`<?xml version="1.0" encoding="UTF-8"?>
-<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${entries.concat(companyEntries).map(([sitemapPath, lastmod]) => sitemapIndexEntry(sitemapPath, lastmod)).join('\n')}
-</sitemapindex>`);
-});
-
-// Unique, lightweight editorial cover for every article. The SVG is generated
-// on request, so hundreds of news pages do not consume extra hosting storage
-// and never depend on third-party image hotlinks.
-app.get('/news/cover/:slug', asyncHandler(async (req, res) => {
-  if (!newsDb) return res.status(503).send('News module not available');
-  const slug = String(req.params.slug || '').replace(/\.svg$/i, '');
-  const article = await newsDb.getBySlug(slug);
-  if (!article) return res.status(404).send('Cover not found');
-  res.set({
-    'Content-Type': 'image/svg+xml; charset=utf-8',
-    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-    'X-Content-Type-Options': 'nosniff',
-  });
-  res.send(buildNewsCoverSvg(article));
-}));
-
-// NEWS DETAIL (must be after feed.xml, category and cover routes)
-app.get('/news/:slug', asyncHandler(async (req, res) => {
-  if (!newsDb) return res.status(503).send('News module not available');
-  const article = await newsDb.getBySlug(req.params.slug);
-  if (!article) return sendNotFound(res);
-
-  const displayTitle = newsDisplayTitle(article);
-  const displayExcerpt = newsDisplayExcerpt(article);
-  const isAdvokat = article.category === 'ĞĞ´Ğ²Ğ¾ĞºĞ°Ñ‚';
-  const generated = !isAdvokat && newsImporter?.buildGeneratedContent
-    ? newsImporter.buildGeneratedContent(displayTitle, displayExcerpt)
-    : {};
-  const articleView = {
-    ...article,
-    display_title: displayTitle,
-    display_excerpt: displayExcerpt,
-    event_summary: article.event_summary || generated.event_summary || displayExcerpt,
-    why_important: article.why_important || generated.why_important || '',
-    legal_commentary: article.legal_commentary || generated.legal_commentary || '',
-    what_to_check: article.what_to_check || JSON.stringify(generated.what_to_check || []),
-    when_to_seek_help: article.when_to_seek_help || generated.when_to_seek_help || '',
-    display_cover: (
-      String(article.og_image || '').startsWith('/img/')
-      || (process.env.NEWS_USE_SOURCE_IMAGES !== 'false' && /^https:\/\//i.test(article.og_image || ''))
-    ) ? article.og_image : `/news/cover/${encodeURIComponent(article.slug)}.svg`,
-    fallback_cover: `/news/cover/${encodeURIComponent(article.slug)}.svg`,
-  };
-  const rawSchemaImage = articleView.display_cover;
-  const schemaImage = /^https:\/\//i.test(rawSchemaImage)
-    ? rawSchemaImage
-    : `https://zakonexpertt.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
-
-  const tagsArr = JSON.parse(article.tags || '[]');
-  const relatedRaw = tagsArr.length > 0
-    ? await newsDb.getByTags(tagsArr[0])
-    : await newsDb.getPublished(5, 0);
-  const related = relatedRaw
-    .filter(r => r.slug !== article.slug && (isAdvokat ? r.category === 'ĞĞ´Ğ²Ğ¾ĞºĞ°Ñ‚' : r.category !== 'ĞĞ´Ğ²Ğ¾ĞºĞ°Ñ‚'))
-    .slice(0, 4);
-
-  const pubDate = new Date(article.published_at_source || article.published_at_site || article.created_at);
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    headline: displayTitle,
-    description: article.meta_desc || displayExcerpt,
-    url: `https://zakonexpertt.kz/news/${article.slug}`,
-    datePublished: pubDate.toISOString(),
-    dateModified: article.updated_at || pubDate.toISOString(),
-    publisher: {
-      '@type': 'Organization',
-      name: 'ZakonExpert',
-      url: 'https://zakonexpertt.kz'
-    },
-    image: schemaImage,
-  };
-
-  res.render('news/detail', {
-    title: `${displayTitle.substring(0, 62)} | ZakonExpert`,
-    description: (article.meta_desc || displayExcerpt).substring(0, 160),
-    canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
-    ogType: 'article',
-    ogImage: articleView.display_cover,
-    article: articleView,
-    related,
-    schema,
-  });
-}));
-
-function secretsEqual(provided, expected) {
-  const expectedBuffer = Buffer.from(String(expected || ''));
-  const providedBuffer = Buffer.from(String(provided || ''));
-  return providedBuffer.length === expectedBuffer.length
-    && crypto.timingSafeEqual(providedBuffer, expectedBuffer);
-}
-
-// ADMIN KEY helper
-function checkAdminKey(req, res) {
-  const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey || adminKey.length < 24) {
-    logger.error('[Security] ADMIN_KEY is missing or shorter than 24 characters; admin route denied');
-    res.status(503).json({ error: 'Admin API Ğ¾Ñ‚ĞºĞ»ÑÑ‡Ñ‘Ğ½: Ğ½Ğ°ÑÑ‚Ñ€Ğ¾Ğ¹Ñ‚Ğµ ADMIN_KEY Ğ´Ğ»Ğ¸Ğ½Ğ¾Ğ¹ Ğ½Ğµ Ğ¼ĞµĞ½ĞµĞµ 24 ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ¾Ğ²' });
-    return false;
-  }
-  const provided = String(req.headers['x-admin-key'] || '');
-  if (!secretsEqual(provided, adminKey)) {
-    res.status(403).json({ error: 'Forbidden â€” provide a valid x-admin-key header' });
-    return false;
-  }
-  return true;
-}
-
-const ADMIN_MUTATION_PATHS = [
-  '/api/notaries/import',
-  '/api/notaries/refresh',
-  '/api/bailiffs/import',
-  '/api/news/import',
-  '/api/news/clear',
-  '/api/news/reset',
-  '/api/news/fix-images',
-  '/api/telegram/setup',
-];
-app.get(ADMIN_MUTATION_PATHS, (req, res) => {
-  res.set('Allow', 'POST');
-  res.status(405).json({ error: 'Method Not Allowed â€” use POST with x-admin-key' });
-});
-
-// POST /api/news/import â€” manual trigger
-app.post('/api/news/import', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsImporter) return res.status(503).json({ error: 'News module not available' });
-  const count = await newsImporter.importAll();
-  res.json({ ok: true, imported: count });
-}));
-
-// POST /api/news/clear â€” wipe ALL news. State-changing admin operations must
-// never be GET requests because crawlers, previews and browser prefetch can
-// invoke GET without the owner's intent.
-app.post('/api/news/clear', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
-  await newsDb.clearAll();
-  logger.info('[Admin] News DB cleared by admin request');
-  res.json({ ok: true, message: 'All news deleted. Run /api/news/import to reload.' });
-}));
-
-// POST /api/news/reset â€” wipe ALL news AND immediately re-import
-app.post('/api/news/reset', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
-  await newsDb.clearAll();
-  logger.info('[Admin] News DB cleared, starting fresh import...');
-  // Run import in background, respond immediately
-  res.json({ ok: true, message: 'DB cleared. Import started in background. Check /api/news/status in 2-3 minutes.' });
-  try {
-    const count = await newsImporter.importAll();
-    logger.info(`[Admin] Fresh import done. Imported: ${count}`);
-  } catch (e) {
-    logger.error('[Admin] Fresh import failed: ' + e.message);
-  }
-}));
-
-// POST /api/news/fix-images â€” fetch og:image for existing articles that have none
-app.post('/api/news/fix-images', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsDb || !newsImporter) return res.status(503).json({ error: 'News module not available' });
-  res.json({ ok: true, message: 'Image fetch started in background. Check logs.' });
-  try {
-    const articles = await newsDb.getAllWithoutImage();
-    logger.info(`[fix-images] Found ${articles.length} articles without og_image`);
-    let updated = 0;
-    for (const a of articles) {
-      const urls = [...new Set([a.source_url, a.original_url].filter(Boolean))];
-      for (const url of urls) {
-        try {
-          const { ogImage } = await newsImporter.fetchPageMeta(url);
-          const img = newsImporter.normalizeSourceImage(ogImage);
-          if (img) {
-            await newsDb.updateOgImage(a._id, img);
-            updated++;
-            if (updated % 25 === 0) logger.info(`[fix-images] Progress: ${updated} images found`);
-            break;
-          }
-        } catch (_) {}
-        await new Promise(r => setTimeout(r, 350));
-      }
-    }
-    logger.info(`[fix-images] Done. Updated ${updated}/${articles.length}`);
-  } catch (e) {
-    logger.error('[fix-images] Error: ' + e.message);
-  }
-}));
-
-// GET /api/news/status â€” show stats
-app.get('/api/news/status', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  if (!newsDb) return res.status(503).json({ error: 'News DB not available' });
-  const stats    = await newsDb.getStats();
-  const latestPublishedAt = await newsDb.getLatestPublishedAt();
-  const importInfo = newsImporter ? newsImporter.getLastImportInfo() : {};
-  const parserReference = importInfo.lastImportTime || latestPublishedAt;
-  const parserStale = !parserReference || Date.now() - new Date(parserReference).getTime() > 8 * 60 * 60 * 1000;
-  const contentStale = !latestPublishedAt || Date.now() - new Date(latestPublishedAt).getTime() > 48 * 60 * 60 * 1000;
-  res.json({
-    ok: true,
-    ...stats,
-    sources: require('./config/news_sources.json').filter(s => s.enabled).length,
-    lastImportTime:  importInfo.lastImportTime  || null,
-    lastImportStats: importInfo.lastImportStats || null,
-    importInProgress: Boolean(importInfo.importInProgress),
-    latestPublishedAt,
-    stale: parserStale,
-    contentStale,
-    env: {
-      AUTO_PUBLISH_NEWS:    process.env.AUTO_PUBLISH_NEWS    || 'true',
-      NEWS_MIN_RELEVANCE:   process.env.NEWS_MIN_RELEVANCE   || '0.45',
-      NEWS_IMPORT_LIMIT:    process.env.NEWS_IMPORT_LIMIT    || '50',
-      NEWS_USE_SOURCE_IMAGES: process.env.NEWS_USE_SOURCE_IMAGES || 'true',
-    },
-  });
-}));
-
-// Public, non-sensitive parser health check for uptime monitoring.
-app.get('/api/news/health', asyncHandler(async (_req, res) => {
-  if (!newsDb) return res.status(503).json({ ok: false, error: 'News DB not available' });
-  const latestPublishedAt = await newsDb.getLatestPublishedAt();
-  const importInfo = newsImporter ? newsImporter.getLastImportInfo() : {};
-  const parserReference = importInfo.lastImportTime || latestPublishedAt;
-  const stale = !parserReference || Date.now() - new Date(parserReference).getTime() > 8 * 60 * 60 * 1000;
-  res.status(stale ? 503 : 200).json({
-    ok: !stale,
-    scheduled: BACKGROUND_JOBS_ENABLED,
-    latestPublishedAt,
-    lastImportTime: importInfo.lastImportTime || null,
-    importInProgress: Boolean(importInfo.importInProgress),
-  });
-}));
-
-// ===== NOTARY + BAILIFF DB: auto-import on startup if source is newer =====
-// This is data initialization, not an optional background job. It must run even
-// when cron/Telegram polling are disabled in production.
-setTimeout(async () => {
-  if (importNotaries) {
-    // Startup must be deterministic and fast. Network refresh belongs to the
-    // daily cron/manual admin action; here we only import the validated local
-    // snapshot when its version is newer than the DB.
-    try {
-      const count = await importNotaries();
-      if (count > 0) logger.info(`[Notaries] DB ready: ${count} notaries`);
-    } catch (e) { logger.warn('[Notaries] Startup import failed: ' + e.message); }
-  }
-  if (importBailiffs) {
-    try {
-      const count = await importBailiffs();
-      if (count > 0) logger.info(`[Bailiffs] DB ready: ${count} bailiffs`);
-    } catch (e) { logger.warn('[Bailiffs] Startup import failed: ' + e.message); }
-  }
-}, 5000);
-
-if (BACKGROUND_JOBS_ENABLED) {
-
-// Daily refresh from the official ENIS registry, followed by a validated import.
-// Archive-transfer notes are free text in ENIS and can change without notice.
-cron.schedule('15 3 * * *', async () => {
-  logger.info('[Cron] Daily notary+bailiff re-import starting...');
-  if (importNotaries) {
-    try {
-      if (refreshNotariesRegistry) await refreshNotariesRegistry();
-      const n = await importNotaries();
-      logger.info(`[Cron] Notaries: ${n}`);
-    }
-    catch (e) { logger.error('[Cron] Notary re-import failed: ' + e.message); }
-  }
-  if (importBailiffs) {
-    try { const n = await importBailiffs(); logger.info(`[Cron] Bailiffs: ${n}`); }
-    catch (e) { logger.error('[Cron] Bailiff re-import failed: ' + e.message); }
-  }
-});
-logger.info('Notary+Bailiff cron scheduled: daily 03:15');
-
-// The complete catalog is compact metadata (about 7 MB) and is refreshed
-// daily. Record materialisation starts after this metadata refresh.
-if (process.env.OPEN_DATA_AUTO_REFRESH !== 'false') {
-  cron.schedule('20 4 * * *', async () => {
-    logger.info('[Cron] Complete open-data catalog sync starting...');
-    try {
-      const inventory = await syncOpenDataInventory();
-      logger.info(`[Cron] Open-data catalog synced: ${inventory.processedCount}/${inventory.expectedCount}, ${inventory.digest}`);
-    } catch (error) {
-      logger.error('[Cron] Open-data catalog sync failed: ' + error.message);
-    }
-  });
-  logger.info('Open-data catalog cron scheduled: daily 04:20');
-}
-
-// Materialise official records as Brotli-compressed chunks only when an
-// operator explicitly opts the web process into this heavy job. On shared
-// Passenger hosting, traversing and writing thousands of cache files inside
-// the request-serving process can starve the event loop and make Passenger
-// report that the application could not be started. Production should run
-// `npm run cache-open-data-records` as a separate Plesk scheduled task instead.
-if (OPEN_DATA_RECORD_CACHE_WARMER_ENABLED) {
-  const runOpenDataCacheWarm = async reason => {
-    logger.info(`[Open data cache] ${reason}: materialisation starting...`);
-    try {
-      const result = await warmOpenDataRecordCache({
-        apiKey: EGOV_API_KEY,
-        datasets: openDataPages.listDatasets(),
-        onProgress: progress => {
-          if (progress.processed % 250 === 0) {
-            logger.info(`[Open data cache] ${progress.phase}: ${progress.processed}/${progress.total}, ${Math.round(progress.bytes / 1024 / 1024)} MB`);
-          }
-        },
-      });
-      logger.info(`[Open data cache] finished: ${result.completed} complete, ${result.failures.length} errors, ${Math.round(result.bytes / 1024 / 1024)} MB${result.stoppedForSpace ? ', disk limit reached' : ''}`);
-    } catch (error) {
-      logger.error('[Open data cache] materialisation failed: ' + error.message);
-    }
-  };
-  cron.schedule('45 4 * * *', () => runOpenDataCacheWarm('daily'));
-  const startupCacheTimer = setTimeout(() => runOpenDataCacheWarm('startup'), 45_000);
-  startupCacheTimer.unref?.();
-  logger.info('Open-data record cache warmer scheduled in web process: startup + daily 04:45');
-} else if (OPEN_DATA_RECORD_CACHE_ENABLED) {
-  logger.info('Open-data record cache enabled; bulk warmer delegated to an external scheduled task');
-}
-
-// Optional statistical aggregates for the older curated landing pages.
-if (EGOV_API_KEY && process.env.OPEN_DATA_AGGREGATE_REFRESH === 'true') {
-  cron.schedule('35 4 * * 1', async () => {
-    logger.info('[Cron] Curated open-data aggregate refresh starting...');
-    try {
-      const snapshot = await refreshOpenDataSnapshot({ apiKey: EGOV_API_KEY });
-      logger.info(`[Cron] Curated open data refreshed: ${snapshot.digest}`);
-    } catch (error) {
-      logger.error('[Cron] Curated open-data refresh failed: ' + error.message);
-    }
-  });
-  logger.info('Curated open-data aggregate cron scheduled: Monday 04:35');
-}
-
-// ===== SCHEDULED NEWS IMPORT (every 4 hours) =====
-if (newsImporter) {
-  // Run import every 4 hours
-  cron.schedule('0 */4 * * *', async () => {
-    logger.info('[Cron] Starting scheduled news import...');
-    try {
-      const count = await newsImporter.importAll();
-      logger.info(`[Cron] News import done. Imported: ${count}`);
-    } catch (e) {
-      logger.error('[Cron] News import failed: ' + e.message);
-    }
-  });
-  logger.info('News cron scheduled: every 4 hours');
-
-  // Run an initial import after startup when the feed is empty or stale.
-  setTimeout(async () => {
-    try {
-      const existing = await newsDb.countPublished();
-      const latestPublishedAt = await newsDb.getLatestPublishedAt();
-      const lastImportTime = newsImporter.getLastImportInfo().lastImportTime;
-      const freshnessReference = lastImportTime || latestPublishedAt;
-      const stale = !freshnessReference || Date.now() - new Date(freshnessReference).getTime() > 6 * 60 * 60 * 1000;
-      if (existing === 0 || stale) {
-        logger.info(`[Startup] News feed ${existing === 0 ? 'empty' : 'stale'}, running import...`);
-        await newsImporter.importAll();
-        logger.info('[Startup] Initial import done.');
-      }
-    } catch (e) {
-      logger.warn('[Startup] Initial import check failed: ' + e.message);
-    }
-  }, 10000);
-}
-} else {
-  logger.info('Background jobs disabled by DISABLE_BACKGROUND_JOBS');
-}
-
-// ===== APPLICATION FORM =====
-app.post('/api/application', leadLimiter, asyncHandler(async (req, res) => {
-  const { name, phone, bank, description } = req.body;
-  if (!name || !phone) {
-    return res.status(400).json({ error: 'Ğ˜Ğ¼Ñ Ğ¸ Ñ‚ĞµĞ»ĞµÑ„Ğ¾Ğ½ Ğ¾Ğ±ÑĞ·Ğ°Ñ‚ĞµĞ»ÑŒĞ½Ñ‹' });
-  }
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || '';
-  logger.info(`ĞĞ¾Ğ²Ğ°Ñ Ğ·Ğ°ÑĞ²ĞºĞ°: ${name}, ${phone}, Ğ±Ğ°Ğ½Ğº: ${bank || 'â€”'}`);
-  telegram.notifyApplication({ name, phone, bank, description }, ip, ua);
-  res.json({ ok: true });
-}));
-
-// ===== CLICK TRACKING =====
-let clicksDb = null;
-try { clicksDb = require('./modules/clicks-db'); } catch (e) { logger.warn('clicks-db not loaded: ' + e.message); }
-
-app.get('/api/document-download-counts', asyncHandler(async (req, res) => {
-  const counts = clicksDb ? await clicksDb.getDocumentDownloadCounts() : {};
-  res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=300');
-  res.json({ counts });
-}));
-
-app.get('/download-document/:filename', asyncHandler(async (req, res) => {
-  const filename = String(req.params.filename || '');
-  if (!/^[a-z0-9_-]+\.(?:docx|pdf)$/i.test(filename)) return sendNotFound(res);
-  const downloadsRoot = path.resolve(__dirname, 'public', 'downloads');
-  const resolved = path.resolve(downloadsRoot, filename);
-  if (!resolved.startsWith(`${downloadsRoot}${path.sep}`) || !fs.existsSync(resolved)) return sendNotFound(res);
-  const documentId = filename.replace(/\.(?:docx|pdf)$/i, '');
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || '';
-  if (clicksDb && !/bot|crawler|spider|slurp|headless/i.test(ua)) {
-    await clicksDb.recordClick({
-      type: 'document_download',
-      target: documentId,
-      page: '/dokumenty',
-      format: path.extname(filename).slice(1).toLowerCase(),
-      ip,
-      ua,
-    });
-  }
-  res.set('Cache-Control', 'private, no-store');
-  return res.download(resolved, filename);
-}));
-
-const TRACK_CLICK_TYPES = new Set(['phone', 'whatsapp']);
-const TRACK_CLICK_TARGETS = new Set(['main', 'advocate', 'mediator']);
-app.post('/api/track-click', asyncHandler(async (req, res) => {
-  const { type, target, page } = req.body || {};
-  if (!TRACK_CLICK_TYPES.has(type) || !TRACK_CLICK_TARGETS.has(target)) return res.json({ ok: false });
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || '';
-  if (clicksDb) clicksDb.recordClick({ type, target, page: page || '/', ip, ua }).catch(() => {});
-  telegram.notifyClick(type, target, page || '/', ip, ua);
-  res.json({ ok: true });
-}));
-
-// Lightweight product-analytics events (calculator_completed, copy_link, etc.) â€”
-// logged for later reporting, deliberately does NOT ping Telegram like
-// /api/track-click does, so it can be wired into high-frequency UI actions
-// without spamming the lead-notification channel.
-const ANALYTICS_EVENT_TYPES = new Set([
-  'submit_iin', 'calculator_completed', 'bin_search_completed', 'open_case',
-  'download_document', 'copy_link', 'external_campaign_visit',
-  'click_cta_bailiff', 'click_cta_notary', 'send_document',
-  'click_document_review', 'click_whatsapp_after_download',
-  'view_company_page', 'view_company_cta', 'click_cta_company',
-  'company_check_started', 'company_check_completed', 'company_check_pdf',
-  'company_check_shared', 'click_cta_company_check',
-  'view_bank_arrest_page', 'click_cta_bank_arrest',
-  'view_legal_intent_page', 'click_cta_legal_intent',
-  'arrest_diagnostic_started', 'arrest_diagnostic_step',
-  'arrest_diagnostic_entry',
-  'arrest_diagnostic_completed', 'arrest_diagnostic_copy',
-  'arrest_diagnostic_whatsapp',
-]);
-const COMPANY_FUNNEL_EVENT_TYPES = new Set([
-  'view_company_page', 'view_company_cta', 'click_cta_company',
-]);
-const COMPANY_CTA_POSITIONS = new Set([
-  'sidebar', 'bottom', 'catalog-bottom', 'footer',
-  'desktop-floating', 'mobile-sticky', 'unknown',
-]);
-// Best-effort page_type classifier so LEAD-TRACKING-PLAN reports can group
-// events without re-deriving it from the raw path every time.
-function classifyPageType(page) {
-  if (!page) return 'other';
-  if (page === '/' ) return 'home';
-  if (page === BANK_ARREST_HUB_PATH || BANK_ARREST_PATH_SET.has(page)) return 'bank_arrest';
-  if (LEGAL_INTENT_PATH_SET.has(page)) return 'legal_intent';
-  if (/^\/bailiff\//.test(page)) return 'bailiff_card';
-  if (/^\/notary\//.test(page)) return 'notary_card';
-  if (/^\/(?:(?:kk|en|zh|tr)\/)?company\//.test(page)) return 'company_card';
-  if (/^\/(?:(?:kk|en|zh|tr)\/)?companies$/.test(page)) return 'company_catalog';
-  if (/^\/(bailiffs|notaries|banks|mfo|lombards|collectors|insurance|gsi)$/.test(page)) return 'catalog';
-  if (/^\/(arest-|snyatie-|zapret-|otmena-|vozrazhenie-|grafik-)/.test(page)) return 'money_page';
-  if (page === '/dokumenty') return 'documents';
-  if (page === '/calculator' || /^\/tools(?:\/|$)/.test(page)) return 'calculator';
-  if (page === '/diagnostika-aresta') return 'arrest_diagnostic';
-  if (page === '/bin-search') return 'bin_search';
-  if (page === '/proverka-kontragenta') return 'company_check';
-  if (page === '/proverka-bankrotstva') return 'bankruptcy_check';
-  return 'other';
-}
-function normalizeAnalyticsPage(page) {
-  const clean = String(page || '/').split(/[?#]/, 1)[0].slice(0, 300);
-  if (!clean.startsWith('/')) return '/';
-  return clean.replace(
-    /^\/((?:kk|en|zh|tr)\/)?company\/(\d+)(?:-[^/]*)?\/?$/,
-    '/$1company/$2'
-  );
-}
-function classifyPageLocale(page) {
-  return String(page || '').match(/^\/(kk|en|zh|tr)(?:\/|$)/)?.[1] || 'ru';
-}
-function classifyDevice(userAgent) {
-  const ua = String(userAgent || '');
-  if (/bot|crawler|spider|slurp|headless/i.test(ua)) return 'bot';
-  if (/ipad|tablet|kindle|silk|android(?!.*mobile)/i.test(ua)) return 'tablet';
-  if (/mobi|iphone|ipod|android/i.test(ua)) return 'mobile';
-  return 'desktop';
-}
-app.post('/api/track-event', asyncHandler(async (req, res) => {
-  const {
-    type, target, page, utm, cta, offer_variant: offerVariant,
-    source_entity_type: sourceEntityType,
-    source_page: sourcePage,
-    service_type: serviceType,
-    document_type: documentType,
-  } = req.body || {};
-  if (!type || !ANALYTICS_EVENT_TYPES.has(type)) return res.json({ ok: false });
-  const safePage = normalizeAnalyticsPage(page);
-  const ua = req.headers['user-agent'] || '';
-  const companyFunnelEvent = COMPANY_FUNNEL_EVENT_TYPES.has(type);
-  const pageType = classifyPageType(safePage);
-  if (companyFunnelEvent && !['company_card', 'company_catalog'].includes(pageType)) {
-    return res.json({ ok: false });
-  }
-  if (clicksDb) {
-    const event = {
-      type,
-      target: companyFunnelEvent ? 'company-directory' : (target || utm || '-'),
-      page: safePage,
-      page_type: pageType,
-      cta_position: companyFunnelEvent
-        ? (COMPANY_CTA_POSITIONS.has(cta) ? cta : '')
-        : String(cta || '').slice(0, 50),
-      offer_variant: offerVariant === 'b' ? 'b' : 'a',
-      page_locale: classifyPageLocale(safePage),
-      device_type: classifyDevice(ua),
-      source_entity_type: ['bailiff', 'notary', 'company', 'bank', 'legal_intent'].includes(sourceEntityType) ? sourceEntityType : '',
-      source_page: normalizeAnalyticsPage(sourcePage || safePage),
-      service_type: ['arrest_diagnostic', 'document_review', 'legal_help'].includes(serviceType) ? serviceType : '',
-      document_type: ['notary', 'court', 'bailiff', 'state', 'unknown'].includes(documentType) ? documentType : '',
-      ...(companyFunnelEvent ? { funnel_version: 'v2' } : {
-        ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown',
-        ua,
-        utm: utm || '',
-      }),
-    };
-    clicksDb.recordClick(event).catch(() => {});
-  }
-  res.json({ ok: true });
-}));
-
-// ===== LEAD FORM (chatbot / contact form) =====
-let leadsDb = null;
-try { leadsDb = require('./modules/leads-db'); } catch (e) { logger.warn('leads-db not loaded: ' + e.message); }
-
-app.post('/api/lead', leadLimiter, asyncHandler(async (req, res) => {
-  const { name, phone, issue, question, page, source, campaign, consent } = req.body || {};
-  if (consent !== true) return res.status(400).json({ error: 'ĞĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ğ¾ ÑĞ¾Ğ³Ğ»Ğ°ÑĞ¸Ğµ Ğ½Ğ° Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºÑƒ Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ…' });
-  const safeName = String(name || '').trim().slice(0, 120);
-  const safePhone = String(phone || '').trim().slice(0, 40);
-  const phoneDigits = safePhone.replace(/\D/g, '');
-  const safeIssue = String(issue || 'other').trim().slice(0, 160);
-  const safeQuestion = String(question || '').trim().slice(0, 2000);
-  const safePage = String(page || '/').trim().slice(0, 300);
-  const safeSource = String(source || '').trim().slice(0, 120);
-  const safeCampaign = String(campaign || '').trim().slice(0, 160);
-  if (phoneDigits.length < 10 || phoneDigits.length > 15) {
-    return res.status(400).json({ error: 'Ğ£ĞºĞ°Ğ¶Ğ¸Ñ‚Ğµ ĞºĞ¾Ñ€Ñ€ĞµĞºÑ‚Ğ½Ñ‹Ğ¹ Ğ½Ğ¾Ğ¼ĞµÑ€ Ñ‚ĞµĞ»ĞµÑ„Ğ¾Ğ½Ğ°' });
-  }
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || '';
-  const lead = {
-    name: safeName,
-    phone: safePhone,
-    issue: safeIssue,
-    question: safeQuestion,
-    page: safePage,
-    source: safeSource,
-    campaign: safeCampaign,
-  };
-  if (leadsDb) {
-    try {
-      await leadsDb.recordLead({ ...lead, ip, ua });
-    } catch (error) {
-      logger.warn('Lead storage failed: ' + error.message);
-    }
-  }
-  telegram.notifyLead(lead, ip, ua);
-  res.json({ ok: true });
-}));
-
-// ===== LIVE CHAT (widget â†’ Telegram, owner replies via Telegram Reply) =====
-let chatDb = null;
-try { chatDb = require('./modules/chat-db'); } catch (e) { logger.warn('chat-db not loaded: ' + e.message); }
-
-// Enforce the public retention policy for site-only lead, chat and analytics
-// records. Contract/accounting documents are stored in separate workflows.
-setTimeout(() => {
-  const day = 24 * 60 * 60 * 1000;
-  clicksDb?.purgeOlderThan(Date.now() - 395 * day).catch(error => logger.warn('[Privacy] Click cleanup failed: ' + error.message));
-  leadsDb?.purgeOlderThan(Date.now() - 730 * day).catch(error => logger.warn('[Privacy] Lead cleanup failed: ' + error.message));
-  chatDb?.purgeOlderThan(Date.now() - 365 * day).catch(error => logger.warn('[Privacy] Chat cleanup failed: ' + error.message));
-  commentsDb?.purgeModeratorIps(Date.now() - 90 * day).catch(error => logger.warn('[Privacy] Comment IP cleanup failed: ' + error.message));
-}, 15000);
-
-const chatSendLimiter = new Map(); // sessionId -> [timestamps]
-function chatRateLimited(sessionId) {
-  const now = Date.now();
-  if (chatSendLimiter.size > 5000) {
-    for (const [key, timestamps] of chatSendLimiter) {
-      if (!timestamps.some(timestamp => now - timestamp < 60000)) chatSendLimiter.delete(key);
-      if (chatSendLimiter.size <= 5000) break;
-    }
-  }
-  const hits = (chatSendLimiter.get(sessionId) || []).filter(t => now - t < 60000);
-  hits.push(now);
-  chatSendLimiter.set(sessionId, hits);
-  return hits.length > 20; // 20 messages/minute per session is plenty for a real conversation
-}
-
-app.post('/api/chat/send', asyncHandler(async (req, res) => {
-  const sessionId = String(req.body?.sessionId || '').slice(0, 64);
-  const text = String(req.body?.text || '').trim().slice(0, 1000);
-  const page = String(req.body?.page || '').slice(0, 200);
-  if (req.body?.consent !== true) return res.status(400).json({ error: 'ĞĞµĞ¾Ğ±Ñ…Ğ¾Ğ´Ğ¸Ğ¼Ğ¾ ÑĞ¾Ğ³Ğ»Ğ°ÑĞ¸Ğµ Ğ½Ğ° Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚ĞºÑƒ ÑĞ¾Ğ¾Ğ±Ñ‰ĞµĞ½Ğ¸Ñ' });
-  if (!chatDb) return res.status(503).json({ error: 'Ğ§Ğ°Ñ‚ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿ĞµĞ½' });
-  if (!sessionId || !text) return res.status(400).json({ error: 'ĞŸÑƒÑÑ‚Ğ¾Ğµ ÑĞ¾Ğ¾Ğ±Ñ‰ĞµĞ½Ğ¸Ğµ' });
-  if (chatRateLimited(sessionId)) return res.status(429).json({ error: 'Ğ¡Ğ»Ğ¸ÑˆĞºĞ¾Ğ¼ Ğ¼Ğ½Ğ¾Ğ³Ğ¾ ÑĞ¾Ğ¾Ğ±Ñ‰ĞµĞ½Ğ¸Ğ¹, Ğ¿Ğ¾Ğ´Ğ¾Ğ¶Ğ´Ğ¸Ñ‚Ğµ Ğ½ĞµĞ¼Ğ½Ğ¾Ğ³Ğ¾' });
-
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  const ua = req.headers['user-agent'] || '';
-  const chatNumber = await chatDb.addClientMessage(sessionId, text, page);
-  const sent = await telegram.notifyChatMessage(chatNumber, text, page, ip, ua);
-  if (sent?.message_id) await chatDb.pushBotMsgId(sessionId, sent.message_id);
-  res.json({ ok: true });
-}));
-
-app.get('/api/chat/poll', asyncHandler(async (req, res) => {
-  const sessionId = String(req.query?.session || '').slice(0, 64);
-  const since = Number.parseInt(req.query?.since, 10) || 0;
-  if (!chatDb || !sessionId) return res.json({ messages: [], now: Date.now() });
-  const messages = await chatDb.getMessagesSince(sessionId, since);
-  res.json({ messages, now: Date.now() });
-}));
-
-// ===== TELEGRAM SETUP: Ğ¾Ğ¿Ñ€ĞµĞ´ĞµĞ»Ğ¸Ñ‚ÑŒ CHAT_ID =====
-app.post('/api/telegram/setup', asyncHandler(async (req, res) => {
-  if (!checkAdminKey(req, res)) return;
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) {
-    return res.json({ ok: false, error: 'TELEGRAM_BOT_TOKEN Ğ½Ğµ Ğ·Ğ°Ğ´Ğ°Ğ½ Ğ² .env' });
-  }
-  const chatId = await telegram.detectChatId();
-  if (!chatId) {
-    return res.json({
-      ok: false,
-      error: 'Ğ¡Ğ¾Ğ¾Ğ±Ñ‰ĞµĞ½Ğ¸Ğ¹ Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ¾. ĞĞ°Ğ¿Ğ¸ÑˆĞ¸Ñ‚Ğµ /start Ğ±Ğ¾Ñ‚Ñƒ Ğ¸ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ¸Ñ‚Ğµ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ†Ñƒ.',
-      token_hint: `Ğ‘Ğ¾Ñ‚ Ñ‚Ğ¾ĞºĞµĞ½ Ğ·Ğ°Ğ´Ğ°Ğ½ âœ“`,
-    });
-  }
-  // ĞĞ²Ñ‚Ğ¾-Ğ¿Ñ€Ğ¸Ğ¼ĞµĞ½ÑĞµĞ¼ Ğ² runtime (Ğ´Ğ¾ Ğ¿ĞµÑ€ĞµĞ·Ğ°Ğ¿ÑƒÑĞºĞ°)
-  process.env.TELEGRAM_CHAT_ID = chatId;
-  await telegram.send(`âœ… <b>ZakonExpert Ğ¿Ğ¾Ğ´ĞºĞ»ÑÑ‡Ñ‘Ğ½!</b>\n\nChat ID: <code>${chatId}</code>\nĞ¢ĞµĞ¿ĞµÑ€ÑŒ ÑƒĞ²ĞµĞ´Ğ¾Ğ¼Ğ»ĞµĞ½Ğ¸Ñ Ğ±ÑƒĞ´ÑƒÑ‚ Ğ¿Ñ€Ğ¸Ñ…Ğ¾Ğ´Ğ¸Ñ‚ÑŒ ÑÑĞ´Ğ°.\n\n<i>Ğ”Ğ¾Ğ±Ğ°Ğ²ÑŒÑ‚Ğµ Ğ² .env:\nTELEGRAM_CHAT_ID=${chatId}</i>`);
-  res.json({ ok: true, chat_id: chatId, note: `Ğ”Ğ¾Ğ±Ğ°Ğ²ÑŒÑ‚Ğµ TELEGRAM_CHAT_ID=${chatId} Ğ² .env Ğ´Ğ»Ñ Ğ¿Ğ¾ÑÑ‚Ğ¾ÑĞ½Ğ½Ğ¾Ğ¹ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‹` });
-}));
-
-// Health-check Ğ´Ğ»Ñ Ğ¼Ğ¾Ğ½Ğ¸Ñ‚Ğ¾Ñ€Ğ¸Ğ½Ğ³Ğ° ÑĞµÑ€Ğ²Ğ¸ÑĞ°
-app.get('/health', (req, res) => {
-    const companyStats = companiesDb ? companiesDb.stats() : null;
-    const openDataCache = getOpenDataCacheJobStatus();
-    res.json({
-        status: 'ok',
-        service: 'ZakonExpert',
-        release: RELEASE_ID,
-        egovKey: EGOV_API_KEY ? 'configured' : 'missing',
-        kgdApi: kgdCounterparty.configured ? 'configured' : 'missing',
-        goszakupApi: goszakup.configured ? 'configured' : 'missing',
-        openDataCache: {
-            enabled: OPEN_DATA_RECORD_CACHE_ENABLED,
-            warmerEnabled: OPEN_DATA_RECORD_CACHE_WARMER_ENABLED,
-            status: OPEN_DATA_RECORD_CACHE_WARMER_ENABLED && openDataCache.status === 'idle'
-              ? 'scheduled'
-              : (OPEN_DATA_RECORD_CACHE_ENABLED && openDataCache.status === 'idle' ? 'external' : openDataCache.status),
-            phase: openDataCache.phase,
-            processed: openDataCache.processed,
-            total: openDataCache.total,
-            completed: openDataCache.completed,
-            cachedRows: openDataCache.cachedRows,
-            megabytes: Math.round((openDataCache.bytes || 0) / 1024 / 1024),
-            errors: openDataCache.errors,
-            startedAt: openDataCache.startedAt,
-            finishedAt: openDataCache.finishedAt
-        },
-        companies: companyStats ? {
-            available: companyStats.available,
-            count: companyStats.count,
-            qualityReady: companyStats.qualityReady,
-            indexableCount: companyStats.indexableCount
-        } : null,
-        time: new Date().toISOString()
-    });
-});
-
-// ===== ĞšĞĞœĞœĞ•ĞĞ¢ĞĞ Ğ˜Ğ˜ =====
-app.post('/comments', commentLimiter, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-  if (!commentsDb) return res.redirect(req.headers.referer || '/');
-  const { type, slug, name, rating, text, backUrl, privacyConsent } = req.body;
-  if (!privacyConsent || !type || !slug || !text || text.trim().length < 3) {
-    return res.redirect(backUrl || req.headers.referer || '/');
-  }
-  await commentsDb.add({
-    type:   type.slice(0, 20),
-    slug:   slug.slice(0, 120),
-    name:   ((name || '').trim() || 'ĞĞ½Ğ¾Ğ½Ğ¸Ğ¼').slice(0, 50),
-    rating: Math.min(5, Math.max(1, parseInt(rating) || 5)),
-    text:   text.trim().slice(0, 600),
-    ip:     req.ip,
-  });
-  res.redirect((backUrl || req.headers.referer || '/') + '?comment=sent');
-}));
-
-function requireAdminPassword(req, res, next) {
-  const expected = process.env.ADMIN_PW || '';
-  const authorization = String(req.headers.authorization || '');
-  let provided = '';
-  if (authorization.startsWith('Basic ')) {
-    try {
-      const decoded = Buffer.from(authorization.slice(6), 'base64').toString('utf8');
-      provided = decoded.slice(decoded.indexOf(':') + 1);
-    } catch (_) {}
-  }
-  if (!expected || !secretsEqual(provided, expected)) {
-    res.set('WWW-Authenticate', 'Basic realm="ZakonExpert comments", charset="UTF-8"');
-    return res.status(401).send('Authentication required');
-  }
-  next();
-}
-
-app.get('/admin/comments', requireAdminPassword, asyncHandler(async (req, res) => {
-  const all = commentsDb ? await commentsDb.getAll() : [];
-  res.render('admin/comments', { comments: all });
-}));
-
-app.post('/admin/comments/:id/approve', requireAdminPassword, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-  if (commentsDb) await commentsDb.approve(req.params.id);
-  res.redirect('/admin/comments');
-}));
-
-app.post('/admin/comments/:id/delete', requireAdminPassword, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-  if (commentsDb) await commentsDb.remove(req.params.id);
-  res.redirect('/admin/comments');
-}));
-
-// ===== BIN SEARCH =====
-app.get('/bin-search', (req, res) => {
-  const bin = (req.query.bin || '').replace(/\D/g, '').slice(0, 12);
-  if (bin.length < 9) return res.render('bin-search/index', { bin, results: [], searched: false });
-  const results = [];
-  try { getBanksData().filter(b => b.bin === bin).forEach(b => results.push({ type: 'Ğ‘Ğ°Ğ½Ğº', name: b.shortName || b.name, url: '/banks/' + b.slug })); } catch(e){}
-  try { const { mfo, lombards } = getMfoData(); mfo.filter(m => m.bin === bin).forEach(m => results.push({ type: 'ĞœĞ¤Ğ', name: m.name, url: '/mfo/' + m.slug })); lombards.filter(m => m.bin === bin).forEach(m => results.push({ type: 'Ğ›Ğ¾Ğ¼Ğ±Ğ°Ñ€Ğ´', name: m.name, url: '/lombards/' + m.slug })); } catch(e){}
-  try { getCollectors().filter(c => c.bin === bin).forEach(c => results.push({ type: 'ĞšĞ¾Ğ»Ğ»ĞµĞºÑ‚Ğ¾Ñ€', name: c.name, url: '/collectors/' + c.slug })); } catch(e){}
-  try { getInsuranceData().filter(c => c.bin === bin).forEach(c => results.push({ type: 'Ğ¡Ñ‚Ñ€Ğ°Ñ…Ğ¾Ğ²Ğ°Ñ', name: c.shortName || c.name, url: '/insurance/' + c.slug })); } catch(e){}
-  try { getGsiData().filter(g => g.bin && g.bin === bin).forEach(g => results.push({ type: 'Ğ“Ğ¡Ğ˜', name: g.name, url: '/gsi/' + g.slug })); } catch(e){}
-  try {
-    if (companiesDb && companiesDb.available()) {
-      companiesDb.search(bin, 1, 5).items.forEach(company => results.push({
-        type: 'ĞšĞ¾Ğ¼Ğ¿Ğ°Ğ½Ğ¸Ñ',
-        name: company.name_ru || company.name_kk,
-        url: '/company/' + company.slug,
-      }));
-    }
-  } catch(e){}
-  if (clicksDb) clicksDb.recordClick({ type: 'bin_search_completed', target: bin, page: '/bin-search', ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown', ua: req.headers['user-agent'] || '' }).catch(() => {});
-  res.render('bin-search/index', { bin, results, searched: true });
-});
-
-// ===== ĞšĞĞ›Ğ¬ĞšĞ£Ğ›Ğ¯Ğ¢ĞĞ  =====
-app.get('/calculator', (req, res) => res.render('calculator/index', {}));
-app.get('/marshrut-dolzhnika', (req, res) => res.render('debt-route'));
-app.get('/diagnostika-aresta', (req, res) => res.render('arrest-diagnostic'));
-app.get('/proverka-kompanii-po-bin', (req, res) => res.redirect(301, '/proverka-kontragenta'));
-app.get('/proverka-kontragenta', (req, res) => {
-  if (Object.keys(req.query || {}).length) {
-    const bin = validateBin(req.query.bin);
-    return res.redirect(301, bin ? `/proverka-kontragenta#bin=${bin}` : '/proverka-kontragenta');
-  }
-  return res.render('company-check');
-});
-app.get('/proverka-bankrotstva', (req, res) => res.render('bankruptcy-check'));
-app.post('/api/company-check', externalApiLimiter, async (req, res) => {
-  res.set('Cache-Control', 'private, no-store');
-  const bin = validateBin(req.body?.bin);
-  if (!bin) {
-    return res.status(400).json({
-      error: 'Ğ’Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ Ğ‘Ğ˜Ğ Ğ¸Ğ· 12 Ñ†Ğ¸Ñ„Ñ€.',
-      code: 'INVALID_BIN',
-    });
-  }
-  const cached = companyCheckCache.get(bin);
-  if (cached && Date.now() - cached.savedAt < COMPANY_CHECK_CACHE_TTL_MS) {
-    res.set('X-Data-Cache', 'HIT');
-    return res.json({ ...cached.report, meta: { cached: true, cacheTtlMinutes: 30 } });
-  }
-  if (cached) companyCheckCache.delete(bin);
-
-  try {
-    const report = await companyCheckService.check(bin);
-    if (companyCheckCache.size >= COMPANY_CHECK_CACHE_LIMIT) {
-      const oldestKey = companyCheckCache.keys().next().value;
-      if (oldestKey) companyCheckCache.delete(oldestKey);
-    }
-    companyCheckCache.set(bin, { report, savedAt: Date.now() });
-    res.set('X-Data-Cache', 'MISS');
-    return res.json({ ...report, meta: { cached: false, cacheTtlMinutes: 30 } });
-  } catch (error) {
-    if (error.code === 'NO_OFFICIAL_DATA') {
-      const localRegistryChecked = error.sources?.egov === 'not_found';
-      return res.status(localRegistryChecked ? 404 : 503).json({
-        error: localRegistryChecked
-          ? 'ĞÑ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ñ Ñ Ñ‚Ğ°ĞºĞ¸Ğ¼ Ğ‘Ğ˜Ğ Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½Ğ° Ğ² Ğ¿Ğ¾Ğ´ĞºĞ»ÑÑ‡Ñ‘Ğ½Ğ½Ñ‹Ñ… Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ñ… Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ°Ñ….'
-          : 'ĞŸĞ¾Ğ´ĞºĞ»ÑÑ‡Ñ‘Ğ½Ğ½Ñ‹Ğµ Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¸ Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½Ğµ Ğ²ĞµÑ€Ğ½ÑƒĞ»Ğ¸ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ.',
-        code: 'NO_OFFICIAL_DATA',
-      });
-    }
-    logger.error(`[Company check] Request failed: ${error.code || error.message}`);
-    return res.status(502).json({
-      error: 'ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ ÑĞ¾Ğ±Ñ€Ğ°Ñ‚ÑŒ Ğ¾Ñ‚Ñ‡Ñ‘Ñ‚ Ğ¸Ğ· Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ñ… Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¾Ğ². ĞŸĞ¾Ğ²Ñ‚Ğ¾Ñ€Ğ¸Ñ‚Ğµ Ñ‡ĞµÑ€ĞµĞ· Ğ½ĞµÑĞºĞ¾Ğ»ÑŒĞºĞ¾ Ğ¼Ğ¸Ğ½ÑƒÑ‚.',
-      code: 'OFFICIAL_SOURCES_UNAVAILABLE',
-    });
-  }
-});
-function renderOpenDataPage(req, res, next, bodyView, bodyData, meta) {
-  const shared = {
-    formatDate: openDataPages.formatDate,
-    formatNumber: openDataPages.formatNumber,
-    recordCountLabel: openDataPages.recordCountLabel,
-  };
-  app.render(bodyView, { ...shared, ...bodyData }, (error, body) => {
-    if (error) return next(error);
-    res.render('news/layout', {
-      title: meta.title,
-      description: meta.description,
-      canonical: openDataPages.canonical(req.path),
-      schema: meta.schema,
-      noindex: Boolean(meta.noindex),
-      ogType: 'website',
-      enableAutoAds: false,
-      activeNav: 'open-data',
-      extraStyles: ['/css/open-data.css?v=20260826-2'],
-      extraScripts: ['/js/open-data-housing.js?v=20260826-2', ...(Array.isArray(meta.extraScripts) ? meta.extraScripts : [])],
-      body,
-    });
-  });
-}
-
-app.post('/api/open-data/housing-search', housingSearchLimiter, asyncHandler(async (req, res) => {
-  try {
-    const result = await searchHousingRecords({
-      fullName: req.body?.fullName,
-      apiKey: EGOV_API_KEY,
-      datasets: openDataPages.listDatasets(),
-      http: axios,
-    });
-    res.set('Cache-Control', 'no-store');
-    return res.json(result);
-  } catch (error) {
-    const status = /Ğ’Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ|ĞŸĞ¾Ğ´Ñ‚Ğ²ĞµÑ€Ğ´Ğ¸Ñ‚Ğµ/.test(error.message) ? 400 : 503;
-    logger.warn(`[Open data] Housing name lookup failed: ${error.code || error.message}`);
-    return res.status(status).json({ error: status === 400 ? error.message : 'ĞÑ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½Ğµ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ¸Ğ». ĞŸĞ¾Ğ²Ñ‚Ğ¾Ñ€Ğ¸Ñ‚Ğµ Ğ¿Ğ¾Ğ·Ğ¶Ğµ.' });
-  }
-}));
-
-app.post('/api/open-data/housing-records', housingRecordsLimiter, asyncHandler(async (req, res) => {
-  const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 180));
-  if (!dataset || !isHousingDataset(dataset)) return res.status(404).json({ error: 'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğ¹ Ğ½Ğ°Ğ±Ğ¾Ñ€ Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½' });
-  try {
-    const result = await fetchHousingRecordsPageCached({
-      dataset,
-      apiKey: EGOV_API_KEY,
-      cursor: req.body?.cursor,
-      fullName: req.body?.fullName,
-      limit: 50,
-      http: axios,
-    });
-    res.set('Cache-Control', 'private, no-store');
-    return res.json(result);
-  } catch (error) {
-    const status = /Ğ’Ğ²ĞµĞ´Ğ¸Ñ‚Ğµ|Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½/.test(error.message) ? 400 : 503;
-    logger.warn(`[Open data] Housing records request failed for ${dataset.key}: ${error.code || error.message}`);
-    return res.status(status).json({ error: status === 400 ? error.message : 'ĞĞµ ÑƒĞ´Ğ°Ğ»Ğ¾ÑÑŒ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ñ‚ÑŒ Ğ·Ğ°Ğ¿Ğ¸ÑĞ¸ Ğ¸Ğ· Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ°. ĞŸĞ¾Ğ²Ñ‚Ğ¾Ñ€Ğ¸Ñ‚Ğµ Ğ¿Ğ¾Ğ·Ğ¶Ğµ.' });
-  }
-}));
-
-app.post('/api/open-data/records', housingRecordsLimiter, asyncHandler(async (req, res) => {
-  const dataset = openDataPages.getDataset(String(req.body?.dataset || '').slice(0, 220));
-  if (!dataset || !dataset.liveAvailable) return res.status(404).json({ error: 'ĞĞ°Ğ±Ğ¾Ñ€ Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½' });
-  try {
-    const result = await fetchOpenDataRecordsCached({
-      dataset,
-      apiKey: EGOV_API_KEY,
-      offset: req.body?.offset,
-      limit: req.body?.limit,
-      query: req.body?.query,
-      http: axios,
-    });
-    res.set('Cache-Control', 'private, no-store');
-    return res.json(result);
-  } catch (error) {
-    const status = /Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½|Ğ½Ğµ Ğ½Ğ°Ğ¹Ğ´ĞµĞ½/.test(error.message) ? 400 : 503;
-    logger.warn(`[Open data] Records request failed for ${dataset.index}: ${error.code || error.message}`);
-    return res.status(status).json({
-      error: status === 400 ? error.message : 'ĞÑ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğ¹ API Ğ²Ñ€ĞµĞ¼ĞµĞ½Ğ½Ğ¾ Ğ½Ğµ Ğ¾Ñ‚Ğ²ĞµÑ‚Ğ¸Ğ». ĞŸĞ¾Ğ²Ñ‚Ğ¾Ñ€Ğ¸Ñ‚Ğµ Ğ¿Ğ¾Ğ·Ğ¶Ğµ.',
-    });
-  }
-}));
-
-app.get('/otkrytye-dannye', (req, res, next) => {
-  const snapshot = openDataPages.loadSnapshot();
-  const inventory = openDataPages.loadInventory();
-  const categories = openDataPages.categorySummaries();
-  const agencies = openDataPages.agencySummaries();
-  const housingReceived = openDataPages.housingGroup('housing_received');
-  const housingWaitlist = openDataPages.housingGroup('housing_waitlist');
-  const audit = openDataPages.getDataset('audit-commissions-2026-q2');
-  const rehab = openDataPages.getDataset('children-rehabilitation-alatau-2026-h1');
-  const governmentSector = openDataPages.listDatasets().filter(dataset => dataset.category === 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ ÑĞµĞºÑ‚Ğ¾Ñ€');
-  const title = 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° â€” Ğ¶Ğ¸Ğ»ÑŒÑ‘, Ğ°ÑƒĞ´Ğ¸Ñ‚ Ğ¸ ÑĞ¾Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ¿Ğ¾ĞºĞ°Ğ·Ğ°Ñ‚ĞµĞ»Ğ¸ | ZakonExpert';
-  const description = 'ĞŸĞ¾Ğ½ÑÑ‚Ğ½Ñ‹Ğµ ÑÑ€ĞµĞ·Ñ‹ Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ñ… Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°: Ğ¶Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸ Ğ¿Ğ¾ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ¼, Ğ¾Ñ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ¸ Ğ³Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ Ğ°ÑƒĞ´Ğ¸Ñ‚. Ğ˜ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¸ Ğ¸ Ğ´Ğ°Ñ‚Ñ‹ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ñ.';
-  renderOpenDataPage(req, res, next, 'open-data/hub-body', {
-    snapshot, inventory, categories, agencies, housingReceived, housingWaitlist, audit, rehab, governmentSector,
-    datasets: [audit, rehab],
-  }, {
-    title,
-    description,
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: req.path },
-    ]),
-  });
-});
-
-app.get('/zhilishchnye-spiski', (req, res, next) => {
-  const waitlist = openDataPages.housingGroup('housing_waitlist');
-  const received = openDataPages.housingGroup('housing_received');
-  const title = 'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° Ğ¿Ğ¾ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ¼ â€” Ğ¾Ñ‡ĞµÑ€ĞµĞ´ÑŒ Ğ¸ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ğ²ÑˆĞ¸Ğµ Ğ¶Ğ¸Ğ»ÑŒÑ‘';
-  const description = 'ĞÑ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ¶Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ°: Ğ¿Ğ¾Ğ¸ÑĞº Ğ¿Ğ¾ Ğ¤Ğ˜Ğ, Ğ¾Ñ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘, Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ğ²ÑˆĞ¸Ğµ ĞºĞ¾Ğ¼Ğ¼ÑƒĞ½Ğ°Ğ»ÑŒĞ½Ğ¾Ğµ Ğ¶Ğ¸Ğ»ÑŒÑ‘, ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸ Ğ¸ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ñ‹.';
-  renderOpenDataPage(req, res, next, 'open-data/housing-hub-body', { waitlist, received }, {
-    title,
-    description,
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸', path: req.path },
-    ]),
-  });
-});
-
-function renderHousingGroup(kind) {
-  return (req, res, next) => {
-    const group = openDataPages.housingGroup(kind);
-    const waitlist = kind === 'housing_waitlist';
-    const title = waitlist
-      ? 'ĞÑ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ¿Ğ¾ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ¼ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° â€” Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸ 2026'
-      : 'Ğ¡Ğ¿Ğ¸ÑĞºĞ¸ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ğ²ÑˆĞ¸Ñ… Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ¿Ğ¾ Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ¼ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° â€” Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ 2026';
-    const description = waitlist
-      ? 'Ğ¡Ğ¿Ğ¸ÑĞºĞ¸ Ğ¾Ñ‡ĞµÑ€ĞµĞ´Ğ¸ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ² ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğµ Ğ¿Ğ¾ Ğ¤Ğ˜Ğ, Ñ€ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ¼, ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸ÑĞ¼ Ğ¸ Ğ´Ğ°Ñ‚Ğ°Ğ¼ Ğ¿Ğ¾ÑÑ‚Ğ°Ğ½Ğ¾Ğ²ĞºĞ¸ Ğ½Ğ° ÑƒÑ‡Ñ‘Ñ‚.'
-      : 'Ğ ĞµĞ³Ğ¸Ğ¾Ğ½Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸ Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ğ²ÑˆĞ¸Ñ… ĞºĞ¾Ğ¼Ğ¼ÑƒĞ½Ğ°Ğ»ÑŒĞ½Ğ¾Ğµ Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ¿Ğ¾ Ğ¤Ğ˜Ğ, ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸ÑĞ¼, Ğ¿Ñ€Ğ¾Ğ³Ñ€Ğ°Ğ¼Ğ¼Ğ°Ğ¼ Ğ¸ Ğ´Ğ°Ñ‚Ğ°Ğ¼ Ğ¿Ñ€ĞµĞ´Ğ¾ÑÑ‚Ğ°Ğ²Ğ»ĞµĞ½Ğ¸Ñ.';
-    renderOpenDataPage(req, res, next, 'open-data/housing-group-body', { group }, {
-      title,
-      description,
-      schema: openDataPages.pageSchema(title, description, req.path, [
-        { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' },
-        { name: 'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸', path: '/zhilishchnye-spiski' },
-        { name: waitlist ? 'ĞÑ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘' : 'ĞŸĞ¾Ğ»ÑƒÑ‡Ğ¸Ğ»Ğ¸ Ğ¶Ğ¸Ğ»ÑŒÑ‘', path: req.path },
-      ]),
-    });
-  };
-}
-
-app.get('/zhilishchnye-spiski/ochered-na-zhile', renderHousingGroup('housing_waitlist'));
-app.get('/zhilishchnye-spiski/poluchili-zhile', renderHousingGroup('housing_received'));
-
-function renderHousingDataset(kind) {
-  return (req, res, next) => {
-    const dataset = openDataPages.getHousingDataset(kind, req.params.regionSlug);
-    if (!dataset) return sendNotFound(res);
-    const isWaitlist = kind === 'housing_waitlist';
-    const title = isWaitlist
-      ? `ĞÑ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ² ${dataset.regionPrepositional} â€” ÑĞ¿Ğ¸ÑĞ¾Ğº Ğ¸ ÑÑ‚Ğ°Ñ‚Ğ¸ÑÑ‚Ğ¸ĞºĞ° 2026`
-      : `Ğ¡Ğ¿Ğ¸ÑĞ¾Ğº Ğ¿Ğ¾Ğ»ÑƒÑ‡Ğ¸Ğ²ÑˆĞ¸Ñ… Ğ¶Ğ¸Ğ»ÑŒÑ‘ Ğ² ${dataset.regionPrepositional} â€” Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ 2026`;
-    const description = `${dataset.description} ĞŸĞ¾Ğ¸ÑĞº Ğ¿Ğ¾ Ğ¤Ğ˜Ğ, Ğ¿Ğ¾Ğ»Ğ½Ñ‹Ğ¹ ÑĞ¿Ğ¸ÑĞ¾Ğº Ğ·Ğ°Ğ¿Ğ¸ÑĞµĞ¹, ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸, Ğ´Ğ°Ñ‚Ñ‹, Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº Ğ¸ Ğ°ĞºÑ‚ÑƒĞ°Ğ»ÑŒĞ½Ğ¾ÑÑ‚ÑŒ.`;
-    const related = openDataPages.listDatasets(kind).filter(item => item.key !== dataset.key);
-    renderOpenDataPage(req, res, next, 'open-data/housing-detail-body', { dataset, related }, {
-      title,
-      description,
-      noindex: !(dataset.liveAvailable || dataset.hasData),
-      schema: openDataPages.datasetSchema(dataset, [
-        { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' },
-        { name: 'Ğ–Ğ¸Ğ»Ğ¸Ñ‰Ğ½Ñ‹Ğµ ÑĞ¿Ğ¸ÑĞºĞ¸', path: '/zhilishchnye-spiski' },
-        { name: isWaitlist ? 'ĞÑ‡ĞµÑ€ĞµĞ´ÑŒ Ğ½Ğ° Ğ¶Ğ¸Ğ»ÑŒÑ‘' : 'ĞŸĞ¾Ğ»ÑƒÑ‡Ğ¸Ğ»Ğ¸ Ğ¶Ğ¸Ğ»ÑŒÑ‘', path: isWaitlist ? '/zhilishchnye-spiski/ochered-na-zhile' : '/zhilishchnye-spiski/poluchili-zhile' },
-        { name: dataset.regionName, path: dataset.path },
-      ]),
-    });
-  };
-}
-
-app.get('/zhilishchnye-spiski/ochered-na-zhile/:regionSlug', renderHousingDataset('housing_waitlist'));
-app.get('/zhilishchnye-spiski/poluchili-zhile/:regionSlug', renderHousingDataset('housing_received'));
-
-app.get('/otkrytye-dannye/revizionnye-komissii-2-kvartal-2026', (req, res, next) => {
-  const dataset = openDataPages.getDataset('audit-commissions-2026-q2');
-  const title = 'ĞŸĞ¾ĞºĞ°Ğ·Ğ°Ñ‚ĞµĞ»Ğ¸ Ñ€ĞµĞ²Ğ¸Ğ·Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ñ… ĞºĞ¾Ğ¼Ğ¸ÑÑĞ¸Ğ¹ Ğ·Ğ° 2 ĞºĞ²Ğ°Ñ€Ñ‚Ğ°Ğ» 2026 Ğ³Ğ¾Ğ´Ğ°';
-  const description = 'ĞÑƒĞ´Ğ¸Ñ‚Ğ¾Ñ€ÑĞºĞ¸Ğµ Ğ¼ĞµÑ€Ğ¾Ğ¿Ñ€Ğ¸ÑÑ‚Ğ¸Ñ Ñ€ĞµĞ²Ğ¸Ğ·Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ñ… ĞºĞ¾Ğ¼Ğ¸ÑÑĞ¸Ğ¹ ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° Ğ·Ğ° 2 ĞºĞ²Ğ°Ñ€Ñ‚Ğ°Ğ» 2026 Ğ³Ğ¾Ğ´Ğ°: Ğ¾Ğ±ÑŠÑ‘Ğ¼ Ğ°ÑƒĞ´Ğ¸Ñ‚Ğ°, Ğ½Ğ°Ñ€ÑƒÑˆĞµĞ½Ğ¸Ñ, Ğ²Ğ¾ÑÑÑ‚Ğ°Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ½Ñ‹Ğµ ÑÑ€ĞµĞ´ÑÑ‚Ğ²Ğ°.';
-  renderOpenDataPage(req, res, next, 'open-data/audit-body', { dataset }, {
-    title,
-    description,
-    noindex: !dataset.hasData,
-    schema: openDataPages.datasetSchema(dataset, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'Ğ ĞµĞ²Ğ¸Ğ·Ğ¸Ğ¾Ğ½Ğ½Ñ‹Ğµ ĞºĞ¾Ğ¼Ğ¸ÑÑĞ¸Ğ¸', path: dataset.path },
-    ]),
-  });
-});
-
-app.get('/otkrytye-dannye/reabilitaciya-detey-alatau-2026', (req, res, next) => {
-  const dataset = openDataPages.getDataset('children-rehabilitation-alatau-2026-h1');
-  const title = 'Ğ ĞµĞ°Ğ±Ğ¸Ğ»Ğ¸Ñ‚Ğ°Ñ†Ğ¸Ñ Ğ´ĞµÑ‚ĞµĞ¹ Ğ² ÑĞ°Ğ½Ğ°Ñ‚Ğ¾Ñ€Ğ¸Ğ¸ Â«ĞĞ»Ğ°Ñ‚Ğ°ÑƒÂ» â€” Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ·Ğ° 2026 Ğ³Ğ¾Ğ´';
-  renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset, housingDataset: false }, {
-    title,
-    description: `${dataset.description} ĞĞºÑ‚ÑƒĞ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ·Ğ°Ğ¿Ğ¸ÑĞ¸ Ğ·Ğ°Ğ³Ñ€ÑƒĞ¶Ğ°ÑÑ‚ÑÑ Ğ½Ğ°Ğ¿Ñ€ÑĞ¼ÑƒÑ Ğ¸Ğ· Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ API data.egov.kz.`,
-    noindex: !(dataset.liveAvailable || dataset.hasData),
-    extraScripts: ['/js/open-data-records.js?v=20260826-3'],
-    schema: openDataPages.datasetSchema(dataset, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: dataset.shortTitle, path: dataset.path },
-    ]),
-  });
-});
-
-app.get('/otkrytye-dannye/gosudarstvennyy-sektor', (req, res, next) => {
-  const datasets = openDataPages.listDatasets().filter(dataset => dataset.category === 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ ÑĞµĞºÑ‚Ğ¾Ñ€');
-  const totalRows = datasets.reduce((sum, dataset) => sum + dataset.rowCount, 0);
-  const readyCount = datasets.filter(dataset => dataset.liveAvailable || dataset.hasData).length;
-  const partial = datasets.some(dataset => dataset.rowLimitReached || dataset.completeness !== 'complete');
-  const title = 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ³Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ğ¾Ğ³Ğ¾ ÑĞµĞºÑ‚Ğ¾Ñ€Ğ° ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° â€” ĞºĞ°Ñ‚Ğ°Ğ»Ğ¾Ğ³ Ğ½Ğ°Ğ±Ğ¾Ñ€Ğ¾Ğ²';
-  const description = 'Ğ’ÑĞµ Ğ¾Ğ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ğµ Ğ½Ğ°Ğ±Ğ¾Ñ€Ñ‹ ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸ Â«Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ ÑĞµĞºÑ‚Ğ¾Ñ€Â» Ğ½Ğ° data.egov.kz: Ğ°ĞºÑ‚ÑƒĞ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ²ĞµÑ€ÑĞ¸Ğ¸, Ñ‡Ğ¸ÑĞ»Ğ¾ Ğ·Ğ°Ğ¿Ğ¸ÑĞµĞ¹, ÑÑ‚Ñ€ÑƒĞºÑ‚ÑƒÑ€Ğ° Ğ¸ Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº.';
-  renderOpenDataPage(req, res, next, 'open-data/government-sector-body', { datasets, totalRows, readyCount, partial }, {
-    title,
-    description,
-    extraScripts: ['/js/open-data.js?v=20260826-1'],
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ ÑĞµĞºÑ‚Ğ¾Ñ€', path: req.path },
-    ]),
-  });
-});
-
-app.get('/otkrytye-dannye/kategorii', (req, res, next) => {
-  const categories = openDataPages.categorySummaries();
-  const totalDatasets = openDataPages.loadInventory().processedCount || openDataPages.listDatasets().length;
-  const title = 'ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸ Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ñ… Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° | ZakonExpert';
-  const description = `Ğ’ÑĞµ ${totalDatasets} Ğ¾Ğ¿ÑƒĞ±Ğ»Ğ¸ĞºĞ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ñ… Ğ½Ğ°Ğ±Ğ¾Ñ€Ğ° data.egov.kz Ğ¿Ğ¾ ${categories.length} ĞºĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸ÑĞ¼: Ğ¿Ğ¾Ğ¸ÑĞº, Ğ·Ğ°Ğ¿Ğ¸ÑĞ¸, Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¸ Ğ¸ Ğ´Ğ°Ñ‚Ñ‹ Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ñ.`;
-  renderOpenDataPage(req, res, next, 'open-data/categories-body', { categories, totalDatasets }, {
-    title, description,
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸', path: req.path },
-    ]),
-  });
-});
-
-app.get('/otkrytye-dannye/organizacii', (req, res, next) => {
-  const agencies = openDataPages.agencySummaries();
-  const totalDatasets = openDataPages.loadInventory().processedCount || openDataPages.listDatasets().length;
-  const title = 'Ğ“Ğ¾ÑĞ¾Ñ€Ğ³Ğ°Ğ½Ñ‹, Ğ°ĞºĞ¸Ğ¼Ğ°Ñ‚Ñ‹ Ğ¸ ĞºĞ²Ğ°Ğ·Ğ¸ÑĞµĞºÑ‚Ğ¾Ñ€ â€” Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ';
-  const description = `ĞÑ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ½Ğ°Ğ±Ğ¾Ñ€Ñ‹ ${agencies.length} Ğ¼Ğ¸Ğ½Ğ¸ÑÑ‚ĞµÑ€ÑÑ‚Ğ², Ğ°Ğ³ĞµĞ½Ñ‚ÑÑ‚Ğ², Ğ°ĞºĞ¸Ğ¼Ğ°Ñ‚Ğ¾Ğ² Ğ¸ ĞºĞ²Ğ°Ğ·Ğ¸Ğ³Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ñ… Ğ¾Ñ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ğ¹.`;
-  renderOpenDataPage(req, res, next, 'open-data/agencies-body', { agencies, totalDatasets }, {
-    title, description, extraScripts: ['/js/open-data.js?v=20260826-2'],
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'ĞÑ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ğ¸', path: req.path },
-    ]),
-  });
-});
-
-app.get('/otkrytye-dannye/istochniki', (req, res, next) => {
-  const { reviewedAt, sources } = openDataPages.officialDataSources();
-  const title = 'ĞÑ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¸ Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… ĞšĞ°Ğ·Ğ°Ñ…ÑÑ‚Ğ°Ğ½Ğ° | ZakonExpert';
-  const description = 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ, Ğ³Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğµ Ñ€ĞµĞµÑÑ‚Ñ€Ñ‹ Ğ¸ Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğµ API, Ğ¿Ğ¾Ğ´ĞºĞ»ÑÑ‡Ñ‘Ğ½Ğ½Ñ‹Ğµ Ğº ÑĞ¿Ñ€Ğ°Ğ²Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ°Ğ¼ ZakonExpert.';
-  renderOpenDataPage(req, res, next, 'open-data/sources-body', { reviewedAt, sources }, {
-    title, description,
-    schema: openDataPages.pageSchema(title, description, req.path, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' }, { name: 'Ğ˜ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸ĞºĞ¸', path: req.path },
-    ]),
-  });
-});
-
-function renderOpenDataGroup(groupType) {
-  return (req, res, next) => {
-    const group = groupType === 'category' ? openDataPages.findCategory(req.params.slug) : openDataPages.findAgency(req.params.slug);
-    if (!group) return sendNotFound(res);
-    const result = openDataPages.paginatedDatasets({
-      [groupType === 'category' ? 'categoryId' : 'agencyId']: group.id,
-      query: req.query.q,
-      page: req.query.page,
-      pageSize: 48,
-    });
-    const title = `${group.name} â€” ${result.total} Ğ½Ğ°Ğ±Ğ¾Ñ€Ğ¾Ğ² Ğ¾Ñ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ñ… Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ…`;
-    const description = `ĞŸĞ¾Ğ¸ÑĞº Ğ¸ Ğ¿Ñ€Ğ¾ÑĞ¼Ğ¾Ñ‚Ñ€ Ğ²ÑĞµÑ… Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ñ… Ğ·Ğ°Ğ¿Ğ¸ÑĞµĞ¹: ${group.name}. Ğ˜ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº data.egov.kz.`;
-    renderOpenDataPage(req, res, next, 'open-data/catalog-group-body', { groupType, group, result }, {
-      title, description,
-      noindex: Boolean(result.query || result.page > 1),
-      schema: openDataPages.pageSchema(title, description, req.path, [
-        { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' },
-        { name: groupType === 'category' ? 'ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸' : 'ĞÑ€Ğ³Ğ°Ğ½Ğ¸Ğ·Ğ°Ñ†Ğ¸Ğ¸', path: groupType === 'category' ? '/otkrytye-dannye/kategorii' : '/otkrytye-dannye/organizacii' },
-        { name: group.name, path: req.path },
-      ]),
-    });
-  };
-}
-
-app.get('/otkrytye-dannye/kategoriya/:slug', renderOpenDataGroup('category'));
-app.get('/otkrytye-dannye/organizaciya/:slug', renderOpenDataGroup('agency'));
-
-function renderGenericOpenDataDataset(req, res, next, dataset) {
-  if (!dataset || !['government_sector', 'catalog_dataset'].includes(dataset.kind)) return sendNotFound(res);
-  const title = `${dataset.title} â€” Ğ¾Ñ„Ğ¸Ñ†Ğ¸Ğ°Ğ»ÑŒĞ½Ñ‹Ğ¹ Ğ½Ğ°Ğ±Ğ¾Ñ€ Ğ´Ğ°Ğ½Ğ½Ñ‹Ñ… | ZakonExpert`;
-  const description = `${dataset.description} ĞŸĞ¾Ğ»Ğ½Ñ‹Ğµ Ğ·Ğ°Ğ¿Ğ¸ÑĞ¸, Ğ¿Ğ¾Ğ¸ÑĞº, Ğ´Ğ°Ñ‚Ğ° Ğ¾Ğ±Ğ½Ğ¾Ğ²Ğ»ĞµĞ½Ğ¸Ñ Ğ¸ ÑÑÑ‹Ğ»ĞºĞ° Ğ½Ğ° Ğ¸ÑÑ‚Ğ¾Ñ‡Ğ½Ğ¸Ğº.`;
-  const housingDataset = isHousingDataset(dataset);
-  renderOpenDataPage(req, res, next, 'open-data/generic-body', { dataset, housingDataset }, {
-    title,
-    description,
-    noindex: !(dataset.liveAvailable || dataset.hasData),
-    extraScripts: housingDataset ? [] : ['/js/open-data-records.js?v=20260826-3'],
-    schema: openDataPages.datasetSchema(dataset, [
-      { name: 'Ğ“Ğ»Ğ°Ğ²Ğ½Ğ°Ñ', path: '/' }, { name: 'ĞÑ‚ĞºÑ€Ñ‹Ñ‚Ñ‹Ğµ Ğ´Ğ°Ğ½Ğ½Ñ‹Ğµ', path: '/otkrytye-dannye' },
-      { name: dataset.category, path: dataset.category === 'Ğ“Ğ¾ÑÑƒĞ´Ğ°Ñ€ÑÑ‚Ğ²ĞµĞ½Ğ½Ñ‹Ğ¹ ÑĞµĞºÑ‚Ğ¾Ñ€' ? '/otkrytye-dannye/gosudarstvennyy-sektor' : '/otkrytye-dannye/kategorii' },
-      { name: dataset.title, path: dataset.path },
-    ]),
-  });
-}
-
-app.get('/otkrytye-dannye/gosudarstvennyy-sektor/:slug', (req, res, next) => {
-  const requestPath = `/otkrytye-dannye/gosudarstvennyy-sektor/${req.params.slug}`;
-  const dataset = openDataPages.getDatasetByPath(requestPath);
-  return renderGenericOpenDataDataset(req, res, next, dataset);
-});
-
-app.get('/otkrytye-dannye/nabor/:slug', (req, res, next) => {
-  const dataset = openDataPages.getDatasetByPath(`/otkrytye-dannye/nabor/${req.params.slug}`);
-  return renderGenericOpenDataDataset(req, res, next, dataset);
-});
-
-app.get('/tools', (req, res) => res.render('tools/index', { tools: TOOLS }));
-app.get('/tools/:slug', (req, res) => {
-  const tool = findTool(req.params.slug);
-  if (!tool) return sendNotFound(res);
-  res.render('tools/tool', { tool, tools: TOOLS });
-});
-
-// A real 404 response prevents crawlers from treating missing profiles as
-// indexable soft-404 redirects and gives visitors useful recovery links.
-app.use((req, res) => sendNotFound(res));
-
-// Ğ¦ĞµĞ½Ñ‚Ñ€Ğ°Ğ»Ğ¸Ğ·Ğ¾Ğ²Ğ°Ğ½Ğ½Ñ‹Ğ¹ Ğ¾Ğ±Ñ€Ğ°Ğ±Ğ¾Ñ‚Ñ‡Ğ¸Ğº Ğ´Ğ¾Ğ»Ğ¶ĞµĞ½ Ğ½Ğ°Ñ…Ğ¾Ğ´Ğ¸Ñ‚ÑŒÑÑ Ğ¿Ğ¾ÑĞ»Ğµ Ğ²ÑĞµÑ… Ğ¼Ğ°Ñ€ÑˆÑ€ÑƒÑ‚Ğ¾Ğ², Ğ¸Ğ½Ğ°Ñ‡Ğµ
-// Ğ¾ÑˆĞ¸Ğ±ĞºĞ¸ Ğ¸Ğ· Ğ¾Ğ±ÑŠÑĞ²Ğ»ĞµĞ½Ğ½Ñ‹Ñ… Ğ½Ğ¸Ğ¶Ğµ Ğ½ĞµĞ³Ğ¾ ÑÑ‚Ñ€Ğ°Ğ½Ğ¸Ñ† Ğ¿Ğ¾Ğ¿Ğ°Ğ´ÑƒÑ‚ Ğ² ÑÑ‚Ğ°Ğ½Ğ´Ğ°Ñ€Ñ‚Ğ½Ñ‹Ğ¹ HTML-Ğ¾Ñ‚Ğ²ĞµÑ‚
-// Express Ğ¸ Ğ¼Ğ¾Ğ³ÑƒÑ‚ Ñ€Ğ°ÑĞºÑ€Ñ‹Ñ‚ÑŒ Ğ»Ğ¸ÑˆĞ½Ğ¸Ğµ Ğ´ĞµÑ‚Ğ°Ğ»Ğ¸.
-app.use((err, req, res, next) => {
-  logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, err);
-  if (!res.headersSent) {
-    return res.status(err.status || 500).json({
-      error: 'Ğ’Ğ½ÑƒÑ‚Ñ€ĞµĞ½Ğ½ÑÑ Ğ¾ÑˆĞ¸Ğ±ĞºĞ° ÑĞµÑ€Ğ²ĞµÑ€Ğ°',
-      details: process.env.NODE_ENV === 'production' ? 'ĞŸÑ€Ğ¾Ğ¸Ğ·Ğ¾ÑˆĞ»Ğ° Ğ½ĞµĞ¿Ñ€ĞµĞ´Ğ²Ğ¸Ğ´ĞµĞ½Ğ½Ğ°Ñ Ğ¾ÑˆĞ¸Ğ±ĞºĞ°.' : err.message,
-    });
-  }
-  next(err);
-});
-
-// Ğ—Ğ°Ğ¿ÑƒÑĞº ÑĞµÑ€Ğ²ĞµÑ€Ğ°
-app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`ZakonExpert ÑĞµÑ€Ğ²ĞµÑ€ Ğ·Ğ°Ğ¿ÑƒÑ‰ĞµĞ½ Ğ½Ğ° Ğ¿Ğ¾Ñ€Ñ‚Ñƒ ${PORT}`);
-    logger.info(`EGOV_API_KEY: ${EGOV_API_KEY ? 'Ğ·Ğ°Ğ´Ğ°Ğ½ âœ“' : 'ĞĞ• Ğ—ĞĞ”ĞĞ â€” Ğ¿Ñ€Ğ¾Ğ²ĞµÑ€ĞºĞ° Ğ˜Ğ˜Ğ Ğ½Ğµ Ğ±ÑƒĞ´ĞµÑ‚ Ñ€Ğ°Ğ±Ğ¾Ñ‚Ğ°Ñ‚ÑŒ!'}`);
-    logger.info(`KGD_API_TOKEN: ${kgdCounterparty.configured ? 'Ğ·Ğ°Ğ´Ğ°Ğ½ âœ“' : 'ĞĞ• Ğ—ĞĞ”ĞĞ â€” Ğ½Ğ°Ğ»Ğ¾Ğ³Ğ¾Ğ²Ñ‹Ğ¹ Ñ€Ğ°Ğ·Ğ´ĞµĞ» Ğ±ÑƒĞ´ĞµÑ‚ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿ĞµĞ½'}`);
-    logger.info(`GOSZAKUP_API_TOKEN: ${goszakup.configured ? 'Ğ·Ğ°Ğ´Ğ°Ğ½ âœ“' : 'ĞĞ• Ğ—ĞĞ”ĞĞ â€” Ñ€Ğ°Ğ·Ğ´ĞµĞ» Ğ³Ğ¾ÑĞ·Ğ°ĞºÑƒĞ¿Ğ¾Ğº Ğ±ÑƒĞ´ĞµÑ‚ Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿ĞµĞ½'}`);
-    // Ğ—Ğ°Ğ¿ÑƒÑĞºĞ°ĞµĞ¼ Telegram Ğ±Ğ¾Ñ‚ (Ğ¿Ñ€Ğ¸Ğ½Ğ¸Ğ¼Ğ°ĞµÑ‚ ĞºĞ¾Ğ¼Ğ°Ğ½Ğ´Ñ‹ /stats, /leads, /help)
-    if (BACKGROUND_JOBS_ENABLED) {
-      telegram.startPolling();
-      logger.info('Telegram bot polling started âœ“');
-    } else {
-      logger.info('Telegram bot polling disabled');
-    }
-});
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éíëÏ7õ:-jZ.¶›­–)Ş³W&WV—&R‚vF÷FVçbr’æ6öæf–r‚“²òò}==m]"æVçbMâ-]=âí-½Íİí=à ¦6öç7BW‡&W72Ò&WV—&R‚vW‡&W72r“°¦6öç7B6÷'2Ò&WV—&R‚v6÷'2r“°¦6öç7BF‚Ò&WV—&R‚wF‚r“°¦6öç7Bg2Ò&WV—&R‚vg2r“°¦6öç7B7'—FòÒ&WV—&R‚v7'—Fòr“°¦6öç7B†VÆÖWBÒ&WV—&R‚v†VÆÖWBr“°¦6öç7B6ö×&W76–öâÒ&WV—&R‚v6ö×&W76–öâr“°¦6öç7B†–÷2Ò&WV—&R‚v†–÷2r“°¦6öç7B†ÖÃ&§2Ò&WV—&R‚w†ÖÃ&§2r“°¦6öç7B²cC¢WV–GcBÒÒ&WV—&R‚wWV–Br“°¦6öç7B7&öâÒ&WV—&R‚væöFRÖ7&öâr“°¦6öç7Bv–ç7FöâÒ&WV—&R‚wv–ç7Föâr“°¦6öç7B&VÆV6T6öæf–rÒ&WV—&R‚râöÖöGVÆW2÷&VÆV6RÖ6öæf–rr“° ¦6öç7BÄôuôÔ…õ4•¤RÒ"¢#B¢#C°¦6öç7BÄôuôÔ…ôd”ÄU2Ò#°¦6öç7B$TÄT4Uô”BÒ&VÆV6T6öæf–ræ–C° ¦gVæ7F–öâf–ÆTÆör†f–ÆVæÖRÂÆWfVÂ’°¢&WGW&âæWrv–ç7FöâçG&ç7÷'G2äf–ÆR‡°¢f–ÆVæÖS¢F‚æ¦ö–â…õöF—&æÖRÂf–ÆVæÖR’À¢ÆWfVÂÀ¢Ö‡6—¦S¢ÄôuôÔ…õ4•¤RÀ¢Ö„f–ÆW3¢ÄôuôÔ…ôd”ÄU2À¢F–Æ&ÆS¢G'VRÀ¢Ò“°§Ğ ¦gVæ7F–öâ6öç6öÆTÆör‚’°¢&WGW&âæWrv–ç7FöâçG&ç7÷'G2ä6öç6öÆR‡°¢f÷&ÖC¢v–ç7Föâæf÷&ÖBæ6öÖ&–æR€¢v–ç7Föâæf÷&ÖBæ6öÆ÷&—¦R‚’À¢v–ç7Föâæf÷&ÖBç&–çFb‚‡²F–ÖW7F×ÂÆWfVÂÂÖW76vRÂ7F6²Ò’Óâ°¢&WGW&âG·F–ÖW7F×ÒG¶ÆWfVÇÓ¢G·7F6²ÇÂÖW76vWÖ°¢Ò¢’À¢ÆWfVÃ¢v–æfòrÀ¢Ò“°§Ğ ¢òòÆW6²6GW&W27FF÷WB÷7FFW'"âf–ÆRÆöw2&R÷BÖ–âæBÇv—2&÷FFVBÂ6ğ¢òòâVæGFVæFVBÆ–6F–öâ6âæòÆöævW"f–ÆÂF†R†÷7F–ærF—6²à¦6öç7Bd”ÄUôÄôu5ôTä$ÄTBÒõâƒÇG'VWÇ–W2’Bö’çFW7B‡&ö6W72æVçbäd”ÄUôÄôu5ôTä$ÄTBÇÂrr“° ¦6öç7BÆövvW"Òv–ç7Föâæ7&VFTÆövvW"‡°¢ÆWfVÃ¢v–æfòrÀ¢f÷&ÖC¢v–ç7Föâæf÷&ÖBæ6öÖ&–æR€¢v–ç7Föâæf÷&ÖBçF–ÖW7F×‡²f÷&ÖC¢u•••’ÔÔÒÔDB„ƒ¦ÖÓ§72rÒ’À¢v–ç7Föâæf÷&ÖBæW'&÷'2‡²7F6³¢G'VRÒ’À¢v–ç7Föâæf÷&ÖBç7ÆB‚’À¢v–ç7Föâæf÷&ÖBç&–çFb‚‡²F–ÖW7F×ÂÆWfVÂÂÖW76vRÂ7F6²Ò’Óâ°¢&WGW&âG·F–ÖW7F×ÒG¶ÆWfVÇÓ¢G·7F6²ÇÂÖW76vWÖ°¢Ò¢’À¢G&ç7÷'G3¢¶6öç6öÆTÆör‚’Ââââ„d”ÄUôÄôu5ôTä$ÄTBò¶f–ÆTÆör‚væÆörrÂv–æfòr•Ò¢µÒ•ÒÀ¢W†6WF–öä†æFÆW'3¢¶6öç6öÆTÆör‚’Ââââ„d”ÄUôÄôu5ôTä$ÄTBò¶f–ÆTÆör‚vW†6WF–öç2æÆörrÂvW'&÷"r•Ò¢µÒ•ÒÀ¢&V¦V7F–öä†æFÆW'3¢¶6öç6öÆTÆör‚’Ââââ„d”ÄUôÄôu5ôTä$ÄTBò¶f–ÆTÆör‚w&V¦V7F–öç2æÆörrÂvW'&÷"r•Ò¢µÒ•ÒÀ§Ò“° ¢òòFVÆVw&Òæ÷F–f–6F–öç0¦6öç7BFVÆVw&ÒÒ&WV—&R‚râöÖöGVÆW2÷FVÆVw&Òr“°¦6öç7B²Æ÷t6öçFVçD&ö÷7BÒÒ&WV—&R‚râöÖöGVÆW2÷6VòÖ&Æö6·2r“°¦6öç7B²DôôÅ2Âf–æEFööÂÒÒ&WV—&R‚râöÖöGVÆW2÷FööÇ2Ö6FÆörr“°¦6öç7B²7&VFT¶vD6÷VçFW''G”6Æ–VçBÂfÆ–FFT&–âÒÒ&WV—&R‚râöÖöGVÆW2ö¶vBÖ6÷VçFW''G’r“°¦6öç7B²7&VFTv÷7¦·W6Æ–VçBÒÒ&WV—&R‚râöÖöGVÆW2öv÷7¦·Wr“°¦6öç7B²7&VFT6ö×ç”6†V6µ6W'f–6RÒÒ&WV—&R‚râöÖöGVÆW2ö6ö×ç’Ö6†V6²×6÷W&6W2r“°¦6öç7B²vWE&Vv–öäVÖ&ÆVÒÒÒ&WV—&R‚râöÖöGVÆW2÷&Vv–öâÖVÖ&ÆV×2r“°¦6öç7B°¢vWD&–Æ–fe&Vv–öä'•6ÇVrÀ¢vWD&–Æ–fe&Vv–öä'”æÖRÀ¢v—F„&–Æ–fe&Vv–öåF‡2À§ÒÒ&WV—&R‚râöÖöGVÆW2ö&–Æ–fb×&Vv–öç2r“°¦6öç7B°¢vWDæ÷F'•&Vv–öä'•6ÇVrÀ¢vWDæ÷F'•&Vv–öä'”æÖRÀ¢v—F„æ÷F'•&Vv–öåF‡2À§ÒÒ&WV—&R‚râöÖöGVÆW2öæ÷F'’×&Vv–öç2r“°¦6öç7B²Ç•&Vv—7G'•&—f7”÷fW'&–FRÒÒ&WV—&R‚râöÖöGVÆW2÷&Vv—7G'’×&—f7’r“°¦6öç7B÷VäFFvW2Ò&WV—&R‚râöÖöGVÆW2ö÷VâÖFF×vW2r“°¦6öç7B²&Vg&W6„÷VäFF6æ6†÷BÒÒ&WV—&R‚râöÖöGVÆW2ö÷VâÖFF×&Vg&W6‚r“°¦6öç7B²fWF6„†÷W6–æu&V6÷&G5vT66†VBÂ—4†÷W6–ætFF6WBÂ6V&6„†÷W6–æu&V6÷&G2ÒÒ&WV—&R‚râöÖöGVÆW2ö÷VâÖFFÖ†÷W6–ær×6V&6‚r“°¦6öç7B²fWF6„÷VäFF&V6÷&G466†VBÒÒ&WV—&R‚râöÖöGVÆW2ö÷VâÖFF×&V6÷&G2r“°¦6öç7B²vWD÷VäFF66†T¦ö%7FGW2Âv&Ô÷VäFF&V6÷&D66†RÒÒ&WV—&R‚râöÖöGVÆW2ö÷VâÖFFÖ66†R×v&ÖW"r“°¦6öç7B²7–æ4÷VäFF–çfVçF÷'’ÒÒ&WV—&R‚râ÷67&—G2÷7–æ2Ö÷VâÖFFÖ–çfVçF÷'’r“°¦6öç7B²æ÷&ÖÆ—¦U&Vv–öä¶W’ÒÒ&WV—&R‚râöÖöGVÆW2öæ÷F'’Ö&6†—fRr“°¦6öç7B²æ÷F'”¶W’Â&VDæ÷F'”6†ævW2ÒÒ&WV—&R‚râöÖöGVÆW2öæ÷F'’Ö6†ævW2r“°¦6öç7B²&W6öÇfTÆVv7”6FÆöt—FVÒÒÒ&WV—&R‚râöÖöGVÆW2÷6Vò×W&Â×öÆ–7’r“°¦6öç7B°¢$äµô%$U5Eô…T%õD‚À¢$äµô%$U5EõtU2À¢$äµô%$U5EõD…õ4UBÀ¢vWD&æ´'&W7EvT'•F‚À¢f–æD&æµ&V6÷&BÀ¢vWE&VÆFVD&æ´'&W7EvW2À¢vWD&æ´'&W7EF„f÷$&æ²À§ÒÒ&WV—&R‚râöÖöGVÆW2ö&æ²Ö'&W7B×vW2r“°¦6öç7B°¢ÄTtÅô”åDTåEõtU2À¢ÄTtÅô”åDTåEõD…õ4UBÀ¢vWDÆVvÄ–çFVçEvRÀ§ÒÒ&WV—&R‚râöÖöGVÆW2öÆVvÂÖ–çFVçB×vW2r“°¦6öç7B°¢”äDU„$ÄUôÄô4ÄU3¢4ôÕå•ôÄô4ÄU2À¢6FÆötÇFW&æFW2À¢6FÆöuFƒ¢6ö×ç”6FÆöuF„f÷"À¢6ö×ç•Fƒ¢6ö×ç•F„f÷"À¢vWDÆö6ÆS¢vWD6ö×ç”Æö6ÆRÀ§ÒÒ&WV—&R‚râöÖöGVÆW2ö6ö×ç’Ö“†âr“° ¢òò–æ—F–Æ—¦RD"æBæWw2–×÷'FW ¦ÆWBæWw4F"ÒçVÆÃ°¦ÆWBæWw4–×÷'FW"ÒçVÆÃ°§G'’°¢æWw4F"Ò&WV—&R‚râöÖöGVÆW2öF"r“°¢æWw4–×÷'FW"Ò&WV—&R‚râöÖöGVÆW2öæWw5ö–×÷'FW"r“°¢ÆövvW"æ–æfò‚tæWw2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚tæWw2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò–æ—F–Æ—¦Ræ÷F&–W2D ¦ÆWBæ÷F&–W4F"ÒçVÆÃ°¦ÆWB–×÷'Dæ÷F&–W2ÒçVÆÃ°¦ÆWB&Vg&W6„æ÷F&–W5&Vv—7G'’ÒçVÆÃ°§G'’°¢æ÷F&–W4F"Ò&WV—&R‚râöÖöGVÆW2öæ÷F&–W2ÖF"r“°¢‡²–×÷'Dæ÷F&–W2ÒÒ&WV—&R‚râ÷67&—G2ö–×÷'BÖæ÷F&–W2r’“°¢‡²&Vg&W6„æ÷F&–W5&Vv—7G'’ÒÒ&WV—&R‚râ÷67&—G2÷&Vg&W6‚Öæ÷F&–W2Ö77br’“°¢ÆövvW"æ–æfò‚tæ÷F&–W2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚tæ÷F&–W2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò–æ—F–Æ—¦R&–Æ–fg2D ¦ÆWB&–Æ–fg4F"ÒçVÆÃ°¦ÆWB–×÷'D&–Æ–fg2ÒçVÆÃ°§G'’°¢&–Æ–fg4F"Ò&WV—&R‚râöÖöGVÆW2ö&–Æ–fg2ÖF"r“°¢‡²–×÷'D&–Æ–fg2ÒÒ&WV—&R‚râ÷67&—G2ö–×÷'BÖ&–Æ–fg2r’“°¢ÆövvW"æ–æfò‚t&–Æ–fg2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚t&–Æ–fg2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò–æ—F–Æ—¦R6öÖÖVçG2D ¦ÆWB6öÖÖVçG4F"ÒçVÆÃ°§G'’°¢6öÖÖVçG4F"Ò&WV—&R‚râöÖöGVÆW2ö6öÖÖVçG2ÖF"r“°¢ÆövvW"æ–æfò‚t6öÖÖVçG2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚t6öÖÖVçG2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò–æ—F–Æ—¦RF†RÆ&vR¶¦¶‡7Fâ6ö×æ–W2&Vv—7G'’…5Æ—FRÂÆöFVBöâFVÖæB¦ÆWB6ö×æ–W4F"ÒçVÆÃ°¦ÆWB&Vv–öäÆ&VÂÒ‚’ÓâçVÆÃ°§G'’°¢6ö×æ–W4F"Ò&WV—&R‚râöÖöGVÆW2ö6ö×æ–W2ÖF"r“°¢&Vv–öäÆ&VÂÒ&WV—&R‚râöÖöGVÆW2ö6ö×ç’×&Vv–öâr’ç&Vv–öäÆ&VÃ°¢ÆövvW"æ–æfò‚t6ö×æ–W2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚t6ö×æ–W2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò–æ—F–Æ—¦RÆw2D ¦ÆWBÆw4F"ÒçVÆÃ°§G'’°¢Æw4F"Ò&WV—&R‚râöÖöGVÆW2öÆw2ÖF"r“°¢ÆövvW"æ–æfò‚tÆw2ÖöGVÆRÆöFVB)É2r“°§Ò6F6‚†R’°¢ÆövvW"çv&â‚tÆw2ÖöGVÆRæ÷BÆöFVC¢r²RæÖW76vR“°§Ğ ¢òò	Í­í-­			ÒM½ò]}íıİí=â½í=í-İğ¦gVæ7F–öâÖ6´––â†––â’°¢6öç7B6ÆVâÒ7G&–ær†––âÇÂrr’ç&WÆ6R‚õÄBörÂrr“°¢&WGW&â6ÆVâæÆVæwF‚ãÒBò6ÆVâç6Æ–6RƒÂB’²r¢¢¢¢¢¢¢¢r¢}İ]-½Mİ½’s°§Ğ ¦6öç7BÒW‡&W72‚“°¦6öç7Bõ%BÒ&ö6W72æVçbåõ%BÇÂ3°¦6öç7B$4´u$õTäEô¤ô%5ôTä$ÄTBÒõâƒÇG'VWÇ–W2’Bö’çFW7B‡&ö6W72æVçbäD•4$ÄUô$4´u$õTäEô¤ô%2ÇÂrr“°¦6öç7B´tEô•õDô´TâÒ7G&–ær‡&ö6W72æVçbä´tEô•õDô´TâÇÂrr’çG&–Ò‚“°¦6öç7B´tEô•ô$4UõU$ÂÒ&ö6W72æVçbä´tEô•ô$4UõU$ÂÇÂv‡GG3¢ò÷÷'FÂæ¶vBæv÷bæ·¢s°¦6öç7B¶vD6÷VçFW''G’Ò7&VFT¶vD6÷VçFW''G”6Æ–VçB‡°¢Fö¶Vã¢´tEô•õDô´TâÀ¢&6UW&Ã¢´tEô•ô$4UõU$ÂÀ¢‡GG¢†–÷2À§Ò“°¦6öç7Btõ5¤µUô•õDô´TâÒ7G&–ær‡&ö6W72æVçbätõ5¤µUô•õDô´TâÇÂrr’çG&–Ò‚“°¦6öç7Btõ5¤µUô•ô$4UõU$ÂÒ&ö6W72æVçbätõ5¤µUô•ô$4UõU$ÂÇÂv‡GG3¢òö÷w2æv÷7¦·Wæv÷bæ·¢s°¦6öç7Bv÷7¦·WÒ7&VFTv÷7¦·W6Æ–VçB‡°¢Fö¶Vã¢tõ5¤µUô•õDô´TâÀ¢&6UW&Ã¢tõ5¤µUô•ô$4UõU$ÂÀ¢‡GG¢†–÷2À§Ò“°¦6öç7B6ö×ç”6†V6µ6W'f–6RÒ7&VFT6ö×ç”6†V6µ6W'f–6R‡°¢6ö×æ–W4F"À¢¶vD6Æ–VçC¢¶vD6÷VçFW''G’À¢v÷7¦·W6Æ–VçC¢v÷7¦·WÀ§Ò“°¦6öç7B4ôÕå•ô4„T4µô44„UõEDÅôÕ2Ò3¢c¢°¦6öç7B4ôÕå•ô4„T4µô44„UôÄ”Ô•BÒ°¦6öç7B6ö×ç”6†V6´66†RÒæWrÖ‚“° ¦ç6WB‚wG'W7B&÷‡’rÂ“°¦æF—6&ÆR‚w‚×÷vW&VBÖ'’r“° ¢òòFV×ÆFRVæv–æRf÷"æWw2vW0¦ç6WB‚wf–WrVæv–æRrÂvV§2r“°¦ç6WB‚wf–Ww2rÂF‚æ¦ö–â…õöF—&æÖRÂwf–Ww2r’“° ¢òòÖ–FFÆWv&R(	BıíıMí¢-m]Ó¢†VÆÖWB(i"6ö×&W76–öâ(i"6÷'2(i"&öG’×'6W"(i"7FF–0¦çW6R††VÆÖWB‡°¢6öçFVçE6V7W&—G•öÆ–7“¢°¢F—&V7F—fW3¢°¢FVfVÇE7&3¢²"w6VÆbr%ÒÀ¢&6UW&“¢²"w6VÆbr%ÒÀ¢ö&¦V7E7&3¢²"væöæRr%ÒÀ¢g&ÖTæ6W7F÷'3¢²"w6VÆbr%ÒÀ¢f÷&Ô7F–öã¢²"w6VÆbr%ÒÀ¢67&—E7&3¢°¢"w6VÆbr"À¢"wVç6fRÖ–æÆ–æRr"À¢v‡GG3¢òö6Fâæ§6FVÆ—g"ææWBrÀ¢v‡GG3¢òöÖ2ç–æFW‚ç'RrÀ¢v‡GG3¢ò÷–æFW‚ç'RrÀ¢ÒÀ¢7G–ÆU7&3¢²"w6VÆbr"Â"wVç6fRÖ–æÆ–æRr"Âv‡GG3¢òö6Fâæ§6FVÆ—g"ææWBrÂv‡GG3¢òöföçG2ævöövÆV—2æ6öÒuÒÀ¢föçE7&3¢²"w6VÆbr"ÂvFF¢rÂv‡GG3¢òö6Fâæ§6FVÆ—g"ææWBrÂv‡GG3¢òöföçG2æw7FF–2æ6öÒuÒÀ¢–Öu7&3¢²"w6VÆbr"ÂvFF¢rÂv‡GG3¢uÒÀ¢6öææV7E7&3¢°¢"w6VÆbr"À¢v‡GG3¢òö6Fâæ§6FVÆ—g"ææWBrÀ¢v‡GG3¢òöÖ2ç–æFW‚ç'RrÀ¢v‡GG3¢ò÷–æFW‚ç'RrÀ¢ÒÀ¢g&ÖU7&3¢°¢"w6VÆbr"À¢v‡GG3¢òöÖ2ævöövÆRæ6öÒrÀ¢v‡GG3¢ò÷wwrævöövÆRæ6öÒrÀ¢v‡GG3¢ò÷–æFW‚ç'RrÀ¢ÒÀ¢Ww&FT–ç6V7W&U&WVW7G3¢µÒÀ¢ÒÀ¢ÒÀ§Ò’“° ¢òòÆö6²F†RGvò†VFW'2F†B&RÖ÷7BögFVâ6†ævVB'’76VævW"ôW‡&W70¢òò&W7öç6R†æFÆ–ærâF†Ræ÷&ÖÂ†VÆÖWBÖ–FFÆWv&R6WG2F†RöÆ–7’f—'7C°¢òòF†—2f–æÂw&—FT†VBwV&B&W7F÷&W2—B–bÆFW"Ö–FFÆWv&R&VÖ÷fW2—Bæ@¢òò7G&—2F†RW‡&W726–væGW&R–ÖÖVF–FVÇ’&Vf÷&R†VFW'2ÆVfRF†Rà¦çW6R‚‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7B6öçFVçE6V7W&—G•öÆ–7’Ò&W2ævWD†VFW"‚t6öçFVçBÕ6V7W&—G’ÕöÆ–7’r“°¢6öç7B÷&–v–æÅw&—FT†VBÒ&W2çw&—FT†VC°¢6öç7BVæf÷&6RÒ‚’Óâ°¢&W2ç&VÖ÷fT†VFW"‚u‚Õ÷vW&VBÔ'’r“°¢–b†6öçFVçE6V7W&—G•öÆ–7’’°¢&W2ç6WD†VFW"‚t6öçFVçBÕ6V7W&—G’ÕöÆ–7’rÂ6öçFVçE6V7W&—G•öÆ–7’“°¢Ğ¢Ó°¢&W2çw&—FT†VBÒgVæ7F–öâÆö6¶VE6V7W&—G•w&—FT†VB‚ââæ&w2’°¢Væf÷&6R‚“°¢&WGW&â÷&–v–æÅw&—FT†VBæÇ’‡F†—2Â&w2“°¢Ó°¢Væf÷&6R‚“°¢æW‡B‚“°§Ò“°¦çW6R†6ö×&W76–öâ‚’“°¦çW6R†6÷'2‡°¢÷&–v–ã¢&ö6W72æVçbä4õ%5ôõ$”t”âÇÂfÇ6RÂòò"&öGV7F–öâ}M-R4õ%5ôõ$”t”ãÖ‡GG3¢ò÷¦¶öæW‡W'GBæ· ¢ÖWF†öG3¢²ttUBrÂuõ5BuÒÀ¢ÆÆ÷vVD†VFW'3¢²t6öçFVçBÕG—RrÂu‚ÔFÖ–âÔ¶W’uÒÀ§Ò’“°¦çW6R†W‡&W72æ§6öâ‚’“²òò}Í]İı]"&öG•'6W"æ§6öâ‚ ¦gVæ7F–öâ7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×2ÂÖ‚ÂæÖRÒ’°¢6öç7B'V6¶WG2ÒæWrÖ‚“°¢ÆWBÆ7E7vVWÒ°¢&WGW&â‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7Bæ÷rÒFFRææ÷r‚“°¢–b†æ÷rÒÆ7E7vVWâv–æF÷t×2’°¢f÷"†6öç7B¶¶W’ÂfÇVUÒöb'V6¶WG2’°¢–b†æ÷rÒfÇVRç7F'FVDBãÒv–æF÷t×2’'V6¶WG2æFVÆWFR†¶W’“°¢Ğ¢Æ7E7vVWÒæ÷s°¢Ğ¢6öç7B¶W’Ò&Wæ—ÇÂ&Wç6ö6¶WBç&VÖ÷FTFG&W72ÇÂwVæ¶æ÷vâs°¢ÆWB'V6¶WBÒ'V6¶WG2ævWB†¶W’“°¢–b‚'V6¶WBÇÂæ÷rÒ'V6¶WBç7F'FVDBãÒv–æF÷t×2’°¢'V6¶WBÒ²6÷VçC¢Â7F'FVDC¢æ÷rÓ°¢'V6¶WG2ç6WB†¶W’Â'V6¶WB“°¢Ğ¢'V6¶WBæ6÷VçB³Ò°¢–b†'V6¶WBæ6÷VçBâÖ‚’°¢&W2ç6WB‚u&WG'’ÔgFW"rÂ7G&–ær„ÖF‚æ6V–Â‚‡v–æF÷t×2Ò†æ÷rÒ'V6¶WBç7F'FVDB’’ò’’“°¢&WGW&â&W2ç7FGW2ƒC#’’æ§6öâ‡²W'&÷#¢
+½­íÂÍİí=â}ıíí"¢G¶æÖWÒâ	ıí--í-Rıí}mRæÒ“°¢Ğ¢æW‡B‚“°¢Ó°§Ğ ¦6öç7BW‡FW&æÄ”Æ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢c¢ÂÖƒ¢#ÂæÖS¢}-İ]İ]Í2]]-2rÒ“°¦6öç7B†÷W6–æu6V&6„Æ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢c¢ÂÖƒ¢"ÂæÖS¢}ıí­2ıâm½İ½Âı­ÂrÒ“°¦6öç7B†÷W6–æu&V6÷&G4Æ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢c¢ÂÖƒ¢#ÂæÖS¢}ı­Âí-­½-½RMİİ½RrÒ“°¦6öç7B6ö×ç•7VvvW7DÆ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢c¢ÂÖƒ¢#ÂæÖS¢}ıí­2í=İ}m’rÒ“°¦6öç7BÆVDÆ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢¢c¢ÂÖƒ¢ÂæÖS¢}MíÍRrÒ“°¦6öç7B6öÖÖVçDÆ–Ö—FW"Ò7&VFU&FTÆ–Ö—FW"‡²v–æF÷t×3¢¢c¢ÂÖƒ¢‚ÂæÖS¢}­íÍÍ]İ-ıÂrÒ“° ¢òòÓÓÓÓÒÄTt5’Ä”2U$Â(i"4äôä”4ÂU$Â3$TD•$T5E2ÓÓÓÓĞ¢òòF†W6Rf–ÆVæÖW27F–ÆÂW†—7B2‡—6–6Âf–ÆW2‡6W'f–ærF†R6æöæ–6Â&÷WFP¢òòf–6W'f–6UvW2&VÆ÷r’Â'WBF†RöÆBU$Â—G6VÆb×W7Bæ÷B7F’Æ—fR2¢òò6V6öæB–æFW†&ÆRGWÆ–6FRöbF†R6æöæ–6ÂvRâ×W7B&R&Vv—7FW&V@¢òò&Vf÷&RW‡&W72ç7FF–2Âv†–6‚v÷VÆB÷F†W'v—6R6W'fRF†Rf–ÆRF—&V7FÇ’à¦6öç7BÄTt5•ôÄ”5õ$TD•$T5E2Ò°¢rö—7öÆæ—FVÆæ–ÖæG—2s¢rö÷FÖVæÖ—7öÆæ—FVÆæö’ÖæG—6’rÀ¢r÷7÷&æ÷7BÖFöÆvs¢r÷f÷§&¦†Væ–RÖæÖ—7öÆæ—FVÆçW—RÖæG—2rÀ¢rö6‡6’Ö&W7B×66†WF÷bs¢r÷6ç–F–RÖöw&æ–6†Væ–’Ö6‡6’rÀ¢r÷¦&WB×&Vv—7G&6–öæç–‚ÖFW—7Gf—’s¢r÷6ç–F–R×¦&WF×&Vv—7G&6–öæç–‚ÖFV—7Gf–’rÀ¢röw&f–²×ÆFW¦†W’s¢röw&f–²Ö÷ÆG’×¦FöÇ¦†Vææ÷7F’rÀ§Ó°¦f÷"†6öç7B¶öÆEF‚ÂæWuF…Òöbö&¦V7BæVçG&–W2„ÄTt5•ôÄ”5õ$TD•$T5E2’’°¢ævWB…¶öÆEF‚ÂöÆEF‚²ræ‡FÖÂuÒÂ‡&WÂ&W2’Óâ&W2ç&VF—&V7Bƒ3ÂæWuF‚’“°§Ğ ¢òò6V&6‚FW&×2&VÆöær–âF†R6Æ–VçB×6–FR7FFRÂæ÷B–â7&vÆ&ÆR6æöæ–6À¢òòU$Ç2âF†—2&÷WFR×W7B&V6VFRW‡&W72ç7FF–2&V6W6Ræ÷F'’×6V&6‚æ‡FÖÂ—2¢òò‡—6–6Âf–ÆRæBv÷VÆB÷F†W'v—6R&R6W'fVB&Vf÷&RW‡&W726âæ÷&ÖÆ—¦R—Bà¦ævWB‚röæ÷F'’×6V&6‚rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BVçG&–W2Òö&¦V7BæVçG&–W2‡&WçVW'’ÇÂ·Ò’æfÆDÖ‚…¶¶W’ÂfÇVUÒ’Óà¢„'&’æ—4'&’‡fÇVR’òfÇVR¢·fÇVUÒ’æÖ†—FVÒÓâ¶¶W’Â7G&–ær†—FVÒÇÂrr•Ò¢’æf–ÇFW"‚…²ÂfÇVUÒ’ÓâfÇVR“°¢–b‚VçG&–W2æÆVæwF‚’&WGW&âæW‡B‚“°¢&W2ç&VF—&V7Bƒ3Âöæ÷F'’×6V&6‚2G¶æWrU$Å6V&6…&×2†VçG&–W2’çFõ7G&–ær‚—Ö“°§Ò“° ¢òòÓÓÓÓÒtTäU$”2æ‡FÖÂ5Tdd•‚(i"U…DTå4”ôäÄU524äôä”4Â3$TD•$T5BÓÓÓÓĞ¢òò&VÂ–æFW‚vV&Ö7FW"FFƒ##bÓrÓRW‡÷'B’6†÷vVB–æFW‚–æFWVæFVçFÇ¢òò–æFW†–ærF†Ræ‡FÖÂ×7Vff—†VBU$Âf÷"6WfW&ÂvW2†Rærâ÷6ç–F–RÖ&W7F×6ò×66†WFæ‡FÖÀ¢òòB÷6—F–öâbÂ7Æ—Bv’g&öÒ—G26VÆb×&VfW&Væ6–ær6æöæ–6Â’(	B6öæf—&×0¢òòF†—2—2æ÷BF†V÷&WF–6ÂGWÆ–6FRÖ6öçFVçB&—6²â6V&6‚Ö6öç6öÆRfW&–f–6F–öà¢òò7GV"f–ÆW2×W7B¶VWF†V—"Æ—FW&Âæ‡FÖÂU$ÂæB&RW†6ÇVFVBà¦6öç7B…DÔÅõ5Tdd•…õ$TD•$T5EôU„4ÅTDRÒæWr6WB…°¢rövöövÆW$v$³”tÓ6´C'‡¥G¤tÕ3Ee¦§SCfDFE¦¥FÔö–u¦äµ’æ‡FÖÂrÀ¢r÷–æFW…öFV63“–f6&c3s6Ræ‡FÖÂrÀ¥Ò“°¦ævWB‚õåÂòâµÂæ‡FÖÂBòÂ‡&WÂ&W2ÂæW‡B’Óâ°¢–b„…DÔÅõ5Tdd•…õ$TD•$T5EôU„4ÅTDRæ†2‡&WçF‚’’&WGW&âæW‡B‚“°¢6öç7B6ÆVåF‚Ò&WçF‚ÓÓÒrö–æFW‚æ‡FÖÂròròr¢&WçF‚ç6Æ–6RƒÂÒræ‡FÖÂræÆVæwF‚“°¢6öç7Bf–ÆUF‚ÒF‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2rÂ&WçF‚“°¢–b‚g2æW†—7G57–æ2†f–ÆUF‚’’&WGW&âæW‡B‚“°¢6öç7B2Ò&WçW&Âæ–æ6ÇVFW2‚sòr’ò&WçW&Âç6Æ–6R‡&WçW&Âæ–æFW„öb‚sòr’’¢rs°¢&W2ç&VF—&V7Bƒ3Â6ÆVåF‚²2“°§Ò“° ¢òòv÷&¶–ærFF&6W2öW‡÷'G2×W7BæWfW"&RvV"×&V6†&ÆRÂWfVâ–b6öÖWF†–æp¢òò—2G&÷VB–çFòV&Æ–2öFFò'’Ö—7F¶R†f÷VæB7G&’æF"×vÂf–ÆRF†W&P¢òòGW&–ær7F÷&vRVF—B(	Bæ÷F†–ær–âF†Rw&—FW2F†W&RÂ'WBW‡&W72ç7FF–0¢òòv÷VÆB†fR6W'fVB—BFòç–öæRv†ò&WVW7FVBF†RU$ÂF—&V7FÇ’’à¦çW6R‚röFFrÂ‡&WÂ&W2’Óâ&W2ç7FGW2ƒCB’æVæB‚’“° ¦çW6R†W‡&W72ç7FF–2‡F‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2r’Â°¢W‡FVç6–öç3¢²v‡FÖÂuÒÀ¢6WD†VFW'2‡&W2Âf–ÆUF‚’°¢–b‚õÂâƒó¦f–gÇvV'ÇæwÆ§SöwÆv–gÇ7fwÆ–6÷Çvöfc#ò’Bö’çFW7B†f–ÆUF‚’’°¢&W2ç6WD†VFW"‚t66†RÔ6öçG&öÂrÂwV&Æ–2ÂÖ‚ÖvSÓcCƒÂ7FÆR×v†–ÆR×&WfÆ–FFSÓƒcCr“°¢ÒVÇ6R–b‚õÂâƒó¦777Æ§2’Bö’çFW7B†f–ÆUF‚’’°¢&W2ç6WD†VFW"‚t66†RÔ6öçG&öÂrÂwV&Æ–2ÂÖ‚ÖvSÓ3cÂ7FÆR×v†–ÆR×&WfÆ–FFSÓƒcCr“°¢Ğ¢ÒÀ§Ò’“° ¢òòÓÓÓÓÒd•4•Dõ"E$4´”ärÓÓÓÓĞ¦6öç7BE$4´TEõD…2ÒæWr6WB…°¢ròrÂrö–æFW‚æ‡FÖÂrÀ¢r÷6W'f–6W2æ‡FÖÂrÂrö6öçF7Bæ‡FÖÂrÂr÷¦¶öç’æ‡FÖÂrÂr÷&Wf–Ww2rÂr÷&Wf–Ww2æ‡FÖÂrÀ¢röGfö6FRrÀ¢rö&W7BÖ¶7’rÂrö&W7BÖ¶7’æ‡FÖÂrÀ¢rö&W7BÖ†Ç–²Ö&æ²rÂrö&W7BÖ†Ç–²Ö&æ²æ‡FÖÂrÀ¢rö&W7BÖg&VVFöÒÖ&æ²rÂrö&W7BÖg&VVFöÒÖ&æ²æ‡FÖÂrÀ¢rö—7öÆæ—FVÆæ–ÖæG—2æ‡FÖÂrÂrö÷FÖVæÖ—7öÆæ—FVÆæö’ÖæG—6’rÀ¢r÷6ç–F–R×¦&WFÖæÖgFòrÂr÷6ç–F–R×¦&WFÖæÖgFòæ‡FÖÂrÀ¢r÷¦&WB×&Vv—7G&6–öæç–‚ÖFW—7Gf—’rÂr÷¦&WB×&Vv—7G&6–öæç–‚ÖFW—7Gf—’æ‡FÖÂrÀ¢r÷6ç–F–RÖ&W7F×6ò×66†WFrÂr÷6ç–F–RÖ&W7F×6ò×66†WFæ‡FÖÂrÀ¢röw&f–²×ÆFW¦†W’æ‡FÖÂrÂröw&f–²Ö÷ÆG’×¦FöÇ¦†Vææ÷7F’rÂröw&f–²×ÆFW¦†W’rÀ¢rö6‡6’Ö&W7B×66†WF÷bæ‡FÖÂrÂrö6‡6’Ö&W7B×66†WF÷brÀ¢r÷V'&B×&ö6VçG’Ö’×&6†öG’Ö6‡6’rÀ¢rö&W77÷&æ÷7BÖFöÆvæ‡FÖÂrÂrö&W77÷&æ÷7BÖFöÆvrÀ¢röÆ–ÖVçG’Ö’Ö&W7G’rÂröÆ–ÖVçG’Ö’Ö&W7G’æ‡FÖÂrÀ¢r÷6‡G&g’Ö’Ö&W7G’rÂr÷6‡G&g’Ö’Ö&W7G’æ‡FÖÂrÀ¢r÷6ç–F–RÖöw&æ–6†Væ—–ÖæÖ–×W6†6†W7GfòrÀ¢r÷6ç–F–RÖöw&æ–6†Væ–’×RÖæ÷F&—W6rÀ¢rö÷FÖVæ×&W6†Væ—–×7VFæ‡FÖÂrÀ¢r÷7÷&æ÷7BÖFöÆvrÀ¢rö6‡6’×&Vf–æç6—&÷fæ–RrÀ¢röæ÷F&–W2rÂr÷¦ÖVæÖæ÷F&—W6rÂrö&–Æ–fg2rÀ¢röæ÷F'’×6V&6‚rÂrö&–Æ–fb×6V&6‚rÀ¢rö&æ·2rÂröÖfòrÂrö6÷W'G2rÂrö6†Ö&W'2rÂrö6ö×æ–W2rÂrö6öÆÆV7F÷'2rÂröÆöÖ&&G2rÀ¢röw6’rÂrö–ç7W&æ6RrÂrö7&VF—BÖ'W&VW2rÂr÷&VwVÆF÷'2rÂröVÖW&vVæ7’rÀ¢röæWw2rÂr÷7FG–’rÀ¥Ò“°¦çW6R‚‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7Bæ÷F–g•f—6—G2ÒõâƒÇG'VWÇ–W2’Bö’çFW7B‡&ö6W72æVçbåDTÄTu$Õõd•4•EôäõD”d”4D”ôå2ÇÂrr“°¢6öç7Bw&÷wF…G&6¶VBÒ&WçF‚ÓÓÒ$äµô%$U5Eô…T%õD€¢ÇÂ$äµô%$U5EõD…õ4UBæ†2‡&WçF‚¢ÇÂÄTtÅô”åDTåEõD…õ4UBæ†2‡&WçF‚“°¢–b†æ÷F–g•f—6—G2bb&WæÖWF†öBÓÓÒttUBrbb…E$4´TEõD…2æ†2‡&WçF‚’ÇÂw&÷wF…G&6¶VB’’°¢6öç7B—Ò&Wæ†VFW'5²w‚Öf÷'v&FVBÖf÷"uÒÇÂ&Wç6ö6¶WBç&VÖ÷FTFG&W72ÇÂwVæ¶æ÷vâs°¢6öç7BVÒ&Wæ†VFW'5²wW6W"ÖvVçBuÒÇÂrs°¢6öç7B&VfW&W"Ò&Wæ†VFW'5²w&VfW&W"uÒÇÂ&Wæ†VFW'5²w&VfW'&W"uÒÇÂrs°¢FVÆVw&Òææ÷F–g•f—6—B‡&WçF‚Â—ÂVÂ&VfW&W"“°¢Ğ¢æW‡B‚“°§Ò“° ¢òò	İRM]mÂí½}İ½R-]İ}ıí²í-­½-½Í‚Íİ=#¢İ-â]íM=]"-í­]²€¢òòM]½]"ı½ím]İR=ı}-Í]R¢Í]M½]İİ½Âí]Mİ]İıÂâ	Mí½=RFÖ–âİ}M}€¢òò}ı=­í-òí-M]½Íİ½Í‚õ5BİÍ=-Í‚à¦çW6R‚‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BF–ÖV÷WD×2Ò&WçF‚ç7F'G5v—F‚‚rö’òr’ò#¢3°¢&Wç6WEF–ÖV÷WB‡F–ÖV÷WD×2“°¢&W2ç6WEF–ÖV÷WB‡F–ÖV÷WD×2“°¢&W2ç6WD†VFW"‚t6öææV7F–öârÂv¶VWÖÆ—fRr“°¢&W2ç6WD†VFW"‚t¶VWÔÆ—fRrÂwF–ÖV÷WCÓRr“°¢æW‡B‚“°§Ò“° ¢òò	íí-­}ıíff–6öâæ–6ğ¦ævWB‚röff–6öâæ–6òrÂ‡&WÂ&W2’Óâ°¢&W2ç7FGW2ƒ#B’æVæB‚“°§Ò“° ¢òò	íİí-İí’Í= ¦ævWB‚ròrÂ‡&WÂ&W2’Óâ°¢&W2ç6VæDf–ÆR‡F‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2rÂv–æFW‚æ‡FÖÂr’“°§Ò“° ¢òò
+=-½-M½òíí-­‚İ]íİİ½R}ıíí ¦6öç7B7–æ4†æFÆW"ÒfâÓâ‡&WÂ&W2ÂæW‡B’Óà¢&öÖ—6Rç&W6öÇfR†fâ‡&WÂ&W2ÂæW‡B’’æ6F6‚†W'"Óâ°¢ÆövvW"æW'&÷"‚}	í­"İ]íİİíÂíí-}­S¢rÂW'"“²òò	½í==]Âí­0¢æW‡B†W'"“²òò	ı]]M]Âí­2M½ÍR-İM-İíÍ2íí-}­2W‡&W70¢Ò“° ¦gVæ7F–öâ6VæDæ÷Df÷VæB‡&W2’°¢&W2ç7FGW2ƒCB’ç6VæDf–ÆR‡F‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2rÂsCBæ‡FÖÂr’ÂW'&÷"Óâ°¢–b†W'&÷"bb&W2æ†VFW'56VçB’&W2ç7FGW2ƒCB’ç6VæB‚}
+-İmİRİM]İr“°¢Ò“°§Ğ ¦gVæ7F–öâ6VæDvöæR‡&W2’°¢&W2ç6WB‚t66†RÔ6öçG&öÂrÂvæò×7F÷&Rr“°¢&W2ç7FGW2ƒC’ç6VæDf–ÆR‡F‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2rÂsCBæ‡FÖÂr’ÂW'&÷"Óâ°¢–b†W'&÷"bb&W2æ†VFW'56VçB’&W2ç7FGW2ƒC’ç6VæB‚}
+}M]²=M½Òr“°¢Ò“°§Ğ ¢òò	­íİM==mòM½ò’Tv÷`¦6öç7BTtõeô•õU$ÂÒ&‡GG3¢òöFFæVv÷bæ·¢öVv÷bÖ÷VæFF×w2ôôEvV%6W'f–6T–×Â#°¦6öç7BTtõeô•ô´U’Ò&ö6W72æVçbäTtõeô•ô´U“°¦6öç7BõTåôDDõ$T4õ$Eô44„UôTä$ÄTBÒ&ööÆVâ„Ttõeô•ô´U’bb&ö6W72æVçbäõTåôDDõ$T4õ$Eô44„RÓÒvfÇ6Rr“°¦6öç7BõTåôDDõ$T4õ$Eô44„Uõt$ÔU%ôTä$ÄTBÒ&ööÆVâ€¢õTåôDDõ$T4õ$Eô44„UôTä$ÄT@¢bbõâƒÇG'VWÇ–W2’Bö’çFW7B‡&ö6W72æVçbäõTåôDDõ$T4õ$Eô44„Uõt$ÔU"ÇÂrr¢“° ¢òò	ıí-]­íı}-]½Íİ½RVçbİı]]Í]İİ½Rı‚--P¦–b‚Ttõeô•ô´U’’°¢ÆövvW"æW'&÷"‚}	­
+	
+-	
+}	İ	ã¢	ı]]Í]İİòí­=m]İòTtõeô•ô´U’İR}Mİâ
+M=İ­mòıí-]­‚			ÒİR=M]"í--Ââ	}M-R]"æVçbM½R½‚"İ-í­R]-]âr“°§Ğ ¢òò
+M=İ­mòM½òıí-]­‚Míıí½İ-]½Íİ½Rí=İ}]İ’à¢òò	-í}İ¢Mİİ½RİR]½}í-Ò(	B-í}-]"ı=-í’Í"à¢òò	½í¢-	Míıí½İ-]½Íİ½Rí=İ}]İò"İMíİ-R­½"ıí­Í"ı="à¦7–æ2gVæ7F–öâ6†V6µ&W7G&–7F–öç2†––â’°¢&WGW&âµÓ°§Ğ ¢òòÒÒÒ	İ	
+}		½	ã¢	İí-òM=İ­mòM½òıí-]­‚Mí½mİ­}]]r’Tv÷bÒÒĞ¦7–æ2gVæ7F–öâ6†V6´FV'F÷%f–’†––â’°¢6öç7Bf÷&ÖGFVD””âÒ7G&–ær†––â’ç&WÆ6R‚õµåÆEÒörÂrr“°¢–b†f÷&ÖGFVD””âæÆVæwF‚ÓÒ"’°¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"çv&â‚í­ ¢6öç7BW'&÷$×6rÒ}			ÒMí½m]ÒíM]m-Â"mMs°¢ÆövvW"çv&â†	ıíı½-­ıí-]-ÂMí½mİ­İ]-]İ½Â			Ó¢G¶Ö6´––â†––â—Ö“°¢F‡&÷ræWrW'&÷"†W'&÷$×6r“°¢Ğ ¢6öç7BÖW76vT–BÒWV–GcB‚“°¢6öç7BÖW76vTFFRÒæWrFFR‚’çFô•4õ7G&–ær‚’ç&WÆ6R‚õ¢BòÂr³c£r“° ¢6öç7B6ö&öG’Ò £Ç6öVçc¤VçfVÆ÷R†ÖÆç3§6öVçcÒ&‡GG¢ò÷66†VÖ2ç†ÖÇ6öæ÷&r÷6ööVçfVÆ÷Rò"†ÖÆç3§6öÒ&‡GG¢ò÷6öæ÷VæFFæVv÷bææ—FV2æ·¢ò#à¢Ç6öVçc¤†VFW"óà¢Ç6öVçc¤&öG“à¢Ç6ö§&WVW7Cà¢Ç&WVW7Cà¢Ç&WVW7D–æfóà¢ÆÖW76vT–CâG¶ÖW76vT–GÓÂöÖW76vT–Cà¢ÆÖW76vTFFSâG¶ÖW76vTFFWÓÂöÖW76vTFFSà¢Æ–æFW„æÖSæ—6ö—Âö–æFW„æÖSà¢Æ”¶W“âG´Ttõeô•ô´U—ÓÂö”¶W“à¢Â÷&WVW7D–æfóà¢Ç&WVW7DFFà¢ÆFF†ÖÆç3¦ç3'WÒ&‡GG¢òö&—æ&VRæ·¢õ7–æ46†ææVÂ÷cõG—W2õ&WVW7B"†ÖÆç3§‡6“Ò&‡GG¢ò÷wwrçs2æ÷&ró#õ„ÔÅ66†VÖÖ–ç7Fæ6R"‡6“§G—SÒ&ç3'W¥&WVW7DÖW76vR#à¢Æ––ä÷$&–ãâG¶f÷&ÖGFVD””çÓÂö––ä÷$&–ãà¢ÂöFFà¢Â÷&WVW7DFFà¢Â÷&WVW7Cà¢Â÷6ö§&WVW7Cà¢Â÷6öVçc¤&öG“à£Â÷6öVçc¤VçfVÆ÷Sà¦° ¢6öç7B†VFW'2Ò°¢$6öçFVçBÕG—R#¢'FW‡B÷†ÖÃ¶6†'6WCÕUDbÓ‚ ¢Ó° ¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æ–æfğ¢–b‚Ttõeô•ô´U’’°¢F‡&÷ræWrW'&÷"‚}
+]--]Í]İİâİ]Mí-=ı]ÒâTtõeô•ô´U’İRİ-í]Òâ	í--]Â}]]rv†G4âr“°¢Ğ ¢ÆövvW"æ–æfò†	í-ı-­4ô}ıíM½ò			ÒG¶Ö6´––â†f÷&ÖGFVD””â—ÒİG´Ttõeô•õU$ÇÖ“°¢G'’°¢6öç7B&W7öç6RÒv—B†–÷2ç÷7B„Ttõeô•õU$ÂÂ6ö&öG’Â²†VFW'2ÂF–ÖV÷WC¢3Ò“°¢ÆövvW"æ–æfò†4ôí--]"ıí½=}]ÒM½ò			ÒG¶Ö6´––â†f÷&ÖGFVD””â—Òâ
+--=¢G·&W7öç6Rç7FGW7Ö“° ¢6öç7B'6W"ÒæWr†ÖÃ&§2å'6W"‡²W‡Æ–6—D'&“¢fÇ6RÂ–væ÷&TGG'3¢G'VRÒ“°¢6öç7B&W7VÇBÒv—B'6W"ç'6U7G&–æu&öÖ—6R‡&W7öç6RæFF“° ¢6öç7B&W7öç6T–æfòÒ&W7VÇCòå²w6ö¤VçfVÆ÷RuÓòå²w6ö¤&öG’uÓòå²vç3§&WVW7E&W7öç6RuÓòå²w&W7öç6RuÓòå²w&W7öç6T–æfòuÓ°¢6öç7B&W7öç6TFFÒ&W7VÇCòå²w6ö¤VçfVÆ÷RuÓòå²w6ö¤&öG’uÓòå²vç3§&WVW7E&W7öç6RuÓòå²w&W7öç6RuÓòå²w&W7öç6TFFuÓòå²vFFuÓ° ¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æFV'VrM½òM]-½Íİí=âí--]-Íímİâ}Í]İ-Â=í-]İÂİ–æfòı‚í-½M­R¢òòÆövvW"æFV'Vr‚u&W7öç6R–æfó¢rÂ¥4ôâç7G&–æv–g’‡&W7öç6T–æfòÂçVÆÂÂ"’“°¢òòÆövvW"æFV'Vr‚u&W7öç6RFF¢rÂ¥4ôâç7G&–æv–g’‡&W7öç6TFFÂçVÆÂÂ"’“° ¢–b‚&W7öç6T–æfò’°¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æW'&÷ ¢ÆövvW"æW'&÷"‚}	İR=M½íÂİ-‚&W7öç6T–æfò"í--]-R’Tv÷c¢rÂ¥4ôâç7G&–æv–g’‡&W7VÇBÂçVÆÂÂ"’“°¢F‡&÷ræWrW'&÷"‚}	İ]­í]­-İ½’MíÍ"í--]-í"’Tv÷bí-=---=]"&W7öç6T–æfò’r“°¢Ğ ¢6öç7BFV'F÷$FF&÷w2Ò&W7öç6TFFòç&÷w3°¢6öç7B—4FV'F÷"ÒFV'F÷$FF&÷w3° ¢6öç7B7FGW46öFRÒ&W7öç6T–æfóòç7FGW3òæ6öFS°¢6öç7B7FGW4ÖW76vRÒ&W7öç6T–æfóòç7FGW3òæÖW76vS°¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æ–æfğ¢ÆövvW"æ–æfò†
+]}=½Í-"ıí-]­‚			ÒG¶Ö6´––â†f÷&ÖGFVD””â—Ó¢--=rG·7FGW46öFWÒrÂMí½mİ£¢G¶—4FV'F÷'Ö“° ¢&WGW&â°¢—4FV'F÷#¢—4FV'F÷"À¢FWF–Ç3¢—4FV'F÷"òFV'F÷$FF&÷w2¢çVÆÀ¢Ó° ¢Ò6F6‚†W'&÷"’°¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æW'&÷ ¢ÆövvW"æW'&÷"†	í­ı‚-½}í-R’Tv÷b½‚ıİ=Rí--]-M½ò			ÒG¶Ö6´––â†f÷&ÖGFVD””â—Ó¦ÂW'&÷"“°¢–b†W'&÷"ç&W7öç6R’°¢òò	½í==]Â--=‚-]½âí--]-Â]½‚í­í"†–÷0¢ÆövvW"æW'&÷"†
+--=í­‚í"“¢G¶W'&÷"ç&W7öç6Rç7FGW7Ö“°¢ÆövvW"æW'&÷"‚}
+-]½âí­‚í"“¢rÂW'&÷"ç&W7öç6RæFF“°¢òò	ı]]½-]Âí½]R­íİ­]-İ=âí­0¢F‡&÷ræWrW'&÷"†	í­í"’Tv÷c¢G¶W'&÷"ç&W7öç6Rç7FGW7ÒÒG¶W'&÷"ç&W7öç6Rç7FGW5FW‡GÒâ	ıí-]Í-R-]½âí--]-"½í=Ræ“°¢ÒVÇ6R–b†W'&÷"ç&WVW7B’°¢òò	í­í-ı-­‚}ıíİ]"í--]-¢ÆövvW"æW'&÷"‚}	í­í-ı-­‚}ıí¢’Tv÷bİ]"í--]-“¢rÂW'&÷"æÖW76vR“°¢F‡&÷ræWrW'&÷"‚}	İR=M½íÂ-ı}-Íò’Tv÷bâ	ıí-]Í-R]-]-íRí]Mİ]İR½‚Mí-=ıİí-Â]-âr“°¢ÒVÇ6R°¢òò	M==òí­İ-í­}ıíÂıİ2‚"íBâ¢F‡&÷ræWrW'&÷"†	-İ=-]İİıòí­ı‚ıí-]­R}]]r’Tv÷c¢G¶W'&÷"æÖW76vWÖ“°¢Ğ¢Ğ§Ğ¢òòÒÒÒ	­	í	İ	]
+c¢	İí-òM=İ­mòM½òıí-]­‚Mí½mİ­}]]r’Tv÷bÒÒĞ  ¢òò	Í="M½òıí-]­‚			Ğ¦ç÷7B‚rö6†V6²rÂW‡FW&æÄ”Æ–Ö—FW"Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢6öç7B––âÒ7G&–ær‡&Wæ&öG“òæ––âÇÂrr’ç&WÆ6R‚õÄBörÂrr“°¢–b‡&Wæ&öG“òæ6öç6VçBÓÒG'VR’°¢&WGW&â&W2ç7FGW2ƒC’æ§6öâ‡²W'&÷#¢}	İ]í]íMÍâí=½Rİ}í-=âíí-­2			ÒrÒ“°¢Ğ¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"æ–æfğ¢ÆövvW"æ–æfò†	ıí½=}]Ò}ıíİıí-]­2			Ó¢G¶––âò––âç7V'7G&–ærƒÂB’²r¢¢¢¢¢¢¢¢r¢}ı=-í’wÖ“²òò	Í­=]Â			Ò"½í=P ¢–b‚––â’°¢òò		}	Í	]	İ	]	İ	ã¢ÆövvW"çv&à¢ÆövvW"çv&â‚}	}ıíİıí-]­2]r			Òâr“°¢&WGW&â&W2ç7FGW2ƒC’æ§6öâ‡²W'&÷#¢}			ÒİRı]Mí--½]ÒrÒ“°¢Ğ¢–b†––âæÆVæwF‚ÓÒ"’°¢ÆövvW"çv&â†	}ıíİıí-]­2İ]-]İí’M½İí’			Ó¢G¶Ö6´––â†––â—Ö“°¢&WGW&â&W2ç7FGW2ƒC’æ§6öâ‡²W'&÷#¢}			ÒMí½m]ÒíM]m-Â"mMrÒ“°¢Ğ¢–b‚Ttõeô•ô´U’’°¢ÆövvW"æW'&÷"‚}	ıí-]­			Òİ]Mí-=ıİ¢Ttõeô•ô´U’İRİ-í]Òâr“°¢&WGW&â&W2ç7FGW2ƒS2’æ§6öâ‡°¢W'&÷#¢}
+]-ıí-]­‚-]Í]İİâİ]Mí-=ı]ÒrÀ¢FWF–Ç3¢}	í--]Â}]]rv†G4(	Bı]m½"ıí-]"í=İ}]İò-=}İ=ââp¢Ò“°¢Ğ ¢G'’°¢6öç7BFV'F÷%&W7VÇBÒv—B6†V6´FV'F÷%f–’†––â“°¢6öç7B&W7G&–7F–öç5&W7VÇBÒv—B6†V6µ&W7G&–7F–öç2†––â“²òò	-½}½-]Â}=½=­0 ¢&W2æ§6öâ‡°¢FV'F÷$–æfó¢FV'F÷%&W7VÇBÀ¢&W7G&–7F–öç3¢&W7G&–7F–öç5&W7VÇ@¢Ò“°¢ÆövvW"æ–æfò†
+=ı]İâí-ı-½]Òí--]"M½ò			ÒG¶––âç7V'7G&–ærƒÂB—Ò¢¢¢¢¢¢¢¢â	Mí½mİ¢İM]Ó¢G¶FV'F÷%&W7VÇBæ—4FV'F÷'Ö“° ¢òòFVÆVw&Ó¢=-]MíÍ½]İRâıí-]­R			Ğ¢6öç7B—Ò&Wæ†VFW'5²w‚Öf÷'v&FVBÖf÷"uÒÇÂ&Wç6ö6¶WBç&VÖ÷FTFG&W72ÇÂwVæ¶æ÷vâs°¢6öç7BVÒ&Wæ†VFW'5²wW6W"ÖvVçBuÒÇÂrs°¢6öç7BFWF–Ç2ÒFV'F÷%&W7VÇBæFWF–Ç3°¢6öç7B6÷VçBÒ'&’æ—4'&’†FWF–Ç2’òFWF–Ç2æÆVæwF‚¢†FWF–Ç2ò¢“°¢FVÆVw&Òææ÷F–g”––ä6†V6²†—ÂVÂFV'F÷%&W7VÇBæ—4FV'F÷"Â6÷VçBÂ––â“° ¢Ò6F6‚†W'&÷"’°¢òò	í­=mR}½í=í-İ"6†V6´FV'F÷%f–’½‚7–æ4†æFÆW ¢òò		}	Í	]	İ	]	İ	ã¢	½í==]ÂM­"í-ı-­‚í­‚­½]İ-0¢ÆövvW"æW'&÷"†	í-ı-­í­‚S­½]İ-2M½ò			ÒG¶––âò––âç7V'7G&–ærƒÂB’²r¢¢¢¢¢¢¢¢r¢}ı=-í’wÓ¢G¶W'&÷"æÖW76vWÖ“°¢&W2ç7FGW2ƒS’æ§6öâ‡²W'&÷#¢}	í­]-]ı‚ıí-]­RMí½mİ­}]]r’rÂFWF–Ç3¢W'&÷"æÖW76vRÒ“°¢Ğ §Ò’“° ¢òòÓÓÓÓÒäõD%’4T$4‚ÓÓÓÓĞ¦ævWB‚röæ÷F'’×6V&6‚rÂ‡&WÂ&W2’Óâ°¢&W2ç6VæDf–ÆR‡F‚æ¦ö–â…õöF—&æÖRÂwV&Æ–2rÂvæ÷F'’×6V&6‚æ‡FÖÂr’“°§Ò“° ¦ævWB‚rö’öæ÷F'’×6V&6‚rÂW‡FW&æÄ”Æ–Ö—FW"Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢6öç7B6†VW&–òÒ&WV—&R‚v6†VW&–òr“°¢6öç7B²f–òÒrrÂ†öæRÒrrÂÆ–6Vç6RÒrrÂ&Vv–öâÒsrÒÒ&WçVW'“°¢–b‚f–òbb†öæRbbÆ–6Vç6R’°¢&WGW&â&W2ç7FGW2ƒC’æ§6öâ‡²W'&÷#¢}
+=­m-R
+M		âÂ-]½]MíÒ½‚İíÍ]½m]İ}‚rÒ“°¢Ğ¢6öç7B&×2ÒæWrU$Å6V&6…&×2‡²f–òÂ&Vv–öâÂ6—G“¢rrÂ†öæTçVÖ&W#¢†öæRÂÆ–6Vç6TçVÖ&W#¢Æ–6Vç6RÒ“°¢6öç7BW&ÂÒ‡GG3¢òöVæ—2æ·¢ôæ÷F'•6V&6‚ôFWF–Ç2óòG·&×7Ö°¢G'’°¢6öç7B&W7Òv—B†–÷2ævWB‡W&ÂÂ²F–ÖV÷WC¢SÂ†VFW'3¢²uW6W"ÔvVçBs¢tÖ÷¦–ÆÆóRãrÒÒ“°¢6öç7BBÒ6†VW&–òæÆöB‡&W7æFF“°¢6öç7B6÷VçEFW‡BÒB‚v"r’æf–ÇFW"‚†’ÂVÂ’ÓâB†VÂ’çFW‡B‚’æ–æ6ÇVFW2‚}	İM]İâ}ı]’r’’æf—'7B‚’çFW‡B‚“°¢6öç7BF÷FÂÒ'6T–çB†6÷VçEFW‡BæÖF6‚‚õÆB²ò“òå³ÒÇÂsr“°¢6öç7Bæ÷F&–W2ÒµÓ°¢B‚vföçE¶f6SÒ$&–Â%Òr’æV6‚‚†’ÂVÂ’Óâ°¢6öç7BföçBÒB†VÂ“°¢6öç7BæÖTVÂÒföçBæf–æB‚vr’æf—'7B‚“°¢6öç7BæÖRÒæÖTVÂçFW‡B‚’çG&–Ò‚“°¢–b‚æÖR’&WGW&ã°¢6öç7B‡&VbÒæÖTVÂæGG"‚v‡&Vbr’ÇÂrs°¢6öç7B–BÒ‡&VbæÖF6‚‚õÂò…ÆB²’Bò“òå³ÒÇÂrs°¢6öç7B–ææW"ÒföçBæ‡FÖÂ‚’ÇÂrs°¢6öç7B'G2Ò–ææW"ç7Æ—B‚óÆ'%Ç2¥Âóóâö’“°¢ÆWBFG&W72ÒrrÂ†öæS"ÒrrÂv÷&´†÷W'2ÒrrÂVÖ–ÂÒrs°¢f÷"†6öç7B'Böb'G2’°¢6öç7B6ÆVâÒ'Bç&WÆ6R‚óÅµãåÒ³âörÂrr’çG&–Ò‚“°¢–b†6ÆVâç7F'G5v—F‚‚}	M]¢r’’FG&W72Ò6ÆVâç&WÆ6R‚}	M]¢rÂrr’çG&–Ò‚“°¢VÇ6R–b†6ÆVâç7F'G5v—F‚‚}
+-]½]MíÓ¢r’’†öæS"Ò6ÆVâç&WÆ6R‚}
+-]½]MíÓ¢rÂrr’çG&–Ò‚“°¢VÇ6R–b†6ÆVâç7F'G5v—F‚‚}
+]mÂí-³¢r’’v÷&´†÷W'2Ò6ÆVâç&WÆ6R‚}
+]mÂí-³¢rÂrr’çG&–Ò‚“°¢VÇ6R–b†6ÆVâç7F'G5v—F‚‚}
+İ½]­-íİİ½’<óm¢G§²ÚîÆ­y×D–BÒv—BFVÆVw&ÒæFWFV7D6†D–B‚“°¢–b‚6†D–B’°¢&WGW&â&W2æ§6öâ‡°¢ö³¢fÇ6RÀ¢W'&÷#¢}
+íí]İ’İRİM]İââ	İı-R÷7F'Bí-2‚íİí--R-İm2ârÀ¢Fö¶Våö†–çC¢	í"-í­]Ò}MÒ)É6À¢Ò“°¢Ğ¢òò	--âİıÍ]İı]Â"'VçF–ÖRMâı]]}ı=­¢&ö6W72æVçbåDTÄTu$Õô4„Eô”BÒ6†D–C°¢v—BFVÆVw&Òç6VæB†)ÈRÆ#å¦¶öäW‡W'BıíM­½í}ÒÂö#åÆåÆä6†B”C¢Æ6öFSâG¶6†D–GÓÂö6öFSåÆí
+-]ı]Â=-]MíÍ½]İò=M="ı]íM-ÂíMåÆåÆãÆ“í	Mí-Í-R"æVçc¥ÆåDTÄTu$Õô4„Eô”CÒG¶6†D–GÓÂö“æ“°¢&W2æ§6öâ‡²ö³¢G'VRÂ6†Eö–C¢6†D–BÂæ÷FS¢	Mí-Í-RDTÄTu$Õô4„Eô”CÒG¶6†D–GÒ"æVçbM½òıí-íıİİí’í-¶Ò“°§Ò’“° ¢òò†VÇF‚Ö6†V6²M½òÍíİ-íİ=]- ¦ævWB‚rö†VÇF‚rÂ‡&WÂ&W2’Óâ°¢6öç7B6ö×ç•7FG2Ò6ö×æ–W4F"ò6ö×æ–W4F"ç7FG2‚’¢çVÆÃ°¢6öç7B÷VäFF66†RÒvWD÷VäFF66†T¦ö%7FGW2‚“°¢&W2æ§6öâ‡°¢7FGW3¢vö²rÀ¢6W'f–6S¢u¦¶öäW‡W'BrÀ¢&VÆV6S¢$TÄT4Uô”BÀ¢Vv÷d¶W“¢Ttõeô•ô´U’òv6öæf–wW&VBr¢vÖ—76–ærrÀ¢¶vD“¢¶vD6÷VçFW''G’æ6öæf–wW&VBòv6öæf–wW&VBr¢vÖ—76–ærrÀ¢v÷7¦·W“¢v÷7¦·Wæ6öæf–wW&VBòv6öæf–wW&VBr¢vÖ—76–ærrÀ¢÷VäFF66†S¢°¢Væ&ÆVC¢õTåôDDõ$T4õ$Eô44„UôTä$ÄTBÀ¢v&ÖW$Væ&ÆVC¢õTåôDDõ$T4õ$Eô44„Uõt$ÔU%ôTä$ÄTBÀ¢7FGW3¢õTåôDDõ$T4õ$Eô44„Uõt$ÔU%ôTä$ÄTBbb÷VäFF66†Rç7FGW2ÓÓÒv–FÆRp¢òw66†VGVÆVBp¢¢„õTåôDDõ$T4õ$Eô44„UôTä$ÄTBbb÷VäFF66†Rç7FGW2ÓÓÒv–FÆRròvW‡FW&æÂr¢÷VäFF66†Rç7FGW2’À¢†6S¢÷VäFF66†Rç†6RÀ¢&ö6W76VC¢÷VäFF66†Rç&ö6W76VBÀ¢F÷FÃ¢÷VäFF66†RçF÷FÂÀ¢6ö×ÆWFVC¢÷VäFF66†Ræ6ö×ÆWFVBÀ¢66†VE&÷w3¢÷VäFF66†Ræ66†VE&÷w2À¢ÖVv'—FW3¢ÖF‚ç&÷VæB‚†÷VäFF66†Ræ'—FW2ÇÂ’ò#Bò#B’À¢W'&÷'3¢÷VäFF66†RæW'&÷'2À¢7F'FVDC¢÷VäFF66†Rç7F'FVDBÀ¢f–æ—6†VDC¢÷VäFF66†Ræf–æ—6†VD@¢ÒÀ¢6ö×æ–W3¢6ö×ç•7FG2ò°¢f–Æ&ÆS¢6ö×ç•7FG2æf–Æ&ÆRÀ¢6÷VçC¢6ö×ç•7FG2æ6÷VçBÀ¢VÆ—G•&VG“¢6ö×ç•7FG2çVÆ—G•&VG’À¢–æFW†&ÆT6÷VçC¢6ö×ç•7FG2æ–æFW†&ÆT6÷Vç@¢Ò¢çVÆÂÀ¢F–ÖS¢æWrFFR‚’çFô•4õ7G&–ær‚¢Ò“°§Ò“° ¢òòÓÓÓÓÒ	­	í	Í	Í	]	İ
+-	
+		‚ÓÓÓÓĞ¦ç÷7B‚rö6öÖÖVçG2rÂ6öÖÖVçDÆ–Ö—FW"ÂW‡&W72çW&ÆVæ6öFVB‡²W‡FVæFVC¢G'VRÒ’Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢–b‚6öÖÖVçG4F"’&WGW&â&W2ç&VF—&V7B‡&Wæ†VFW'2ç&VfW&W"ÇÂròr“°¢6öç7B²G—RÂ6ÇVrÂæÖRÂ&F–ærÂFW‡BÂ&6µW&ÂÂ&—f7”6öç6VçBÒÒ&Wæ&öG“°¢–b‚&—f7”6öç6VçBÇÂG—RÇÂ6ÇVrÇÂFW‡BÇÂFW‡BçG&–Ò‚’æÆVæwF‚Â2’°¢&WGW&â&W2ç&VF—&V7B†&6µW&ÂÇÂ&Wæ†VFW'2ç&VfW&W"ÇÂròr“°¢Ğ¢v—B6öÖÖVçG4F"æFB‡°¢G—S¢G—Rç6Æ–6RƒÂ#’À¢6ÇVs¢6ÇVrç6Æ–6RƒÂ#’À¢æÖS¢‚†æÖRÇÂrr’çG&–Ò‚’ÇÂ}	İíİÂr’ç6Æ–6RƒÂS’À¢&F–æs¢ÖF‚æÖ–âƒRÂÖF‚æÖ‚ƒÂ'6T–çB‡&F–ær’ÇÂR’’À¢FW‡C¢FW‡BçG&–Ò‚’ç6Æ–6RƒÂc’À¢—¢&Wæ—À¢Ò“°¢&W2ç&VF—&V7B‚†&6µW&ÂÇÂ&Wæ†VFW'2ç&VfW&W"ÇÂròr’²sö6öÖÖVçC×6VçBr“°§Ò’“° ¦gVæ7F–öâ&WV—&TFÖ–å77v÷&B‡&WÂ&W2ÂæW‡B’°¢6öç7BW‡V7FVBÒ&ö6W72æVçbäDÔ”åõrÇÂrs°¢6öç7BWF†÷&—¦F–öâÒ7G&–ær‡&Wæ†VFW'2æWF†÷&—¦F–öâÇÂrr“°¢ÆWB&÷f–FVBÒrs°¢–b†WF†÷&—¦F–öâç7F'G5v—F‚‚t&6–2r’’°¢G'’°¢6öç7BFV6öFVBÒ'VffW"æg&öÒ†WF†÷&—¦F–öâç6Æ–6Rƒb’Âv&6ScBr’çFõ7G&–ær‚wWFc‚r“°¢&÷f–FVBÒFV6öFVBç6Æ–6R†FV6öFVBæ–æFW„öb‚s¢r’²“°¢Ò6F6‚…ò’·Ğ¢Ğ¢–b‚W‡V7FVBÇÂ6V7&WG4WVÂ‡&÷f–FVBÂW‡V7FVB’’°¢&W2ç6WB‚uuurÔWF†VçF–6FRrÂt&6–2&VÆÓÒ%¦¶öäW‡W'B6öÖÖVçG2"Â6†'6WCÒ%UDbÓ‚"r“°¢&WGW&â&W2ç7FGW2ƒC’ç6VæB‚tWF†VçF–6F–öâ&WV—&VBr“°¢Ğ¢æW‡B‚“°§Ğ ¦ævWB‚röFÖ–âö6öÖÖVçG2rÂ&WV—&TFÖ–å77v÷&BÂ7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢6öç7BÆÂÒ6öÖÖVçG4F"òv—B6öÖÖVçG4F"ævWDÆÂ‚’¢µÓ°¢&W2ç&VæFW"‚vFÖ–âö6öÖÖVçG2rÂ²6öÖÖVçG3¢ÆÂÒ“°§Ò’“° ¦ç÷7B‚röFÖ–âö6öÖÖVçG2ó¦–Bö&÷fRrÂ&WV—&TFÖ–å77v÷&BÂW‡&W72çW&ÆVæ6öFVB‡²W‡FVæFVC¢G'VRÒ’Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢–b†6öÖÖVçG4F"’v—B6öÖÖVçG4F"æ&÷fR‡&Wç&×2æ–B“°¢&W2ç&VF—&V7B‚röFÖ–âö6öÖÖVçG2r“°§Ò’“° ¦ç÷7B‚röFÖ–âö6öÖÖVçG2ó¦–BöFVÆWFRrÂ&WV—&TFÖ–å77v÷&BÂW‡&W72çW&ÆVæ6öFVB‡²W‡FVæFVC¢G'VRÒ’Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢–b†6öÖÖVçG4F"’v—B6öÖÖVçG4F"ç&VÖ÷fR‡&Wç&×2æ–B“°¢&W2ç&VF—&V7B‚röFÖ–âö6öÖÖVçG2r“°§Ò’“° ¢òòÓÓÓÓÒ$”â4T$4‚ÓÓÓÓĞ¦ævWB‚rö&–â×6V&6‚rÂ‡&WÂ&W2’Óâ°¢6öç7B&–âÒ‡&WçVW'’æ&–âÇÂrr’ç&WÆ6R‚õÄBörÂrr’ç6Æ–6RƒÂ"“°¢–b†&–âæÆVæwF‚Â’’&WGW&â&W2ç&VæFW"‚v&–â×6V&6‚ö–æFW‚rÂ²&–âÂ&W7VÇG3¢µÒÂ6V&6†VC¢fÇ6RÒ“°¢6öç7B&W7VÇG2ÒµÓ°¢G'’²vWD&æ·4FF‚’æf–ÇFW"†"Óâ"æ&–âÓÓÒ&–â’æf÷$V6‚†"Óâ&W7VÇG2çW6‚‡²G—S¢}	İ¢rÂæÖS¢"ç6†÷'DæÖRÇÂ"ææÖRÂW&Ã¢rö&æ·2òr²"ç6ÇVrÒ’“²Ò6F6‚†R—·Ğ¢G'’²6öç7B²ÖfòÂÆöÖ&&G2ÒÒvWDÖfôFF‚“²Öfòæf–ÇFW"†ÒÓâÒæ&–âÓÓÒ&–â’æf÷$V6‚†ÒÓâ&W7VÇG2çW6‚‡²G—S¢}	Í
+M	ârÂæÖS¢ÒææÖRÂW&Ã¢röÖfòòr²Òç6ÇVrÒ’“²ÆöÖ&&G2æf–ÇFW"†ÒÓâÒæ&–âÓÓÒ&–â’æf÷$V6‚†ÒÓâ&W7VÇG2çW6‚‡²G—S¢}	½íÍBrÂæÖS¢ÒææÖRÂW&Ã¢röÆöÖ&&G2òr²Òç6ÇVrÒ’“²Ò6F6‚†R—·Ğ¢G'’²vWD6öÆÆV7F÷'2‚’æf–ÇFW"†2Óâ2æ&–âÓÓÒ&–â’æf÷$V6‚†2Óâ&W7VÇG2çW6‚‡²G—S¢}	­í½½]­-írÂæÖS¢2ææÖRÂW&Ã¢rö6öÆÆV7F÷'2òr²2ç6ÇVrÒ’“²Ò6F6‚†R—·Ğ¢G'’²vWD–ç7W&æ6TFF‚’æf–ÇFW"†2Óâ2æ&–âÓÓÒ&–â’æf÷$V6‚†2Óâ&W7VÇG2çW6‚‡²G—S¢}
+-]í-òrÂæÖS¢2ç6†÷'DæÖRÇÂ2ææÖRÂW&Ã¢rö–ç7W&æ6Ròr²2ç6ÇVrÒ’“²Ò6F6‚†R—·Ğ¢G'’²vWDw6”FF‚’æf–ÇFW"†rÓâræ&–âbbræ&–âÓÓÒ&–â’æf÷$V6‚†rÓâ&W7VÇG2çW6‚‡²G—S¢}	=
+	‚rÂæÖS¢rææÖRÂW&Ã¢röw6’òr²rç6ÇVrÒ’“²Ò6F6‚†R—·Ğ¢G'’°¢–b†6ö×æ–W4F"bb6ö×æ–W4F"æf–Æ&ÆR‚’’°¢6ö×æ–W4F"ç6V&6‚†&–âÂÂR’æ—FV×2æf÷$V6‚†6ö×ç’Óâ&W7VÇG2çW6‚‡°¢G—S¢}	­íÍıİòrÀ¢æÖS¢6ö×ç’ææÖU÷'RÇÂ6ö×ç’ææÖUö¶²À¢W&Ã¢rö6ö×ç’òr²6ö×ç’ç6ÇVrÀ¢Ò’“°¢Ğ¢Ò6F6‚†R—·Ğ¢–b†6Æ–6·4F"’6Æ–6·4F"ç&V6÷&D6Æ–6²‡²G—S¢v&–å÷6V&6…ö6ö×ÆWFVBrÂF&vWC¢&–âÂvS¢rö&–â×6V&6‚rÂ—¢&Wæ†VFW'5²w‚Öf÷'v&FVBÖf÷"uÒÇÂ&Wç6ö6¶WBç&VÖ÷FTFG&W72ÇÂwVæ¶æ÷vârÂV¢&Wæ†VFW'5²wW6W"ÖvVçBuÒÇÂrrÒ’æ6F6‚‚‚’Óâ·Ò“°¢&W2ç&VæFW"‚v&–â×6V&6‚ö–æFW‚rÂ²&–âÂ&W7VÇG2Â6V&6†VC¢G'VRÒ“°§Ò“° ¢òòÓÓÓÓÒ	­		½
+Í	­
+=	½
+ı
+-	í
+ÓÓÓÓĞ¦ævWB‚rö6Æ7VÆF÷"rÂ‡&WÂ&W2’Óâ&W2ç&VæFW"‚v6Æ7VÆF÷"ö–æFW‚rÂ·Ò’“°¦ævWB‚röÖ'6‡'WBÖFöÇ¦†æ–¶rÂ‡&WÂ&W2’Óâ&W2ç&VæFW"‚vFV'B×&÷WFRr’“°¦ævWB‚röF–væ÷7F–¶Ö&W7FrÂ‡&WÂ&W2’Óâ&W2ç&VæFW"‚v'&W7BÖF–væ÷7F–2r’“°¦ævWB‚r÷&÷fW&¶Ö¶ö×æ–’×òÖ&–ârÂ‡&WÂ&W2’Óâ&W2ç&VF—&V7Bƒ3Âr÷&÷fW&¶Ö¶öçG&vVçFr’“°¦ævWB‚r÷&÷fW&¶Ö¶öçG&vVçFrÂ‡&WÂ&W2’Óâ°¢–b„ö&¦V7Bæ¶W—2‡&WçVW'’ÇÂ·Ò’æÆVæwF‚’°¢6öç7B&–âÒfÆ–FFT&–â‡&WçVW'’æ&–â“°¢&WGW&â&W2ç&VF—&V7Bƒ3Â&–âò÷&÷fW&¶Ö¶öçG&vVçF6&–ãÒG¶&–çÖ¢r÷&÷fW&¶Ö¶öçG&vVçFr“°¢Ğ¢&WGW&â&W2ç&VæFW"‚v6ö×ç’Ö6†V6²r“°§Ò“°¦ævWB‚r÷&÷fW&¶Ö&æ·&÷G7GfrÂ‡&WÂ&W2’Óâ&W2ç&VæFW"‚v&æ·'WF7’Ö6†V6²r’“°¦ç÷7B‚rö’ö6ö×ç’Ö6†V6²rÂW‡FW&æÄ”Æ–Ö—FW"Â7–æ2‡&WÂ&W2’Óâ°¢&W2ç6WB‚t66†RÔ6öçG&öÂrÂw&—fFRÂæò×7F÷&Rr“°¢6öç7B&–âÒfÆ–FFT&–â‡&Wæ&öG“òæ&–â“°¢–b‚&–â’°¢&WGW&â&W2ç7FGW2ƒC’æ§6öâ‡°¢W'&÷#¢}	--]M-R			Òr"mMârÀ¢6öFS¢t”ådÄ”Eô$”ârÀ¢Ò“°¢Ğ¢6öç7B66†VBÒ6ö×ç”6†V6´66†RævWB†&–â“°¢–b†66†VBbbFFRææ÷r‚’Ò66†VBç6fVDBÂ4ôÕå•ô4„T4µô44„UõEDÅôÕ2’°¢&W2ç6WB‚u‚ÔFFÔ66†RrÂt„•Br“°¢&WGW&â&W2æ§6öâ‡²ââæ66†VBç&W÷'BÂÖWF¢²66†VC¢G'VRÂ66†UGFÄÖ–çWFW3¢3ÒÒ“°¢Ğ¢–b†66†VB’6ö×ç”6†V6´66†RæFVÆWFR†&–â“° ¢G'’°¢6öç7B&W÷'BÒv—B6ö×ç”6†V6µ6W'f–6Ræ6†V6²†&–â“°¢–b†6ö×ç”6†V6´66†Rç6—¦RãÒ4ôÕå•ô4„T4µô44„UôÄ”Ô•B’°¢6öç7BöÆFW7D¶W’Ò6ö×ç”6†V6´66†Ræ¶W—2‚’ææW‡B‚’çfÇVS°¢–b†öÆFW7D¶W’’6ö×ç”6†V6´66†RæFVÆWFR†öÆFW7D¶W’“°¢Ğ¢6ö×ç”6†V6´66†Rç6WB†&–âÂ²&W÷'BÂ6fVDC¢FFRææ÷r‚’Ò“°¢&W2ç6WB‚u‚ÔFFÔ66†RrÂtÔ•52r“°¢&WGW&â&W2æ§6öâ‡²ââç&W÷'BÂÖWF¢²66†VC¢fÇ6RÂ66†UGFÄÖ–çWFW3¢3ÒÒ“°¢Ò6F6‚†W'&÷"’°¢–b†W'&÷"æ6öFRÓÓÒtäõôôdd”4”ÅôDDr’°¢6öç7BÆö6Å&Vv—7G'”6†V6¶VBÒW'&÷"ç6÷W&6W3òæVv÷bÓÓÒvæ÷Eöf÷VæBs°¢&WGW&â&W2ç7FGW2†Æö6Å&Vv—7G'”6†V6¶VBòCB¢S2’æ§6öâ‡°¢W'&÷#¢Æö6Å&Vv—7G'”6†V6¶V@¢ò}	í=İ}mò-­Â			ÒİRİM]İ"ıíM­½í}İİ½RíMm½Íİ½R-í}İ­Râp¢¢}	ıíM­½í}İİ½RíMm½Íİ½R-í}İ­‚-]Í]İİâİR-]İ=½‚Mİİ½RârÀ¢6öFS¢täõôôdd”4”ÅôDDrÀ¢Ò“°¢Ğ¢ÆövvW"æW'&÷"†´6ö×ç’6†V6µÒ&WVW7Bf–ÆVC¢G¶W'&÷"æ6öFRÇÂW'&÷"æÖW76vWÖ“°¢&WGW&â&W2ç7FGW2ƒS"’æ§6öâ‡°¢W'&÷#¢}	İR=M½íÂí-Âí-}"ríMm½Íİ½R-í}İ­í"â	ıí--í-R}]]rİ]­í½Í­âÍİ="ârÀ¢6öFS¢tôdd”4”Åõ4õU$4U5õTäd”Ä$ÄRrÀ¢Ò“°¢Ğ§Ò“°¦gVæ7F–öâ&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂ&öG•f–WrÂ&öG”FFÂÖWF’°¢6öç7B6†&VBÒ°¢f÷&ÖDFFS¢÷VäFFvW2æf÷&ÖDFFRÀ¢f÷&ÖDçVÖ&W#¢÷VäFFvW2æf÷&ÖDçVÖ&W"À¢&V6÷&D6÷VçDÆ&VÃ¢÷VäFFvW2ç&V6÷&D6÷VçDÆ&VÂÀ¢Ó°¢ç&VæFW"†&öG•f–WrÂ²ââç6†&VBÂââæ&öG”FFÒÂ†W'&÷"Â&öG’’Óâ°¢–b†W'&÷"’&WGW&âæW‡B†W'&÷"“°¢&W2ç&VæFW"‚væWw2öÆ–÷WBrÂ°¢F—FÆS¢ÖWFçF—FÆRÀ¢FW67&—F–öã¢ÖWFæFW67&—F–öâÀ¢6æöæ–6Ã¢÷VäFFvW2æ6æöæ–6Â‡&WçF‚’À¢66†VÖ¢ÖWFç66†VÖÀ¢æö–æFWƒ¢&ööÆVâ†ÖWFææö–æFW‚’À¢öuG—S¢wvV'6—FRrÀ¢Væ&ÆTWFôG3¢fÇ6RÀ¢7F—fTæc¢v÷VâÖFFrÀ¢W‡G&7G–ÆW3¢²rö772ö÷VâÖFFæ773÷cÓ##cƒ#bÓ"uÒÀ¢W‡G&67&—G3¢²rö§2ö÷VâÖFFÖ†÷W6–æræ§3÷cÓ##cƒ#bÓ"rÂâââ„'&’æ—4'&’†ÖWFæW‡G&67&—G2’òÖWFæW‡G&67&—G2¢µÒ•ÒÀ¢&öG’À¢Ò“°¢Ò“°§Ğ ¦ç÷7B‚rö’ö÷VâÖFFö†÷W6–ær×6V&6‚rÂ†÷W6–æu6V&6„Æ–Ö—FW"Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢G'’°¢6öç7B&W7VÇBÒv—B6V&6„†÷W6–æu&V6÷&G2‡°¢gVÆÄæÖS¢&Wæ&öG“òægVÆÄæÖRÀ¢”¶W“¢Ttõeô•ô´U’À¢FF6WG3¢÷VäFFvW2æÆ—7DFF6WG2‚’À¢‡GG¢†–÷2À¢Ò“°¢&W2ç6WB‚t66†RÔ6öçG&öÂrÂvæò×7F÷&Rr“°¢&WGW&â&W2æ§6öâ‡&W7VÇB“°¢Ò6F6‚†W'&÷"’°¢6öç7B7FGW2Òı	--]M-WÍ	ıíM--]M-RòçFW7B†W'&÷"æÖW76vR’òC¢S3°¢ÆövvW"çv&â†´÷VâFFÒ†÷W6–æræÖRÆöö·Wf–ÆVC¢G¶W'&÷"æ6öFRÇÂW'&÷"æÖW76vWÖ“°¢&WGW&â&W2ç7FGW2‡7FGW2’æ§6öâ‡²W'&÷#¢7FGW2ÓÓÒCòW'&÷"æÖW76vR¢}	íMm½Íİ½’-í}İ¢-]Í]İİâİRí--]-²â	ıí--í-Rıí}mRârÒ“°¢Ğ§Ò’“° ¦ç÷7B‚rö’ö÷VâÖFFö†÷W6–ær×&V6÷&G2rÂ†÷W6–æu&V6÷&G4Æ–Ö—FW"Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WB…7G&–ær‡&Wæ&öG“òæFF6WBÇÂrr’ç6Æ–6RƒÂƒ’“°¢–b‚FF6WBÇÂ—4†÷W6–ætFF6WB†FF6WB’’&WGW&â&W2ç7FGW2ƒCB’æ§6öâ‡²W'&÷#¢}	m½İ½’İíİRİM]ÒrÒ“°¢G'’°¢6öç7B&W7VÇBÒv—BfWF6„†÷W6–æu&V6÷&G5vT66†VB‡°¢FF6WBÀ¢”¶W“¢Ttõeô•ô´U’À¢7W'6÷#¢&Wæ&öG“òæ7W'6÷"À¢gVÆÄæÖS¢&Wæ&öG“òægVÆÄæÖRÀ¢Æ–Ö—C¢SÀ¢‡GG¢†–÷2À¢Ò“°¢&W2ç6WB‚t66†RÔ6öçG&öÂrÂw&—fFRÂæò×7F÷&Rr“°¢&WGW&â&W2æ§6öâ‡&W7VÇB“°¢Ò6F6‚†W'&÷"’°¢6öç7B7FGW2Òı	--]M-WÍİRİM]ÒòçFW7B†W'&÷"æÖW76vR’òC¢S3°¢ÆövvW"çv&â†´÷VâFFÒ†÷W6–ær&V6÷&G2&WVW7Bf–ÆVBf÷"G¶FF6WBæ¶W—Ó¢G¶W'&÷"æ6öFRÇÂW'&÷"æÖW76vWÖ“°¢&WGW&â&W2ç7FGW2‡7FGW2’æ§6öâ‡²W'&÷#¢7FGW2ÓÓÒCòW'&÷"æÖW76vR¢}	İR=M½íÂıí½=}-Â}ı‚ríMm½Íİí=â-í}İ­â	ıí--í-Rıí}mRârÒ“°¢Ğ§Ò’“° ¦ç÷7B‚rö’ö÷VâÖFF÷&V6÷&G2rÂ†÷W6–æu&V6÷&G4Æ–Ö—FW"Â7–æ4†æFÆW"†7–æ2‡&WÂ&W2’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WB…7G&–ær‡&Wæ&öG“òæFF6WBÇÂrr’ç6Æ–6RƒÂ##’“°¢–b‚FF6WBÇÂFF6WBæÆ—fTf–Æ&ÆR’&WGW&â&W2ç7FGW2ƒCB’æ§6öâ‡²W'&÷#¢}	İíMİİ½RİRİM]ÒrÒ“°¢G'’°¢6öç7B&W7VÇBÒv—BfWF6„÷VäFF&V6÷&G466†VB‡°¢FF6WBÀ¢”¶W“¢Ttõeô•ô´U’À¢öfg6WC¢&Wæ&öG“òæöfg6WBÀ¢Æ–Ö—C¢&Wæ&öG“òæÆ–Ö—BÀ¢VW'“¢&Wæ&öG“òçVW'’À¢‡GG¢†–÷2À¢Ò“°¢&W2ç6WB‚t66†RÔ6öçG&öÂrÂw&—fFRÂæò×7F÷&Rr“°¢&WGW&â&W2æ§6öâ‡&W7VÇB“°¢Ò6F6‚†W'&÷"’°¢6öç7B7FGW2ÒıMí½m]×ÍİRİM]ÒòçFW7B†W'&÷"æÖW76vR’òC¢S3°¢ÆövvW"çv&â†´÷VâFFÒ&V6÷&G2&WVW7Bf–ÆVBf÷"G¶FF6WBæ–æFW‡Ó¢G¶W'&÷"æ6öFRÇÂW'&÷"æÖW76vWÖ“°¢&WGW&â&W2ç7FGW2‡7FGW2’æ§6öâ‡°¢W'&÷#¢7FGW2ÓÓÒCòW'&÷"æÖW76vR¢}	íMm½Íİ½’’-]Í]İİâİRí--]-²â	ıí--í-Rıí}mRârÀ¢Ò“°¢Ğ§Ò’“° ¦ævWB‚rö÷F·'—G–RÖFæç–RrÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7B6æ6†÷BÒ÷VäFFvW2æÆöE6æ6†÷B‚“°¢6öç7B–çfVçF÷'’Ò÷VäFFvW2æÆöD–çfVçF÷'’‚“°¢6öç7B6FVv÷&–W2Ò÷VäFFvW2æ6FVv÷'•7VÖÖ&–W2‚“°¢6öç7BvVæ6–W2Ò÷VäFFvW2ævVæ7•7VÖÖ&–W2‚“°¢6öç7B†÷W6–æu&V6V—fVBÒ÷VäFFvW2æ†÷W6–ætw&÷W‚v†÷W6–æu÷&V6V—fVBr“°¢6öç7B†÷W6–æuv—FÆ—7BÒ÷VäFFvW2æ†÷W6–ætw&÷W‚v†÷W6–æu÷v—FÆ—7Br“°¢6öç7BVF—BÒ÷VäFFvW2ævWDFF6WB‚vVF—BÖ6öÖÖ—76–öç2Ó##b×"r“°¢6öç7B&V†"Ò÷VäFFvW2ævWDFF6WB‚v6†–ÆG&Vâ×&V†&–Æ—FF–öâÖÆFRÓ##bÖƒr“°¢6öç7Bv÷fW&æÖVçE6V7F÷"Ò÷VäFFvW2æÆ—7DFF6WG2‚’æf–ÇFW"†FF6WBÓâFF6WBæ6FVv÷'’ÓÓÒ}	=í=M--]İİ½’]­-ír“°¢6öç7BF—FÆRÒ}	í-­½-½RMİİ½R	­}]-İ(	Bm½ÍÂ=M"‚ím½Íİ½Rıí­}-]½‚Â¦¶öäW‡W'Bs°¢6öç7BFW67&—F–öâÒ}	ıíİı-İ½R]}²íMm½Íİ½RMİİ½R	­}]-İ¢m½İ½Rı­‚ıâ]=íİÂÂí}]]MÂİm½Í‚=í=M--]İİ½’=M"â	-í}İ­‚‚M-²íİí-½]İòâs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö‡V"Ö&öG’rÂ°¢6æ6†÷BÂ–çfVçF÷'’Â6FVv÷&–W2ÂvVæ6–W2Â†÷W6–æu&V6V—fVBÂ†÷W6–æuv—FÆ—7BÂVF—BÂ&V†"Âv÷fW&æÖVçE6V7F÷"À¢FF6WG3¢¶VF—BÂ&V†%ÒÀ¢ÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚r÷¦†–Æ—6†6†ç–R×7—6¶’rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7Bv—FÆ—7BÒ÷VäFFvW2æ†÷W6–ætw&÷W‚v†÷W6–æu÷v—FÆ—7Br“°¢6öç7B&V6V—fVBÒ÷VäFFvW2æ†÷W6–ætw&÷W‚v†÷W6–æu÷&V6V—fVBr“°¢6öç7BF—FÆRÒ}	m½İ½Rı­‚	­}]-İıâ]=íİÂ(	Bí}]]MÂ‚ıí½=}-Rm½Ís°¢6öç7BFW67&—F–öâÒ}	íMm½Íİ½Rm½İ½Rı­‚	­}]-İ¢ıí¢ıâ
+M		âÂí}]]MÂİm½ÍÂıí½=}-R­íÍÍ=İ½ÍİíRm½ÍÂ­-]=í‚‚]=íİ²âs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö†÷W6–ærÖ‡V"Ö&öG’rÂ²v—FÆ—7BÂ&V6V—fVBÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}	m½İ½Rı­‚rÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦gVæ7F–öâ&VæFW$†÷W6–ætw&÷W†¶–æB’°¢&WGW&â‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7Bw&÷WÒ÷VäFFvW2æ†÷W6–ætw&÷W†¶–æB“°¢6öç7Bv—FÆ—7BÒ¶–æBÓÓÒv†÷W6–æu÷v—FÆ—7Bs°¢6öç7BF—FÆRÒv—FÆ—7@¢ò}	í}]]MÂİm½Íıâ]=íİÂ	­}]-İ(	BíMm½Íİ½Rı­‚##bp¢¢}
+ı­‚ıí½=}-Rm½Íıâ]=íİÂ	­}]-İ(	BMİİ½R##bs°¢6öç7BFW67&—F–öâÒv—FÆ—7@¢ò}
+ı­‚í}]]M‚İm½Í"	­}]-İRıâ
+M		âÂ]=íİÂÂ­-]=íıÂ‚M-Âıí-İí-­‚İ=}"âp¢¢}
+]=íİ½Íİ½Rı­‚ıí½=}-R­íÍÍ=İ½ÍİíRm½Íıâ
+M		âÂ­-]=íıÂÂıí=ÍÍÂ‚M-Âı]Mí--½]İòâs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö†÷W6–ærÖw&÷WÖ&öG’rÂ²w&÷WÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÀ¢²æÖS¢}	m½İ½Rı­‚rÂFƒ¢r÷¦†–Æ—6†6†ç–R×7—6¶’rÒÀ¢²æÖS¢v—FÆ—7Bò}	í}]]MÂİm½Ír¢}	ıí½=}½‚m½ÍrÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°¢Ó°§Ğ ¦ævWB‚r÷¦†–Æ—6†6†ç–R×7—6¶’öö6†W&VBÖæ×¦†–ÆRrÂ&VæFW$†÷W6–ætw&÷W‚v†÷W6–æu÷v—FÆ—7Br’“°¦ævWB‚r÷¦†–Æ—6†6†ç–R×7—6¶’÷öÇV6†–Æ’×¦†–ÆRrÂ&VæFW$†÷W6–ætw&÷W‚v†÷W6–æu÷&V6V—fVBr’“° ¦gVæ7F–öâ&VæFW$†÷W6–ætFF6WB†¶–æB’°¢&WGW&â‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWD†÷W6–ætFF6WB†¶–æBÂ&Wç&×2ç&Vv–öå6ÇVr“°¢–b‚FF6WB’&WGW&â6VæDæ÷Df÷VæB‡&W2“°¢6öç7B—5v—FÆ—7BÒ¶–æBÓÓÒv†÷W6–æu÷v—FÆ—7Bs°¢6öç7BF—FÆRÒ—5v—FÆ—7@¢ò	í}]]MÂİm½Í"G¶FF6WBç&Vv–öå&W÷6—F–öæÇÒ(	Bıí¢‚---­##f ¢¢
+ıí¢ıí½=}-Rm½Í"G¶FF6WBç&Vv–öå&W÷6—F–öæÇÒ(	BMİİ½R##f°¢6öç7BFW67&—F–öâÒG¶FF6WBæFW67&—F–öçÒ	ıí¢ıâ
+M		âÂıí½İ½’ıí¢}ı]’Â­-]=í‚ÂM-²ÂíMm½Íİ½’-í}İ¢‚­-=½Íİí-Âæ°¢6öç7B&VÆFVBÒ÷VäFFvW2æÆ—7DFF6WG2†¶–æB’æf–ÇFW"†—FVÒÓâ—FVÒæ¶W’ÓÒFF6WBæ¶W’“°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö†÷W6–ærÖFWF–ÂÖ&öG’rÂ²FF6WBÂ&VÆFVBÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢æö–æFWƒ¢†FF6WBæÆ—fTf–Æ&ÆRÇÂFF6WBæ†4FF’À¢66†VÖ¢÷VäFFvW2æFF6WE66†VÖ†FF6WBÂ°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÀ¢²æÖS¢}	m½İ½Rı­‚rÂFƒ¢r÷¦†–Æ—6†6†ç–R×7—6¶’rÒÀ¢²æÖS¢—5v—FÆ—7Bò}	í}]]MÂİm½Ír¢}	ıí½=}½‚m½ÍrÂFƒ¢—5v—FÆ—7Bòr÷¦†–Æ—6†6†ç–R×7—6¶’öö6†W&VBÖæ×¦†–ÆRr¢r÷¦†–Æ—6†6†ç–R×7—6¶’÷öÇV6†–Æ’×¦†–ÆRrÒÀ¢²æÖS¢FF6WBç&Vv–öäæÖRÂFƒ¢FF6WBçF‚ÒÀ¢Ò’À¢Ò“°¢Ó°§Ğ ¦ævWB‚r÷¦†–Æ—6†6†ç–R×7—6¶’öö6†W&VBÖæ×¦†–ÆRó§&Vv–öå6ÇVrrÂ&VæFW$†÷W6–ætFF6WB‚v†÷W6–æu÷v—FÆ—7Br’“°¦ævWB‚r÷¦†–Æ—6†6†ç–R×7—6¶’÷öÇV6†–Æ’×¦†–ÆRó§&Vv–öå6ÇVrrÂ&VæFW$†÷W6–ætFF6WB‚v†÷W6–æu÷&V6V—fVBr’“° ¦ævWB‚rö÷F·'—G–RÖFæç–R÷&Wf—¦–öæç–RÖ¶öÖ—76–’Ó"Ö·f'FÂÓ##brÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WB‚vVF—BÖ6öÖÖ—76–öç2Ó##b×"r“°¢6öç7BF—FÆRÒ}	ıí­}-]½‚]-}íİİ½R­íÍ’}"­--²##b=íMs°¢6öç7BFW67&—F–öâÒ}	=M-í­RÍ]íıı-ò]-}íİİ½R­íÍ’	­}]-İ}"­--²##b=íM¢í­Â=M-Âİ=]İòÂ-í-İí-½]İİ½R]M--âs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFöVF—BÖ&öG’rÂ²FF6WBÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢æö–æFWƒ¢FF6WBæ†4FFÀ¢66†VÖ¢÷VäFFvW2æFF6WE66†VÖ†FF6WBÂ°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}
+]-}íİİ½R­íÍ‚rÂFƒ¢FF6WBçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–R÷&V&–Æ—F6—–ÖFWFW’ÖÆFRÓ##brÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WB‚v6†–ÆG&Vâ×&V†&–Æ—FF–öâÖÆFRÓ##bÖƒr“°¢6öç7BF—FÆRÒ}
+]½-mòM]-]’"İ-í‚*½	½-<+²(	BMİİ½R}##b=íBs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFövVæW&–2Ö&öG’rÂ²FF6WBÂ†÷W6–ætFF6WC¢fÇ6RÒÂ°¢F—FÆRÀ¢FW67&—F–öã¢G¶FF6WBæFW67&—F–öçÒ	­-=½Íİ½R}ı‚}==mí-òİııÍ=âríMm½Íİí=â’FFæVv÷bæ·¢æÀ¢æö–æFWƒ¢†FF6WBæÆ—fTf–Æ&ÆRÇÂFF6WBæ†4FF’À¢W‡G&67&—G3¢²rö§2ö÷VâÖFF×&V6÷&G2æ§3÷cÓ##cƒ#bÓ2uÒÀ¢66†VÖ¢÷VäFFvW2æFF6WE66†VÖ†FF6WBÂ°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢FF6WBç6†÷'EF—FÆRÂFƒ¢FF6WBçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–Röv÷7VF'7GfVæç—’×6V·F÷"rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BFF6WG2Ò÷VäFFvW2æÆ—7DFF6WG2‚’æf–ÇFW"†FF6WBÓâFF6WBæ6FVv÷'’ÓÓÒ}	=í=M--]İİ½’]­-ír“°¢6öç7BF÷FÅ&÷w2ÒFF6WG2ç&VGV6R‚‡7VÒÂFF6WB’Óâ7VÒ²FF6WBç&÷t6÷VçBÂ“°¢6öç7B&VG”6÷VçBÒFF6WG2æf–ÇFW"†FF6WBÓâFF6WBæÆ—fTf–Æ&ÆRÇÂFF6WBæ†4FF’æÆVæwFƒ°¢6öç7B'F–ÂÒFF6WG2ç6öÖR†FF6WBÓâFF6WBç&÷tÆ–Ö—E&V6†VBÇÂFF6WBæ6ö×ÆWFVæW72ÓÒv6ö×ÆWFRr“°¢6öç7BF—FÆRÒ}	í-­½-½RMİİ½R=í=M--]İİí=â]­-í	­}]-İ(	B­-½í2İíí"s°¢6öç7BFW67&—F–öâÒ}	-Ríı=½­í-İİ½Rİí²­-]=í‚*½	=í=M--]İİ½’]­-í+²İFFæVv÷bæ·£¢­-=½Íİ½R-]‚Â}½â}ı]’Â-=­-=‚íMm½Íİ½’-í}İ¢âs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFöv÷fW&æÖVçB×6V7F÷"Ö&öG’rÂ²FF6WG2ÂF÷FÅ&÷w2Â&VG”6÷VçBÂ'F–ÂÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢W‡G&67&—G3¢²rö§2ö÷VâÖFFæ§3÷cÓ##cƒ#bÓuÒÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}	=í=M--]İİ½’]­-írÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–Rö¶FVv÷&–’rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7B6FVv÷&–W2Ò÷VäFFvW2æ6FVv÷'•7VÖÖ&–W2‚“°¢6öç7BF÷FÄFF6WG2Ò÷VäFFvW2æÆöD–çfVçF÷'’‚’ç&ö6W76VD6÷VçBÇÂ÷VäFFvW2æÆ—7DFF6WG2‚’æÆVæwFƒ°¢6öç7BF—FÆRÒ}	­-]=í‚í-­½-½RMİİ½R	­}]-İÂ¦¶öäW‡W'Bs°¢6öç7BFW67&—F–öâÒ	-RG·F÷FÄFF6WG7Òíı=½­í-İİ½RİíFFæVv÷bæ·¢ıâG¶6FVv÷&–W2æÆVæwF‡Ò­-]=íıÃ¢ıí¢Â}ı‚Â-í}İ­‚‚M-²íİí-½]İòæ°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö6FVv÷&–W2Ö&öG’rÂ²6FVv÷&–W2ÂF÷FÄFF6WG2ÒÂ°¢F—FÆRÂFW67&—F–öâÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}	­-]=í‚rÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–Rö÷&væ—¦6–’rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BvVæ6–W2Ò÷VäFFvW2ævVæ7•7VÖÖ&–W2‚“°¢6öç7BF÷FÄFF6WG2Ò÷VäFFvW2æÆöD–çfVçF÷'’‚’ç&ö6W76VD6÷VçBÇÂ÷VäFFvW2æÆ—7DFF6WG2‚’æÆVæwFƒ°¢6öç7BF—FÆRÒ}	=íí=İ²Â­Í-²‚­-}]­-í(	Bí-­½-½RMİİ½Rs°¢6öç7BFW67&—F–öâÒ	íMm½Íİ½Rİí²G¶vVæ6–W2æÆVæwF‡ÒÍİ-]-"Â=]İ--"Â­Í-í"‚­-}=í=M--]İİ½Rí=İ}m’æ°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFövVæ6–W2Ö&öG’rÂ²vVæ6–W2ÂF÷FÄFF6WG2ÒÂ°¢F—FÆRÂFW67&—F–öâÂW‡G&67&—G3¢²rö§2ö÷VâÖFFæ§3÷cÓ##cƒ#bÓ"uÒÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}	í=İ}m‚rÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–Rö—7Fö6†æ–¶’rÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7B²&Wf–WvVDBÂ6÷W&6W2ÒÒ÷VäFFvW2æöff–6–ÄFF6÷W&6W2‚“°¢6öç7BF—FÆRÒ}	íMm½Íİ½R-í}İ­‚Mİİ½R	­}]-İÂ¦¶öäW‡W'Bs°¢6öç7BFW67&—F–öâÒ}	í-­½-½RMİİ½RÂ=í=M--]İİ½R]]-²‚íMm½Íİ½R’ÂıíM­½í}İİ½R¢ı-í}İ­Â¦¶öäW‡W'Bâs°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFF÷6÷W&6W2Ö&öG’rÂ²&Wf–WvVDBÂ6÷W&6W2ÒÂ°¢F—FÆRÂFW67&—F–öâÀ¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÂ²æÖS¢}	-í}İ­‚rÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°§Ò“° ¦gVæ7F–öâ&VæFW$÷VäFFw&÷W†w&÷WG—R’°¢&WGW&â‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7Bw&÷WÒw&÷WG—RÓÓÒv6FVv÷'’rò÷VäFFvW2æf–æD6FVv÷'’‡&Wç&×2ç6ÇVr’¢÷VäFFvW2æf–æDvVæ7’‡&Wç&×2ç6ÇVr“°¢–b‚w&÷W’&WGW&â6VæDæ÷Df÷VæB‡&W2“°¢6öç7B&W7VÇBÒ÷VäFFvW2çv–æFVDFF6WG2‡°¢¶w&÷WG—RÓÓÒv6FVv÷'’ròv6FVv÷'”–Br¢vvVæ7”–BuÓ¢w&÷Wæ–BÀ¢VW'“¢&WçVW'’çÀ¢vS¢&WçVW'’çvRÀ¢vU6—¦S¢C‚À¢Ò“°¢6öç7BF—FÆRÒG¶w&÷WææÖWÒ(	BG·&W7VÇBçF÷FÇÒİíí"í-­½-½RMİİ½V°¢6öç7BFW67&—F–öâÒ	ıí¢‚ıíÍí--]RíMm½Íİ½R}ı]“¢G¶w&÷WææÖWÒâ	-í}İ¢FFæVv÷bæ·¢æ°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFö6FÆörÖw&÷WÖ&öG’rÂ²w&÷WG—RÂw&÷WÂ&W7VÇBÒÂ°¢F—FÆRÂFW67&—F–öâÀ¢æö–æFWƒ¢&ööÆVâ‡&W7VÇBçVW'’ÇÂ&W7VÇBçvRâ’À¢66†VÖ¢÷VäFFvW2çvU66†VÖ‡F—FÆRÂFW67&—F–öâÂ&WçF‚Â°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÀ¢²æÖS¢w&÷WG—RÓÓÒv6FVv÷'’rò}	­-]=í‚r¢}	í=İ}m‚rÂFƒ¢w&÷WG—RÓÓÒv6FVv÷'’ròrö÷F·'—G–RÖFæç–Rö¶FVv÷&–’r¢rö÷F·'—G–RÖFæç–Rö÷&væ—¦6–’rÒÀ¢²æÖS¢w&÷WææÖRÂFƒ¢&WçF‚ÒÀ¢Ò’À¢Ò“°¢Ó°§Ğ ¦ævWB‚rö÷F·'—G–RÖFæç–Rö¶FVv÷&—–ó§6ÇVrrÂ&VæFW$÷VäFFw&÷W‚v6FVv÷'’r’“°¦ævWB‚rö÷F·'—G–RÖFæç–Rö÷&væ—¦6—–ó§6ÇVrrÂ&VæFW$÷VäFFw&÷W‚vvVæ7’r’“° ¦gVæ7F–öâ&VæFW$vVæW&–4÷VäFFFF6WB‡&WÂ&W2ÂæW‡BÂFF6WB’°¢–b‚FF6WBÇÂ²vv÷fW&æÖVçE÷6V7F÷"rÂv6FÆöuöFF6WBuÒæ–æ6ÇVFW2†FF6WBæ¶–æB’’&WGW&â6VæDæ÷Df÷VæB‡&W2“°¢6öç7BF—FÆRÒG¶FF6WBçF—FÆWÒ(	BíMm½Íİ½’İíMİİ½RÂ¦¶öäW‡W'F°¢6öç7BFW67&—F–öâÒG¶FF6WBæFW67&—F–öçÒ	ıí½İ½R}ı‚Âıí¢ÂM-íİí-½]İò‚½½­İ-í}İ¢æ°¢6öç7B†÷W6–ætFF6WBÒ—4†÷W6–ætFF6WB†FF6WB“°¢&VæFW$÷VäFFvR‡&WÂ&W2ÂæW‡BÂv÷VâÖFFövVæW&–2Ö&öG’rÂ²FF6WBÂ†÷W6–ætFF6WBÒÂ°¢F—FÆRÀ¢FW67&—F–öâÀ¢æö–æFWƒ¢†FF6WBæÆ—fTf–Æ&ÆRÇÂFF6WBæ†4FF’À¢W‡G&67&—G3¢†÷W6–ætFF6WBòµÒ¢²rö§2ö÷VâÖFF×&V6÷&G2æ§3÷cÓ##cƒ#bÓ2uÒÀ¢66†VÖ¢÷VäFFvW2æFF6WE66†VÖ†FF6WBÂ°¢²æÖS¢}	=½-İòrÂFƒ¢ròrÒÂ²æÖS¢}	í-­½-½RMİİ½RrÂFƒ¢rö÷F·'—G–RÖFæç–RrÒÀ¢²æÖS¢FF6WBæ6FVv÷'’ÂFƒ¢FF6WBæ6FVv÷'’ÓÓÒ}	=í=M--]İİ½’]­-íròrö÷F·'—G–RÖFæç–Röv÷7VF'7GfVæç—’×6V·F÷"r¢rö÷F·'—G–RÖFæç–Rö¶FVv÷&–’rÒÀ¢²æÖS¢FF6WBçF—FÆRÂFƒ¢FF6WBçF‚ÒÀ¢Ò’À¢Ò“°§Ğ ¦ævWB‚rö÷F·'—G–RÖFæç–Röv÷7VF'7GfVæç—’×6V·F÷"ó§6ÇVrrÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7B&WVW7EF‚Òö÷F·'—G–RÖFæç–Röv÷7VF'7GfVæç—’×6V·F÷"òG·&Wç&×2ç6ÇVwÖ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WD'•F‚‡&WVW7EF‚“°¢&WGW&â&VæFW$vVæW&–4÷VäFFFF6WB‡&WÂ&W2ÂæW‡BÂFF6WB“°§Ò“° ¦ævWB‚rö÷F·'—G–RÖFæç–Röæ&÷"ó§6ÇVrrÂ‡&WÂ&W2ÂæW‡B’Óâ°¢6öç7BFF6WBÒ÷VäFFvW2ævWDFF6WD'•F‚†ö÷F·'—G–RÖFæç–Röæ&÷"òG·&Wç&×2ç6ÇVwÖ“°¢&WGW&â&VæFW$vVæW&–4÷VäFFFF6WB‡&WÂ&W2ÂæW‡BÂFF6WB“°§Ò“° ¦ævWB‚r÷FööÇ2rÂ‡&WÂ&W2’Óâ&W2ç&VæFW"‚wFööÇ2ö–æFW‚rÂ²FööÇ3¢DôôÅ2Ò’“°¦ævWB‚r÷FööÇ2ó§6ÇVrrÂ‡&WÂ&W2’Óâ°¢6öç7BFööÂÒf–æEFööÂ‡&Wç&×2ç6ÇVr“°¢–b‚FööÂ’&WGW&â6VæDæ÷Df÷VæB‡&W2“°¢&W2ç&VæFW"‚wFööÇ2÷FööÂrÂ²FööÂÂFööÇ3¢DôôÅ2Ò“°§Ò“° ¢òò&VÂCB&W7öç6R&WfVçG27&vÆW'2g&öÒG&VF–ærÖ—76–ær&öf–ÆW20¢òò–æFW†&ÆR6ögBÓCB&VF—&V7G2æBv—fW2f—6—F÷'2W6VgVÂ&V6÷fW'’Æ–æ·2à¦çW6R‚‡&WÂ&W2’Óâ6VæDæ÷Df÷VæB‡&W2’“° ¢òò
+m]İ-½}í-İİ½’íí-}¢Mí½m]Òİ]íM-Íòıí½R-]RÍ=-í"Âİ}P¢òòí­‚rí­ı-½]İİ½RİmRİ]=â-İbıíıM=""-İM-İ½’…DÔÂİí--] ¢òòW‡&W72‚Íí=="­½-Â½İRM]-½‚à¦çW6R‚†W'"Â&WÂ&W2ÂæW‡B’Óâ°¢ÆövvW"æW'&÷"†G¶W'"ç7FGW2ÇÂSÒÒG¶W'"æÖW76vWÒÒG·&Wæ÷&–v–æÅW&ÇÒÒG·&WæÖWF†öGÒÒG·&Wæ—ÖÂW'"“°¢–b‚&W2æ†VFW'56VçB’°¢&WGW&â&W2ç7FGW2†W'"ç7FGW2ÇÂS’æ§6öâ‡°¢W'&÷#¢}	-İ=-]İİıòí­]-]rÀ¢FWF–Ç3¢&ö6W72æVçbääôDUôTåbÓÓÒw&öGV7F–öârò}	ıí}í½İ]ı]M-M]İİòí­âr¢W'"æÖW76vRÀ¢Ò“°¢Ğ¢æW‡B†W'"“°§Ò“° ¢òò	}ı=¢]-] ¦æÆ—7FVâ…õ%BÂsãããrÂ‚’Óâ°¢ÆövvW"æ–æfò†¦¶öäW‡W'B]-]}ı=]Òİıí-2Gµõ%GÖ“°¢ÆövvW"æ–æfò†Ttõeô•ô´U“¢G´Ttõeô•ô´U’ò}}MÒ)É2r¢}	İ	R	}		M		Ò(	Bıí-]­			ÒİR=M]"í--ÂwÖ“°¢ÆövvW"æ–æfò†´tEô•õDô´Tã¢G¶¶vD6÷VçFW''G’æ6öæf–wW&VBò}}MÒ)É2r¢}	İ	R	}		M		Ò(	Bİ½í=í-½’}M]²=M]"İ]Mí-=ı]ÒwÖ“°¢ÆövvW"æ–æfò†tõ5¤µUô•õDô´Tã¢G¶v÷7¦·Wæ6öæf–wW&VBò}}MÒ)É2r¢}	İ	R	}		M		Ò(	B}M]²=í}­=ıí¢=M]"İ]Mí-=ı]ÒwÖ“°¢òò	}ı=­]ÂFVÆVw&Òí"ıİÍ]"­íÍİM²÷7FG2ÂöÆVG2Âö†VÇ¢–b„$4´u$õTäEô¤ô%5ôTä$ÄTB’°¢FVÆVw&Òç7F'EöÆÆ–ær‚“°¢ÆövvW"æ–æfò‚uFVÆVw&Ò&÷BöÆÆ–ær7F'FVB)É2r“°¢ÒVÇ6R°¢ÆövvW"æ–æfò‚uFVÆVw&Ò&÷BöÆÆ–ærF—6&ÆVBr“°¢Ğ§Ò“°
