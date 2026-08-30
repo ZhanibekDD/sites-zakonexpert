@@ -35,5 +35,7 @@ jobs:
           node --check modules/crm-db.js
           node --check modules/crm-routes.js
           node --check scripts/test-crm-contract-sync.js
+      - name: Compile CRM view
+        run: node -e "const fs=require('fs'),ejs=require('ejs'); ejs.compile(fs.readFileSync('views/crm/dashboard.ejs','utf8'), {filename:'views/crm/dashboard.ejs'}); console.log('CRM EJS compile: PASS')"
       - name: CRM contract integration tests
         run: node scripts/test-crm-contract-sync.js
