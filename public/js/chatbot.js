@@ -42,12 +42,12 @@
 
   // ── Chatbot widget ────────────────────────────────────────────────────────
   const CSS = `
-  #zke-chat-btn{position:fixed;bottom:18px;right:18px;width:auto;min-width:178px;height:52px;padding:0 18px;border-radius:14px;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;box-shadow:0 8px 24px rgba(13,31,60,.28);z-index:9998;display:flex;gap:9px;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:15px;font-weight:800;}
+  #zke-chat-btn{position:fixed;bottom:82px;right:18px;width:auto;min-width:178px;height:52px;padding:0 18px;border-radius:14px;background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;border:1px solid rgba(255,255,255,.2);cursor:pointer;box-shadow:0 8px 24px rgba(13,31,60,.28);z-index:9998;display:flex;gap:9px;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;font-size:15px;font-weight:800;}
   #zke-chat-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(13,31,60,.35);}
   #zke-chat-btn .zke-label{white-space:nowrap;}
   #zke-chat-btn .zke-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;background:#ef4444;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;border:2px solid #fff;animation:zke-pulse 2s infinite;}
   @keyframes zke-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-  #zke-chat-box{position:fixed;bottom:88px;right:20px;width:330px;max-width:calc(100vw - 40px);background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9999;overflow:hidden;display:none;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+  #zke-chat-box{position:fixed;bottom:152px;right:20px;width:330px;max-width:calc(100vw - 40px);background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);z-index:9999;overflow:hidden;display:none;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
   #zke-chat-box.open{display:flex;}
   .zke-header{background:linear-gradient(135deg,#0d1f3c,#1a3460);color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px;}
   .zke-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
