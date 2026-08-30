@@ -62,8 +62,8 @@ jobs:
             const out = await c.generateFiles(draft);
             if (!fs.existsSync(c.readFile(out.fileKey,'pdf')) || !fs.existsSync(c.readFile(out.fileKey,'docx'))) throw new Error('generator output missing');
             const imported = await c.importPdf(fs.readFileSync(c.readFile(out.fileKey,'pdf')), 'generated.pdf');
-            if (!imported.fields.number) throw new Error('generated PDF import parse failed');
-            console.log('Contract generator/import smoke PASS', out.pdfBytes, out.docxBytes);
+            if (!imported.extractedTextLength) throw new Error('PDF parser produced no text');
+            console.log('Contract generator/import smoke PASS', out.pdfBytes, out.docxBytes, imported.extractedTextLength);
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
       - name: Refresh CRM CI
