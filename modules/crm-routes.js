@@ -1,8 +1,12 @@
 'use strict';
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 const crmDb = require('./crm-db');
+
+const CONTRACT_UPLOAD_DIR = process.env.CRM_CONTRACT_UPLOAD_DIR || path.join(__dirname, '..', 'data', 'crm-contracts');
 
 function safeEqual(a, b) {
   const aa = Buffer.from(String(a || ''));
@@ -63,7 +67,7 @@ function readSession(req) {
 function securityHeaders(req, res, next) {
   res.set({
     'Cache-Control': 'private, no-store, max-age=0',
-    'Pragma': 'no-cache',
+    Pragma: 'no-cache',
     'X-Robots-Tag': 'noindex, nofollow, noarchive',
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
@@ -120,6 +124,14 @@ function integrationAuthorized(req) {
   return expected.length >= 24 && safeEqual(provided, expected);
 }
 
+function generatorBaseUrl() {
+  return String(process.env.CRM_GENERATOR_API_URL || '').trim().replace(/\/+$/, '');
+}
+
+function generatorConfigured() {
+  return Boolean(generatorBaseUrl() && String(process.env.CRM_INTEGRATION_KEY || '').trim().length >= 24);
+}
+
 function extractWhatsAppText(message = {}) {
   if (message.text?.body) return message.text.body;
   if (message.button?.text) return message.button.text;
@@ -156,6 +168,39 @@ async function syncWebsiteLeads() {
   }
 }
 
+function safeFilename(value) {
+  return String(value || 'contract').replace(/[^0-9A-Za-zА-Яа-яЁё._()\- ]/g, '_').slice(0, 180) || 'contract';
+}
+
+function allowedUpload(filename, mimeType) {
+  const ext = path.extname(filename || '').toLowerCase();
+  if (!['.pdf', '.docx', '.txt'].includes(ext)) return false;
+  const mime = String(mimeType || '').toLowerCase();
+  if (!mime) return true;
+  return mime === 'application/pdf'
+    || mime.includes('wordprocessingml')
+    || mime === 'text/plain'
+    || mime === 'application/octet-stream';
+}
+
+async function parseContractInGenerator({ filename, mimeType, dataBase64 }) {
+  if (!generatorConfigured()) throw new Error('GENERATOR_NOT_CONFIGURED');
+  const response = await axios.post(
+    `${generatorBaseUrl()}/internal/crm/parse-contract`,
+    { filename, mime_type: mimeType, data_base64: dataBase64 },
+    {
+      headers: {
+        'X-CRM-Integration-Key': String(process.env.CRM_INTEGRATION_KEY || '').trim(),
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+      maxBodyLength: 16 * 1024 * 1024,
+      maxContentLength: 2 * 1024 * 1024,
+    }
+  );
+  return response.data?.contract || {};
+}
+
 function installCrm(app, express) {
   const router = express.Router();
   router.use(securityHeaders);
@@ -166,9 +211,7 @@ function installCrm(app, express) {
     const mode = String(req.query['hub.mode'] || '');
     const token = String(req.query['hub.verify_token'] || '');
     const challenge = String(req.query['hub.challenge'] || '');
-    if (verifyToken && mode === 'subscribe' && safeEqual(token, verifyToken)) {
-      return res.status(200).send(challenge);
-    }
+    if (verifyToken && mode === 'subscribe' && safeEqual(token, verifyToken)) return res.status(200).send(challenge);
     return res.status(403).send('Forbidden');
   });
 
@@ -177,20 +220,12 @@ function installCrm(app, express) {
       return res.status(401).send('Invalid signature');
     }
     let payload;
-    try {
-      payload = JSON.parse(req.body.toString('utf8'));
-    } catch (_) {
-      return res.status(400).send('Bad JSON');
-    }
-
+    try { payload = JSON.parse(req.body.toString('utf8')); } catch (_) { return res.status(400).send('Bad JSON'); }
     try {
       for (const entry of payload.entry || []) {
         for (const change of entry.changes || []) {
           const value = change.value || {};
-          const contactByWaId = new Map((value.contacts || []).map(contact => [
-            String(contact.wa_id || ''),
-            contact.profile?.name || '',
-          ]));
+          const contactByWaId = new Map((value.contacts || []).map(contact => [String(contact.wa_id || ''), contact.profile?.name || '']));
           for (const message of value.messages || []) {
             const phone = String(message.from || '');
             if (!phone) continue;
@@ -207,10 +242,81 @@ function installCrm(app, express) {
           }
         }
       }
-    } catch (_) {
-      // Meta expects a fast 200; a malformed individual event must not create retries forever.
-    }
+    } catch (_) {}
     return res.status(200).send('EVENT_RECEIVED');
+  });
+
+  // Contract files can be several MB. This one endpoint gets its own parser and remains
+  // protected by the CRM session + CSRF token. Files never go into the public directory.
+  router.post('/api/crm/import-contract', requireCrm, express.json({ limit: '14mb' }), requireCsrf, async (req, res) => {
+    const filename = safeFilename(req.body?.filename);
+    const mimeType = String(req.body?.mimeType || '').slice(0, 160);
+    const dataBase64 = String(req.body?.dataBase64 || '');
+    if (!allowedUpload(filename, mimeType)) return res.status(415).json({ error: 'Разрешены PDF, DOCX и TXT' });
+    if (!dataBase64 || dataBase64.length > 14_000_000) return res.status(413).json({ error: 'Файл слишком большой' });
+
+    let buffer;
+    try {
+      buffer = Buffer.from(dataBase64, 'base64');
+      if (!buffer.length || buffer.length > 10 * 1024 * 1024) throw new Error('size');
+    } catch (_) {
+      return res.status(400).json({ error: 'Повреждённый файл' });
+    }
+
+    let parsed;
+    try {
+      parsed = await parseContractInGenerator({ filename, mimeType, dataBase64 });
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      if (detail === 'CONTRACT_TEXT_NOT_FOUND') return res.status(422).json({ error: 'В документе не удалось извлечь текст. Если это скан, нужен OCR.' });
+      if (detail === 'UNSUPPORTED_CONTRACT_FILE') return res.status(415).json({ error: 'Неподдерживаемый формат договора' });
+      if (error.message === 'GENERATOR_NOT_CONFIGURED') return res.status(503).json({ error: 'Парсер договоров ещё не подключён к CRM' });
+      return res.status(502).json({ error: 'Генератор не смог разобрать договор' });
+    }
+
+    const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+    const ext = path.extname(filename).toLowerCase();
+    fs.mkdirSync(CONTRACT_UPLOAD_DIR, { recursive: true });
+    const storedFile = path.join(CONTRACT_UPLOAD_DIR, `${sha256}${ext}`);
+    if (!fs.existsSync(storedFile)) fs.writeFileSync(storedFile, buffer, { mode: 0o600 });
+
+    try {
+      const result = await crmDb.upsertContractFromIntegration({
+        source: 'contract-import',
+        externalContractId: `upload:${sha256}`,
+        number: parsed.number,
+        title: 'Загруженный договор',
+        date: parsed.date,
+        amount: parsed.amount,
+        currency: parsed.currency || 'KZT',
+        service: parsed.service,
+        paymentType: parsed.paymentType,
+        documentSha256: sha256,
+        hasPdf: ext === '.pdf',
+        hasDocx: ext === '.docx',
+        storedFile,
+        originalName: filename,
+        mimeType,
+        client: {
+          externalClientId: `upload:${sha256}`,
+          name: parsed.name,
+          iin: parsed.iin,
+          phone: parsed.phone,
+          address: parsed.address,
+          documentNumber: parsed.documentNumber,
+        },
+      }, 'contract-import');
+      return res.status(result.created ? 201 : 200).json({
+        ok: true,
+        clientId: result.client._id,
+        contractId: result.contract.id,
+        created: result.created,
+        parsed,
+      });
+    } catch (error) {
+      if (error.message === 'IDENTIFIER_REQUIRED') return res.status(422).json({ error: 'Не удалось определить клиента из договора' });
+      return res.status(500).json({ error: 'Не удалось сохранить договор в CRM' });
+    }
   });
 
   router.use(express.json({ limit: '512kb' }));
@@ -218,16 +324,12 @@ function installCrm(app, express) {
 
   router.get('/crm/login', (req, res) => {
     if (readSession(req)) return res.redirect('/crm');
-    return res.render('crm/login', {
-      configured: sessionConfigured(),
-      error: req.query.error === '1',
-    });
+    return res.render('crm/login', { configured: sessionConfigured(), error: req.query.error === '1' });
   });
 
   router.post('/crm/login', (req, res) => {
     if (!loginAllowed(req)) return res.status(429).render('crm/login', { configured: sessionConfigured(), error: true });
     if (!sessionConfigured()) return res.status(503).render('crm/login', { configured: false, error: false });
-
     const expectedUser = String(process.env.CRM_USERNAME || 'admin').trim();
     const expectedPassword = String(process.env.CRM_PASSWORD || '');
     const user = String(req.body.username || '').trim();
@@ -235,7 +337,6 @@ function installCrm(app, express) {
     if (!safeEqual(user, expectedUser) || !safeEqual(password, expectedPassword)) {
       return res.status(401).render('crm/login', { configured: true, error: true });
     }
-
     const session = createSession(user);
     res.setHeader('Set-Cookie', `zke_crm=${encodeURIComponent(session.token)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200`);
     return res.redirect('/crm');
@@ -247,8 +348,9 @@ function installCrm(app, express) {
       csrf: req.crmSession.csrf,
       username: req.crmSession.u,
       statusLabels: crmDb.STATUS,
+      pipelineStages: crmDb.PIPELINE_STAGES,
       integrations: {
-        telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
+        generator: generatorConfigured(),
         whatsapp: Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_APP_SECRET),
       },
     });
@@ -266,11 +368,7 @@ function installCrm(app, express) {
 
   router.get('/api/crm/clients', requireCrm, async (req, res) => {
     await syncWebsiteLeads();
-    const clients = await crmDb.listClients({
-      status: String(req.query.status || ''),
-      q: String(req.query.q || ''),
-      limit: req.query.limit,
-    });
+    const clients = await crmDb.listClients({ status: String(req.query.status || ''), q: String(req.query.q || ''), limit: req.query.limit });
     return res.json({ clients });
   });
 
@@ -296,9 +394,25 @@ function installCrm(app, express) {
       if (!client) return res.status(404).json({ error: 'NOT_FOUND' });
       return res.json({ client });
     } catch (error) {
-      if (error.message === 'PHONE_EXISTS') return res.status(409).json({ error: 'Этот номер уже есть в CRM' });
-      if (error.message === 'PHONE_REQUIRED') return res.status(400).json({ error: 'Укажите номер телефона' });
+      const messages = {
+        PHONE_EXISTS: 'Этот номер уже есть в CRM',
+        PHONE_INVALID: 'Некорректный номер телефона',
+        IIN_EXISTS: 'Этот ИИН уже есть в CRM',
+        IIN_INVALID: 'ИИН должен содержать 12 цифр',
+      };
+      if (messages[error.message]) return res.status(409).json({ error: messages[error.message] });
       return res.status(500).json({ error: 'Не удалось сохранить' });
+    }
+  });
+
+  router.patch('/api/crm/clients/:id/stage', requireCrm, requireCsrf, async (req, res) => {
+    try {
+      const client = await crmDb.setStatus(req.params.id, String(req.body?.stage || ''), 'kanban');
+      if (!client) return res.status(404).json({ error: 'NOT_FOUND' });
+      return res.json({ client });
+    } catch (error) {
+      if (error.message === 'BAD_STATUS') return res.status(400).json({ error: 'Неизвестная стадия' });
+      return res.status(500).json({ error: 'Не удалось переместить карточку' });
     }
   });
 
@@ -320,46 +434,65 @@ function installCrm(app, express) {
     return res.json(result);
   });
 
+  router.post('/api/crm/clients/:id/contracts/:contractId/cancel', requireCrm, requireCsrf, async (req, res) => {
+    const result = await crmDb.cancelContract(req.params.id, req.params.contractId, 'crm');
+    if (!result) return res.status(404).json({ error: 'NOT_FOUND' });
+    return res.json(result);
+  });
+
+  router.get('/api/crm/contracts/:contractId/file', requireCrm, async (req, res) => {
+    const found = await crmDb.findContractById(req.params.contractId);
+    if (!found) return res.status(404).send('Договор не найден');
+    const { contract } = found;
+    if (contract.storedFile) {
+      const root = path.resolve(CONTRACT_UPLOAD_DIR);
+      const target = path.resolve(contract.storedFile);
+      if (target !== root && !target.startsWith(`${root}${path.sep}`)) return res.status(403).send('Forbidden');
+      if (!fs.existsSync(target)) return res.status(404).send('Файл не найден');
+      return res.download(target, safeFilename(contract.originalName || path.basename(target)));
+    }
+
+    if (contract.generatorContractId && generatorConfigured()) {
+      const kind = String(req.query.kind || (contract.hasPdf ? 'pdf' : 'docx')) === 'docx' ? 'docx' : 'pdf';
+      try {
+        const response = await axios.get(`${generatorBaseUrl()}/internal/crm/contracts/${encodeURIComponent(contract.generatorContractId)}/file`, {
+          params: { kind },
+          headers: { 'X-CRM-Integration-Key': String(process.env.CRM_INTEGRATION_KEY || '').trim() },
+          responseType: 'arraybuffer',
+          timeout: 30000,
+          maxContentLength: 20 * 1024 * 1024,
+        });
+        res.type(kind === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.set('Content-Disposition', `attachment; filename="dogovor-${safeFilename(contract.number || contract.id)}.${kind}"`);
+        return res.send(Buffer.from(response.data));
+      } catch (_) {
+        return res.status(502).send('Не удалось получить файл из генератора');
+      }
+    }
+    return res.status(404).send('Файл договора недоступен');
+  });
+
   router.post('/api/crm/clients/:id/whatsapp', requireCrm, requireCsrf, async (req, res) => {
     const client = await crmDb.getClient(req.params.id);
     if (!client) return res.status(404).json({ error: 'NOT_FOUND' });
-
     const accessToken = String(process.env.WHATSAPP_ACCESS_TOKEN || '').trim();
     const phoneNumberId = String(process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
     const graphVersion = String(process.env.WHATSAPP_GRAPH_VERSION || 'v25.0').trim();
     const text = String(req.body?.text || '').trim().slice(0, 4000);
     if (!accessToken || !phoneNumberId) return res.status(503).json({ error: 'WhatsApp Cloud API ещё не подключён' });
+    if (!client.phoneNorm) return res.status(400).json({ error: 'В карточке нет телефона' });
     if (!text) return res.status(400).json({ error: 'Введите сообщение' });
-
     try {
       const response = await axios.post(
         `https://graph.facebook.com/${graphVersion}/${phoneNumberId}/messages`,
-        {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: client.phoneNorm,
-          type: 'text',
-          text: { body: text, preview_url: false },
-        },
-        {
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          timeout: 15000,
-        }
+        { messaging_product: 'whatsapp', recipient_type: 'individual', to: client.phoneNorm, type: 'text', text: { body: text, preview_url: false } },
+        { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, timeout: 15000 }
       );
       const messageId = response.data?.messages?.[0]?.id || '';
-      await crmDb.recordMessageByPhone({
-        phone: client.phoneNorm,
-        name: client.name,
-        channel: 'whatsapp',
-        direction: 'out',
-        text,
-        messageId,
-        at: Date.now(),
-      });
+      await crmDb.recordMessageByPhone({ phone: client.phoneNorm, name: client.name, channel: 'whatsapp', direction: 'out', text, messageId, at: Date.now() });
       return res.json({ ok: true, messageId });
     } catch (error) {
-      const metaMessage = error.response?.data?.error?.message || 'WhatsApp не принял сообщение';
-      return res.status(502).json({ error: metaMessage });
+      return res.status(502).json({ error: error.response?.data?.error?.message || 'WhatsApp не принял сообщение' });
     }
   });
 
@@ -372,10 +505,12 @@ function installCrm(app, express) {
   router.get('/api/crm/export.csv', requireCrm, async (req, res) => {
     const clients = await crmDb.exportAll();
     const rows = [
-      ['ФИО', 'Телефон', 'Статус', 'Работа', 'Обещано', 'Дата обещания', 'Оплачено', 'Источник', 'Договоры', 'Примечания'],
+      ['ФИО', 'ИИН', 'Телефон', 'Адрес', 'Стадия', 'Работа', 'Обещано', 'Дата обещания', 'Оплачено', 'Источник', 'Договоры', 'Примечания'],
       ...clients.map(client => [
         client.name,
+        client.iin,
         client.phone,
+        client.address,
         crmDb.STATUS[client.status] || client.status,
         client.work,
         client.promiseAmount || '',
@@ -392,22 +527,21 @@ function installCrm(app, express) {
     return res.send(csv);
   });
 
-  // Generic endpoint for the existing contract generator/bot. Once that service
-  // POSTs here, contracts appear in CRM without copying data by hand.
+  // Sole contract-generator ingress. The generator sends structured client + contract data;
+  // externalContractId makes the operation idempotent, so reissues do not create duplicates.
   router.post('/api/crm/integrations/contracts', async (req, res) => {
     if (!integrationAuthorized(req)) return res.status(401).json({ error: 'UNAUTHORIZED' });
     try {
-      const result = await crmDb.addContractByPhone(req.body?.phone, {
-        name: req.body?.name,
-        title: req.body?.title,
-        number: req.body?.number,
-        amount: req.body?.amount,
-        date: req.body?.date,
-        fileUrl: req.body?.fileUrl,
-      }, 'contract-bot');
-      return res.status(201).json({ ok: true, clientId: result.client._id, contractId: result.contract.id });
+      const result = await crmDb.upsertContractFromIntegration(req.body || {}, 'contract-generator');
+      return res.status(result.created ? 201 : 200).json({
+        ok: true,
+        created: result.created,
+        clientId: result.client._id,
+        contractId: result.contract.id,
+      });
     } catch (error) {
-      return res.status(400).json({ error: error.message === 'PHONE_REQUIRED' ? 'PHONE_REQUIRED' : 'BAD_REQUEST' });
+      if (error.message === 'IDENTIFIER_REQUIRED') return res.status(422).json({ error: 'CLIENT_IDENTIFIER_REQUIRED' });
+      return res.status(400).json({ error: 'BAD_REQUEST' });
     }
   });
 
