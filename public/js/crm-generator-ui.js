@@ -37,6 +37,7 @@
     .crm-gen-field{width:100%;border:1px solid #cfd8e6;border-radius:9px;background:#fff;padding:9px 10px;outline:none;font:inherit}textarea.crm-gen-field{min-height:78px;resize:vertical}.crm-gen-field:focus{border-color:#5bb6b0;box-shadow:0 0 0 3px rgba(15,118,110,.10)}
     .crm-gen-section{border-top:1px solid #e5eaf1;padding-top:12px;margin-top:12px}.crm-gen-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.crm-gen-note{font-size:11px;color:#6c788b;line-height:1.45}
     .crm-gen-progress{display:none;font-size:12px;color:#0f766e;font-weight:800}.crm-gen-progress.show{display:inline}.crm-gen-job{display:none;margin-top:12px;border:1px solid #cfe7e4;background:#f0fdfa;border-radius:10px;padding:10px;font-size:12px}.crm-gen-job.show{display:block}
+    .crm-import-status{margin-top:10px;border:1px solid #cfe7e4;background:#f0fdfa;border-radius:10px;padding:9px 10px;font-size:11px;color:#115e59;font-weight:700}
     @media(max-width:720px){.crm-gen-grid,.crm-gen-grid.three{grid-template-columns:1fr}}
   `;
   document.head.appendChild(style);
@@ -86,7 +87,7 @@
   }
 
   function openGenerator(fromDrawer = false) {
-    if (activeJobId) return toast('Сначала дождитесь завершения текущего договора');
+    if (activeJobId) return toast('Сначала дождитесь завершения текущей операции');
     clearForm();
     boundClientId = '';
     if (fromDrawer) {
@@ -113,7 +114,17 @@
     activeJobId = '';
   }
 
-  async function pollJob(jobId) {
+  async function retryJob(jobId, mode) {
+    await jsonFetch(`/api/crm/generator/jobs/${encodeURIComponent(jobId)}/retry`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}',
+    });
+    activeJobId = jobId;
+    if (mode === 'import') return pollImportJob(jobId);
+    setBusy(true, 'Повторяю…');
+    return pollGenerationJob(jobId);
+  }
+
+  async function pollGenerationJob(jobId) {
     try {
       const data = await jsonFetch(`/api/crm/generator/jobs/${encodeURIComponent(jobId)}`);
       const job = data.job || {};
@@ -126,32 +137,18 @@
         box.textContent = 'Генератор получил задание и формирует DOCX/PDF.';
         setBusy(true, 'Формирую договор…');
       } else if (job.status === 'complete') {
-        stopPolling();
-        setBusy(false);
+        stopPolling(); setBusy(false);
         box.textContent = `Готово${job.result?.number ? `: договор №${job.result.number}` : ''}. Карточка обновлена.`;
         toast(`Договор${job.result?.number ? ` №${job.result.number}` : ''} создан`);
-        setTimeout(() => location.reload(), 900);
-        return;
+        return setTimeout(() => location.reload(), 900);
       } else if (job.status === 'failed') {
-        stopPolling();
-        setBusy(false);
-        box.innerHTML = '';
+        stopPolling(); setBusy(false); box.innerHTML = '';
         box.append(document.createTextNode(`Ошибка: ${job.error || 'генерация не выполнена'} `));
-        const retry = document.createElement('button');
-        retry.className = 'btn small'; retry.type = 'button'; retry.textContent = 'Повторить';
-        retry.onclick = async () => {
-          try {
-            await jsonFetch(`/api/crm/generator/jobs/${encodeURIComponent(jobId)}/retry`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: '{}' });
-            activeJobId = jobId; setBusy(true, 'Повторяю…'); pollJob(jobId);
-          } catch (e) { toast(e.message); }
-        };
-        box.appendChild(retry);
+        const retry = document.createElement('button'); retry.className = 'btn small'; retry.type = 'button'; retry.textContent = 'Повторить'; retry.onclick = () => retryJob(jobId, 'create').catch(e => toast(e.message)); box.appendChild(retry);
         return;
       }
-      pollTimer = setTimeout(() => pollJob(jobId), 1800);
-    } catch (error) {
-      pollTimer = setTimeout(() => pollJob(jobId), 3000);
-    }
+      pollTimer = setTimeout(() => pollGenerationJob(jobId), 1800);
+    } catch (_) { pollTimer = setTimeout(() => pollGenerationJob(jobId), 3000); }
   }
 
   async function submitContract() {
@@ -170,17 +167,90 @@
     try {
       const data = await jsonFetch('/api/crm/generator/create', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(payload) });
       if (data.queued && data.jobId) {
-        activeJobId = data.jobId;
-        f('crmGenJob').classList.add('show');
-        f('crmGenJob').textContent = 'Задание сохранено. Жду, когда генератор его заберёт.';
-        return pollJob(data.jobId);
+        activeJobId = data.jobId; f('crmGenJob').classList.add('show'); f('crmGenJob').textContent = 'Задание сохранено. Жду, когда генератор его заберёт.';
+        return pollGenerationJob(data.jobId);
       }
-      setBusy(false);
-      toast(`Договор${data.number ? ` №${data.number}` : ''} создан`);
-      setTimeout(() => location.reload(), 700);
+      setBusy(false); toast(`Договор${data.number ? ` №${data.number}` : ''} создан`); setTimeout(() => location.reload(), 700);
+    } catch (error) { setBusy(false); toast(error.message || 'Ошибка создания договора'); }
+  }
+
+  function fileBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+      reader.onload = () => {
+        const raw = String(reader.result || '');
+        resolve(raw.includes(',') ? raw.split(',')[1] : raw);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function importStatus(text, error = false) {
+    const progress = $('#importProgress');
+    if (progress) progress.style.display = 'none';
+    let box = $('#crmImportQueueStatus');
+    if (!box) {
+      box = document.createElement('div'); box.id = 'crmImportQueueStatus'; box.className = 'crm-import-status';
+      $('#importModal .upload-zone')?.appendChild(box);
+    }
+    box.style.borderColor = error ? '#fecaca' : '#cfe7e4';
+    box.style.background = error ? '#fef2f2' : '#f0fdfa';
+    box.style.color = error ? '#991b1b' : '#115e59';
+    box.textContent = text;
+    return box;
+  }
+
+  async function pollImportJob(jobId) {
+    try {
+      const data = await jsonFetch(`/api/crm/generator/jobs/${encodeURIComponent(jobId)}`);
+      const job = data.job || {};
+      if (job.status === 'pending') importStatus('Договор сохранён. Ожидаю парсер…');
+      else if (job.status === 'claimed') importStatus('Генератор получил файл и извлекает данные клиента и договора…');
+      else if (job.status === 'complete') {
+        stopPolling();
+        $('#doImport').disabled = false;
+        importStatus(`Готово${job.result?.number ? ` · договор №${job.result.number}` : ''}. Карточка клиента заполнена.`);
+        toast(`Договор импортирован${job.result?.number ? ` · №${job.result.number}` : ''}`);
+        return setTimeout(() => location.reload(), 900);
+      } else if (job.status === 'failed') {
+        stopPolling(); $('#doImport').disabled = false;
+        const box = importStatus(`Ошибка: ${job.error || 'не удалось разобрать договор'}`, true);
+        const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'btn small'; retry.style.marginLeft = '8px'; retry.textContent = 'Повторить';
+        retry.onclick = () => retryJob(jobId, 'import').catch(e => toast(e.message)); box.appendChild(retry);
+        return;
+      }
+      pollTimer = setTimeout(() => pollImportJob(jobId), 1800);
+    } catch (_) { pollTimer = setTimeout(() => pollImportJob(jobId), 3000); }
+  }
+
+  async function submitImport() {
+    if (activeJobId) return toast('Сначала дождитесь завершения текущей операции');
+    const file = $('#contractFile')?.files?.[0];
+    if (!file) return toast('Выберите договор');
+    if (file.size > 10 * 1024 * 1024) return toast('Файл больше 10 МБ');
+    const allowed = /\.(pdf|docx|txt)$/i.test(file.name);
+    if (!allowed) return toast('Разрешены PDF, DOCX и TXT');
+
+    $('#doImport').disabled = true;
+    if ($('#importProgress')) $('#importProgress').style.display = 'block';
+    importStatus('Загружаю договор в закрытое хранилище…');
+    try {
+      const dataBase64 = await fileBase64(file);
+      const data = await jsonFetch('/api/crm/import-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ filename: file.name, mimeType: file.type, dataBase64 }),
+      });
+      if (!data.queued || !data.jobId) throw new Error('Сервер не создал задание на разбор');
+      activeJobId = data.jobId;
+      importStatus('Файл сохранён. Жду, когда единый генератор извлечёт данные…');
+      return pollImportJob(data.jobId);
     } catch (error) {
-      setBusy(false);
-      toast(error.message || 'Ошибка создания договора');
+      $('#doImport').disabled = false;
+      if ($('#importProgress')) $('#importProgress').style.display = 'none';
+      importStatus(error.message || 'Ошибка загрузки', true);
+      toast(error.message || 'Ошибка загрузки договора');
     }
   }
 
@@ -202,4 +272,8 @@
   modal.onclick = e => { if (e.target === modal) closeModal(); };
   addTopButton(); addDrawerButton();
   const drawer = $('#drawerBody'); if (drawer) new MutationObserver(addDrawerButton).observe(drawer, { childList: true, subtree: true });
+
+  // The legacy dashboard registers a synchronous importer. This script loads after it and
+  // deliberately replaces that click handler with the queued canonical-parser flow.
+  if ($('#doImport')) $('#doImport').onclick = submitImport;
 })();
