@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const OLD_DOMAIN = 'zakonexpertt.kz';
-const NEW_DOMAIN = 'zakonexpert.kz';
+const OLD_STEM = 'zakonexpertt';
+const NEW_STEM = 'zakonexpert';
 const APPLY = process.argv.includes('--apply');
 
 const SKIP_DIRS = new Set([
@@ -31,9 +31,6 @@ function isTextCandidate(filePath) {
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'scripts' && dir === ROOT) {
-      // include scripts; migration helper is idempotent and contains both domains by design
-    }
     if (entry.isDirectory() && SKIP_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full, out);
@@ -53,7 +50,7 @@ for (const filePath of walk(ROOT)) {
   } catch (_) {
     continue;
   }
-  if (!source.includes(OLD_DOMAIN)) continue;
+  if (!source.includes(OLD_STEM)) continue;
 
   const relative = path.relative(ROOT, filePath).replace(/\\/g, '/');
   if (!APPLY) {
@@ -61,7 +58,7 @@ for (const filePath of walk(ROOT)) {
     continue;
   }
 
-  const next = source.split(OLD_DOMAIN).join(NEW_DOMAIN);
+  const next = source.split(OLD_STEM).join(NEW_STEM);
   fs.writeFileSync(filePath, next, 'utf8');
   changed.push(relative);
 }
@@ -70,7 +67,7 @@ if (APPLY) {
   for (const filePath of walk(ROOT)) {
     if (filePath === __filename) continue;
     try {
-      if (fs.readFileSync(filePath, 'utf8').includes(OLD_DOMAIN)) {
+      if (fs.readFileSync(filePath, 'utf8').includes(OLD_STEM)) {
         remaining.push(path.relative(ROOT, filePath).replace(/\\/g, '/'));
       }
     } catch (_) {}
@@ -79,8 +76,8 @@ if (APPLY) {
 
 console.log(JSON.stringify({
   mode: APPLY ? 'apply' : 'check',
-  from: OLD_DOMAIN,
-  to: NEW_DOMAIN,
+  from: OLD_STEM,
+  to: NEW_STEM,
   changedCount: changed.length,
   changed,
   remainingCount: remaining.length,
