@@ -1,0 +1,39 @@
+name: CRM contract pipeline
+
+on:
+  pull_request:
+    paths:
+      - 'crm-entry.js'
+      - 'modules/crm-*.js'
+      - 'views/crm/**'
+      - 'scripts/test-crm-contract-sync.js'
+      - '.github/workflows/crm-contract-sync.yml'
+  push:
+    branches:
+      - feature/private-crm-kanban-contract-sync
+    paths:
+      - 'crm-entry.js'
+      - 'modules/crm-*.js'
+      - 'views/crm/**'
+      - 'scripts/test-crm-contract-sync.js'
+      - '.github/workflows/crm-contract-sync.yml'
+
+jobs:
+  crm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Syntax
+        run: |
+          node --check crm-entry.js
+          node --check modules/crm-db.js
+          node --check modules/crm-routes.js
+          node --check scripts/test-crm-contract-sync.js
+      - name: CRM contract integration tests
+        run: node scripts/test-crm-contract-sync.js
