@@ -90,6 +90,26 @@ function installCrmImportPull(app, express) {
     }
   );
 
+  // This typed claim shadows the older create-only claim route. Both creation and parsing
+  // now share one persistent FIFO queue and the worker can dispatch by job.kind.
+  app.post(
+    '/api/crm/integrations/generator/jobs/claim',
+    express.json({ limit: '32kb' }),
+    requireIntegration,
+    async (req, res) => {
+      const job = await jobs.claimNext(String(req.body?.workerId || '').slice(0, 180));
+      return res.json({
+        job: job ? {
+          id: job.id,
+          kind: job.kind || jobs.KINDS.CREATE,
+          payload: job.payload,
+          attempts: job.attempts,
+          leaseUntil: job.leaseUntil,
+        } : null,
+      });
+    }
+  );
+
   app.get('/api/crm/integrations/generator/jobs/:id/file', requireIntegration, async (req, res, next) => {
     const job = await jobs.getJob(req.params.id);
     if (!job || job.kind !== jobs.KINDS.PARSE) return next();
