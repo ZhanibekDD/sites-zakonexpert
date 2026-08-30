@@ -1,0 +1,59 @@
+name: Repair migration homepage assets
+
+on:
+  push:
+    branches:
+      - migration/zakonexpert-kz
+    paths-ignore:
+      - 'public/img/migration/**'
+      - 'tmp/restart.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/zakonexpert-kz
+          fetch-depth: 1
+
+      - name: Create migration-specific asset copies and rewrite homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/img/migration/brand public/img/migration/icons/home public/img/migration/services tmp
+
+          cp public/img/brand/zakonexpert-logo-transparent-hd.png public/img/migration/brand/zakonexpert-logo.png
+          cp public/img/icons/home/* public/img/migration/icons/home/
+          cp public/img/services/* public/img/migration/services/
+
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('/img/brand/zakonexpert-logo-transparent-hd.png', '/img/migration/brand/zakonexpert-logo.png')
+          s = s.replace('/img/icons/home/', '/img/migration/icons/home/')
+          s = s.replace('/img/services/', '/img/migration/services/')
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          date -u +'%Y-%m-%dT%H:%M:%SZ migration-assets-repair' > tmp/restart.txt
+
+      - name: Commit repaired assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html public/img/migration tmp/restart.txt
+          if git diff --cached --quiet; then
+            echo "Homepage assets already repaired."
+            exit 0
+          fi
+          git commit -m "Repair homepage assets on migration host"
+          git push origin HEAD:migration/zakonexpert-kz
