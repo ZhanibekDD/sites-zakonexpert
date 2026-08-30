@@ -12,7 +12,7 @@ function cleanText(value, max = 4000) {
 }
 
 function safeFilename(value) {
-  return String(value || 'contract').replace(/[^0-9A-Za-zА-Яа-яЁё._()\- ]/g, '_').slice(0, 180) || 'contract';
+  return String(value || 'contract').replace(/[^0-9A-Za-zА-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі._()\- ]/g, '_').slice(0, 180) || 'contract';
 }
 
 function uploadRoot() {
@@ -36,13 +36,21 @@ function storeUpload(buffer, filename) {
   return { sha256, storedFile: target, ext };
 }
 
+function realIdentity(parsed = {}) {
+  const iin = String(parsed.iin || '').replace(/\D/g, '');
+  const phone = crmDb.normalizePhone(parsed.phone);
+  return { iin: /^\d{12}$/.test(iin) ? iin : '', phone };
+}
+
 async function saveParsedImport({ parsed = {}, storedFile, filename, mimeType, sha256 }) {
   const target = resolveStoredFile(storedFile);
   if (!target || !fs.existsSync(target)) throw new Error('IMPORT_FILE_NOT_FOUND');
   const digest = cleanText(sha256, 64).toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(digest)) throw new Error('BAD_IMPORT_HASH');
+  const identity = realIdentity(parsed);
+  if (!identity.iin && !identity.phone) throw new Error('IDENTIFIER_REQUIRED');
 
-  const result = await crmDb.upsertContractFromIntegration({
+  return crmDb.upsertContractFromIntegration({
     source: 'contract-import',
     externalContractId: `upload:${digest}`,
     number: cleanText(parsed.number, 120),
@@ -61,14 +69,12 @@ async function saveParsedImport({ parsed = {}, storedFile, filename, mimeType, s
     client: {
       externalClientId: `upload:${digest}`,
       name: cleanText(parsed.name, 255),
-      iin: cleanText(parsed.iin, 20),
+      iin: identity.iin,
       phone: cleanText(parsed.phone, 50),
       address: cleanText(parsed.address, 800),
       documentNumber: cleanText(parsed.documentNumber, 100),
     },
   }, 'contract-import');
-
-  return result;
 }
 
 module.exports = {
