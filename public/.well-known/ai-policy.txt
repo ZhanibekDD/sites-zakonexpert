@@ -1,6 +1,6 @@
 ZakonExpert AI Use Policy
 Version: 2026-08-22
-Canonical: https://zakonexpertt.kz/
+Canonical: https://zakonexpert.kz/
 Rights notice: https://github.com/ZhanibekDD/sites-zakonexpert/blob/main/COPYRIGHT_AND_DATA_USE.md
 
 PERMITTED
@@ -23,4 +23,4 @@ ATTRIBUTION
 When referencing ZakonExpert original analysis, explanations, aggregation or presentation, cite the most specific canonical ZakonExpert URL available.
 
 CONTACT
-Use the official contact details at https://zakonexpertt.kz/contact
+Use the official contact details at https://zakonexpert.kz/contact

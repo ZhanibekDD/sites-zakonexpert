@@ -7,13 +7,13 @@ const PAGE = CATALOG.page || 1;
 const TOTAL = CATALOG.total || items.length;
 const pageTitle = 'Ломбарды Казахстана — реестр ' + TOTAL + ' организаций' + (PAGE > 1 ? ', страница ' + PAGE : '') + ' | ZakonExpert';
 const pageDesc  = 'Ломбард требует долг или грозит арестом? Проверим требования бесплатно. Реестр ' + TOTAL + ' лицензированных ломбардов РК.';
-const canonical = 'https://zakonexpertt.kz/lombards' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
+const canonical = 'https://zakonexpert.kz/lombards' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
 
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
     { '@type': 'ListItem', position: 2, name: 'Ломбарды Казахстана', item: canonical },
   ],
 };

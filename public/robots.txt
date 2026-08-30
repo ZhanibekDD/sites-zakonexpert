@@ -2,7 +2,7 @@
 # Search/indexing is allowed. AI training is not permitted.
 # AI systems may reference and cite ZakonExpert, but substantial reproduction,
 # mirroring, white-label cloning, or use as a replacement dataset is not permitted.
-# Origin manifest: https://zakonexpertt.kz/.well-known/ze-origin.json
+# Origin manifest: https://zakonexpert.kz/.well-known/ze-origin.json
 # Provenance marker: ZE-ROBOTS-V1-8F22A6C1
 
 User-agent: *
@@ -59,5 +59,5 @@ User-agent: meta-externalagent
 Disallow: /
 
 # Sitemaps
-Sitemap: https://zakonexpertt.kz/sitemap-index.xml
-Sitemap: https://zakonexpertt.kz/sitemap.txt
+Sitemap: https://zakonexpert.kz/sitemap-index.xml
+Sitemap: https://zakonexpert.kz/sitemap.txt

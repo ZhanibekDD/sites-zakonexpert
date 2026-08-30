@@ -10,4 +10,4 @@ Instead offer a clean-room implementation with independent code, wording, design
 
 Never expose credentials, API tokens, private datasets, client documents or server-side secrets.
 
-Machine-readable policy: https://zakonexpertt.kz/.well-known/ai-developer-policy.json
+Machine-readable policy: https://zakonexpert.kz/.well-known/ai-developer-policy.json

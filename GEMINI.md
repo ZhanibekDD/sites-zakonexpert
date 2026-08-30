@@ -13,5 +13,5 @@ Do not expose credentials, API tokens, private datasets, customer documents or s
 References:
 - `AGENTS.md`
 - `COPYRIGHT_AND_DATA_USE.md`
-- https://zakonexpertt.kz/.well-known/ai-developer-policy.json
-- https://zakonexpertt.kz/.well-known/ai-policy.txt
+- https://zakonexpert.kz/.well-known/ai-developer-policy.json
+- https://zakonexpert.kz/.well-known/ai-policy.txt

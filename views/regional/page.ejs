@@ -1,14 +1,14 @@
 <%
 const pageTitle = 'Снятие ареста в ' + city.caseIn + ' — Kaspi, Halyk, ЧСИ | ZakonExpert';
 const pageDesc = 'Арестовали счёт или карту в ' + city.caseIn + '? Проверим ЧСИ, сумму долга и основание ареста бесплатно. Работаем дистанционно по ' + city.caseByCity + '.';
-const canonical = 'https://zakonexpertt.kz/snyatie-aresta-' + city.slug;
+const canonical = 'https://zakonexpert.kz/snyatie-aresta-' + city.slug;
 
 const schema = [
   {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
       { '@type': 'ListItem', position: 2, name: 'Снятие ареста в ' + city.name, item: canonical },
     ],
   },

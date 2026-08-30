@@ -241,9 +241,9 @@ assert.strictEqual(
     'out-of-range regional pagination must return a real 404 instead of looking like the last page');
   assert.ok(server.includes('return res.redirect(301, normalizedPath)'), 'non-canonical page parameters must redirect');
   assert.ok(server.includes("app.get('/notaries/changes'"), 'registry changes page route is missing');
-  assert.ok(server.includes('<loc>https://zakonexpertt.kz/notaries/changes</loc>'), 'registry changes page must enter the notary sitemap after it has data');
+  assert.ok(server.includes('<loc>https://zakonexpert.kz/notaries/changes</loc>'), 'registry changes page must enter the notary sitemap after it has data');
   assert.ok(notariesDbSource.includes('.sort({ name: 1 }).skip(skip).limit(limit)'), 'database pagination must happen before rendering');
-  assert.ok(server.includes('<loc>https://zakonexpertt.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
+  assert.ok(server.includes('<loc>https://zakonexpert.kz${r.path}</loc>'), 'notary sitemap must publish clean regional URLs');
   assert.ok(regionalLanding.includes('href="${city.notaryPath}"'), 'regional arrest pages must link to clean notary URLs');
 
   const profile = notaries.find(item => item.address && item.phone && item.email && item.schedule);

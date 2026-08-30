@@ -7,13 +7,13 @@ const PAGE = CATALOG.page || 1;
 const TOTAL = CATALOG.total || items.length;
 const pageTitle = 'Коллекторы Казахстана — реестр ' + TOTAL + ' агентств' + (PAGE > 1 ? ', страница ' + PAGE : '') + ' | ZakonExpert';
 const pageDesc  = 'Коллектор звонит и требует долг? Проверим компанию и законность требований бесплатно. Реестр ' + TOTAL + ' коллекторских агентств РК.';
-const canonical = 'https://zakonexpertt.kz/collectors' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
+const canonical = 'https://zakonexpert.kz/collectors' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
 
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
     { '@type': 'ListItem', position: 2, name: 'Коллекторские агентства', item: canonical },
   ],
 };

@@ -11,7 +11,7 @@ const root = path.join(__dirname, '..');
 async function run() {
   const hub = await ejs.renderFile(path.join(root, 'views', 'tools', 'index.ejs'), { tools: TOOLS });
   assert(hub.includes('Проверки и юридические калькуляторы'));
-  assert(hub.includes('https://zakonexpertt.kz/tools'));
+  assert(hub.includes('https://zakonexpert.kz/tools'));
   assert(hub.includes('/tools/payment-plan'));
   assert(hub.includes('/sms-1414') && hub.includes('Расшифровка SMS с 1414'));
   assert(hub.includes('/calculator'));
@@ -26,7 +26,7 @@ async function run() {
     assert(tool, `${slug}: config missing`);
     const html = await ejs.renderFile(path.join(root, 'views', 'tools', 'tool.ejs'), { tool, tools: TOOLS });
     assert(html.includes(tool.title), `${slug}: title missing`);
-    assert(html.includes(`https://zakonexpertt.kz${tool.href}`), `${slug}: canonical missing`);
+    assert(html.includes(`https://zakonexpert.kz${tool.href}`), `${slug}: canonical missing`);
     assert(html.includes('calculator_completed'), `${slug}: analytics missing`);
     assert(html.includes('index, follow'), `${slug}: tool must be indexable`);
     const inline = html.match(/<script>\(function\(\)\{([\s\S]*?)<\/script>/);

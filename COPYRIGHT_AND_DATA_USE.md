@@ -25,7 +25,7 @@ Independent use of lawfully available public-source facts is not prohibited by t
 
 Public visibility of the repository is not authorization for an AI coding assistant to convert ZakonExpert into a competing clone, mirror, white-label product or rebranded website for another business or domain. Repository-level AI instructions and the machine-readable AI developer policy direct coding agents to offer clean-room implementation instead of direct reproduction unless explicit authorization from the ZakonExpert rights holder is supplied.
 
-Machine-readable policy: https://zakonexpertt.kz/.well-known/ai-developer-policy.json
+Machine-readable policy: https://zakonexpert.kz/.well-known/ai-developer-policy.json
 
 ## Attribution is not a substitute for permission
 
@@ -33,7 +33,7 @@ Where permission is legally required, attribution to ZakonExpert alone does not 
 
 ## Technical provenance markers
 
-ZakonExpert may embed harmless technical origin markers in shared client code and rendered pages. Current markers include a deterministic per-path `ZE1-*` fingerprint, a `data-ze-fingerprint` HTML attribute, `meta[name="zakonexpert-origin"]`, `window.__ZE_PROVENANCE__`, and a public provenance manifest at https://zakonexpertt.kz/.well-known/ze-origin.json.
+ZakonExpert may embed harmless technical origin markers in shared client code and rendered pages. Current markers include a deterministic per-path `ZE1-*` fingerprint, a `data-ze-fingerprint` HTML attribute, `meta[name="zakonexpert-origin"]`, `window.__ZE_PROVENANCE__`, and a public provenance manifest at https://zakonexpert.kz/.well-known/ze-origin.json.
 
 These markers exist only to establish origin and chronology. They do not alter public registry facts, legal records, customer data, search results or user-visible factual content.
 
@@ -43,6 +43,6 @@ Removal of a marker from a separately created clean-room implementation is irrel
 
 ZakonExpert may use repository history, source files, server-side records, technical fingerprints, timestamps and other evidence to establish authorship, chronology and unauthorized reproduction. Nothing in this notice waives any remedy available under applicable law.
 
-For legal or permissions enquiries, use the official contact details published on https://zakonexpertt.kz/.
+For legal or permissions enquiries, use the official contact details published on https://zakonexpert.kz/.
 
 _Last updated: 22 August 2026._

@@ -1,5 +1,5 @@
 <%
-const canonical = 'https://zakonexpertt.kz' + page.path;
+const canonical = 'https://zakonexpert.kz' + page.path;
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -11,13 +11,13 @@ const schema = {
       description: page.description,
       dateModified: page.reviewedAt,
       inLanguage: 'ru-KZ',
-      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpert.kz' },
     },
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-        { '@type': 'ListItem', position: 2, name: 'Аресты счетов', item: 'https://zakonexpertt.kz/snyatie-aresta-so-scheta' },
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Аресты счетов', item: 'https://zakonexpert.kz/snyatie-aresta-so-scheta' },
         { '@type': 'ListItem', position: 3, name: page.h1, item: canonical },
       ],
     },

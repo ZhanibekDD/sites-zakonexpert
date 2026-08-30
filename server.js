@@ -269,7 +269,7 @@ app.use((req, res, next) => {
 });
 app.use(compression());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpertt.kz
+    origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpert.kz
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'X-Admin-Key'],
 }));
@@ -723,21 +723,21 @@ app.get('/sitemap-notaries.xml', asyncHandler(async (req, res) => {
   const changeLastmod = Number.isNaN(changeDate.getTime()) ? lastmod : changeDate.toISOString().substring(0, 10);
   const changesUrl = changeHistory.changes.length ? `
   <url>
-    <loc>https://zakonexpertt.kz/notaries/changes</loc>
+    <loc>https://zakonexpert.kz/notaries/changes</loc>
     <lastmod>${changeLastmod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>` : '';
   const regionUrls = withNotaryRegionPaths(regions).map(r => `
   <url>
-    <loc>https://zakonexpertt.kz${r.path}</loc>
+    <loc>https://zakonexpert.kz${r.path}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>`).join('');
   const profileUrls = all.map(n => `
   <url>
-    <loc>https://zakonexpertt.kz/notary/${n.slug}</loc>
+    <loc>https://zakonexpert.kz/notary/${n.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1749,14 +1749,14 @@ app.get('/sitemap-bailiffs.xml', asyncHandler(async (req, res) => {
   const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
   const regionUrls = regions.map(r => getBailiffRegionByName(r.region)).filter(Boolean).map(region => `
   <url>
-    <loc>https://zakonexpertt.kz${region.path}</loc>
+    <loc>https://zakonexpert.kz${region.path}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>`).join('');
   const profileUrls = all.map(b => `
   <url>
-    <loc>https://zakonexpertt.kz/bailiff/${b.slug}</loc>
+    <loc>https://zakonexpert.kz/bailiff/${b.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -1788,7 +1788,7 @@ app.get('/sitemap-laws.xml', asyncHandler(async (req, res) => {
     const today = new Date().toISOString().substring(0, 10);
     const urls = all.map(a => `
   <url>
-    <loc>https://zakonexpertt.kz/statya/${a.slug}</loc>
+    <loc>https://zakonexpert.kz/statya/${a.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -2244,17 +2244,17 @@ async function renderNewsList(req, res, category = null) {
   ]);
   const totalPages = Math.ceil(total / NEWS_PER_PAGE);
 
-  const canonical = `https://zakonexpertt.kz${newsCategoryPath(category, page)}`;
+  const canonical = `https://zakonexpert.kz${newsCategoryPath(category, page)}`;
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: category ? `Новости ZakonExpert: ${category}` : 'Новости ZakonExpert',
-    url: `https://zakonexpertt.kz${newsCategoryPath(category)}`,
+    url: `https://zakonexpert.kz${newsCategoryPath(category)}`,
     numberOfItems: total,
     itemListElement: articles.slice(0, 10).map((a, i) => ({
       '@type': 'ListItem',
       position: offset + i + 1,
-      url: `https://zakonexpertt.kz/news/${a.slug}`
+      url: `https://zakonexpert.kz/news/${a.slug}`
     }))
   };
 
@@ -2300,8 +2300,8 @@ app.get('/news/feed.xml', asyncHandler(async (req, res) => {
   const items = articles.map(a => `
     <item>
       <title><![CDATA[${xmlCdata(newsDisplayTitle(a))}]]></title>
-      <link>https://zakonexpertt.kz/news/${a.slug}</link>
-      <guid isPermaLink="true">https://zakonexpertt.kz/news/${a.slug}</guid>
+      <link>https://zakonexpert.kz/news/${a.slug}</link>
+      <guid isPermaLink="true">https://zakonexpert.kz/news/${a.slug}</guid>
       <pubDate>${new Date(a.published_at_source || a.published_at_site || a.created_at).toUTCString()}</pubDate>
       <description><![CDATA[${xmlCdata(newsDisplayExcerpt(a))}]]></description>
       <category><![CDATA[${xmlCdata(a.category || 'general')}]]></category>
@@ -2312,10 +2312,10 @@ app.get('/news/feed.xml', asyncHandler(async (req, res) => {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>ZakonExpert — Новости</title>
-    <link>https://zakonexpertt.kz/news</link>
+    <link>https://zakonexpert.kz/news</link>
     <description>Новости об арестах счетов, ЧСИ и законодательстве Казахстана</description>
     <language>ru</language>
-    <atom:link href="https://zakonexpertt.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="https://zakonexpert.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
     ${items}
   </channel>
 </rss>`);
@@ -2339,7 +2339,7 @@ app.get('/sitemap-news.xml', asyncHandler(async (req, res) => {
     const publishedAt = a.published_at_source || a.published_at_site;
     return `
   <url>
-    <loc>https://zakonexpertt.kz/news/${xmlEscape(a.slug)}</loc>
+    <loc>https://zakonexpert.kz/news/${xmlEscape(a.slug)}</loc>
     <lastmod>${(a.updatedAt || a.published_at_source || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
     <news:news>
       <news:publication>
@@ -2502,7 +2502,7 @@ app.get('/sitemap-pages.xml', (req, res) => {
     const lastmod = corePageLastmod(page);
     return `
   <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(page.url)}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz${xmlEscape(page.url)}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>${page.freq}</changefreq>
     <priority>${page.priority}</priority>
@@ -2519,11 +2519,11 @@ app.get('/sitemap-pages.xml', (req, res) => {
 // SITEMAP.TXT — plain URL list for AI crawlers (GPTBot, PerplexityBot, ClaudeBot, etc.)
 // that prefer a lightweight format over parsing XML.
 app.get('/sitemap.txt', asyncHandler(async (req, res) => {
-  const urls = getCorePages().map(p => `https://zakonexpertt.kz${p.url}`);
-  openDataPages.sitemapEntries().forEach(entry => urls.push(`https://zakonexpertt.kz${entry.path}`));
+  const urls = getCorePages().map(p => `https://zakonexpert.kz${p.url}`);
+  openDataPages.sitemapEntries().forEach(entry => urls.push(`https://zakonexpert.kz${entry.path}`));
   if (newsDb) {
     const articles = await newsDb.getAllForSitemap();
-    articles.forEach(a => urls.push(`https://zakonexpertt.kz/news/${a.slug}`));
+    articles.forEach(a => urls.push(`https://zakonexpert.kz/news/${a.slug}`));
   }
   res.set('Content-Type', 'text/plain; charset=utf-8');
   res.send(urls.join('\n'));
@@ -2534,7 +2534,7 @@ function csvSitemap(res, items, prefix, sourceFiles) {
   const lastmod = latestFileLastmod(sourceFiles || []);
   const urls = items.filter(item => item.slug).map(item => `
   <url>
-    <loc>https://zakonexpertt.kz/${prefix}/${item.slug}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz/${prefix}/${item.slug}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -2561,7 +2561,7 @@ app.get('/sitemap-lombards.xml', (req, res) => {
 app.get('/sitemap-open-data.xml', (req, res) => {
   const urls = openDataPages.sitemapEntries().map(entry => `
   <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(entry.path)}</loc>${entry.lastmod ? `
+    <loc>https://zakonexpert.kz${xmlEscape(entry.path)}</loc>${entry.lastmod ? `
     <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
     <priority>${entry.priority}</priority>
@@ -2586,7 +2586,7 @@ function buildCompaniesSitemapChunk(chunk) {
   const sourceDate = String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || new Date().toISOString()).substring(0, 10);
   const urls = companiesDb.sitemapChunk(chunk).map(company => `
   <url>
-    <loc>https://zakonexpertt.kz/company/${company.slug}</loc>
+    <loc>https://zakonexpert.kz/company/${company.slug}</loc>
     <lastmod>${sourceDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
@@ -2643,18 +2643,18 @@ app.get('/sitemap-image.xml', (req, res) => {
   ];
 
   let urls = `  <url>
-    <loc>https://zakonexpertt.kz/gallery</loc>
+    <loc>https://zakonexpert.kz/gallery</loc>
 ${galleryImages.map(([file, caption]) => `    <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:loc>https://zakonexpert.kz/img/seo/${file}</image:loc>
       <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
     </image:image>`).join('\n')}
   </url>`;
 
   urls += heroImages.map(([page, file, caption]) => `
   <url>
-    <loc>https://zakonexpertt.kz${page}</loc>
+    <loc>https://zakonexpert.kz${page}</loc>
     <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:loc>https://zakonexpert.kz/img/seo/${file}</image:loc>
       <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
     </image:image>
   </url>`).join('');
@@ -2673,7 +2673,7 @@ app.get('/sitemap.xml', (req, res) => res.redirect(301, '/sitemap-index.xml'));
 // SITEMAP INDEX
 function sitemapIndexEntry(sitemapPath, lastmod) {
   return `  <sitemap>
-    <loc>https://zakonexpertt.kz${sitemapPath}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz${sitemapPath}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
   </sitemap>`;
 }
@@ -2756,7 +2756,7 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   const rawSchemaImage = articleView.display_cover;
   const schemaImage = /^https:\/\//i.test(rawSchemaImage)
     ? rawSchemaImage
-    : `https://zakonexpertt.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
+    : `https://zakonexpert.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
 
   const tagsArr = JSON.parse(article.tags || '[]');
   const relatedRaw = tagsArr.length > 0
@@ -2772,13 +2772,13 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
     '@type': 'NewsArticle',
     headline: displayTitle,
     description: article.meta_desc || displayExcerpt,
-    url: `https://zakonexpertt.kz/news/${article.slug}`,
+    url: `https://zakonexpert.kz/news/${article.slug}`,
     datePublished: pubDate.toISOString(),
     dateModified: article.updated_at || pubDate.toISOString(),
     publisher: {
       '@type': 'Organization',
       name: 'ZakonExpert',
-      url: 'https://zakonexpertt.kz'
+      url: 'https://zakonexpert.kz'
     },
     image: schemaImage,
   };
@@ -2786,7 +2786,7 @@ app.get('/news/:slug', asyncHandler(async (req, res) => {
   res.render('news/detail', {
     title: `${displayTitle.substring(0, 62)} | ZakonExpert`,
     description: (article.meta_desc || displayExcerpt).substring(0, 160),
-    canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
+    canonical: article.canonical_url || `https://zakonexpert.kz/news/${article.slug}`,
     ogType: 'article',
     ogImage: articleView.display_cover,
     article: articleView,

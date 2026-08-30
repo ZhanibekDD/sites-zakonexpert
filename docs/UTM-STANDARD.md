@@ -24,24 +24,24 @@
 ## Формула ссылки
 
 ```
-https://zakonexpertt.kz/<целевая-страница>?utm_source=<площадка>&utm_medium=<канал>&utm_campaign=<кампания>&utm_content=<опц.>
+https://zakonexpert.kz/<целевая-страница>?utm_source=<площадка>&utm_medium=<канал>&utm_campaign=<кампания>&utm_content=<опц.>
 ```
 
 ### Примеры
 
 Гостевая статья на юридическом блоге про арест Kaspi, ссылка в теле статьи на `/arest-kaspi`:
 ```
-https://zakonexpertt.kz/arest-kaspi?utm_source=blog-name&utm_medium=guest-post&utm_campaign=arest-kaspi-guide&utm_content=body-link
+https://zakonexpert.kz/arest-kaspi?utm_source=blog-name&utm_medium=guest-post&utm_campaign=arest-kaspi-guide&utm_content=body-link
 ```
 
 Карточка в 2ГИС, ссылка на сайт:
 ```
-https://zakonexpertt.kz/?utm_source=2gis&utm_medium=maps&utm_campaign=nap-listing
+https://zakonexpert.kz/?utm_source=2gis&utm_medium=maps&utm_campaign=nap-listing
 ```
 
 Комментарий эксперта в региональном СМИ:
 ```
-https://zakonexpertt.kz/press?utm_source=inbusiness-kz&utm_medium=press&utm_campaign=chsi-comment-2026-07
+https://zakonexpert.kz/press?utm_source=inbusiness-kz&utm_medium=press&utm_campaign=chsi-comment-2026-07
 ```
 
 ## Правила

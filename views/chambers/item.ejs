@@ -1,11 +1,11 @@
 <%
 const pageTitle = 'Нотариальная палата и палата ЧСИ — ' + chamber.region + ' | ZakonExpert';
 const pageDesc = 'Контакты нотариальной палаты и палаты ЧСИ: ' + chamber.region + '. Телефоны, адреса, email и сайты.';
-const canonical = 'https://zakonexpertt.kz/chambers/' + chamber.slug;
+const canonical = 'https://zakonexpert.kz/chambers/' + chamber.slug;
 function webHref(value) { return value ? (/^https?:\/\//i.test(value) ? value : 'https://' + value) : ''; }
 const schema = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
-  { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-  { '@type': 'ListItem', position: 2, name: 'Палаты нотариусов и ЧСИ', item: 'https://zakonexpertt.kz/chambers' },
+  { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+  { '@type': 'ListItem', position: 2, name: 'Палаты нотариусов и ЧСИ', item: 'https://zakonexpert.kz/chambers' },
   { '@type': 'ListItem', position: 3, name: chamber.region, item: canonical },
 ] };
 const detail = {

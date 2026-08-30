@@ -2,7 +2,7 @@
 const bankName = bank.shortName || bank.name || page.brand;
 const bankWeb = bank.web || page.officialSite || '';
 const bankWebHref = bankWeb ? (/^https?:\/\//i.test(bankWeb) ? bankWeb : 'https://' + bankWeb) : '';
-const whatsappText = encodeURIComponent('Здравствуйте! Счёт в ' + page.brand + ' ограничен. Хочу понять основание и проверить документы. Страница: https://zakonexpertt.kz' + page.path);
+const whatsappText = encodeURIComponent('Здравствуйте! Счёт в ' + page.brand + ' ограничен. Хочу понять основание и проверить документы. Страница: https://zakonexpert.kz' + page.path);
 const checkerHref = '/#checker-section';
 const aliases = (page.aliases || []).join(' · ');
 const segmentLabel = page.segment === 'business'

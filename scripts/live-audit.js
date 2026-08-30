@@ -2,7 +2,7 @@
 
 const releaseConfig = require('../modules/release-config');
 
-const ORIGIN = String(process.env.AUDIT_ORIGIN || 'https://zakonexpertt.kz').replace(/\/$/, '');
+const ORIGIN = String(process.env.AUDIT_ORIGIN || 'https://zakonexpert.kz').replace(/\/$/, '');
 const TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 20000);
 const STABILITY_ROUNDS = Math.max(1, Number(process.env.AUDIT_STABILITY_ROUNDS || 3));
 const SLOW_RESPONSE_MS = Math.max(1000, Number(process.env.AUDIT_SLOW_RESPONSE_MS || 8000));

@@ -11,7 +11,7 @@ const {
   loadInventory,
 } = require('./open-data-inventory');
 
-const SITE_URL = 'https://zakonexpertt.kz';
+const SITE_URL = 'https://zakonexpert.kz';
 const OFFICIAL_SOURCES_PATH = path.join(__dirname, '..', 'data', 'official-data-sources.json');
 let snapshotCache = null;
 let snapshotMtime = 0;

@@ -24,7 +24,7 @@ assert(title.startsWith('Снять арест со счёта'), 'Primary query
 assert(title.length <= 60, `Title is too long: ${title.length}`);
 assert(description.length >= 120 && description.length <= 170, `Description length is outside the target range: ${description.length}`);
 assert(h1.includes('Снять арест со счёта'), 'Primary query is missing from H1');
-assert(html.includes('<link rel="canonical" href="https://zakonexpertt.kz/snyatie-aresta-so-scheta">'), 'Canonical URL changed');
+assert(html.includes('<link rel="canonical" href="https://zakonexpert.kz/snyatie-aresta-so-scheta">'), 'Canonical URL changed');
 assert(html.includes('max-image-preview:large'), 'Large image preview directive is missing');
 assert(html.includes('/img/seo-v2/bank-arrest-hero.webp'), 'Hero and social image are missing');
 assert(fs.existsSync(path.join(ROOT, 'public', 'img', 'seo-v2', 'bank-arrest-hero.webp')), 'Hero image file does not exist');

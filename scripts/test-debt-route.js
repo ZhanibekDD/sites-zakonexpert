@@ -14,7 +14,7 @@ async function run() {
   const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
 
   assert(html.includes('<h1>Что делать с долгом именно на вашей стадии</h1>'));
-  assert(html.includes('https://zakonexpertt.kz/marshrut-dolzhnika'));
+  assert(html.includes('https://zakonexpert.kz/marshrut-dolzhnika'));
   assert(html.includes('data-debt-route'));
   assert(html.includes('77003097566'));
   assert(!html.includes('гарантия результата'));

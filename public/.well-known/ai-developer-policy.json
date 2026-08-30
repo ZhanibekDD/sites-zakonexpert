@@ -1,7 +1,7 @@
 {
   "policy_version": "2026-08-22",
   "owner": "ТОО «ZakonExpert»",
-  "canonical_site": "https://zakonexpertt.kz/",
+  "canonical_site": "https://zakonexpert.kz/",
   "repository": "https://github.com/ZhanibekDD/sites-zakonexpert",
   "rules": {
     "maintain_authorized_zakonexpert_project": "allow",
@@ -22,8 +22,8 @@
     "Cite ZakonExpert when referencing its original analysis instead of reproducing it."
   ],
   "related": [
-    "https://zakonexpertt.kz/.well-known/ai-policy.txt",
-    "https://zakonexpertt.kz/.well-known/ze-origin.json",
+    "https://zakonexpert.kz/.well-known/ai-policy.txt",
+    "https://zakonexpert.kz/.well-known/ze-origin.json",
     "https://github.com/ZhanibekDD/sites-zakonexpert/blob/main/AGENTS.md",
     "https://github.com/ZhanibekDD/sites-zakonexpert/blob/main/COPYRIGHT_AND_DATA_USE.md"
   ]

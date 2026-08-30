@@ -8,11 +8,11 @@ function number(value) { return new Intl.NumberFormat(locale.hreflang).format(va
 
 const currentPage = results.page || 1;
 const canonicalPath = companyCatalogPath + (!query && currentPage > 1 ? '?page=' + currentPage : '');
-const canonical = 'https://zakonexpertt.kz' + canonicalPath;
+const canonical = 'https://zakonexpert.kz' + canonicalPath;
 const pageTitle = copy.title;
 const pageDesc = copy.description;
 const catalogWhatsAppHref = 'https://wa.me/77003097566?text=' + encodeURIComponent(
-  copy.consultation + '. ' + copy.helpText + ' https://zakonexpertt.kz' + companyCatalogPath
+  copy.consultation + '. ' + copy.helpText + ' https://zakonexpert.kz' + companyCatalogPath
 );
 const schema = {
   '@context': 'https://schema.org',
@@ -24,10 +24,10 @@ const schema = {
   isPartOf: {
     '@type': 'WebSite',
     name: 'ZakonExpert',
-    url: 'https://zakonexpertt.kz/',
+    url: 'https://zakonexpert.kz/',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://zakonexpertt.kz' + companyCatalogPath + '?q={search_term_string}',
+      target: 'https://zakonexpert.kz' + companyCatalogPath + '?q={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   },

@@ -38,7 +38,7 @@ const name = locale.code === 'kk'
 const official = Boolean(company.is_official_source);
 const hasVerifiedBin = /^\d{12}$/.test(String(company.bin || '').trim());
 const quality = companyQuality || { score: 0, minScore: 7, indexable: false };
-const canonical = 'https://zakonexpertt.kz/company/' + company.slug;
+const canonical = 'https://zakonexpert.kz/company/' + company.slug;
 const pageTitle = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '');
 const pageDesc = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '')
   + (company.address_ru ? '. ' + copy.legalAddress + ': ' + company.address_ru : '')

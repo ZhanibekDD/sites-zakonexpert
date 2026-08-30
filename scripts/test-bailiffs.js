@@ -58,7 +58,7 @@ async function main() {
     views: [path.join(__dirname, '..', 'views')],
   });
   assert.ok(html.includes('<title>ЧСИ Астаны: список, контакты и адреса | ZakonExpert</title>'));
-  assert.ok(html.includes('<link rel="canonical" href="https://zakonexpertt.kz/bailiffs/astana">'));
+  assert.ok(html.includes('<link rel="canonical" href="https://zakonexpert.kz/bailiffs/astana">'));
   assert.ok(html.includes('ЧСИ Астаны: список и контакты'));
   assert.ok(html.includes('/img/regions/astana.webp'));
   assert.ok(html.includes('Что проверить до оплаты'));
@@ -69,7 +69,7 @@ async function main() {
   const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
   assert.ok(serverSource.includes("app.get('/bailiffs/:regionSlug'"), 'clean regional route is missing');
   assert.ok(serverSource.includes("res.redirect(301, regionPage ? regionPage.path : '/bailiffs')"), 'legacy region redirect is missing');
-  assert.ok(!serverSource.includes('<loc>https://zakonexpertt.kz/bailiffs?region='), 'sitemap must not publish legacy query URLs');
+  assert.ok(!serverSource.includes('<loc>https://zakonexpert.kz/bailiffs?region='), 'sitemap must not publish legacy query URLs');
 
   console.log(`Bailiff data OK: ${rows.length} records, ${astana.length} Astana records, 20 clean regional URLs`);
 }

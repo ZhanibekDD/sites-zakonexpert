@@ -89,7 +89,7 @@ function normalizeCategory(category = '', tags = []) {
 const parser = new RSSParser({
   timeout: 12000,
   headers: {
-    'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpert-NewsBot/1.0; +https://zakonexpertt.kz)',
+    'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpert-NewsBot/1.0; +https://zakonexpert.kz)',
     'Accept': 'application/rss+xml, application/xml, text/xml',
   },
   customFields: {
@@ -577,7 +577,7 @@ async function fetchSource(source) {
       continue;
     }
     const publishedAt  = safePublishedAt.toISOString();
-    const canonicalUrl = `https://zakonexpertt.kz/news/${slug}`;
+    const canonicalUrl = `https://zakonexpert.kz/news/${slug}`;
     const metaTitle    = legalTitle.substring(0, 65) + ' | ZakonExpert';
     const metaDesc     = excerpt.substring(0, 155) || `Разбор: ${legalTitle.substring(0, 100)}`;
 

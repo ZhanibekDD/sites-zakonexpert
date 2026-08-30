@@ -23,13 +23,13 @@ var verifiedDate = bailiff.updatedAt
   : '';
 var pageTitle = 'ЧСИ ' + nameTitle + ' — контакты и лицензия | ZakonExpert';
 var pageDesc = 'ЧСИ ' + nameTitle + ' (' + bailiff.region + '): телефон, адрес и номер лицензии. Помощь при аресте счёта и ограничениях.';
-var canonical = 'https://zakonexpertt.kz/bailiff/' + bailiff.slug;
+var canonical = 'https://zakonexpert.kz/bailiff/' + bailiff.slug;
 var schema = {
   '@context': 'https://schema.org',
   '@graph': [
     { '@type': 'BreadcrumbList', itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-      { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: 'https://zakonexpertt.kz/bailiffs' },
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: 'https://zakonexpert.kz/bailiffs' },
       { '@type': 'ListItem', position: 3, name: nameTitle, item: canonical },
     ] },
     { '@type': 'LegalService', name: 'ЧСИ ' + nameTitle, url: canonical,

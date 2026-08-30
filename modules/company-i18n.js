@@ -265,9 +265,9 @@ function companyPath(code, slug) {
 function catalogAlternates() {
   const alternates = INDEXABLE_LOCALES.map(code => ({
     hreflang: LOCALES[code].hreflang,
-    href: `https://zakonexpertt.kz${catalogPath(code)}`,
+    href: `https://zakonexpert.kz${catalogPath(code)}`,
   }));
-  alternates.push({ hreflang: 'x-default', href: 'https://zakonexpertt.kz/companies' });
+  alternates.push({ hreflang: 'x-default', href: 'https://zakonexpert.kz/companies' });
   return alternates;
 }
 

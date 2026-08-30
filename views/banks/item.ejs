@@ -1,15 +1,15 @@
 <%
 const pageTitle = bank.shortName + ' — контакты, адрес, БИН | ZakonExpert';
 const pageDesc = bank.shortName + ': БИН ' + bank.bin + ', адрес и официальные контакты. Помощь при аресте банковского счёта.';
-const canonical = 'https://zakonexpertt.kz/banks/' + bank.slug;
+const canonical = 'https://zakonexpert.kz/banks/' + bank.slug;
 const arrestGuidePath = typeof bankArrestPath === 'string' && bankArrestPath ? bankArrestPath : '/arest-scheta-v-bankah-kazahstana';
 const webHref = bank.web ? (/^https?:\/\//i.test(bank.web) ? bank.web : 'https://' + bank.web) : '';
 const schema = {
   '@context': 'https://schema.org',
   '@graph': [
     { '@type': 'BreadcrumbList', itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-      { '@type': 'ListItem', position: 2, name: 'Банки Казахстана', item: 'https://zakonexpertt.kz/banks' },
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Банки Казахстана', item: 'https://zakonexpert.kz/banks' },
       { '@type': 'ListItem', position: 3, name: bank.shortName, item: canonical },
     ] },
     { '@type': 'BankOrCreditUnion', name: bank.name, alternateName: bank.shortName, identifier: bank.bin,

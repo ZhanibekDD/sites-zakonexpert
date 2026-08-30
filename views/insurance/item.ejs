@@ -1,7 +1,7 @@
 <%
 const pageTitle = item.shortName + ' — страховая, контакты | ZakonExpert';
 const pageDesc = item.name + ': БИН ' + item.bin + ', адрес и официальные контакты. Помощь при споре со страховой компанией.';
-const canonical = 'https://zakonexpertt.kz/insurance/' + item.slug;
+const canonical = 'https://zakonexpert.kz/insurance/' + item.slug;
 const webHref = item.web ? (/^https?:\/\//i.test(item.web) ? item.web : 'https://' + item.web) : '';
 const schema = { '@context': 'https://schema.org', '@type': 'Organization', name: item.name, identifier: item.bin,
   telephone: item.phoneRaw || item.phone || undefined, email: item.email || undefined, url: webHref || undefined };

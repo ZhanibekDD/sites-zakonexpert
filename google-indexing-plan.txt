@@ -6,7 +6,7 @@ ZAKONEXPERT.KZ — ПЛАН ПЕРЕИНДЕКСАЦИИ В GOOGLE SEARCH CONSOL
 ----------------------------------------------------
 Search Console → Индексирование → Файлы Sitemap → добавить (если ещё не добавлены):
 
-  https://zakonexpertt.kz/sitemap-index.xml   (главный индекс — достаточно отправить только его)
+  https://zakonexpert.kz/sitemap-index.xml   (главный индекс — достаточно отправить только его)
 
 Он ссылается на все остальные:
   sitemap-pages.xml       — статические страницы + новые страницы городов
@@ -31,27 +31,27 @@ Search Console → Индексирование → Файлы Sitemap → до�
 2. КАКИЕ URL ЗАПРОСИТЬ НА РУЧНУЮ ИНДЕКСАЦИЮ (Инструмент проверки URL)
 ----------------------------------------------------------------------
 Приоритет 1 — исправленные критичные баги (проверить, что Google видит новую версию):
-  https://zakonexpertt.kz/index_kz                (был сломан DOCTYPE — все директивы читались вне <head>)
-  https://zakonexpertt.kz/contact_kz              (был битый казахский текст — title/description)
-  https://zakonexpertt.kz/services_kz             (был битый казахский текст — title/description)
-  https://zakonexpertt.kz/mfo                     (каталог был пустой из-за бага в роутинге)
+  https://zakonexpert.kz/index_kz                (был сломан DOCTYPE — все директивы читались вне <head>)
+  https://zakonexpert.kz/contact_kz              (был битый казахский текст — title/description)
+  https://zakonexpert.kz/services_kz             (был битый казахский текст — title/description)
+  https://zakonexpert.kz/mfo                     (каталог был пустой из-за бага в роутинге)
 
 Приоритет 2 — новые страницы городов:
-  https://zakonexpertt.kz/snyatie-aresta-almaty
-  https://zakonexpertt.kz/snyatie-aresta-astana
-  https://zakonexpertt.kz/snyatie-aresta-shymkent
-  https://zakonexpertt.kz/snyatie-aresta-taldykorgan
-  https://zakonexpertt.kz/snyatie-aresta-karaganda
+  https://zakonexpert.kz/snyatie-aresta-almaty
+  https://zakonexpert.kz/snyatie-aresta-astana
+  https://zakonexpert.kz/snyatie-aresta-shymkent
+  https://zakonexpert.kz/snyatie-aresta-taldykorgan
+  https://zakonexpert.kz/snyatie-aresta-karaganda
 
 Приоритет 3 — усиленные денежные страницы:
-  https://zakonexpertt.kz/arest-kaspi
-  https://zakonexpertt.kz/arest-halyk-bank
-  https://zakonexpertt.kz/arest-freedom-bank
-  https://zakonexpertt.kz/snyatie-aresta-so-scheta
-  https://zakonexpertt.kz/snyatie-zapreta-na-avto
-  https://zakonexpertt.kz/snyatie-ogranichenii-chsi
-  https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
-  https://zakonexpertt.kz/vozrazhenie-na-ispolnitelnuyu-nadpis
+  https://zakonexpert.kz/arest-kaspi
+  https://zakonexpert.kz/arest-halyk-bank
+  https://zakonexpert.kz/arest-freedom-bank
+  https://zakonexpert.kz/snyatie-aresta-so-scheta
+  https://zakonexpert.kz/snyatie-zapreta-na-avto
+  https://zakonexpert.kz/snyatie-ogranichenii-chsi
+  https://zakonexpert.kz/otmena-ispolnitelnoi-nadpisi
+  https://zakonexpert.kz/vozrazhenie-na-ispolnitelnuyu-nadpis
 
 3. ПЛАН ПЕРЕОБХОДА: 10 ДНЕЙ ПО 10 URL/ДЕНЬ (через "Проверка URL" → "Запросить индексирование")
 --------------------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ Google ограничивает количество ручных запросо
 
 5. ЧТО ПРОВЕРИТЬ ПЕРВЫМ ДЕЛОМ ПОСЛЕ ДЕПЛОЯ (вручную, до отправки в GSC)
 --------------------------------------------------------------------------
-  curl -I https://zakonexpertt.kz/index_kz          → должен быть 200, не редирект
-  curl -s https://zakonexpertt.kz/mfo | grep -c 'mfo/'   → должно быть много ссылок на карточки
-  https://search.google.com/test/rich-results?url=https://zakonexpertt.kz/gallery
+  curl -I https://zakonexpert.kz/index_kz          → должен быть 200, не редирект
+  curl -s https://zakonexpert.kz/mfo | grep -c 'mfo/'   → должно быть много ссылок на карточки
+  https://search.google.com/test/rich-results?url=https://zakonexpert.kz/gallery
       → проверить, что ImageGallery распознаётся без ошибок

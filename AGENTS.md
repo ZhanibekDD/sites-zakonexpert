@@ -25,4 +25,4 @@ Do not expose private datasets, credentials, API tokens, internal storage, custo
 See also:
 - `COPYRIGHT_AND_DATA_USE.md`
 - `LICENSE`
-- `https://zakonexpertt.kz/.well-known/ai-policy.txt`
+- `https://zakonexpert.kz/.well-known/ai-policy.txt`

@@ -1,7 +1,7 @@
 <%
 const pageTitle = item.name + ' — ГСИ, контакты | ZakonExpert';
 const pageDesc = item.name + ' (' + item.region + '): адрес и официальные контакты. Помощь при незаконном аресте.';
-const canonical = 'https://zakonexpertt.kz/gsi/' + item.slug;
+const canonical = 'https://zakonexpert.kz/gsi/' + item.slug;
 const schema = { '@context': 'https://schema.org', '@type': 'GovernmentOrganization', name: item.name,
   telephone: item.phoneRaw || item.phone || undefined, email: item.email || undefined,
   address: item.address ? { '@type': 'PostalAddress', streetAddress: item.address, addressLocality: item.region, addressCountry: 'KZ' } : undefined };

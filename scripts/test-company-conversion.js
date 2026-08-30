@@ -104,7 +104,7 @@ const analyticsContext = {
     analyticsPayloads.push(JSON.parse(options.body));
     return Promise.resolve({ ok: true });
   },
-  location: { pathname: '/en/company/7137221-alfa-pravo', search: '', hostname: 'zakonexpertt.kz' },
+  location: { pathname: '/en/company/7137221-alfa-pravo', search: '', hostname: 'zakonexpert.kz' },
   navigator: {},
   sessionStorage: {
     getItem(key) { return analyticsSession.get(key) || null; },

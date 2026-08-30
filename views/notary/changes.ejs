@@ -1,7 +1,7 @@
 <%
 const pageTitle = 'Изменения в реестре нотариусов Казахстана | ZakonExpert';
 const pageDesc = 'Автоматическая сверка реестра нотариусов ЕНИС: новые записи, изменения статуса, контактов, адресов, режима работы и передачи архивов.';
-const canonical = 'https://zakonexpertt.kz/notaries/changes';
+const canonical = 'https://zakonexpert.kz/notaries/changes';
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -19,8 +19,8 @@ const schema = {
         position: index + 1,
         name: change.name + ' — ' + change.region,
         url: change.profileSlug
-          ? 'https://zakonexpertt.kz/notary/' + change.profileSlug
-          : 'https://zakonexpertt.kz/zamena-notariusa?q=' + encodeURIComponent(change.name),
+          ? 'https://zakonexpert.kz/notary/' + change.profileSlug
+          : 'https://zakonexpert.kz/zamena-notariusa?q=' + encodeURIComponent(change.name),
       };
     }),
   },
