@@ -1,26 +1,32 @@
 name: Private CRM checks
-
 on:
-  pull_request:
-    branches:
-      - migration/zakonexpert-kz
+  push:
+    branches: [migration/zakonexpert-kz]
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
       - 'views/crm/**'
       - 'scripts/test-crm.js'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/crm-ci.yml'
-      - '.env.example'
-      - 'docs/CRM-SETUP.md'
+  pull_request:
+    branches: [migration/zakonexpert-kz]
+    paths:
+      - 'crm-entry.js'
+      - 'modules/crm-*.js'
+      - 'views/crm/**'
+      - 'scripts/test-crm.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/crm-ci.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   crm:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,7 +38,8 @@ jobs:
         run: |
           node --check crm-entry.js
           node --check modules/crm-db.js
+          node --check modules/crm-contracts.js
           node --check modules/crm-routes.js
           node --check scripts/test-crm.js
       - name: CRM tests
-        run: node scripts/test-crm.js
+        run: npm run test:crm

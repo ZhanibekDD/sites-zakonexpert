@@ -75,7 +75,8 @@
     "storage:audit": "node scripts/storage-audit.js",
     "storage:compact": "node scripts/compact-databases.js",
     "test:bank-growth": "node scripts/test-bank-arrest-cluster.js",
-    "test:company-corrections": "node scripts/test-company-corrections.js"
+    "test:company-corrections": "node scripts/test-company-corrections.js",
+    "test:crm": "node scripts/test-crm.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
@@ -92,7 +93,10 @@
     "slugify": "^1.6.9",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
-    "xml2js": "^0.6.2"
+    "xml2js": "^0.6.2",
+    "docx": "^9.5.1",
+    "pdfmake": "^0.2.20",
+    "pdf-parse": "1.1.1"
   },
   "devDependencies": {
     "adm-zip": "^0.6.0",
