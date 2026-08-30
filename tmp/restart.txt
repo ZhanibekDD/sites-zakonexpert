@@ -1,1 +1,1 @@
-ZakonExpert release 2026-08-03-company-import-api-key-fix
+2026-08-30T18:04:34Z migration-assets-repair
