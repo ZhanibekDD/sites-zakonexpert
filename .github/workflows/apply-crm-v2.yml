@@ -1,0 +1,127 @@
+name: Apply CRM v2
+
+on:
+  push:
+    branches:
+      - migration/zakonexpert-kz
+    paths:
+      - '.crm-payload/**'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: migration/zakonexpert-kz
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Restore CRM v2 source
+        run: |
+          gzip -dc .crm-payload/crm-routes.js.gz > modules/crm-routes.js
+          gzip -dc .crm-payload/dashboard.ejs.gz > views/crm/dashboard.ejs
+          gzip -dc .crm-payload/sign.ejs.gz > views/crm/sign.ejs
+          gzip -dc .crm-payload/test-crm.js.gz > scripts/test-crm.js
+      - name: Add contract dependencies
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json','utf8'));
+          p.dependencies = p.dependencies || {};
+          p.dependencies.docx = '^9.5.1';
+          p.dependencies.pdfmake = '^0.2.20';
+          p.dependencies['pdf-parse'] = '1.1.1';
+          p.scripts = p.scripts || {};
+          p.scripts['test:crm'] = 'node scripts/test-crm.js';
+          fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          NODE
+          npm install --package-lock-only --ignore-scripts
+          npm ci --ignore-scripts
+      - name: CRM checks
+        env:
+          CRM_CONTRACT_FILE_DIR: /tmp/zakonexpert-contracts
+        run: |
+          node --check crm-entry.js
+          node --check modules/crm-db.js
+          node --check modules/crm-contracts.js
+          node --check modules/crm-routes.js
+          node --check scripts/test-crm.js
+          npm run test:crm
+          node <<'NODE'
+          const fs = require('fs');
+          const c = require('./modules/crm-contracts');
+          (async()=>{
+            const draft = c.normalizeDraft({number:'999999',amount:123456,presetKey:'arrest',clientName:'Тест Клиент',clientIin:'900101300000',clientPhone:'+7 700 000 00 00'},{});
+            const out = await c.generateFiles(draft);
+            if (!fs.existsSync(c.readFile(out.fileKey,'pdf')) || !fs.existsSync(c.readFile(out.fileKey,'docx'))) throw new Error('generator output missing');
+            const imported = await c.importPdf(fs.readFileSync(c.readFile(out.fileKey,'pdf')), 'generated.pdf');
+            if (!imported.fields.number) throw new Error('generated PDF import parse failed');
+            console.log('Contract generator/import smoke PASS', out.pdfBytes, out.docxBytes);
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
+      - name: Refresh CRM CI
+        run: |
+          cat > .github/workflows/crm-ci.yml <<'YAML'
+          name: Private CRM checks
+          on:
+            push:
+              branches: [migration/zakonexpert-kz]
+              paths:
+                - 'crm-entry.js'
+                - 'modules/crm-*.js'
+                - 'views/crm/**'
+                - 'scripts/test-crm.js'
+                - 'package.json'
+                - 'package-lock.json'
+                - '.github/workflows/crm-ci.yml'
+            pull_request:
+              branches: [migration/zakonexpert-kz]
+              paths:
+                - 'crm-entry.js'
+                - 'modules/crm-*.js'
+                - 'views/crm/**'
+                - 'scripts/test-crm.js'
+                - 'package.json'
+                - 'package-lock.json'
+                - '.github/workflows/crm-ci.yml'
+            workflow_dispatch:
+          permissions:
+            contents: read
+          jobs:
+            crm:
+              runs-on: ubuntu-latest
+              timeout-minutes: 12
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 22
+                    cache: npm
+                - run: npm ci --ignore-scripts
+                - name: Syntax check
+                  run: |
+                    node --check crm-entry.js
+                    node --check modules/crm-db.js
+                    node --check modules/crm-contracts.js
+                    node --check modules/crm-routes.js
+                    node --check scripts/test-crm.js
+                - name: CRM tests
+                  run: npm run test:crm
+          YAML
+      - name: Commit verified CRM v2
+        run: |
+          rm -rf .crm-payload
+          rm -f .github/workflows/apply-crm-v2.yml .github/workflows/crm-lock-refresh.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/crm-routes.js views/crm/dashboard.ejs views/crm/sign.ejs scripts/test-crm.js package.json package-lock.json .github/workflows/crm-ci.yml
+          git add -A .crm-payload .github/workflows/apply-crm-v2.yml .github/workflows/crm-lock-refresh.yml
+          git commit -m "Upgrade private CRM with contract workspace"
+          git push origin HEAD:migration/zakonexpert-kz
