@@ -1,0 +1,36 @@
+name: Rewrite domain for zakonexpert.kz migration
+
+on:
+  push:
+    branches:
+      - migration/zakonexpert-kz
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite-domain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: migration/zakonexpert-kz
+          fetch-depth: 1
+
+      - name: Rewrite old domain in tracked text files
+        run: node scripts/migrate-domain-to-zakonexpert-kz.js --apply
+
+      - name: Commit rewritten files
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No domain references left to rewrite."
+            exit 0
+          fi
+          git commit -m "Rewrite production origin to zakonexpert.kz"
+          git push origin HEAD:migration/zakonexpert-kz
