@@ -5,15 +5,18 @@ on:
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
+      - 'public/js/crm-generator-ui.js'
       - 'views/crm/**'
       - 'scripts/test-crm-contract-sync.js'
       - '.github/workflows/crm-contract-sync.yml'
   push:
     branches:
       - feature/private-crm-kanban-contract-sync
+      - feature/crm-generator-inside-kanban
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
+      - 'public/js/crm-generator-ui.js'
       - 'views/crm/**'
       - 'scripts/test-crm-contract-sync.js'
       - '.github/workflows/crm-contract-sync.yml'
@@ -34,6 +37,8 @@ jobs:
           node --check crm-entry.js
           node --check modules/crm-db.js
           node --check modules/crm-routes.js
+          node --check modules/crm-generator-create.js
+          node --check public/js/crm-generator-ui.js
           node --check scripts/test-crm-contract-sync.js
       - name: Compile CRM view
         run: |
