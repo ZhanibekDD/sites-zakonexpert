@@ -10,10 +10,12 @@ process.env.CRM_DB_PATH = path.join(tmp, 'crm.db');
 process.env.CRM_META_DB_PATH = path.join(tmp, 'crm-meta.db');
 process.env.CRM_JOB_DB_PATH = path.join(tmp, 'crm-jobs.db');
 process.env.CRM_BACKUP_DIR = path.join(tmp, 'backups');
+process.env.CRM_CONTRACT_UPLOAD_DIR = path.join(tmp, 'contract-uploads');
 process.env.CRM_BACKUP_KEEP_DAYS = '7';
 
 const crm = require('../modules/crm-db');
 const jobs = require('../modules/crm-generation-jobs');
+const contractImport = require('../modules/crm-contract-import');
 
 (async () => {
   try {
@@ -55,6 +57,7 @@ const jobs = require('../modules/crm-generation-jobs');
       name: 'Тестов Тест Тестович', iin: '900101300123', phone: '+7 700 123 45 67',
       service: 'Отмена исполнительной надписи', amount: 60000, paymentType: 'prepayment',
     }, 'test');
+    assert.strictEqual(queued.kind, jobs.KINDS.CREATE);
     assert.strictEqual(queued.status, 'pending');
     assert.strictEqual(queued.payload.iin, '900101300123');
 
@@ -81,10 +84,61 @@ const jobs = require('../modules/crm-generation-jobs');
     assert.strictEqual(failedRead.status, 'failed');
     const retried = await jobs.retry(failed.id);
     assert.strictEqual(retried.status, 'pending');
+    const reclaimed = await jobs.claimNext('worker-test');
+    assert.strictEqual(reclaimed.id, failed.id);
+    await jobs.complete(failed.id, { number: 'retry-ok' });
 
-    console.log('CRM contract sync + pull queue: PASS');
+    const fakePdf = Buffer.from('%PDF-1.4\nZakonExpert integration test\n%%EOF\n', 'utf8');
+    const stored = contractImport.storeUpload(fakePdf, 'Старый договор №77.pdf');
+    assert(fs.existsSync(stored.storedFile), 'private uploaded file should be stored');
+    const importJob = await jobs.createImportJob({
+      filename: 'Старый договор №77.pdf',
+      mimeType: 'application/pdf',
+      sha256: stored.sha256,
+      storedFile: stored.storedFile,
+    }, 'test');
+    assert.strictEqual(importJob.kind, jobs.KINDS.PARSE);
+    const importClaim = await jobs.claimNext('worker-import');
+    assert.strictEqual(importClaim.id, importJob.id);
+    assert.strictEqual(importClaim.kind, jobs.KINDS.PARSE);
+    assert.strictEqual(importClaim.payload.sha256, stored.sha256);
+
+    const imported = await contractImport.saveParsedImport({
+      parsed: {
+        name: 'Тестов Тест Тестович',
+        iin: '900101300123',
+        phone: '+7 700 123 45 67',
+        address: 'г. Алматы, ул. Тестовая 1',
+        number: '77',
+        date: '2026-08-30',
+        amount: 70000,
+        currency: 'KZT',
+        service: 'Снятие ограничений ЧСИ',
+        paymentType: 'prepayment',
+      },
+      storedFile: stored.storedFile,
+      filename: 'Старый договор №77.pdf',
+      mimeType: 'application/pdf',
+      sha256: stored.sha256,
+    });
+    assert.strictEqual(imported.client._id, first.client._id, 'uploaded contract should attach by IIN');
+    assert.strictEqual(imported.contract.number, '77');
+    assert.strictEqual(imported.contract.amount, 70000);
+    assert.strictEqual(imported.contract.storedFile, stored.storedFile);
+
+    const importCompleted = await jobs.complete(importJob.id, {
+      clientId: imported.client._id,
+      contractId: imported.contract.id,
+      number: imported.contract.number,
+      filename: 'Старый договор №77.pdf',
+      imported: true,
+    });
+    assert.strictEqual(importCompleted.status, 'complete');
+    assert.strictEqual(importCompleted.result.imported, true);
+
+    console.log('CRM contract sync + create/import pull queues: PASS');
   } finally {
-    await new Promise(resolve => setTimeout(resolve, 40));
+    await new Promise(resolve => setTimeout(resolve, 60));
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 })().catch(error => {
