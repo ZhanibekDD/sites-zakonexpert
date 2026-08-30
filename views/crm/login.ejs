@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>ZakonExpert CRM — вход</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{width:min(430px,100%);background:#111c32;border:1px solid #263755;border-radius:22px;padding:32px;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+    .brand{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#67e8f9;font-weight:800}.title{font-size:30px;margin:9px 0 7px}.sub{color:#94a3b8;line-height:1.5;margin:0 0 24px}
+    label{display:block;font-size:13px;color:#cbd5e1;margin:14px 0 7px}.input{width:100%;border:1px solid #334765;border-radius:12px;background:#0b1324;color:#fff;padding:13px 14px;font-size:16px;outline:none}.input:focus{border-color:#22d3ee;box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+    .btn{margin-top:18px;width:100%;border:0;border-radius:12px;padding:14px 16px;font-weight:800;font-size:15px;background:#22d3ee;color:#06202a;cursor:pointer}.btn:hover{filter:brightness(1.05)}
+    .error{background:#3f1d24;border:1px solid #7f1d1d;color:#fecaca;padding:11px 13px;border-radius:12px;margin-bottom:14px}.setup{background:#2a210c;border:1px solid #6b4f13;color:#fde68a;padding:14px;border-radius:12px;line-height:1.5}.setup code{color:#fff}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">ZakonExpert</div>
+    <h1 class="title">Личная CRM</h1>
+    <p class="sub">Клиенты, обещания оплаты, договоры и работа — только для внутреннего доступа.</p>
+
+    <% if (!configured) { %>
+      <div class="setup">
+        CRM ещё не активирована. В Plesk добавьте <code>CRM_PASSWORD</code> и случайный <code>CRM_SESSION_SECRET</code> длиной не менее 24 символов, затем перезапустите приложение.
+      </div>
+    <% } else { %>
+      <% if (error) { %><div class="error">Неверный логин или пароль.</div><% } %>
+      <form method="post" action="/crm/login" autocomplete="off">
+        <label for="username">Логин</label>
+        <input class="input" id="username" name="username" value="admin" autocomplete="username" required>
+        <label for="password">Пароль</label>
+        <input class="input" id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+        <button class="btn" type="submit">Войти в CRM</button>
+      </form>
+    <% } %>
+  </main>
+</body>
+</html>
