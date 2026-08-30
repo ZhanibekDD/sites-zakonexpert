@@ -13,6 +13,7 @@ on:
     branches:
       - feature/private-crm-kanban-contract-sync
       - feature/crm-generator-inside-kanban
+      - feature/crm-pull-worker-final
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
@@ -38,6 +39,7 @@ jobs:
           node --check modules/crm-db.js
           node --check modules/crm-routes.js
           node --check modules/crm-generator-create.js
+          node --check modules/crm-generation-jobs.js
           node --check public/js/crm-generator-ui.js
           node --check scripts/test-crm-contract-sync.js
       - name: Compile CRM view
