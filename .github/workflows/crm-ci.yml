@@ -1,0 +1,38 @@
+name: Private CRM checks
+
+on:
+  pull_request:
+    branches:
+      - migration/zakonexpert-kz
+    paths:
+      - 'crm-entry.js'
+      - 'modules/crm-*.js'
+      - 'views/crm/**'
+      - 'scripts/test-crm.js'
+      - '.github/workflows/crm-ci.yml'
+      - '.env.example'
+      - 'docs/CRM-SETUP.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Syntax check
+        run: |
+          node --check crm-entry.js
+          node --check modules/crm-db.js
+          node --check modules/crm-routes.js
+          node --check scripts/test-crm.js
+      - name: CRM tests
+        run: node scripts/test-crm.js
