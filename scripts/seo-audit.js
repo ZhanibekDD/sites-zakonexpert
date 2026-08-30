@@ -39,7 +39,7 @@ for (const file of files) {
     else titles.set(title, file);
   }
   if (canonical) {
-    if (!/^https:\/\/zakonexpertt\.kz\//.test(canonical)) add(file, 'error', 'canonical is not an absolute production URL');
+    if (!/^https:\/\/zakonexpert\.kz\//.test(canonical)) add(file, 'error', 'canonical is not an absolute production URL');
     if (canonicals.has(canonical)) add(file, 'warning', `duplicate canonical with ${canonicals.get(canonical)}`);
     else canonicals.set(canonical, file);
   }

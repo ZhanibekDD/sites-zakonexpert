@@ -200,7 +200,7 @@ assert.strictEqual(
     },
   );
   assert.ok(astanaNotaries.length > 0, 'Astana regional fixture is empty');
-  assert.match(regionalCatalogHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/astana">/);
+  assert.match(regionalCatalogHtml, /<link rel="canonical" href="https:\/\/zakonexpert\.kz\/notaries\/astana">/);
   assert.match(regionalCatalogHtml, /<h1>Нотариусы Астаны: список и контакты<\/h1>/);
   assert.ok(regionalCatalogHtml.includes('source=notary&amp;entry=notary_region'), 'regional notary diagnostic bridge is missing');
   assert.ok(regionalCatalogHtml.includes('/zamena-notariusa'), 'archive-holder search must be linked from regional notary pages');
@@ -223,7 +223,7 @@ assert.strictEqual(
       pagination: { page: 2, pageSize, total: astanaNotaries.length, totalPages },
     },
   );
-  assert.match(secondPageHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/astana\?page=2">/);
+  assert.match(secondPageHtml, /<link rel="canonical" href="https:\/\/zakonexpert\.kz\/notaries\/astana\?page=2">/);
   assert.match(secondPageHtml, /<title>Нотариусы Астаны — страница 2 \| ZakonExpert<\/title>/);
   assert.match(secondPageHtml, /<h1>Нотариусы Астаны: список и контакты — страница 2<\/h1>/);
   assert.ok(secondPageHtml.includes('href="/notaries/astana" rel="prev"'), 'page two must link back to the clean first page');
@@ -296,7 +296,7 @@ assert.strictEqual(
       noindex: false,
     },
   );
-  assert.match(changesHtml, /<link rel="canonical" href="https:\/\/zakonexpertt\.kz\/notaries\/changes">/);
+  assert.match(changesHtml, /<link rel="canonical" href="https:\/\/zakonexpert\.kz\/notaries\/changes">/);
   assert.match(changesHtml, /Автоматическая сверка ЕНИС/);
   assert.match(changesHtml, /Сверка каждый день/);
   assert.match(changesHtml, /Это не доказывает прекращение деятельности/);
