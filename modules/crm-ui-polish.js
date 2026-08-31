@@ -7,10 +7,15 @@ function generatorConnected() {
 function injectReferenceAssets(html) {
   let out = String(html || '');
   if (!out.includes('/css/crm-reference.css')) {
-    out = out.replace('</head>', '<link rel="stylesheet" href="/css/crm-reference.css?v=20260831a"></head>');
+    out = out.replace('</head>', '<link rel="stylesheet" href="/css/crm-reference.css?v=20260831b"></head>');
   }
-  if (!out.includes('/js/crm-reference-ui.js')) {
-    out = out.replace('</body>', '<script src="/js/crm-reference-ui.js?v=20260831a"></script></body>');
+  const scripts = [
+    '<script src="/js/crm-reference-ui.js?v=20260831b"></script>',
+    '<script src="/js/crm-reference-archive.js?v=20260831b"></script>',
+  ];
+  for (const script of scripts) {
+    const src = script.match(/src="([^"]+)/)?.[1] || '';
+    if (src && !out.includes(src)) out = out.replace('</body>', `${script}</body>`);
   }
   return out;
 }
