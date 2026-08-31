@@ -5,7 +5,9 @@ on:
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
+      - 'public/css/crm-reference.css'
       - 'public/js/crm-generator-ui.js'
+      - 'public/js/crm-reference-*.js'
       - 'views/crm/**'
       - 'scripts/test-crm-contract-sync.js'
       - '.github/workflows/crm-contract-sync.yml'
@@ -15,10 +17,13 @@ on:
       - feature/crm-generator-inside-kanban
       - feature/crm-pull-worker-final
       - feature/crm-import-pull-final
+      - feature/crm-reference-ui
     paths:
       - 'crm-entry.js'
       - 'modules/crm-*.js'
+      - 'public/css/crm-reference.css'
       - 'public/js/crm-generator-ui.js'
+      - 'public/js/crm-reference-*.js'
       - 'views/crm/**'
       - 'scripts/test-crm-contract-sync.js'
       - '.github/workflows/crm-contract-sync.yml'
@@ -43,7 +48,10 @@ jobs:
           node --check modules/crm-generation-jobs.js
           node --check modules/crm-contract-import.js
           node --check modules/crm-import-pull.js
+          node --check modules/crm-ui-polish.js
           node --check public/js/crm-generator-ui.js
+          node --check public/js/crm-reference-ui.js
+          node --check public/js/crm-reference-archive.js
           node --check scripts/test-crm-contract-sync.js
       - name: Compile CRM view
         run: |
