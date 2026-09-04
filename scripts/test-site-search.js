@@ -49,7 +49,7 @@ for (const filename of fs.readdirSync(path.join(root, 'public')).filter(name => 
     `${filename} must expose the global site search`);
 }
 
-const serverSource = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const serverSource = require('./lib/source-files').readServerSource();
 assert.ok(serverSource.includes("app.get('/poisk'"), 'global search results route is missing');
 for (const source of ['companiesDb.search', 'notariesDb.search', 'bailiffsDb.search', 'lawsDb.search', 'newsDb.searchPublished']) {
   assert.ok(serverSource.includes(source), `global search must include ${source}`);

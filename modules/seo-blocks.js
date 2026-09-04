@@ -2,10 +2,12 @@
 // (banks, mfo, lombards, collectors, insurance, gsi) to add genuine,
 // useful educational content and reduce thin-content pages.
 
+const { escapeHtml } = require('./html');
+
 function lowContentBoost(opts) {
   opts = opts || {};
-  var entityLabel = opts.entityLabel || 'эта организация';
-  var entityLabelGenitive = opts.entityLabelGenitive || entityLabel;
+  var entityLabel = escapeHtml(opts.entityLabel || 'эта организация');
+  var entityLabelGenitive = escapeHtml(opts.entityLabelGenitive || opts.entityLabel || 'эта организация');
   return ''
     + '<div class="law-faq mt-4" style="max-width:720px;">'
     + '<h2 style="font-size:1.05rem;font-weight:800;margin-bottom:14px;color:#0f2044;">Что делать, если по вам есть взыскание</h2>'

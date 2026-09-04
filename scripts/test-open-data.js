@@ -292,7 +292,7 @@ async function run() {
   assert(body.includes('Показатели за квартал'));
   assert(body.includes('data.egov.kz'));
 
-  const serverSource = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  const serverSource = require('./lib/source-files').readServerSource();
   assert(serverSource.includes("app.get('/sitemap-open-data.xml'"));
   assert(serverSource.includes("process.env.OPEN_DATA_RECORD_CACHE_WARMER"), 'bulk cache warming must be explicitly enabled in the web process');
   assert(serverSource.includes('bulk warmer delegated to an external scheduled task'), 'web process must delegate the bulk cache warmer by default');

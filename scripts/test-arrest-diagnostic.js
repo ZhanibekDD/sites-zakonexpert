@@ -13,7 +13,7 @@ async function run() {
   const html = await ejs.renderFile(path.join(root, 'views', 'arrest-diagnostic.ejs'));
   const script = fs.readFileSync(path.join(root, 'public', 'js', 'arrest-diagnostic.js'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'public', 'css', 'arrest-diagnostic.css'), 'utf8');
-  const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+  const server = require('./lib/source-files').readServerSource();
   const homepage = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
   const arrestPillar = fs.readFileSync(path.join(root, 'public', 'snyatie-aresta-so-scheta.html'), 'utf8');
   const bankHub = fs.readFileSync(path.join(root, 'views', 'partials', 'bank-arrest-hub-body.ejs'), 'utf8');

@@ -1,0 +1,1334 @@
+[
+  {
+    "path": "/ispolnitelnaya-nadpis",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/ispolnitelnaya-nadpis.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/spornost-dolga",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/spornost-dolga.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chsi-arest-schetov",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chsi-arest-schetov.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zapret-registracionnyh-deystviy",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zapret-registracionnyh-deystviy.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/grafik-platezhey",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/grafik-platezhey.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/notary-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/^\\/.+\\.html$/",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/favicon.ico",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/check",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/notary-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/notary-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zamena-notariusa.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zamena-notariusa",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/notary/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-notaries.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/notaries/import",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/notaries/refresh",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/bailiff-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/notaries",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/notaries/changes",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/notaries/:regionSlug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-aresta-:city",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/bailiffs",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/bailiffs/:regionSlug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/banks",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/courts",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chambers",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/companies",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/company-suggest",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/:locale(kk|en|zh|tr)/companies",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/companies/regions",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/companies/region/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/:locale(kk|en|zh|tr)/company/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/company/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/gsi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/gsi/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/insurance",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/insurance/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/credit-bureaus",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/regulators",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/emergency",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/banks/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-scheta-v-bankah-kazahstana",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-bank-centercredit",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-fortebank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-evraziyskiy-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-bereke-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-alatau-city-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-bank-rbk",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-home-credit-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-nurbank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-otbasy-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-altyn-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-vtb-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-kzi-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-bnk-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-kmf-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-shinhan-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-bank-of-china-kazakhstan",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-icbc-kazakhstan",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-citibank-kazakhstan",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-adcb-kazakhstan",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-zaman-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/kak-uznat-kto-nalozhil-arest-na-schet",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/bank-spisal-dengi-po-ispolnitelnomu-proizvodstvu",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-sotsialnogo-scheta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-scheta-nalogovoy",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/blokirovka-scheta-po-finmonitoringu",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/kak-poluchit-postanovlenie-chsi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-ip-scheta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-snyat-no-schet-zablokirovan",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/srok-snyatiya-aresta-so-scheta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-scheta-bez-uvedomleniya",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/neskolko-arestov-na-schete",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-posle-otmeny-ispolnitelnoy-nadpisi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/courts/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chambers/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/collectors",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/collectors/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/mfo",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/mfo/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/lombards",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/lombards/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/bailiff/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-bailiffs.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/bailiffs/import",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/sitemap-laws.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/lawyers",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/lawyer-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/lawyer/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-lawyers.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/advocate",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/statyi/search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/statyi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/statya/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/bankruptcy-check",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/bankruptcy-check",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/erdr-check",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/inscription-session",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/inscription-captcha",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/inscription-check",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/gallery",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otzyvy",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otzyvy.html",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-aresta-so-scheta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otmena-ispolnitelnoi-nadpisi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/vozrazhenie-na-ispolnitelnuyu-nadpis",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-ogranichenii-chsi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-zapreta-na-avto",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-ogranicheniya-na-imushchestvo",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-zapreta-registracionnyh-deistvii",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyatie-ogranichenii-u-notariusa",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/grafik-oplaty-zadolzhennosti",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/ubrat-procenty-i-rashody-chsi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-kaspi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-halyk-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-freedom-bank",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zakony",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/besspornost-dolga",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/alimenty-i-aresty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/shtrafy-i-aresty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chsi-refinansirovanie",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otmena-resheniya-suda",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/dokumenty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/rezultaty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/mediator",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/privacy",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/services",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/contact",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sms-1414",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zapret-na-vyezd-iz-kazahstana",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhaloba-na-chsi",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/chsi-ne-snimaet-arest-posle-oplaty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/arest-zarplatnoy-karty",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/snyat-arest-s-nedvizhimosti",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/nadpis-ili-list",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/news",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/news/category/:category",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/news/feed.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/feed.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-news.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-pages.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap.txt",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-banks.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-courts.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-chambers.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-collectors.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-gsi.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-insurance.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-mfo.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-lombards.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-open-data.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/^\\/sitemap-companies-(\\d+)\\.xml$/",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-image.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/sitemap-index.xml",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/news/cover/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/news/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/notaries/import",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/notaries/refresh",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/bailiffs/import",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/import",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/clear",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/reset",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/fix-images",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/telegram/setup",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/import",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/news/clear",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/news/reset",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/news/fix-images",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/news/status",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/news/health",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/application",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/document-download-counts",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/download-document/:filename",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/track-click",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/track-event",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/lead",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/chat/send",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/chat/poll",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/telegram/setup",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/health",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/comments",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/admin/comments",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/admin/comments/:id/approve",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/admin/comments/:id/delete",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/bin-search",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/calculator",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/marshrut-dolzhnika",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/diagnostika-aresta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/proverka-kompanii-po-bin",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/proverka-kontragenta",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/proverka-bankrotstva",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/api/company-check",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/open-data/housing-search",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/open-data/housing-records",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/api/open-data/records",
+    "methods": [
+      "post"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhilishchnye-spiski",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhilishchnye-spiski/ochered-na-zhile",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhilishchnye-spiski/poluchili-zhile",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhilishchnye-spiski/ochered-na-zhile/:regionSlug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/zhilishchnye-spiski/poluchili-zhile/:regionSlug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/revizionnye-komissii-2-kvartal-2026",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/reabilitaciya-detey-alatau-2026",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/gosudarstvennyy-sektor",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/kategorii",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/organizacii",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/istochniki",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/kategoriya/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/organizaciya/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/gosudarstvennyy-sektor/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/otkrytye-dannye/nabor/:slug",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/poisk",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/tools",
+    "methods": [
+      "get"
+    ]
+  },
+  {
+    "path": "/tools/:slug",
+    "methods": [
+      "get"
+    ]
+  }
+]
