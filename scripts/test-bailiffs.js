@@ -66,7 +66,7 @@ async function main() {
   assert.ok(html.includes('/bailiffs/almaty'));
   assert.ok(!html.includes('/bailiffs?region='), 'regional page must not link back to legacy query URLs');
 
-  const serverSource = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const serverSource = require('./lib/source-files').readServerSource();
   assert.ok(serverSource.includes("app.get('/bailiffs/:regionSlug'"), 'clean regional route is missing');
   assert.ok(serverSource.includes("res.redirect(301, regionPage ? regionPage.path : '/bailiffs')"), 'legacy region redirect is missing');
   assert.ok(!serverSource.includes('<loc>https://zakonexpert.kz/bailiffs?region='), 'sitemap must not publish legacy query URLs');

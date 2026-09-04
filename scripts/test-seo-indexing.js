@@ -91,7 +91,7 @@ collectMarkup(path.join(root, 'public')).concat(collectMarkup(path.join(root, 'v
     `retired lawyer registry link remains in ${path.relative(root, file)}`);
 });
 
-const serverSource = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+const serverSource = require('./lib/source-files').readServerSource();
 assert(serverSource.includes("'/sitemap-lawyers.xml'"), 'retired lawyer URLs must keep an explicit 410 route');
 assert(!serverSource.includes("'/api/lawyers/refresh'"), 'retired lawyer refresh endpoint must be removed');
 

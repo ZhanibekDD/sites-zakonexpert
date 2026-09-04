@@ -230,7 +230,7 @@ assert.strictEqual(
   assert.ok(secondPageHtml.includes('aria-current="page">2</a>'), 'current pagination page is not exposed accessibly');
   assert.ok(secondPageHtml.includes('"position":61'), 'ItemList positions must continue across pages');
 
-  const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const server = require('./lib/source-files').readServerSource();
   const notariesDbSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'notaries-db.js'), 'utf8');
   const regionalLanding = fs.readFileSync(path.join(__dirname, '..', 'views', 'regional', 'page.ejs'), 'utf8');
   assert.ok(server.includes("app.get('/notaries/:regionSlug'"), 'clean regional notary route is missing');

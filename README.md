@@ -22,6 +22,21 @@
 - **eGov SOAP API** — проверка ИИН по реестру АИСОИП
 - **КГД API** — экспресс-проверка контрагента по БИН через серверный прокси
 
+## Архитектура и проверки
+
+`server.js` — совместимая с Passenger точка входа. Создание HTTP-приложения,
+подключение источников данных, фоновые задания и маршруты разделов вынесены
+в независимые модули `app/`. Существующие URL, шаблоны EJS и SQLite-базы сохранены.
+
+Структура проекта, правила добавления маршрутов и порядок безопасного выпуска:
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+```bash
+npm run test:architecture # контракт маршрутов, HTTP, безопасность и приватность
+npm run test:site-shell   # меню, общий поиск и запрет контактов на карточках
+npm test                 # полный набор проверок, включая JS / HTML / CSS / SEO
+```
+
 ## Установка и запуск
 
 ```bash
@@ -147,7 +162,8 @@ npm run refresh-open-data -- --input-dir=/полный/путь/recon-out
 - ID элементов: `search-form`, `iin`, `search-button`, `loading-container`, `error-message`, `results`, `debtors-table`, `restrictions-table`, `debtorDetailsModal`
 - Маршрут `POST /check` и его API-контракт
 - Статическая раздача `public/`
-- Функции `checkDebtorViaApi`, `asyncHandler` в `server.js`
+- Контракт `checkDebtorViaApi` в `app/routes/checks.js` и обработку ошибок
+  `asyncHandler` в `app/http/helpers.js`
 
 ## Деплой
 
