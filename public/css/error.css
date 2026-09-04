@@ -83,6 +83,55 @@ body {
   line-height: 1.7;
 }
 
+.error-search {
+  width: min(100%, 650px);
+  margin: 0 0 24px;
+  text-align: left;
+}
+
+.error-search > label {
+  display: block;
+  margin-bottom: 8px;
+  color: #334b68;
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.error-search > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.error-search input,
+.error-search button {
+  min-height: 48px;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.error-search input {
+  min-width: 0;
+  padding: 0 15px;
+  color: #0b2447;
+  background: #fff;
+  border: 1px solid #b9c8d9;
+}
+
+.error-search input:focus {
+  border-color: #0b3c78;
+  outline: 3px solid rgb(11 60 120 / 14%);
+}
+
+.error-search button {
+  padding: 0 20px;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  background: #0b3c78;
+  border: 1px solid #0b3c78;
+}
+
 .error-actions {
   display: flex;
   justify-content: center;

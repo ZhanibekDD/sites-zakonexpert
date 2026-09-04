@@ -14,7 +14,7 @@
   <meta property="og:image" content="https://zakonexpertt.kz/img/brand/zakonexpert-logo-transparent-hd.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet" href="/css/design-system.css?v=20260715-1">
-  <link rel="stylesheet" href="/css/landing.css?v=20260619-1">
+  <link rel="stylesheet" href="/css/landing.css?v=20260904-1">
   <link rel="stylesheet" href="/css/style.css?v=20260823-1">
   <script src="/js/privacy-consent.js?v=20260828-1"></script>
   <script async src="https://news.google.com/swg/js/v1/publisher.js"></script>
@@ -45,6 +45,15 @@
       </nav>
     </div>
   </header>
+
+  <section class="global-site-search" data-global-site-search aria-label="Поиск по всему сайту">
+    <div class="landing-container">
+      <form class="global-site-search__form" action="/poisk" method="get" role="search">
+        <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Поиск по всему сайту</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, ЧСИ, закон, услуга…" autocomplete="off"></label>
+        <button class="global-site-search__button" type="submit">Найти</button>
+      </form>
+    </div>
+  </section>
 
   <main>
     <section class="dl-hero">
