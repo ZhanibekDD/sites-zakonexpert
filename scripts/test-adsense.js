@@ -27,7 +27,7 @@ function collectFiles(directory) {
   return files;
 }
 
-const runtimeFiles = collectFiles(PUBLIC).concat(collectFiles(path.join(ROOT, 'views')), path.join(ROOT, 'server.js'));
+const runtimeFiles = collectFiles(PUBLIC).concat(collectFiles(path.join(ROOT, 'views')), require('./lib/source-files').listServerFiles());
 for (const filename of runtimeFiles) {
   const source = fs.readFileSync(filename, 'utf8');
   const matches = FORBIDDEN_GOOGLE_AD_MARKERS.filter(marker => source.includes(marker));

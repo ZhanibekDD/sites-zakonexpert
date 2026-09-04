@@ -11,7 +11,7 @@ async function run() {
   const html = await ejs.renderFile(path.join(root, 'views', 'debt-route.ejs'));
   const script = fs.readFileSync(path.join(root, 'public', 'js', 'debt-route.js'), 'utf8');
   const homepage = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
-  const server = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+  const server = require('./lib/source-files').readServerSource();
 
   assert(html.includes('<h1>Что делать с долгом именно на вашей стадии</h1>'));
   assert(html.includes('https://zakonexpertt.kz/marshrut-dolzhnika'));
