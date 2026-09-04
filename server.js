@@ -1389,6 +1389,9 @@ function renderCompanyItem(req, res, localeCode = 'ru') {
   const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
   const companyQuality = companiesDb.quality(company);
   setCompanyCache(res, true, 300);
+  if (company.privacy_noindex) {
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
   setCompanyDbTiming(res, started);
   return res.render('companies/item', {
     company,

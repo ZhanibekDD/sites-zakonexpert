@@ -15,6 +15,7 @@ const {
   applyRegistryPrivacyOverride,
   hasRegistryContactSuppressions,
   isRegistryContactSuppressed,
+  isRegistrySearchMatchSuppressed,
 } = require('./registry-privacy');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
@@ -278,7 +279,9 @@ function search(query, page = 1, limit = 30) {
     `).all(match, safeLimit + 1, offset);
   }
 
-  const visibleItems = items.filter(item => !isRegistryContactSuppressed('companies', item.bin, q));
+  const visibleItems = items.filter(item => !isRegistrySearchMatchSuppressed(
+    'companies', item, q
+  ));
   return {
     items: visibleItems.slice(0, safeLimit).map(addSlug),
     page: safePage,
@@ -473,7 +476,9 @@ function hydrateDetails(database, rawCompany) {
   company.names = dedupeDetails(names, item => `${item.locale}:${item.normalized || item.value}`);
   company.categories = dedupeDetails(categories, item => `${item.category}:${item.subcategory}`);
   company.attributes = dedupeDetails(attributes, item => `${item.type}:${item.value}`);
-  return company;
+  // Re-apply the persistent privacy rule after detail hydration and verified
+  // database overrides so future imports cannot restore suppressed fields.
+  return applyRegistryPrivacyOverride('companies', company);
 }
 
 function findById(id) {
@@ -568,9 +573,11 @@ function sitemapChunk(chunk) {
   const safeChunk = Number.parseInt(chunk, 10);
   if (!database || !stats().qualityReady || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
   return database.prepare(`
-    SELECT id, name_ru, name_kk, quality_score, is_indexable
+    SELECT id, bin, name_ru, name_kk, quality_score, is_indexable
     FROM companies WHERE is_indexable = 1 ORDER BY id LIMIT ? OFFSET ?
-  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT).map(addSlug);
+  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT)
+    .map(addSlug)
+    .filter(company => !company.privacy_noindex);
 }
 
 function quality(company) {
