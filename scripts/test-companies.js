@@ -347,7 +347,7 @@ Promise.all([
     path.join(__dirname, '..', 'public', 'js', 'site.js'),
     'utf8'
   );
-  assert(siteSource.includes("hasAttribute(\n    'data-suppress-zakonexpert-contacts'"),
+  assert(/hasAttribute\(\s*'data-suppress-zakonexpert-contacts'\s*\)/.test(siteSource),
     'site-wide contact injection must honor the company-page suppression marker');
   assert(siteSource.includes('!suppressZakonExpertContacts && !document.querySelector'),
     'company pages must not receive the global WhatsApp QR dock');

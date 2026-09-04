@@ -76,12 +76,15 @@ for (const name of publicPages) {
     `${name} loads optional analytics without consent`);
 }
 
+const siteScriptAsset = require('../modules/release-config').assets
+  .find(asset => asset.startsWith('/js/site.js?v='));
+assert(siteScriptAsset, 'release manifest must version the shared site script');
 const staleSiteScriptRefs = userFacingFiles
   .filter(filename => /\.(?:html|ejs)$/i.test(filename))
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
-    return /(?:^|\/)js\/site\.js\?v=/.test(source)
-      && !/(?:^|\/)js\/site\.js\?v=20260904-1/.test(source);
+    const references = source.match(/(?:^|\/)js\/site\.js(?:\?[^"'\s<>]+)?/g) || [];
+    return references.some(reference => '/' + reference.replace(/^\//, '') !== siteScriptAsset);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleSiteScriptRefs, [],
@@ -130,7 +133,7 @@ assert.deepStrictEqual(floatingButtonMarkup, [],
 const home = fs.readFileSync(path.join(PUBLIC, 'index.html'), 'utf8');
 const contact = fs.readFileSync(path.join(PUBLIC, 'contact.html'), 'utf8');
 const servicesPage = fs.readFileSync(path.join(PUBLIC, 'services.html'), 'utf8');
-const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+const server = require('./lib/source-files').readServerSource();
 assert.match(home, /class="ze-home-company-check" href="\/proverka-kontragenta"/,
   'homepage must expose the company BIN checker above the fold');
 assert.match(home, /href="\/proverka-bankrotstva"[\s\S]{0,420}Проверить статус банкротства по ИИН/,
