@@ -294,6 +294,17 @@ Promise.all([
     'company cards must not load the retired contact funnel controller');
   assert(itemHtml.includes('class="company-info-row"'),
     'company facts must use the responsive mobile row layout');
+  assert(itemHtml.includes('/css/company-directory.css?v=20260904-1'),
+    'company cards must load their directory layout independently of the retired contact funnel');
+  assert(!itemHtml.includes('/css/company-conversion.css'),
+    'company cards must not restore the retired contact funnel stylesheet');
+  const directoryCss = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'css', 'company-directory.css'),
+    'utf8'
+  );
+  for (const selector of ['.company-item-grid', '.company-info-card', '.company-info-row']) {
+    assert(directoryCss.includes(selector), `company directory stylesheet is missing ${selector}`);
+  }
   assert(!itemHtml.includes('pagead2.googlesyndication.com'),
     'company pages must not load intrusive Google auto-placement ads');
   assert(!itemHtml.includes('yandex.ru/ads/system'),
