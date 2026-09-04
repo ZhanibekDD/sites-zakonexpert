@@ -15,6 +15,18 @@
       ],
       "reason": "data_subject_correction_request",
       "effectiveDate": "2026-08-19"
+    },
+    "251140034546": {
+      "suppressFields": [
+        "leader",
+        "leader_display",
+        "address_ru"
+      ],
+      "suppressAddresses": true,
+      "suppressAllContacts": true,
+      "noindex": true,
+      "reason": "data_subject_privacy_request",
+      "effectiveDate": "2026-09-04"
     }
   }
 }

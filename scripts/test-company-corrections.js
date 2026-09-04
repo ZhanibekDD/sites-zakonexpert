@@ -30,10 +30,24 @@ const unrelated = { bin: '260740044168', leader: 'КИЯШЕВ ЖАНИБЕК Д
 assert.strictEqual(applyCompanyCorrection(unrelated), unrelated, 'unrelated companies must remain untouched');
 assert.strictEqual(getCompanyCorrection('05 024 000 2031').bin, '050240002031');
 
+const caveGroup = applyCompanyCorrection({
+  id: 350784397,
+  bin: '251140034546',
+  name_ru: 'Товарищество с ограниченной ответственностью «Cave Group»',
+  status_ru: 'Зарегистрирован',
+  leader: 'FORMER EXECUTIVE',
+});
+assert.strictEqual(caveGroup.status_ru, 'Деятельность прекращена 20.08.2026');
+assert.strictEqual(caveGroup.dissolution_date, '2026-08-20');
+assert.strictEqual(caveGroup.leader, null, 'ceased company must not expose a former executive as current');
+assert.match(caveGroup.correction.sourceLabel, /Приказ № 33519/);
+assert(!/\b\d{12}\b/.test(JSON.stringify(caveGroup.correction)), 'public correction note must not contain a personal IIN');
+
 const itemTemplate = fs.readFileSync(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), 'utf8');
 assert.match(itemTemplate, /company\.leader_display \|\| company\.leader/);
 assert.match(itemTemplate, /company\.dissolution_date/);
 assert.match(itemTemplate, /company\.correction/);
 assert.match(itemTemplate, /прекращ\|реорганиз/);
+assert.match(itemTemplate, /company\.privacy_noindex/);
 
 console.log('Company corrections OK: ALИАСКАР-2005 status and leader presentation are corrected');

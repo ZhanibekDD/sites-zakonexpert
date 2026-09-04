@@ -242,7 +242,7 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   title: pageTitle,
   description: pageDesc,
   canonical,
-  noindex: localized || !name || !quality.indexable,
+  noindex: localized || !name || !quality.indexable || company.privacy_noindex,
   schema,
   alternates: [],
   locale,
