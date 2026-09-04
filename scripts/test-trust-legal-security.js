@@ -81,7 +81,7 @@ const staleSiteScriptRefs = userFacingFiles
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
     return /(?:^|\/)js\/site\.js\?v=/.test(source)
-      && !/(?:^|\/)js\/site\.js\?v=20260828-1/.test(source);
+      && !/(?:^|\/)js\/site\.js\?v=20260904-1/.test(source);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleSiteScriptRefs, [],

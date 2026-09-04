@@ -11,9 +11,6 @@ const canonicalPath = companyCatalogPath + (!query && currentPage > 1 ? '?page='
 const canonical = 'https://zakonexpertt.kz' + canonicalPath;
 const pageTitle = copy.title;
 const pageDesc = copy.description;
-const catalogWhatsAppHref = 'https://wa.me/77003097566?text=' + encodeURIComponent(
-  copy.consultation + '. ' + copy.helpText + ' https://zakonexpertt.kz' + companyCatalogPath
-);
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'CollectionPage',
@@ -92,9 +89,6 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<section aria-labelledby="company-results-title"><h2 id="company-results-title" style="font-size:1.28rem;color:#0d1f3c;margin:6px 0 16px;">' + esc(query ? copy.find : copy.browse) + '</h2>'
   + resultsHtml + paginationHtml + '</section>'
   + '<div style="margin-top:28px;padding:16px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.84rem;line-height:1.55;"><i class="bi bi-shield-check" aria-hidden="true"></i> ' + esc(copy.sourcePolicy) + '</div>'
-  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
-  + '<h2 class="npage-cta-title" data-company-offer data-offer-a="' + esc(copy.offerTitleA) + '" data-offer-b="' + esc(copy.offerTitleB) + '">' + esc(copy.offerTitleA) + '</h2><p class="npage-cta-sub" data-company-offer data-offer-a="' + esc(copy.offerTextA) + '" data-offer-b="' + esc(copy.offerTextB) + '">' + esc(copy.offerTextA) + '</p></div>'
-  + '<a class="npage-wa-btn" href="' + catalogWhatsAppHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="catalog-bottom"><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a></div>'
   + '</div></div>';
 %>
 <%- include('./layout', {
@@ -108,8 +102,5 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   copy,
   languages,
   companyCatalogPath,
-  whatsappHref: catalogWhatsAppHref,
-  companyCta: true,
-  companyPageType: 'company_catalog',
   body
 }) %>

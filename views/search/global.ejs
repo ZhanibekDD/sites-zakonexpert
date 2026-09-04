@@ -1,0 +1,73 @@
+<%
+const safeQuery = String(locals.query || '');
+const resultGroups = Array.isArray(locals.groups) ? locals.groups : [];
+const resultTotal = Number(locals.total || 0);
+
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const pageTitle = safeQuery
+  ? `Поиск по сайту: ${safeQuery} | ZakonExpert`
+  : 'Поиск по сайту ZakonExpert';
+const pageDescription = 'Единый поиск по организациям, БИН, нотариусам, ЧСИ, реестрам, законам, новостям, открытым данным и инструментам ZakonExpert.';
+const body = `
+<section class="site-search-page" data-global-site-search>
+  <div class="landing-container">
+    <nav class="npage-breadcrumb" aria-label="Хлебные крошки"><a href="/">Главная</a><span class="npage-bc-sep">/</span><span>Поиск</span></nav>
+    <header class="site-search-page__header">
+      <span class="site-search-page__kicker">Весь сайт в одном поиске</span>
+      <h1>Поиск по ZakonExpert</h1>
+      <p>Ищите организацию или БИН, специалиста, статью закона, новость, реестр, официальный набор данных или нужный инструмент.</p>
+    </header>
+    <form class="global-site-search__form global-site-search__form--page" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <span class="visually-hidden">Поиск по всему сайту</span>
+        <input class="global-site-search__input" type="search" name="q" value="${esc(safeQuery)}" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, ЧСИ, закон, услуга…" autocomplete="off">
+      </label>
+      <button class="global-site-search__button" type="submit">Найти</button>
+    </form>
+
+    ${safeQuery.length >= 2 ? `
+      <div class="site-search-page__summary" role="status">
+        ${resultTotal ? `Найдено результатов: <strong>${resultTotal}</strong>` : `По запросу «${esc(safeQuery)}» ничего не найдено`}
+      </div>
+      ${resultGroups.length ? `<div class="site-search-groups">
+        ${resultGroups.map(group => `<section class="site-search-group" aria-labelledby="search-group-${esc(group.key)}">
+          <h2 id="search-group-${esc(group.key)}"><i class="bi ${esc(group.icon)}" aria-hidden="true"></i>${esc(group.title)} <span>${group.items.length}</span></h2>
+          <div class="site-search-results">
+            ${group.items.map(result => `<a class="site-search-result" href="${esc(result.url)}">
+              <strong>${esc(result.title)}</strong>
+              ${result.description ? `<span>${esc(result.description)}</span>` : ''}
+              <small>${esc(result.url)}</small>
+            </a>`).join('')}
+          </div>
+        </section>`).join('')}
+      </div>` : `<div class="site-search-empty"><i class="bi bi-search" aria-hidden="true"></i><h2>Попробуйте другой запрос</h2><p>Введите название, БИН, ФИО, номер статьи или несколько ключевых слов.</p></div>`}
+    ` : `<div class="site-search-empty site-search-empty--initial"><i class="bi bi-stars" aria-hidden="true"></i><h2>Что можно найти</h2><p>Компании и БИН, нотариусов и ЧСИ, банки и МФО, статьи законов, новости, открытые данные, услуги и калькуляторы.</p></div>`}
+  </div>
+</section>`;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'SearchResultsPage',
+  name: pageTitle,
+  description: pageDescription,
+  url: 'https://zakonexpertt.kz/poisk',
+};
+%>
+<%- include('../news/layout', {
+  title: pageTitle,
+  description: pageDescription,
+  canonical: 'https://zakonexpertt.kz/poisk',
+  ogType: 'website',
+  noindex: true,
+  schema,
+  body
+}) %>

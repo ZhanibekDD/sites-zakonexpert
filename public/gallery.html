@@ -40,7 +40,7 @@
   }
   </script>
   <link rel="stylesheet" href="css/design-system.css?v=20260715-1">
-  <link rel="stylesheet" href="css/landing.css?v=20260708">
+  <link rel="stylesheet" href="css/landing.css?v=20260904-1">
   <style>
     body { background: #f0f4f8; }
     .gal-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
@@ -67,6 +67,15 @@
     <a href="tel:+77003097566" class="landing-cta-btn">+7 700 309-75-66</a>
   </div>
 </header>
+
+<section class="global-site-search" data-global-site-search aria-label="Поиск по всему сайту">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Поиск по всему сайту</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, ЧСИ, закон, услуга…" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit">Найти</button>
+    </form>
+  </div>
+</section>
 
 <div class="gal-wrap">
   <div class="gal-header">
