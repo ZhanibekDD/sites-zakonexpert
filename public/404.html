@@ -21,6 +21,10 @@
     <p class="error-kicker">Страница не найдена</p>
     <h1>Возможно, адрес изменился или в ссылке есть ошибка</h1>
     <p class="error-copy">Вернитесь на главную страницу или откройте нужный официальный каталог.</p>
+    <form class="error-search" action="/poisk" method="get" role="search" data-global-site-search>
+      <label for="error-search-query">Поиск по всему сайту</label>
+      <div><input id="error-search-query" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, закон…"><button type="submit">Найти</button></div>
+    </form>
     <nav class="error-actions" aria-label="Полезные разделы">
       <a class="error-primary" href="/">На главную</a>
       <a href="/news">Новости</a>

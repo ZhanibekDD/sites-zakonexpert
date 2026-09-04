@@ -155,6 +155,13 @@ assert.strictEqual(companies.sitemapChunk(1).length, 1);
 
 const company = companies.findById(7137221);
 const lowQualityCompany = companies.findById(7137497);
+const companyWithPublisherPhone = {
+  ...company,
+  contacts: [
+    ...(company.contacts || []),
+    { type: 'phone', value: '+7 (700) 309-75-66', normalized: '+77003097566' },
+  ],
+};
 assert.strictEqual(company.addresses.some(item => item.value === 'Дополнительный адрес'), true,
   'malformed supplemental detail tuples must be ignored without breaking the company card');
 assert.strictEqual(companies.quality({ ...company, is_indexable: 0 }).indexable, false,
@@ -228,8 +235,36 @@ Promise.all([
     languages: catalogData.languages,
     companyCatalogPath: '/en/companies',
   }),
+  ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
+    company: companyWithPublisherPhone,
+    sourceUpdatedAt: '2026-07-16',
+    regionName: null,
+    companyQuality: companies.quality(companyWithPublisherPhone),
+    localized: false,
+    locale: getLocale('ru'),
+    copy: getLocale('ru'),
+    languages: catalogData.languages,
+    companyCatalogPath: '/companies',
+  }),
+  ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'regions.ejs'), {
+    regions: [{ slug: 'almaty', label: 'Алматы', count: 1 }],
+    stats: { available: true, count: 1 },
+  }),
+  ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'region.ejs'), {
+    slug: 'almaty',
+    results: { label: 'Алматы', items: [company], page: 1, hasMore: false },
+  }),
   ...localizedCatalogPromises,
-]).then(([catalogHtml, itemHtml, lowQualityHtml, localizedItemHtml, ...localizedCatalogs]) => {
+]).then(([
+  catalogHtml,
+  itemHtml,
+  lowQualityHtml,
+  localizedItemHtml,
+  publisherPhoneHtml,
+  regionsHtml,
+  regionHtml,
+  ...localizedCatalogs
+]) => {
   assert(catalogHtml.includes('Альфа Право'));
   assert(catalogHtml.includes('noindex'));
   assert(itemHtml.includes('БИН 970540001234'));
@@ -237,32 +272,46 @@ Promise.all([
   assert(itemHtml.includes('alfa pravo'), 'Latin alias must be visible and present in schema');
   assert(!itemHtml.includes('aggregateRating'), 'unattributed directory ratings must not be published');
   assert(!itemHtml.includes('noindex,follow'), 'rich company must be indexable');
-  assert(itemHtml.includes('data-company-whatsapp'), 'company card must expose tracked WhatsApp CTAs');
-  assert(itemHtml.includes('data-company-page-type="company_card"'),
-    'company card must identify its funnel page type');
-  assert(itemHtml.includes('data-cta-position="mobile-sticky"'),
-    'company card must expose the mobile conversion bar');
-  assert(itemHtml.includes('data-offer-b='), 'company card must render both A/B offer variants');
-  assert(itemHtml.includes('/js/company-conversion.js'),
-    'company card must load the conversion funnel controller');
+  for (const [page, html] of [
+    ['catalog', catalogHtml],
+    ['company card', itemHtml],
+    ['company card with contaminated source data', publisherPhoneHtml],
+    ['regions', regionsHtml],
+    ['regional catalog', regionHtml],
+  ]) {
+    assert(html.includes('data-suppress-zakonexpert-contacts'),
+      `${page} must disable site-wide ZakonExpert contact injection`);
+    assert(!html.includes('77003097566'), `${page} must not expose the ZakonExpert phone`);
+    assert(!html.includes('+7 (700) 309-75-66'), `${page} must not show the ZakonExpert phone label`);
+    assert(!html.includes('wa.me/77003097566'), `${page} must not link to ZakonExpert WhatsApp`);
+    assert(!html.includes('/js/chatbot.js'), `${page} must not inject a contact widget`);
+  }
+  assert(!itemHtml.includes('data-company-whatsapp'),
+    'company cards must not expose ZakonExpert conversion links');
+  assert(!itemHtml.includes('data-cta-position="mobile-sticky"'),
+    'company cards must not expose a ZakonExpert mobile contact bar');
+  assert(!itemHtml.includes('/js/company-conversion.js'),
+    'company cards must not load the retired contact funnel controller');
   assert(itemHtml.includes('class="company-info-row"'),
     'company facts must use the responsive mobile row layout');
   assert(!itemHtml.includes('pagead2.googlesyndication.com'),
     'company pages must not load intrusive Google auto-placement ads');
   assert(!itemHtml.includes('yandex.ru/ads/system'),
     'company pages must not load intrusive Yandex auto-placement ads');
-  assert(itemHtml.includes('%2Fcompany%2F7137221-'),
-    'company WhatsApp message must carry the exact card URL');
-  assert(itemHtml.includes('%D0%91%D0%98%D0%9D%3A%20970540001234'),
-    'company WhatsApp message must carry the BIN');
   for (const route of [
     '/snyatie-ogranichenii-chsi',
     '/otmena-ispolnitelnoi-nadpisi',
     '/grafik-oplaty-zadolzhennosti',
     '/marshrut-dolzhnika',
   ]) {
-    assert(itemHtml.includes(`href="${route}"`), `company card must link to ${route}`);
+    assert(!itemHtml.includes(`href="${route}"`), `company card must not advertise ${route}`);
   }
+  assert(!itemHtml.includes('href="/contact"'),
+    'company pages must not link visitors into the ZakonExpert contact funnel');
+  assert(itemHtml.includes('class="company-language-picker"'),
+    'company language selection must use the repaired header control');
+  assert(itemHtml.includes('class="company-language-picker__select"'),
+    'company language selection must not depend on fragile inline styles');
   assert(lowQualityHtml.includes('noindex,follow'), 'thin company must be noindex');
   assert(lowQualityHtml.includes('Официальные регистрационные сведения'));
   assert(lowQualityHtml.includes('Зарегистрирован'),
@@ -283,20 +332,16 @@ Promise.all([
       assert(html.includes(`hreflang="${getLocale(alternate).hreflang}"`));
     }
   });
-  const analyticsSource = fs.readFileSync(
-    path.join(__dirname, '..', 'public', 'js', 'analytics-events.js'),
+  const siteSource = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'js', 'site.js'),
     'utf8'
   );
-  assert(analyticsSource.includes("send('click_cta_company'"),
-    'company WhatsApp clicks must be recorded as a dedicated conversion event');
-  const conversionSource = fs.readFileSync(
-    path.join(__dirname, '..', 'public', 'js', 'company-conversion.js'),
-    'utf8'
-  );
-  assert(conversionSource.includes("track('view_company_page'"),
-    'company page views must provide the conversion denominator');
-  assert(conversionSource.includes("track('view_company_cta'"),
-    'visible CTA impressions must be tracked by position');
+  assert(siteSource.includes("hasAttribute(\n    'data-suppress-zakonexpert-contacts'"),
+    'site-wide contact injection must honor the company-page suppression marker');
+  assert(siteSource.includes('!suppressZakonExpertContacts && !document.querySelector'),
+    'company pages must not receive the global WhatsApp QR dock');
+  assert(siteSource.includes("action=\"/poisk\""),
+    'all shared pages must receive the global site search form');
   console.log('Company data OK: normalization, SQLite search, templates and sitemap chunks');
 }).finally(() => {
   companies.close();
