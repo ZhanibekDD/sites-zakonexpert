@@ -1,7 +1,7 @@
 ﻿<%
 const resolvedOgImage = (typeof ogImage !== 'undefined' && ogImage)
-  ? (/^https:\/\//i.test(ogImage) ? ogImage : 'https://zakonexpertt.kz' + (ogImage.startsWith('/') ? '' : '/') + ogImage)
-  : 'https://zakonexpertt.kz/img/brand/zakonexpert-logo-transparent-hd.png';
+  ? (/^https:\/\//i.test(ogImage) ? ogImage : 'https://zakonexpert.kz' + (ogImage.startsWith('/') ? '' : '/') + ogImage)
+  : 'https://zakonexpert.kz/img/brand/zakonexpert-logo-transparent-hd.png';
 const safeSchemaJson = (typeof schema !== 'undefined' && schema)
   ? JSON.stringify(schema).replace(/</g, '\\u003c')
   : '';

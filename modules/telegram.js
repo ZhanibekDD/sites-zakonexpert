@@ -51,7 +51,7 @@ function refSource(referer) {
     if (/instagram/i.test(host))          return '📸 Instagram';
     if (/t\.me|telegram/i.test(host))     return '✈️ Telegram';
     if (/whatsapp/i.test(host))           return '💬 WhatsApp';
-    if (host.includes('zakonexpertt.kz')) return '';
+    if (host.includes('zakonexpert.kz')) return '';
     return `🔗 ${host}`;
   } catch (_) { return ''; }
 }

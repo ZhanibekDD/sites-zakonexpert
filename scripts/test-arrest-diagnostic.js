@@ -39,7 +39,7 @@ async function run() {
   ]);
 
   assert(html.includes('<h1>Диагностика ареста счёта:'), 'H1 must begin with the search intent');
-  assert(html.includes('<link rel="canonical" href="https://zakonexpertt.kz/diagnostika-aresta">'), 'Canonical is missing');
+  assert(html.includes('<link rel="canonical" href="https://zakonexpert.kz/diagnostika-aresta">'), 'Canonical is missing');
   assert(html.includes('WebApplication') && html.includes('FAQPage') && html.includes('BreadcrumbList'), 'Structured data is incomplete');
   assert(html.includes('/css/arrest-diagnostic.css?v=20260824-1'), 'Dedicated stylesheet is missing');
   assert(html.includes('/js/arrest-diagnostic.js?v=20260824-2'), 'Dedicated script is missing');

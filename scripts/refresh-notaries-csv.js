@@ -94,7 +94,7 @@ async function fetchChamber(id, region) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     try {
       const response = await fetch(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpertRegistry/1.0; +https://zakonexpertt.kz)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ZakonExpertRegistry/1.0; +https://zakonexpert.kz)' },
         signal: AbortSignal.timeout(60000),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);

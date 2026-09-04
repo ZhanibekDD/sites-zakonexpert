@@ -80,7 +80,7 @@ const fixture = {
   const listHtml = await ejs.renderFile(path.join(views, 'list.ejs'), {
     title: 'Новости | ZakonExpert',
     description: 'Новости и юридические разборы Казахстана.',
-    canonical: 'https://zakonexpertt.kz/news',
+    canonical: 'https://zakonexpert.kz/news',
     articles: [fixture, { ...fixture, slug: 'test-news-2' }, { ...fixture, slug: 'test-news-3' }],
     currentPage: 1,
     totalPages: 1,
@@ -97,7 +97,7 @@ const fixture = {
   const listWithSourceImages = await ejs.renderFile(path.join(views, 'list.ejs'), {
     title: 'Новости | ZakonExpert',
     description: 'Новости и юридические разборы Казахстана.',
-    canonical: 'https://zakonexpertt.kz/news',
+    canonical: 'https://zakonexpert.kz/news',
     articles: [fixture],
     currentPage: 1,
     totalPages: 1,

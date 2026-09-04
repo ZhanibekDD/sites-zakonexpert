@@ -89,7 +89,7 @@ async function expectLeanCatalog(path) {
   });
   const pageTwoBody = await pageTwo.text();
   assert(pageTwo.status === 200, `${path} page 2 returned ${pageTwo.status}`);
-  assert(pageTwoBody.includes(`rel="canonical" href="https://zakonexpertt.kz${path}?page=2"`),
+  assert(pageTwoBody.includes(`rel="canonical" href="https://zakonexpert.kz${path}?page=2"`),
     `${path} page 2 has an incorrect canonical URL`);
   assert(pageTwoBody.includes('aria-current="page">2</span>'),
     `${path} page 2 is not marked as current`);
@@ -210,7 +210,7 @@ async function run() {
     const newsCategory = await fetch(`${origin}/news/category/finance`);
     const newsCategoryHtml = await newsCategory.text();
     assert(newsCategory.status === 200, `/news/category/finance returned ${newsCategory.status}`);
-    assert(newsCategoryHtml.includes('rel="canonical" href="https://zakonexpertt.kz/news/category/finance"'),
+    assert(newsCategoryHtml.includes('rel="canonical" href="https://zakonexpert.kz/news/category/finance"'),
       'clean news category page has an incorrect canonical URL');
 
     const homepageResponse = await fetch(`${origin}/`, {

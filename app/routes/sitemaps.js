@@ -167,7 +167,7 @@ function registerSitemapRoutes(app, dependencies) {
       const lastmod = corePageLastmod(page);
       return `
   <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(page.url)}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz${xmlEscape(page.url)}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>${page.freq}</changefreq>
     <priority>${page.priority}</priority>
@@ -184,11 +184,11 @@ function registerSitemapRoutes(app, dependencies) {
   // SITEMAP.TXT — plain URL list for AI crawlers (GPTBot, PerplexityBot, ClaudeBot, etc.)
   // that prefer a lightweight format over parsing XML.
   app.get('/sitemap.txt', asyncHandler(async (req, res) => {
-    const urls = getCorePages().map(p => `https://zakonexpertt.kz${p.url}`);
-    openDataPages.sitemapEntries().forEach(entry => urls.push(`https://zakonexpertt.kz${entry.path}`));
+    const urls = getCorePages().map(p => `https://zakonexpert.kz${p.url}`);
+    openDataPages.sitemapEntries().forEach(entry => urls.push(`https://zakonexpert.kz${entry.path}`));
     if (newsDb) {
       const articles = await newsDb.getAllForSitemap();
-      articles.forEach(a => urls.push(`https://zakonexpertt.kz/news/${a.slug}`));
+      articles.forEach(a => urls.push(`https://zakonexpert.kz/news/${a.slug}`));
     }
     res.set('Content-Type', 'text/plain; charset=utf-8');
     res.send(urls.join('\n'));
@@ -199,7 +199,7 @@ function registerSitemapRoutes(app, dependencies) {
     const lastmod = latestFileLastmod(sourceFiles || []);
     const urls = items.filter(item => item.slug).map(item => `
   <url>
-    <loc>https://zakonexpertt.kz/${prefix}/${item.slug}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz/${prefix}/${item.slug}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -226,7 +226,7 @@ function registerSitemapRoutes(app, dependencies) {
   app.get('/sitemap-open-data.xml', (req, res) => {
     const urls = openDataPages.sitemapEntries().map(entry => `
   <url>
-    <loc>https://zakonexpertt.kz${xmlEscape(entry.path)}</loc>${entry.lastmod ? `
+    <loc>https://zakonexpert.kz${xmlEscape(entry.path)}</loc>${entry.lastmod ? `
     <lastmod>${xmlEscape(entry.lastmod)}</lastmod>` : ''}
     <changefreq>weekly</changefreq>
     <priority>${entry.priority}</priority>
@@ -251,7 +251,7 @@ function registerSitemapRoutes(app, dependencies) {
     const sourceDate = String(companiesDb.stats().qualityUpdatedAt || companiesDb.stats().updatedAt || new Date().toISOString()).substring(0, 10);
     const urls = companiesDb.sitemapChunk(chunk).map(company => `
   <url>
-    <loc>https://zakonexpertt.kz/company/${company.slug}</loc>
+    <loc>https://zakonexpert.kz/company/${company.slug}</loc>
     <lastmod>${sourceDate}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
@@ -308,18 +308,18 @@ function registerSitemapRoutes(app, dependencies) {
     ];
 
     let urls = `  <url>
-    <loc>https://zakonexpertt.kz/gallery</loc>
+    <loc>https://zakonexpert.kz/gallery</loc>
   ${galleryImages.map(([file, caption]) => `    <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:loc>https://zakonexpert.kz/img/seo/${file}</image:loc>
       <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
     </image:image>`).join('\n')}
   </url>`;
 
     urls += heroImages.map(([page, file, caption]) => `
   <url>
-    <loc>https://zakonexpertt.kz${page}</loc>
+    <loc>https://zakonexpert.kz${page}</loc>
     <image:image>
-      <image:loc>https://zakonexpertt.kz/img/seo/${file}</image:loc>
+      <image:loc>https://zakonexpert.kz/img/seo/${file}</image:loc>
       <image:caption>${caption.replace(/&/g, '&amp;')}</image:caption>
     </image:image>
   </url>`).join('');
@@ -338,7 +338,7 @@ function registerSitemapRoutes(app, dependencies) {
   // SITEMAP INDEX
   function sitemapIndexEntry(sitemapPath, lastmod) {
     return `  <sitemap>
-    <loc>https://zakonexpertt.kz${sitemapPath}</loc>${lastmod ? `
+    <loc>https://zakonexpert.kz${sitemapPath}</loc>${lastmod ? `
     <lastmod>${lastmod}</lastmod>` : ''}
   </sitemap>`;
   }

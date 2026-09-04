@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://zakonexpertt.kz/.well-known/ze-origin.schema.json",
+  "$id": "https://zakonexpert.kz/.well-known/ze-origin.schema.json",
   "title": "ZakonExpert provenance manifest",
   "type": "object",
   "required": ["issuer", "canonical_origin", "namespace", "fingerprint", "policy"],

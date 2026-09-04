@@ -1,13 +1,13 @@
 <%
 const pageTitle = item.name + ' — ломбард, контакты и БИН | ZakonExpert';
 const pageDesc = item.name + ': БИН ' + item.bin + ', адрес и сведения из реестра. Помощь при споре с ломбардом.';
-const canonical = 'https://zakonexpertt.kz/lombards/' + item.slug;
+const canonical = 'https://zakonexpert.kz/lombards/' + item.slug;
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-    { '@type': 'ListItem', position: 2, name: 'Ломбарды Казахстана', item: 'https://zakonexpertt.kz/lombards' },
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+    { '@type': 'ListItem', position: 2, name: 'Ломбарды Казахстана', item: 'https://zakonexpert.kz/lombards' },
     { '@type': 'ListItem', position: 3, name: item.name, item: canonical },
   ],
 };

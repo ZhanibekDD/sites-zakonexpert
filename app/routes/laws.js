@@ -19,7 +19,7 @@ function registerLawRoutes(app, dependencies) {
       const today = new Date().toISOString().substring(0, 10);
       const urls = all.map(a => `
   <url>
-    <loc>https://zakonexpertt.kz/statya/${a.slug}</loc>
+    <loc>https://zakonexpert.kz/statya/${a.slug}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

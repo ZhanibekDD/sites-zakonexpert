@@ -38,13 +38,13 @@ if (notary.active === false) {
 detailRows.push({ icon: 'bi-database-check', label: 'Источник', value: 'Официальный реестр ЕНИС' + (verifiedDate ? ' · проверено ' + verifiedDate : ''), href: notary.sourceChamberUrl || 'https://enis.kz/NotarySearch', external: true });
 var pageTitle = 'Нотариус ' + nameTitle + ' — контакты и лицензия | ZakonExpert';
 var pageDesc = 'Нотариус ' + nameTitle + ' (' + notary.region + '): телефон, email, адрес, режим работы и номер лицензии из официального реестра ЕНИС.';
-var canonical = 'https://zakonexpertt.kz/notary/' + notary.slug;
+var canonical = 'https://zakonexpert.kz/notary/' + notary.slug;
 var schema = {
   '@context': 'https://schema.org',
   '@graph': [
     { '@type': 'BreadcrumbList', itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-      { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpertt.kz/notaries' },
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpert.kz/notaries' },
       { '@type': 'ListItem', position: 3, name: nameTitle, item: canonical },
     ] },
     { '@type': 'LegalService', name: 'Нотариус ' + nameTitle, url: canonical,

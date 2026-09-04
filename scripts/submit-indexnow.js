@@ -11,7 +11,7 @@
 //   node scripts/submit-indexnow.js --sitemap=sitemap-laws.xml
 //   node scripts/submit-indexnow.js --all                  # exceptional full run
 
-const HOST = 'zakonexpertt.kz';
+const HOST = 'zakonexpert.kz';
 const KEY = '666b24a135bdeacb4dd7376da5267f9a';
 const KEY_LOCATION = `https://${HOST}/${KEY}.txt`;
 const BATCH_SIZE = 10000;

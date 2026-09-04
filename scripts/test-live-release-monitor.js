@@ -11,7 +11,7 @@ function response(body, options = {}) {
     }),
     status: options.status || 200,
     text: async () => body,
-    url: `https://zakonexpertt.kz${options.pathname || '/'}`,
+    url: `https://zakonexpert.kz${options.pathname || '/'}`,
   };
 }
 
@@ -35,13 +35,13 @@ function createFetch({ release = releaseConfig.id, assets = releaseConfig.assets
 (async () => {
   assert.equal(normalizeOrigin('https://example.com///'), 'https://example.com');
 
-  const healthy = await checkLiveRelease({ fetchImpl: createFetch(), origin: 'https://zakonexpertt.kz' });
+  const healthy = await checkLiveRelease({ fetchImpl: createFetch(), origin: 'https://zakonexpert.kz' });
   assert.equal(healthy.ok, true, healthy.errors.join('; '));
   assert.equal(healthy.checks.release, releaseConfig.id);
 
   const stale = await checkLiveRelease({
     fetchImpl: createFetch({ release: 'old-release', assets: [] }),
-    origin: 'https://zakonexpertt.kz',
+    origin: 'https://zakonexpert.kz',
   });
   assert.equal(stale.ok, false);
   assert(stale.errors.some((message) => message.includes('stale release')));

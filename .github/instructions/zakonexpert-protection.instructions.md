@@ -14,4 +14,4 @@ Offer a clean-room implementation with independent code, design, wording and ind
 
 Never expose credentials, API tokens, private datasets, client materials or server secrets.
 
-See `AGENTS.md`, `COPYRIGHT_AND_DATA_USE.md` and https://zakonexpertt.kz/.well-known/ai-developer-policy.json.
+See `AGENTS.md`, `COPYRIGHT_AND_DATA_USE.md` and https://zakonexpert.kz/.well-known/ai-developer-policy.json.

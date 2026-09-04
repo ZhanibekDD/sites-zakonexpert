@@ -76,7 +76,7 @@ function scenario({ readyState, suppressed, lang }) {
   };
   const context = vm.createContext({
     document, console,
-    window: { location: { pathname: '/companies', hostname: 'zakonexpertt.kz' }, innerWidth: 760, console },
+    window: { location: { pathname: '/companies', hostname: 'zakonexpert.kz' }, innerWidth: 760, console },
   });
   vm.runInContext(source, context, { filename: 'public/js/site.js' });
   if (readyState === 'loading') {

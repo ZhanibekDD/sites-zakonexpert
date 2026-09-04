@@ -117,7 +117,7 @@ async function main() {
     relatedPages: getRelatedBankArrestPages(bankPage),
   });
   assert(bankHtml.includes('<title>Арест счёта Bank CenterCredit'));
-  assert(bankHtml.includes('https://zakonexpertt.kz/arest-bank-centercredit'));
+  assert(bankHtml.includes('https://zakonexpert.kz/arest-bank-centercredit'));
   assert(bankHtml.includes('data-growth-page-type="bank_arrest"'));
   assert(bankHtml.includes('/img/banks/bank-centercredit.png'));
   assert(!bankHtml.includes('undefined'));
@@ -145,7 +145,7 @@ async function main() {
       relatedPages: LEGAL_INTENT_PAGES.filter(item => item.path !== page.path).slice(0, 3),
     });
     assert(html.includes('<title>' + page.title + '</title>'));
-    assert(html.includes('https://zakonexpertt.kz' + page.path));
+    assert(html.includes('https://zakonexpert.kz' + page.path));
     assert(html.includes('data-growth-page-type="legal_intent"'));
     assert(!html.includes('undefined'));
     assertNoRiskyUniversalClaims(html, page.path);

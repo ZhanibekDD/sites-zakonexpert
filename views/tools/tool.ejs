@@ -4,7 +4,7 @@ function esc(value) {
 }
 const pageTitle = tool.title + ' | ZakonExpert';
 const pageDesc = tool.description;
-const canonical = 'https://zakonexpertt.kz' + tool.href;
+const canonical = 'https://zakonexpert.kz' + tool.href;
 const schema = [
   { '@context':'https://schema.org','@type':'WebApplication',name:tool.title,description:tool.description,url:canonical,applicationCategory:'FinanceApplication',operatingSystem:'Any',offers:{'@type':'Offer',price:'0',priceCurrency:'KZT'} },
   { '@context':'https://schema.org','@type':'FAQPage',mainEntity:(tool.faq || []).map(function(item){return {'@type':'Question',name:item[0],acceptedAnswer:{'@type':'Answer',text:item[1]}};}) },

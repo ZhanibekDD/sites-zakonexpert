@@ -78,7 +78,7 @@ function installMiddleware(app, dependencies) {
   });
   app.use(compression());
   app.use(cors({
-      origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpertt.kz
+      origin: process.env.CORS_ORIGIN || false, // в production задайте CORS_ORIGIN=https://zakonexpert.kz
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type', 'X-Admin-Key'],
   }));

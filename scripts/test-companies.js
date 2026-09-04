@@ -337,7 +337,7 @@ Promise.all([
   INDEXABLE_LOCALES.forEach((code, index) => {
     const html = localizedCatalogs[index];
     assert(html.includes(`lang="${getLocale(code).hreflang}"`));
-    assert(html.includes(`https://zakonexpertt.kz${catalogPath(code)}`));
+    assert(html.includes(`https://zakonexpert.kz${catalogPath(code)}`));
     assert(html.includes('hreflang="x-default"'));
     for (const alternate of INDEXABLE_LOCALES) {
       assert(html.includes(`hreflang="${getLocale(alternate).hreflang}"`));

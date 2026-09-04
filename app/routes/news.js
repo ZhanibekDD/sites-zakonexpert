@@ -34,17 +34,17 @@ function registerNewsRoutes(app, dependencies) {
     ]);
     const totalPages = Math.ceil(total / NEWS_PER_PAGE);
 
-    const canonical = `https://zakonexpertt.kz${newsCategoryPath(category, page)}`;
+    const canonical = `https://zakonexpert.kz${newsCategoryPath(category, page)}`;
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
       name: category ? `Новости ZakonExpert: ${category}` : 'Новости ZakonExpert',
-      url: `https://zakonexpertt.kz${newsCategoryPath(category)}`,
+      url: `https://zakonexpert.kz${newsCategoryPath(category)}`,
       numberOfItems: total,
       itemListElement: articles.slice(0, 10).map((a, i) => ({
         '@type': 'ListItem',
         position: offset + i + 1,
-        url: `https://zakonexpertt.kz/news/${a.slug}`
+        url: `https://zakonexpert.kz/news/${a.slug}`
       }))
     };
 
@@ -90,8 +90,8 @@ function registerNewsRoutes(app, dependencies) {
     const items = articles.map(a => `
     <item>
       <title><![CDATA[${xmlCdata(newsDisplayTitle(a))}]]></title>
-      <link>https://zakonexpertt.kz/news/${a.slug}</link>
-      <guid isPermaLink="true">https://zakonexpertt.kz/news/${a.slug}</guid>
+      <link>https://zakonexpert.kz/news/${a.slug}</link>
+      <guid isPermaLink="true">https://zakonexpert.kz/news/${a.slug}</guid>
       <pubDate>${new Date(a.published_at_source || a.published_at_site || a.created_at).toUTCString()}</pubDate>
       <description><![CDATA[${xmlCdata(newsDisplayExcerpt(a))}]]></description>
       <category><![CDATA[${xmlCdata(a.category || 'general')}]]></category>
@@ -102,10 +102,10 @@ function registerNewsRoutes(app, dependencies) {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>ZakonExpert — Новости</title>
-    <link>https://zakonexpertt.kz/news</link>
+    <link>https://zakonexpert.kz/news</link>
     <description>Новости об арестах счетов, ЧСИ и законодательстве Казахстана</description>
     <language>ru</language>
-    <atom:link href="https://zakonexpertt.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="https://zakonexpert.kz/news/feed.xml" rel="self" type="application/rss+xml"/>
     ${items}
   </channel>
 </rss>`);
@@ -129,7 +129,7 @@ function registerNewsRoutes(app, dependencies) {
       const publishedAt = a.published_at_source || a.published_at_site;
       return `
   <url>
-    <loc>https://zakonexpertt.kz/news/${xmlEscape(a.slug)}</loc>
+    <loc>https://zakonexpert.kz/news/${xmlEscape(a.slug)}</loc>
     <lastmod>${(a.updatedAt || a.published_at_source || a.published_at_site || new Date().toISOString()).substring(0, 10)}</lastmod>
     <news:news>
       <news:publication>
@@ -196,7 +196,7 @@ function registerNewsRoutes(app, dependencies) {
     const rawSchemaImage = articleView.display_cover;
     const schemaImage = /^https:\/\//i.test(rawSchemaImage)
       ? rawSchemaImage
-      : `https://zakonexpertt.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
+      : `https://zakonexpert.kz${rawSchemaImage.startsWith('/') ? '' : '/'}${rawSchemaImage}`;
 
     const tagsArr = JSON.parse(article.tags || '[]');
     const relatedRaw = tagsArr.length > 0
@@ -212,13 +212,13 @@ function registerNewsRoutes(app, dependencies) {
       '@type': 'NewsArticle',
       headline: displayTitle,
       description: article.meta_desc || displayExcerpt,
-      url: `https://zakonexpertt.kz/news/${article.slug}`,
+      url: `https://zakonexpert.kz/news/${article.slug}`,
       datePublished: pubDate.toISOString(),
       dateModified: article.updated_at || pubDate.toISOString(),
       publisher: {
         '@type': 'Organization',
         name: 'ZakonExpert',
-        url: 'https://zakonexpertt.kz'
+        url: 'https://zakonexpert.kz'
       },
       image: schemaImage,
     };
@@ -226,7 +226,7 @@ function registerNewsRoutes(app, dependencies) {
     res.render('news/detail', {
       title: `${displayTitle.substring(0, 62)} | ZakonExpert`,
       description: (article.meta_desc || displayExcerpt).substring(0, 160),
-      canonical: article.canonical_url || `https://zakonexpertt.kz/news/${article.slug}`,
+      canonical: article.canonical_url || `https://zakonexpert.kz/news/${article.slug}`,
       ogType: 'article',
       ogImage: articleView.display_cover,
       article: articleView,

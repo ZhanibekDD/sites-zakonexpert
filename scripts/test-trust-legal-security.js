@@ -228,8 +228,8 @@ const homeServiceImages = [
   'paid-debt-restriction.webp',
 ];
 for (const filename of homeServiceImages) {
-  assert(home.includes(`/img/services/${filename}`), `${filename} is not used by a homepage service card`);
-  const imagePath = path.join(PUBLIC, 'img', 'services', filename);
+  assert(home.includes(`/img/migration/services/${filename}`), `${filename} is not used by a homepage service card`);
+  const imagePath = path.join(PUBLIC, 'img', 'migration', 'services', filename);
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a homepage card`);
 }

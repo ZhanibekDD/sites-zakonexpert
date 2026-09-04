@@ -80,14 +80,14 @@ function registerBailiffRoutes(app, dependencies) {
     const lastmod = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10);
     const regionUrls = regions.map(r => getBailiffRegionByName(r.region)).filter(Boolean).map(region => `
   <url>
-    <loc>https://zakonexpertt.kz${region.path}</loc>
+    <loc>https://zakonexpert.kz${region.path}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>`).join('');
     const profileUrls = all.map(b => `
   <url>
-    <loc>https://zakonexpertt.kz/bailiff/${b.slug}</loc>
+    <loc>https://zakonexpert.kz/bailiff/${b.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

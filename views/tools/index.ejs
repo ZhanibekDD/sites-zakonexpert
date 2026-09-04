@@ -4,10 +4,10 @@ function esc(value) {
 }
 const pageTitle = 'Проверки и юридические калькуляторы Казахстана | ZakonExpert';
 const pageDesc = 'Бесплатная проверка контрагента по БИН и юридические калькуляторы: долг и пеня, график платежей, МРП, госпошлина и сроки.';
-const canonical = 'https://zakonexpertt.kz/tools';
+const canonical = 'https://zakonexpert.kz/tools';
 const schema = {
   '@context':'https://schema.org', '@type':'CollectionPage', name:'Юридические инструменты Казахстана', url:canonical,
-  hasPart: tools.map(function(tool) { return { '@type':'WebApplication', name:tool.title, url:'https://zakonexpertt.kz' + tool.href, applicationCategory:tool.applicationCategory || 'FinanceApplication' }; }),
+  hasPart: tools.map(function(tool) { return { '@type':'WebApplication', name:tool.title, url:'https://zakonexpert.kz' + tool.href, applicationCategory:tool.applicationCategory || 'FinanceApplication' }; }),
 };
 const cards = tools.map(function(tool) {
   return '<a class="tool-card" href="' + esc(tool.href) + '"><span class="tool-icon"><i class="bi ' + esc(tool.icon) + '"></i></span>'

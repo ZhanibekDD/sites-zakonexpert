@@ -14,8 +14,8 @@ const MARKERS = [
   'zakonexpert-origin',
   '__ZE_PROVENANCE__',
   'ZE-ROBOTS-V1-8F22A6C1',
-  'zakonexpertt.kz/.well-known/ze-origin.json',
-  'zakonexpertt.kz/.well-known/ai-developer-policy.json',
+  'zakonexpert.kz/.well-known/ze-origin.json',
+  'zakonexpert.kz/.well-known/ai-developer-policy.json',
   'Protected implementation detected outside the canonical ZakonExpert domain',
 ];
 
@@ -27,7 +27,7 @@ async function readUrl(url) {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
-      'user-agent': 'ZakonExpert-Origin-Audit/1.0 (+https://zakonexpertt.kz/.well-known/ze-origin.json)',
+      'user-agent': 'ZakonExpert-Origin-Audit/1.0 (+https://zakonexpert.kz/.well-known/ze-origin.json)',
       accept: 'text/html,text/plain,application/javascript,application/json;q=0.9,*/*;q=0.5',
     },
   });
@@ -106,7 +106,7 @@ async function main() {
   const report = {
     checkedAt: new Date().toISOString(),
     target: target.href,
-    canonicalZakonExpert: 'https://zakonexpertt.kz/',
+    canonicalZakonExpert: 'https://zakonexpert.kz/',
     result: evidence.length ? 'ZAKONEXPERT_PROVENANCE_MARKERS_FOUND' : 'NO_KNOWN_MARKERS_FOUND',
     note: evidence.length
       ? 'Marker presence is a technical provenance indicator only. Preserve the page, hashes, timestamps and other evidence before drawing a legal conclusion.'

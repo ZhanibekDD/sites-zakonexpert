@@ -11,8 +11,8 @@ const pageDesc = currentRegion
   ? ('Список ЧСИ ' + currentRegion.genitive + ': ' + bailiffs.length + ' частных судебных исполнителей. Поиск по ФИО, телефоны, адреса, лицензии и порядок действий при аресте счёта.')
   : ('Каталог ' + total + ' частных судебных исполнителей Казахстана. Поиск по ФИО, контакты, адреса и номера лицензий.');
 const canonical = currentRegion
-  ? ('https://zakonexpertt.kz' + currentRegion.path)
-  : 'https://zakonexpertt.kz/bailiffs';
+  ? ('https://zakonexpert.kz' + currentRegion.path)
+  : 'https://zakonexpert.kz/bailiffs';
 const modifiedDate = lastUpdated ? new Date(lastUpdated).toISOString().substring(0, 10) : undefined;
 const schema = {
   '@context': 'https://schema.org',
@@ -29,18 +29,18 @@ const schema = {
         '@type': 'ItemList',
         numberOfItems: bailiffs.length || total,
         itemListElement: bailiffs.slice(0, 50).map(function(item, index) {
-          return { '@type': 'ListItem', position: index + 1, name: item.name, url: 'https://zakonexpertt.kz/bailiff/' + item.slug };
+          return { '@type': 'ListItem', position: index + 1, name: item.name, url: 'https://zakonexpert.kz/bailiff/' + item.slug };
         }),
       },
     },
     {
       '@type': 'BreadcrumbList',
       itemListElement: currentRegion ? [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-        { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: 'https://zakonexpertt.kz/bailiffs' },
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: 'https://zakonexpert.kz/bailiffs' },
         { '@type': 'ListItem', position: 3, name: currentRegion.displayName, item: canonical },
       ] : [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
         { '@type': 'ListItem', position: 2, name: 'Каталог ЧСИ', item: canonical },
       ],
     },

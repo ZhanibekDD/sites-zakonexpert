@@ -1,5 +1,5 @@
 <%
-const canonical = 'https://zakonexpertt.kz' + page.path;
+const canonical = 'https://zakonexpert.kz' + page.path;
 const title = 'Арест счёта ' + page.brand + ': что делать | ZakonExpert';
 const description = 'Арестовали или заблокировали счёт в ' + page.brand + '? Узнайте, кто установил ограничение, какие документы запросить и куда обращаться в Казахстане.';
 const faq = [
@@ -27,15 +27,15 @@ const schema = {
       description,
       dateModified: page.reviewedAt,
       inLanguage: 'ru-KZ',
-      isPartOf: { '@id': 'https://zakonexpertt.kz/#website' },
-      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+      isPartOf: { '@id': 'https://zakonexpert.kz/#website' },
+      publisher: { '@type': 'Organization', name: 'ZakonExpert', url: 'https://zakonexpert.kz' },
       about: { '@type': 'Thing', name: 'Ограничение банковского счёта в ' + page.brand },
     },
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-        { '@type': 'ListItem', position: 2, name: 'Аресты в банках', item: 'https://zakonexpertt.kz/arest-scheta-v-bankah-kazahstana' },
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Аресты в банках', item: 'https://zakonexpert.kz/arest-scheta-v-bankah-kazahstana' },
         { '@type': 'ListItem', position: 3, name: page.brand, item: canonical },
       ],
     },

@@ -2,7 +2,7 @@
 
 const releaseConfig = require('../modules/release-config');
 
-const DEFAULT_ORIGIN = 'https://zakonexpertt.kz';
+const DEFAULT_ORIGIN = 'https://zakonexpert.kz';
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_SLOW_MS = 4000;
 

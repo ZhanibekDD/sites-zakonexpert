@@ -115,21 +115,21 @@ function registerNotaryRoutes(app, dependencies) {
     const changeLastmod = Number.isNaN(changeDate.getTime()) ? lastmod : changeDate.toISOString().substring(0, 10);
     const changesUrl = changeHistory.changes.length ? `
   <url>
-    <loc>https://zakonexpertt.kz/notaries/changes</loc>
+    <loc>https://zakonexpert.kz/notaries/changes</loc>
     <lastmod>${changeLastmod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>` : '';
     const regionUrls = withNotaryRegionPaths(regions).map(r => `
   <url>
-    <loc>https://zakonexpertt.kz${r.path}</loc>
+    <loc>https://zakonexpert.kz${r.path}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>`).join('');
     const profileUrls = all.map(n => `
   <url>
-    <loc>https://zakonexpertt.kz/notary/${n.slug}</loc>
+    <loc>https://zakonexpert.kz/notary/${n.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>

@@ -158,13 +158,13 @@ const TOTAL = CATALOG.total || COURTS.length;
 
 const pageTitle = 'Суды Казахстана — ' + TOTAL + ' судов' + (PAGE > 1 ? ', страница ' + PAGE : '') + ' | ZakonExpert';
 const pageDesc  = 'Полный реестр ' + TOTAL + ' судов Казахстана по всем регионам: адреса, телефоны, email и руководители. Нужна помощь в суде? ZakonExpert.';
-const canonical = 'https://zakonexpertt.kz/courts' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
+const canonical = 'https://zakonexpert.kz/courts' + (!QUERY && PAGE > 1 ? '?page=' + PAGE : '');
 
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
     { '@type': 'ListItem', position: 2, name: 'Суды Казахстана', item: canonical },
   ],
 };

@@ -2,7 +2,7 @@
 const displayName = String(item.name || '').replace(/^«/, '').trim();
 const pageTitle = displayName + ' — коллектор, контакты | ZakonExpert';
 const pageDesc = displayName + ': БИН ' + item.bin + '. Контакты и сведения из реестра коллекторских агентств. Юридическая помощь при незаконных требованиях.';
-const canonical = 'https://zakonexpertt.kz/collectors/' + item.slug;
+const canonical = 'https://zakonexpert.kz/collectors/' + item.slug;
 
 function escHtml(value) {
   return String(value || '')
@@ -41,8 +41,8 @@ const schema = {
     {
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpertt.kz/' },
-        { '@type': 'ListItem', position: 2, name: 'Коллекторские агентства', item: 'https://zakonexpertt.kz/collectors' },
+        { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+        { '@type': 'ListItem', position: 2, name: 'Коллекторские агентства', item: 'https://zakonexpert.kz/collectors' },
         { '@type': 'ListItem', position: 3, name: displayName, item: canonical },
       ],
     },

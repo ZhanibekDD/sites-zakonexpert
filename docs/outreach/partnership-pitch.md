@@ -18,7 +18,7 @@
 Готов(а) обсудить формат, который будет полезен именно вам, без давления и без "обмена ссылками ради ссылок".
 
 [Имя], ZakonExpert
-https://zakonexpertt.kz
+https://zakonexpert.kz
 
 ## WhatsApp
 

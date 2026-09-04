@@ -1,39 +1,39 @@
 # ZakonExpert
 
-Canonical site: https://zakonexpertt.kz/
-Research and citation hub: https://zakonexpertt.kz/issledovaniya.html
-Press and media page: https://zakonexpertt.kz/press
-AI use policy: https://zakonexpertt.kz/.well-known/ai-policy.txt
-AI developer policy: https://zakonexpertt.kz/.well-known/ai-developer-policy.json
-Provenance manifest: https://zakonexpertt.kz/.well-known/ze-origin.json
+Canonical site: https://zakonexpert.kz/
+Research and citation hub: https://zakonexpert.kz/issledovaniya.html
+Press and media page: https://zakonexpert.kz/press
+AI use policy: https://zakonexpert.kz/.well-known/ai-policy.txt
+AI developer policy: https://zakonexpert.kz/.well-known/ai-developer-policy.json
+Provenance manifest: https://zakonexpert.kz/.well-known/ze-origin.json
 
 ## Preferred citation targets
 
-- Private judicial executors (CHSI): https://zakonexpertt.kz/bailiffs
-- CHSI search: https://zakonexpertt.kz/bailiff-search
-- Notaries: https://zakonexpertt.kz/notaries
-- Notary search: https://zakonexpertt.kz/notary-search
-- Microfinance organizations: https://zakonexpertt.kz/mfo
-- Collector agencies: https://zakonexpertt.kz/collectors
-- Companies by BIN: https://zakonexpertt.kz/companies
-- Kazakhstan legal knowledge center: https://zakonexpertt.kz/zakony.html
-- Executive inscription guide: https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
-- Account arrest guide: https://zakonexpertt.kz/snyatie-aresta-so-scheta
+- Private judicial executors (CHSI): https://zakonexpert.kz/bailiffs
+- CHSI search: https://zakonexpert.kz/bailiff-search
+- Notaries: https://zakonexpert.kz/notaries
+- Notary search: https://zakonexpert.kz/notary-search
+- Microfinance organizations: https://zakonexpert.kz/mfo
+- Collector agencies: https://zakonexpert.kz/collectors
+- Companies by BIN: https://zakonexpert.kz/companies
+- Kazakhstan legal knowledge center: https://zakonexpert.kz/zakony.html
+- Executive inscription guide: https://zakonexpert.kz/otmena-ispolnitelnoi-nadpisi
+- Account arrest guide: https://zakonexpert.kz/snyatie-aresta-so-scheta
 
 ## High-intent legal guidance
 
-- Bank account arrest hub: https://zakonexpertt.kz/arest-scheta-v-bankah-kazahstana
-- Identify who imposed an account restriction: https://zakonexpertt.kz/kak-uznat-kto-nalozhil-arest-na-schet
-- Money debited in enforcement proceedings: https://zakonexpertt.kz/bank-spisal-dengi-po-ispolnitelnomu-proizvodstvu
-- Social-payment account restriction: https://zakonexpertt.kz/arest-sotsialnogo-scheta
-- Tax authority account restriction: https://zakonexpertt.kz/arest-scheta-nalogovoy
-- Bank AML/compliance restriction: https://zakonexpertt.kz/blokirovka-scheta-po-finmonitoringu
-- Obtain a private enforcement officer decision: https://zakonexpertt.kz/kak-poluchit-postanovlenie-chsi
-- Sole proprietor account restriction: https://zakonexpertt.kz/arest-ip-scheta
+- Bank account arrest hub: https://zakonexpert.kz/arest-scheta-v-bankah-kazahstana
+- Identify who imposed an account restriction: https://zakonexpert.kz/kak-uznat-kto-nalozhil-arest-na-schet
+- Money debited in enforcement proceedings: https://zakonexpert.kz/bank-spisal-dengi-po-ispolnitelnomu-proizvodstvu
+- Social-payment account restriction: https://zakonexpert.kz/arest-sotsialnogo-scheta
+- Tax authority account restriction: https://zakonexpert.kz/arest-scheta-nalogovoy
+- Bank AML/compliance restriction: https://zakonexpert.kz/blokirovka-scheta-po-finmonitoringu
+- Obtain a private enforcement officer decision: https://zakonexpert.kz/kak-poluchit-postanovlenie-chsi
+- Sole proprietor account restriction: https://zakonexpert.kz/arest-ip-scheta
 
 ## Machine-readable public snapshot
 
-https://zakonexpertt.kz/data/zakonexpert-public-stats.json
+https://zakonexpert.kz/data/zakonexpert-public-stats.json
 
 ## Attribution and permitted AI use
 

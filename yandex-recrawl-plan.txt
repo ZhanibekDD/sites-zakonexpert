@@ -6,7 +6,7 @@ ZAKONEXPERT.KZ — ПЛАН ПЕРЕОБХОДА В ЯНДЕКС.ВЕБМАСТ�
 -----------------------------
 Яндекс.Вебмастер → Индексирование → Файлы Sitemap → добавить:
 
-  https://zakonexpertt.kz/sitemap-index.xml
+  https://zakonexpert.kz/sitemap-index.xml
 
 Он уже включает sitemap-image.xml (новый — картинки инфографики) и обновлённый
 sitemap-pages.xml (5 новых страниц городов). Отдельно отправлять остальные sitemap-*.xml
@@ -20,26 +20,26 @@ sitemap-pages.xml (5 новых страниц городов). Отдельно
 Яндекс.Вебмастер даёт ограниченную квоту запросов в сутки — распределяем по дням.
 
 Приоритет 1 (критичные фиксы, день 1):
-  https://zakonexpertt.kz/index_kz
-  https://zakonexpertt.kz/contact_kz
-  https://zakonexpertt.kz/services_kz
-  https://zakonexpertt.kz/mfo
-  https://zakonexpertt.kz/
+  https://zakonexpert.kz/index_kz
+  https://zakonexpert.kz/contact_kz
+  https://zakonexpert.kz/services_kz
+  https://zakonexpert.kz/mfo
+  https://zakonexpert.kz/
 
 Приоритет 2 (новые страницы городов — актуально для Яндекса, у него сильный вес
 региональной релевантности для kz-доменов):
-  https://zakonexpertt.kz/snyatie-aresta-almaty
-  https://zakonexpertt.kz/snyatie-aresta-astana
-  https://zakonexpertt.kz/snyatie-aresta-shymkent
-  https://zakonexpertt.kz/snyatie-aresta-taldykorgan
-  https://zakonexpertt.kz/snyatie-aresta-karaganda
+  https://zakonexpert.kz/snyatie-aresta-almaty
+  https://zakonexpert.kz/snyatie-aresta-astana
+  https://zakonexpert.kz/snyatie-aresta-shymkent
+  https://zakonexpert.kz/snyatie-aresta-taldykorgan
+  https://zakonexpert.kz/snyatie-aresta-karaganda
 
 Приоритет 3 (денежные страницы):
-  https://zakonexpertt.kz/arest-kaspi
-  https://zakonexpertt.kz/arest-halyk-bank
-  https://zakonexpertt.kz/arest-freedom-bank
-  https://zakonexpertt.kz/snyatie-aresta-so-scheta
-  https://zakonexpertt.kz/otmena-ispolnitelnoi-nadpisi
+  https://zakonexpert.kz/arest-kaspi
+  https://zakonexpert.kz/arest-halyk-bank
+  https://zakonexpert.kz/arest-freedom-bank
+  https://zakonexpert.kz/snyatie-aresta-so-scheta
+  https://zakonexpert.kz/otmena-ispolnitelnoi-nadpisi
 
 3. ПЛАН НА 10 ДНЕЙ ПО 10 URL В ДЕНЬ
 ---------------------------------------
@@ -85,8 +85,8 @@ sitemap-pages.xml (5 новых страниц городов). Отдельно
 
 5. ЧТО ПРОВЕРИТЬ ПЕРВЫМ ДЕЛОМ ПОСЛЕ ДЕПЛОЯ
 -----------------------------------------------
-  curl -I https://zakonexpertt.kz/index_kz     → 200, без редиректов
-  https://webmaster.yandex.ru/tools/microtest/?url=https://zakonexpertt.kz/bailiffs
+  curl -I https://zakonexpert.kz/index_kz     → 200, без редиректов
+  https://webmaster.yandex.ru/tools/microtest/?url=https://zakonexpert.kz/bailiffs
       → проверить FAQ-разметку каталога ЧСИ
-  Проверить robots.txt (https://zakonexpertt.kz/robots.txt) — Яндекс уважает
+  Проверить robots.txt (https://zakonexpert.kz/robots.txt) — Яндекс уважает
   директиву Sitemap: в robots.txt, она уже указывает на sitemap-index.xml.

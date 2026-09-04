@@ -186,9 +186,9 @@ const body = `
         <!-- SHARE -->
         <div class="news-share">
           <span>Поделиться:</span>
-          <a href="https://wa.me/?text=${encodeURIComponent(displayTitle + ' — https://zakonexpertt.kz/news/' + article.slug)}"
+          <a href="https://wa.me/?text=${encodeURIComponent(displayTitle + ' — https://zakonexpert.kz/news/' + article.slug)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-wa">WhatsApp</a>
-          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpertt.kz/news/' + article.slug)}&text=${encodeURIComponent(displayTitle)}"
+          <a href="https://t.me/share/url?url=${encodeURIComponent('https://zakonexpert.kz/news/' + article.slug)}&text=${encodeURIComponent(displayTitle)}"
              target="_blank" rel="noopener" class="news-share-btn news-share-tg">Telegram</a>
           <button class="news-share-btn news-share-copy"
                   onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Скопировано!'">
@@ -276,4 +276,4 @@ const body = `
 </section>
 `;
 %>
-<%- include('layout', { title: displayTitle.substring(0, 62) + ' | ZakonExpert', description: (article.meta_desc || displayExcerpt).substring(0, 160), canonical: 'https://zakonexpertt.kz/news/' + article.slug, ogType: 'article', ogImage: coverImg, schema, activeNav: 'news', body }) %>
+<%- include('layout', { title: displayTitle.substring(0, 62) + ' | ZakonExpert', description: (article.meta_desc || displayExcerpt).substring(0, 160), canonical: 'https://zakonexpert.kz/news/' + article.slug, ogType: 'article', ogImage: coverImg, schema, activeNav: 'news', body }) %>

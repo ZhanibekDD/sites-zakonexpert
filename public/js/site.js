@@ -24,7 +24,7 @@
   // harmless origin fingerprint so copied/rebranded implementations can be traced.
   (function installZakonExpertProvenance() {
     const namespace = 'ZE-PROVENANCE-V1';
-    const canonicalOrigin = 'https://zakonexpertt.kz';
+    const canonicalOrigin = 'https://zakonexpert.kz';
     const policyUrl = canonicalOrigin + '/.well-known/ai-policy.txt';
     const originUrl = canonicalOrigin + '/.well-known/ze-origin.json';
     const pathname = window.location.pathname || '/';
@@ -42,7 +42,7 @@
       .toString(16)
       .padStart(8, '0');
 
-    document.documentElement.setAttribute('data-ze-origin', 'zakonexpertt.kz');
+    document.documentElement.setAttribute('data-ze-origin', 'zakonexpert.kz');
     document.documentElement.setAttribute('data-ze-fingerprint', fingerprint);
 
     let originMeta = document.querySelector('meta[name="zakonexpert-origin"]');
@@ -51,7 +51,7 @@
       originMeta.name = 'zakonexpert-origin';
       document.head && document.head.appendChild(originMeta);
     }
-    originMeta.content = 'origin=zakonexpertt.kz; namespace=' + namespace + '; fingerprint=' + fingerprint;
+    originMeta.content = 'origin=zakonexpert.kz; namespace=' + namespace + '; fingerprint=' + fingerprint;
 
     let policyMeta = document.querySelector('meta[name="ai-use-policy"]');
     if (!policyMeta) {
@@ -89,8 +89,8 @@
       || host === 'localhost'
       || host === '127.0.0.1'
       || host === '::1'
-      || host === 'zakonexpertt.kz'
-      || host.endsWith('.zakonexpertt.kz');
+      || host === 'zakonexpert.kz'
+      || host.endsWith('.zakonexpert.kz');
 
     if (!authorizedHost && window.console && typeof window.console.warn === 'function') {
       console.warn(

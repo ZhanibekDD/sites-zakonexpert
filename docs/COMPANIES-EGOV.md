@@ -161,9 +161,9 @@ npm run import-directory-contacts -- --confirm-offline --limit-rows=5000
 После завершения запустить Node.js и проверить:
 
 ```bash
-curl -I https://zakonexpertt.kz/companies
-curl -I https://zakonexpertt.kz/en/companies
-curl -I https://zakonexpertt.kz/company/ID-SLUG
+curl -I https://zakonexpert.kz/companies
+curl -I https://zakonexpert.kz/en/companies
+curl -I https://zakonexpert.kz/company/ID-SLUG
 ```
 
 ## Откат

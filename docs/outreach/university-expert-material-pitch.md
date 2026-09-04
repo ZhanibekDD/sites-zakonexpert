@@ -18,7 +18,7 @@
 Материал будет полезен именно с практической стороны — то, что не всегда очевидно из текста закона.
 
 [Имя], ZakonExpert
-https://zakonexpertt.kz/press
+https://zakonexpert.kz/press
 
 ## Telegram (студенческие паблики/чаты юрфаков)
 

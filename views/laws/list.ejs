@@ -48,7 +48,7 @@ const pageDesc = code
 const canonicalParams = new URLSearchParams();
 if (code) canonicalParams.set('code', code);
 if (page > 1) canonicalParams.set('page', String(page));
-const canonical = `https://zakonexpertt.kz/statyi${canonicalParams.toString() ? `?${canonicalParams}` : ''}`;
+const canonical = `https://zakonexpert.kz/statyi${canonicalParams.toString() ? `?${canonicalParams}` : ''}`;
 
 const schema = {
   '@context': 'https://schema.org',
@@ -56,7 +56,7 @@ const schema = {
   name: pageTitle,
   description: pageDesc,
   url: canonical,
-  publisher: { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpertt.kz' },
+  publisher: { '@type': 'LegalService', name: 'ZakonExpert', url: 'https://zakonexpert.kz' },
   mainEntity: {
     '@type': 'ItemList',
     numberOfItems: total,
@@ -64,7 +64,7 @@ const schema = {
       '@type': 'ListItem',
       position: ((page - 1) * 30) + index + 1,
       name: `Статья ${article.num} ${article.codeName}: ${article.title}`,
-      url: `https://zakonexpertt.kz/statya/${article.slug}`,
+      url: `https://zakonexpert.kz/statya/${article.slug}`,
     })),
   },
 };

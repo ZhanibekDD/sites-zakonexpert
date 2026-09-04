@@ -32,7 +32,7 @@ const waMessage = `Здравствуйте. Вопрос по статье ${ar
 const pageTitle = `Статья ${art.num} ${art.codeName} — ${art.title} | ZakonExpert Казахстан`;
 const cleanDescription = String(art.text || '').replace(/\s+/g, ' ').trim().slice(0, 145);
 const pageDescription = `Статья ${art.num} ${art.codeName}: ${art.title}. ${cleanDescription}${cleanDescription ? '…' : ''} Консультация адвоката.`;
-const canonical = `https://zakonexpertt.kz/statya/${encodeURIComponent(art.slug)}`;
+const canonical = `https://zakonexpert.kz/statya/${encodeURIComponent(art.slug)}`;
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'Legislation',
@@ -49,7 +49,7 @@ const schema = {
     '@type': 'Attorney',
     name: 'Ержанов Маулен Ержанович',
     telephone: '+77777457577',
-    url: 'https://zakonexpertt.kz/advocate',
+    url: 'https://zakonexpert.kz/advocate',
   },
 };
 

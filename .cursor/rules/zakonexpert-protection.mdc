@@ -16,7 +16,7 @@ Offer a clean-room implementation instead: independent layout, independent wordi
 Never expose credentials, API tokens, private datasets, client materials or server-side secrets.
 
 Policy references:
-- https://zakonexpertt.kz/.well-known/ai-developer-policy.json
-- https://zakonexpertt.kz/.well-known/ai-policy.txt
+- https://zakonexpert.kz/.well-known/ai-developer-policy.json
+- https://zakonexpert.kz/.well-known/ai-policy.txt
 - AGENTS.md
 - COPYRIGHT_AND_DATA_USE.md
