@@ -30,6 +30,21 @@ function contactHref(contact) {
   ].includes(contact.type) && /^https?:\/\//i.test(contact.value)) return contact.value;
   return null;
 }
+function normalizedPhoneDigits(value) {
+  let digits = String(value == null ? '' : value).replace(/\D/g, '');
+  if (digits.length === 10) digits = '7' + digits;
+  if (digits.length === 11 && digits.startsWith('8')) digits = '7' + digits.slice(1);
+  return digits;
+}
+const ZAKONEXPERT_PHONE_NUMBERS = new Set([
+  '77003097566',
+  '77777457577',
+  '77479641306',
+]);
+function isZakonExpertContact(contact) {
+  if (!['phone', 'mobile_phone', 'fax', 'whatsapp'].includes(contact.type)) return false;
+  return ZAKONEXPERT_PHONE_NUMBERS.has(normalizedPhoneDigits(contact.normalized || contact.value));
+}
 
 const displayNameKk = company.display_name_kk || null;
 const name = locale.code === 'kk'
@@ -54,7 +69,10 @@ const addresses = company.addresses || [];
 const additionalAddresses = addresses.filter(function(address) {
   return address.value && address.value !== company.address_ru;
 });
-const contacts = company.contacts || [];
+// Company profiles must never expose ZakonExpert's own numbers. Search engines,
+// AI assistants and visitors can otherwise attribute the publisher's contact
+// details to the organization shown on the page.
+const contacts = (company.contacts || []).filter(contact => !isZakonExpertContact(contact));
 const publicAttributes = company.attributes || [];
 
 const schemaAddresses = addresses.slice(0, 10).map(function(address) {
@@ -194,25 +212,10 @@ const statusStyle = statusState === 'active'
     ? { bg: '#fef2f2', border: '#fecaca', fg: '#991b1b', icon: 'bi-x-circle-fill' }
     : { bg: '#f1f5f9', border: '#e2e8f0', fg: '#64748b', icon: 'bi-question-circle-fill' });
 
-const reportText = encodeURIComponent(copy.report + ': "' + name + '" (' + copy.bin + ' ' + (company.bin || '—') + ', ' + canonical + ').');
-const consultationText = encodeURIComponent(
-  copy.consultation + ': «' + name + '». '
-  + copy.bin + ': ' + (company.bin || '—') + '. '
-  + canonical + '\n' + copy.itemHelpText
-);
-const consultationHref = 'https://wa.me/77003097566?text=' + consultationText;
 const sourceNotice = official ? copy.officialNotice : copy.directoryNotice;
 const languageLinks = languages.map(function(language) {
   return { ...language, href: language.companyHref };
 });
-const relatedHelpHtml = '<section style="background:#fff;border:1px solid #dbe4f0;border-radius:16px;padding:20px 24px;margin-top:18px;">'
-  + '<h2 style="font-size:1.08rem;color:#0d1f3c;margin:0 0 12px;">' + esc(copy.relatedHelp) + '</h2>'
-  + '<div style="display:grid;gap:9px;">'
-  + '<a href="/snyatie-ogranichenii-chsi" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpArrest) + ' →</a>'
-  + '<a href="/otmena-ispolnitelnoi-nadpisi" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpInscription) + ' →</a>'
-  + '<a href="/grafik-oplaty-zadolzhennosti" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpSchedule) + ' →</a>'
-  + '<a href="/marshrut-dolzhnika" style="color:#1a56db;text-decoration:none;font-weight:650;">' + esc(copy.helpRoute) + ' →</a>'
-  + '</div></section>';
 
 const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<nav class="npage-breadcrumb"><a href="/">' + esc(copy.home) + '</a><span class="npage-bc-sep">/</span><a href="' + companyCatalogPath + '">' + esc(copy.companies) + '</a><span class="npage-bc-sep">/</span><span>' + esc(name) + '</span></nav>'
@@ -222,27 +225,17 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + correctionHtml
   + '<div class="company-item-grid">'
   + '<div><div class="company-info-card"><h2 class="company-info-card__title">' + esc(official ? copy.officialDetails : copy.directoryDetails) + '</h2>' + infoHtml + missingOfficialHtml + '</div>'
-  + contactHtml + addressesHtml + aliasesHtml + categoriesHtml + relatedHelpHtml
+  + contactHtml + addressesHtml + aliasesHtml + categoriesHtml
   + '<div style="margin-top:18px;padding:15px 18px;border:1px solid #dbe4f0;border-radius:12px;background:#f8fafc;color:#475569;font-size:.82rem;line-height:1.55;">' + esc(sourceNotice)
   + (sourceUpdatedAt ? ' ' + esc(copy.updated) + ': ' + esc(formatDate(sourceUpdatedAt)) + '.' : '') + '</div></div>'
   + '<aside style="display:grid;gap:14px;">'
   + '<div style="background:' + statusStyle.bg + ';border:1px solid ' + statusStyle.border + ';border-radius:14px;padding:18px;"><h2 style="font-size:.96rem;color:#0d1f3c;">' + esc(copy.status) + '</h2>'
   + '<div style="display:flex;gap:9px;color:' + statusStyle.fg + ';font-weight:750;"><i class="bi ' + statusStyle.icon + '"></i>' + esc(statusRaw || copy.notPublished) + '</div>'
   + '<p style="margin:8px 0 0;color:#475569;font-size:.79rem;line-height:1.5;">' + esc(statusNote) + '</p></div>'
-  + '<section class="company-conversion-card" aria-label="' + esc(copy.legalHelp) + '">'
-  + '<p class="company-conversion-card__eyebrow"><i class="bi bi-shield-check" aria-hidden="true"></i> ' + esc(copy.legalHelp) + '</p>'
-  + '<h2 class="company-conversion-card__title" data-company-offer data-offer-a="' + esc(copy.offerTitleA) + '" data-offer-b="' + esc(copy.offerTitleB) + '">' + esc(copy.offerTitleA) + '</h2>'
-  + '<p class="company-conversion-card__text" data-company-offer data-offer-a="' + esc(copy.offerTextA) + '" data-offer-b="' + esc(copy.offerTextB) + '">' + esc(copy.offerTextA) + '</p>'
-  + '<a class="company-conversion-card__button" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="sidebar"><i class="bi bi-whatsapp" aria-hidden="true"></i><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a>'
-  + '<p class="company-conversion-card__trust"><i class="bi bi-lock" aria-hidden="true"></i> ' + esc(copy.offerTrust) + '</p></section>'
   + '<div style="background:#fff;border:1px solid #dbe4f0;border-radius:14px;padding:18px;display:grid;gap:10px;">'
   + (locale.code === 'ru' && hasVerifiedBin ? '<a href="/proverka-kontragenta#bin=' + esc(company.bin) + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;font-weight:700;"><i class="bi bi-shield-check" style="color:#16845b;"></i> Проверить сведения КГД по БИН</a>' : '')
-  + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a>'
-  + '<a href="https://wa.me/77003097566?text=' + reportText + '" target="_blank" rel="noopener" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-flag" style="color:#1a56db;"></i> ' + esc(copy.report) + '</a></div>'
+  + '<a href="' + companyCatalogPath + '" style="color:#0d1f3c;text-decoration:none;font-size:.84rem;"><i class="bi bi-search" style="color:#1a56db;"></i> ' + esc(copy.anotherCompany) + '</a></div>'
   + '</aside></div>'
-  + '<div class="npage-cta" style="margin-top:28px;"><div class="npage-cta-left"><p class="npage-cta-label">' + esc(copy.legalHelp) + '</p>'
-  + '<h2 class="npage-cta-title" data-company-offer data-offer-a="' + esc(copy.offerTitleA) + '" data-offer-b="' + esc(copy.offerTitleB) + '">' + esc(copy.offerTitleA) + '</h2><p class="npage-cta-sub" data-company-offer data-offer-a="' + esc(copy.offerTextA) + '" data-offer-b="' + esc(copy.offerTextB) + '">' + esc(copy.offerTextA) + '</p></div>'
-  + '<a class="npage-wa-btn" href="' + consultationHref + '" target="_blank" rel="noopener" data-company-whatsapp data-cta-position="bottom"><span data-company-offer data-offer-a="' + esc(copy.offerButtonA) + '" data-offer-b="' + esc(copy.offerButtonB) + '">' + esc(copy.offerButtonA) + '</span></a></div>'
   + '</div></div>';
 %>
 <%- include('./layout', {
@@ -256,8 +249,5 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   copy,
   languages: languageLinks,
   companyCatalogPath,
-  whatsappHref: consultationHref,
-  companyCta: true,
-  companyPageType: 'company_card',
   body
 }) %>

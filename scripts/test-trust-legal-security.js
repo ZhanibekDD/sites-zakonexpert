@@ -81,7 +81,7 @@ const staleSiteScriptRefs = userFacingFiles
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
     return /(?:^|\/)js\/site\.js\?v=/.test(source)
-      && !/(?:^|\/)js\/site\.js\?v=20260828-1/.test(source);
+      && !/(?:^|\/)js\/site\.js\?v=20260904-1/.test(source);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleSiteScriptRefs, [],
@@ -225,8 +225,8 @@ const homeServiceImages = [
   'paid-debt-restriction.webp',
 ];
 for (const filename of homeServiceImages) {
-  assert(home.includes(`/img/services/${filename}`), `${filename} is not used by a homepage service card`);
-  const imagePath = path.join(PUBLIC, 'img', 'services', filename);
+  assert(home.includes(`/img/migration/services/${filename}`), `${filename} is not used by a homepage service card`);
+  const imagePath = path.join(PUBLIC, 'img', 'migration', 'services', filename);
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 120 * 1024, `${filename} is too large for a homepage card`);
 }

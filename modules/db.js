@@ -112,6 +112,31 @@ module.exports = {
     }));
   },
 
+  async searchPublished(query, limit = 10) {
+    const q = String(query || '').replace(/\s+/g, ' ').trim();
+    if (q.length < 2) return [];
+    const terms = q.toLocaleLowerCase('ru-RU').replace(/ё/g, 'е').split(' ').filter(Boolean);
+    const docs = await news.find({ status: 'published', category: { $ne: 'Адвокат' } }, {
+      title: 1,
+      slug: 1,
+      category: 1,
+      excerpt: 1,
+      tags: 1,
+      published_at_source: 1,
+      published_at_site: 1,
+      _id: 0,
+    });
+    return docs.filter(article => {
+      const haystack = [article.title, article.category, article.excerpt, article.tags]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('ru-RU')
+        .replace(/ё/g, 'е');
+      return terms.every(term => haystack.includes(term));
+    }).sort((left, right) => newsTimestamp(right).localeCompare(newsTimestamp(left)))
+      .slice(0, Math.max(1, Math.min(Number(limit) || 10, 30)));
+  },
+
   async getAllForSitemap() {
     const docs = await news.find({ status: 'published' });
     docs.sort((a, b) => newsTimestamp(b).localeCompare(newsTimestamp(a)));

@@ -113,8 +113,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const companyWhatsAppLink = 'https://wa.me/77003097566';
   const companyPhoneRaw = '77003097566';
   const companyPhoneDisplay = '+7 (700) 309-75-66';
+  const suppressZakonExpertContacts = document.documentElement.hasAttribute(
+    'data-suppress-zakonexpert-contacts'
+  );
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navLinks = document.querySelector('[data-nav-links]');
+
+  // One consistent search entry point on every public page. Individual
+  // catalogues keep their focused filters; this form searches the whole site.
+  if (!document.querySelector('[data-global-site-search]')) {
+    const language = (document.documentElement.lang || 'ru').toLowerCase().split('-')[0];
+    const searchCopy = {
+      ru: { label: 'Поиск по всему сайту', placeholder: 'Компания, БИН, нотариус, ЧСИ, закон, услуга…', button: 'Найти' },
+      kk: { label: 'Бүкіл сайт бойынша іздеу', placeholder: 'Компания, БСН, нотариус, ЖСО, заң, қызмет…', button: 'Іздеу' },
+      en: { label: 'Search the entire site', placeholder: 'Company, BIN, notary, bailiff, law, service…', button: 'Search' },
+      zh: { label: '搜索整个网站', placeholder: '公司、BIN、公证员、执法人员、法律、服务…', button: '搜索' },
+      tr: { label: 'Tüm sitede ara', placeholder: 'Şirket, BIN, noter, icra memuru, kanun, hizmet…', button: 'Ara' },
+    }[language] || null;
+    const copy = searchCopy || { label: 'Поиск по всему сайту', placeholder: 'Компания, БИН, нотариус, ЧСИ, закон, услуга…', button: 'Найти' };
+    const searchRegion = document.createElement('section');
+    searchRegion.className = 'global-site-search';
+    searchRegion.dataset.globalSiteSearch = '';
+    searchRegion.setAttribute('aria-label', copy.label);
+    searchRegion.innerHTML = `
+      <div class="landing-container">
+        <form class="global-site-search__form" action="/poisk" method="get" role="search">
+          <label class="global-site-search__field">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <span class="visually-hidden">${copy.label}</span>
+            <input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="${copy.placeholder}" autocomplete="off">
+          </label>
+          <button class="global-site-search__button" type="submit">${copy.button}</button>
+        </form>
+      </div>`;
+    const header = document.querySelector('.site-header') || document.querySelector('body > header');
+    const main = document.querySelector('main');
+    if (header) header.insertAdjacentElement('afterend', searchRegion);
+    else if (main) main.insertAdjacentElement('beforebegin', searchRegion);
+    else document.body.prepend(searchRegion);
+  }
 
   // Keep the KGD company check visible in legacy page headers as well.
   if (navLinks && !navLinks.querySelector('[data-nav-kgd]')) {
@@ -190,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Desktop visitors can scan the official WhatsApp Business link without
   // copying a phone number. Mobile visitors keep the direct inline links.
-  if (!document.querySelector('.ze-wa-qr-dock')) {
+  if (!suppressZakonExpertContacts && !document.querySelector('.ze-wa-qr-dock')) {
     const qrDock = document.createElement('aside');
     qrDock.className = 'ze-wa-qr-dock';
     qrDock.setAttribute('aria-label', 'WhatsApp ZakonExpert');

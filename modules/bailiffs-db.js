@@ -27,11 +27,13 @@ module.exports = {
     if (!query || query.trim().length < 2) return [];
     const q = query.trim().toUpperCase();
     const words = q.split(/\s+/).filter(w => w.length >= 2);
-    const all = await db.find({}, { name: 1, slug: 1, region: 1, address: 1, email: 1, _id: 0 });
+    const all = await db.find({}, {
+      name: 1, slug: 1, region: 1, address: 1, phones: 1, email: 1, license: 1, _id: 0,
+    });
     return all.filter(d => {
-      const name = (d.name || '').toUpperCase();
-      // все слова запроса должны встречаться в имени
-      return words.every(w => name.includes(w));
+      const searchable = [d.name, d.region, d.address, d.phones, d.email, d.license]
+        .filter(Boolean).join(' ').toUpperCase();
+      return words.every(w => searchable.includes(w));
     }).slice(0, limit);
   },
 

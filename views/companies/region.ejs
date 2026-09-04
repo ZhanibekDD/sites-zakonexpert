@@ -43,9 +43,6 @@ const body = '<div class="npage-wrap"><div class="landing-container">'
   + '<h1 class="npage-h1">Компании: ' + esc(label) + '</h1>'
   + '<p style="color:#475569;max-width:760px;">Юридические лица, зарегистрированные по адресу в регионе «' + esc(label) + '». Источник — Министерство юстиции РК через data.egov.kz.</p></section>'
   + resultsHtml + paginationHtml
-  + '<div class="npage-cta" style="margin-top:34px;"><div class="npage-cta-left"><p class="npage-cta-label">Юридическая помощь</p>'
-  + '<h2 class="npage-cta-title">Компания требует оплату или арестовала счёт?</h2><p class="npage-cta-sub">Проверим основания взыскания и поможем защитить ваши права.</p></div>'
-  + '<a class="npage-wa-btn" href="https://wa.me/77003097566?text=Здравствуйте!+Нужна+проверка+компании+и+юридическая+помощь." target="_blank" rel="noopener">Написать в WhatsApp</a></div>'
   + '</div></div>';
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: results.page > 1, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: results.page > 1, suppressZakonExpertContacts: true, body }) %>
