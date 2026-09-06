@@ -1,0 +1,88 @@
+name: Apply production header cleanup
+
+on:
+  push:
+    branches:
+      - fix/production-header-cleanup-20260906
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out production cleanup branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/production-header-cleanup-20260906
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply production cleanup
+        run: |
+          node --check scripts/apply-production-header-cleanup-20260906.js
+          node scripts/apply-production-header-cleanup-20260906.js
+
+      - name: Regenerate WhatsApp QR
+        shell: bash
+        run: |
+          if [ -f public/img/contact/whatsapp-zakonexpert-qr.svg ]; then
+            python -m pip install --disable-pip-version-check qrcode
+            python - <<'PYCODE'
+          from pathlib import Path
+          import qrcode
+          from qrcode.image.svg import SvgPathImage
+
+          url = 'https://wa.me/77058762795'
+          target = Path('public/img/contact/whatsapp-zakonexpert-qr.svg')
+          image = qrcode.make(url, image_factory=SvgPathImage, box_size=10, border=4)
+          with target.open('wb') as output:
+              image.save(output)
+          svg = target.read_text(encoding='utf-8')
+          svg = svg.replace(
+              '<svg ',
+              '<svg data-whatsapp-url="https://wa.me/77058762795" role="img" aria-label="QR-код WhatsApp компании ZakonExpert" ',
+              1,
+          )
+          target.write_text(svg, encoding='utf-8')
+          PYCODE
+          fi
+
+      - name: Verify migration is idempotent
+        run: node scripts/apply-production-header-cleanup-20260906.js
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run contact and syntax checks
+        run: |
+          if [ -f scripts/test-contact-number.js ]; then node scripts/test-contact-number.js; fi
+          node --check public/js/site.js
+          if [ -f public/js/chatbot.js ]; then node --check public/js/chatbot.js; fi
+
+      - name: Run full validation suite
+        run: npm test
+
+      - name: Commit production cleanup
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f scripts/apply-production-header-cleanup-20260906.js
+          rm -f .github/workflows/apply-production-header-cleanup-20260906.yml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+            exit 0
+          fi
+          git commit -m "Finish production contact and header cleanup"
+          git push origin HEAD:fix/production-header-cleanup-20260906
