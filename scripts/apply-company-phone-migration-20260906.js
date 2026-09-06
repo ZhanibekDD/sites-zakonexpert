@@ -6,6 +6,7 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const SELF = path.relative(ROOT, __filename).replace(/\\/g, '/');
 const WORKFLOW = '.github/workflows/migrate-company-phone-20260906.yml';
+const ASSET_VERSION = '20260906-1';
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'data', 'backups', 'logs', 'coverage', 'dist', 'tmp']);
 const TEXT_EXTENSIONS = new Set([
   '.css', '.ejs', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml', '.yml', '.yaml',
@@ -22,6 +23,8 @@ const replacements = [
 
 const oldPhonePattern = /77003097566|\+?7\s*\(?700\)?\s*309(?:[-\s]*)75(?:[-\s]*)66/g;
 const newPhonePattern = /77058762795|\+?7\s*\(?705\)?\s*876(?:[-\s]*)27(?:[-\s]*)95/g;
+const contactAssetPattern = /((?:\/)?js\/(?:site|chatbot|arrest-route|debt-route|main)\.js\?v=)[0-9A-Za-z._-]+/g;
+const qrAssetPattern = /((?:\/)?img\/contact\/whatsapp-zakonexpert-qr\.svg)(?:\?v=[0-9A-Za-z._-]+)?/g;
 
 function isTextFile(filename) {
   return TEXT_EXTENSIONS.has(path.extname(filename).toLowerCase());
@@ -59,6 +62,14 @@ for (const absolute of files) {
       updated = parts.join(to);
     }
   }
+
+  // Company contact JavaScript and the QR image are cacheable assets. Bump all
+  // references in the same migration so returning visitors cannot keep the old
+  // number from a browser cache after deployment.
+  updated = updated.replace(contactAssetPattern, `$1${ASSET_VERSION}`);
+  contactAssetPattern.lastIndex = 0;
+  updated = updated.replace(qrAssetPattern, `$1?v=${ASSET_VERSION}`);
+  qrAssetPattern.lastIndex = 0;
 
   if (updated !== original) {
     fs.writeFileSync(absolute, updated, 'utf8');
