@@ -95,7 +95,7 @@ const staleChatbotScriptRefs = userFacingFiles
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
     return /(?:^|\/)js\/chatbot\.js/.test(source)
-      && !/(?:^|\/)js\/chatbot\.js\?v=20260828-1/.test(source);
+      && !/(?:^|\/)js\/chatbot\.js\?v=20260906-1/.test(source);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleChatbotScriptRefs, [],

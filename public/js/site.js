@@ -13,9 +13,9 @@
     }
   }
 
-  const companyWhatsAppLink = 'https://wa.me/77003097566';
-    const companyPhoneRaw = '77003097566';
-    const companyPhoneDisplay = '+7 (700) 309-75-66';
+  const companyWhatsAppLink = 'https://wa.me/77058762795';
+    const companyPhoneRaw = '77058762795';
+    const companyPhoneDisplay = '+7 (705) 876-27-95';
 
   document.documentElement.classList.add('js-enabled');
 
@@ -262,7 +262,7 @@
         <span class="ze-wa-qr-kicker">Напишите компании ZakonExpert</span>
         <strong>Отсканируйте камерой телефона</strong>
         <a class="ze-wa-qr-image-link" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
-          <img src="/img/contact/whatsapp-zakonexpert-qr.svg" width="320" height="320" alt="QR-код WhatsApp компании ZakonExpert" loading="lazy">
+          <img src="/img/contact/whatsapp-zakonexpert-qr.svg?v=20260906-1" width="320" height="320" alt="QR-код WhatsApp компании ZakonExpert" loading="lazy">
         </a>
         <a class="ze-wa-qr-phone" href="tel:+${companyPhoneRaw}">${companyPhoneDisplay}</a>
         <a class="ze-wa-qr-button" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
