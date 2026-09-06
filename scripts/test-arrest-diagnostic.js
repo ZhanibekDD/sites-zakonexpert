@@ -48,7 +48,7 @@ async function run() {
   assert.strictEqual((html.match(/data-answer="payment"/g) || []).length, 4, 'Four payment choices are required');
   assert.strictEqual((html.match(/<details>/g) || []).length, 4, 'Visible FAQ and schema must remain aligned');
   assert(html.includes('предоплатой 50%'), 'The agreed commercial model is missing');
-  assert(html.includes('77003097566'), 'Current WhatsApp number is missing');
+  assert(html.includes('77058762795'), 'Current WhatsApp number is missing');
   assert(html.includes('https://www.adilet.zan.kz/rus/docs/Z100000261_'), 'Official law source is missing');
   assert(html.includes('https://aisoip.adilet.gov.kz'), 'Official enforcement registry is missing');
 

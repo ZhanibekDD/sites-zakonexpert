@@ -61,8 +61,6 @@ function registerSitemapRoutes(app, dependencies) {
       { url: '/alimenty-i-aresty', priority: '0.8', freq: 'monthly' },
       { url: '/shtrafy-i-aresty', priority: '0.8', freq: 'monthly' },
       { url: '/zakony', priority: '0.85', freq: 'weekly' },
-      { url: '/advocate', priority: '0.85', freq: 'monthly' },
-      { url: '/mediator', priority: '0.8', freq: 'monthly' },
       { url: '/chsi-refinansirovanie',   priority: '0.8', freq: 'monthly' },
       { url: '/otmena-resheniya-suda',   priority: '0.8', freq: 'monthly' },
       { url: '/dokumenty',               priority: '0.8', freq: 'monthly' },

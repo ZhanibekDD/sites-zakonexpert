@@ -84,6 +84,15 @@ function installMiddleware(app, dependencies) {
   }));
   app.use(express.json()); // заменяет bodyParser.json()
 
+  // ZE_RETIRED_SPECIALIST_410_20260906
+  const REMOVED_SPECIALIST_PROFILE_PATHS = new Set(['/advocate', '/mediator']);
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && REMOVED_SPECIALIST_PROFILE_PATHS.has(req.path)) {
+      return res.status(410).type('text/plain; charset=utf-8').send('Страница удалена.');
+    }
+    return next();
+  });
+
   // ===== LEGACY ALIAS URL → CANONICAL URL 301 REDIRECTS =====
   // These filenames still exist as physical files (serving the canonical route
   // via servicePages below), but the old URL itself must not stay live as a
