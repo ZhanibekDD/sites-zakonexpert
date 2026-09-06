@@ -60,6 +60,20 @@ jobs:
       - name: Verify migration is idempotent
         run: node scripts/apply-production-header-cleanup-20260906.js
 
+      - name: Align chatbot cache regression guard
+        shell: bash
+        run: |
+          python - <<'PYCODE'
+          from pathlib import Path
+          target = Path('scripts/test-trust-legal-security.js')
+          source = target.read_text(encoding='utf-8')
+          old = r'js\/chatbot\.js\?v=20260828-1'
+          new = r'js\/chatbot\.js\?v=20260906-1'
+          if old not in source:
+              raise SystemExit('chatbot cache guard anchor not found')
+          target.write_text(source.replace(old, new), encoding='utf-8')
+          PYCODE
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
