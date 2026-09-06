@@ -84,6 +84,19 @@ jobs:
               raise SystemExit('law reader advocate guard anchors not found')
           source = source.replace(old_phone, new_phone).replace(old_profile, new_profile)
           laws.write_text(source, encoding='utf-8')
+
+          smoke = Path('scripts/smoke-test.js')
+          source = smoke.read_text(encoding='utf-8')
+          old_routes = "      '/advocate',\n      '/mediator',\n"
+          if old_routes not in source:
+              raise SystemExit('smoke retired profile route anchors not found')
+          source = source.replace(old_routes, '')
+          anchor = "    for (const route of routes) await expectGet(route);\n"
+          gone_check = "    for (const removedProfile of ['/advocate', '/mediator']) {\n      const response = await fetch(`${origin}${removedProfile}`, { redirect: 'manual' });\n      assert(response.status === 410, `${removedProfile}: expected 410, received ${response.status}`);\n      assert(response.headers.get('content-security-policy')?.includes(\"default-src 'self'\"), `${removedProfile}: missing security headers`);\n    }\n"
+          if anchor not in source:
+              raise SystemExit('smoke route loop anchor not found')
+          source = source.replace(anchor, anchor + gone_check)
+          smoke.write_text(source, encoding='utf-8')
           PYCODE
 
       - name: Install dependencies
