@@ -231,7 +231,7 @@ async function run() {
       'Homepage still renders a floating round WhatsApp button');
     assert(!homepageHtml.includes('notary-search?fio={search_term_string}'),
       'Homepage still advertises an obsolete crawlable SearchAction query URL');
-    assert(homepageHtml.includes('/js/site.js?v=20260904-2'),
+    assert(homepageHtml.includes('/js/site.js?v=20260906-1'),
       'Homepage is missing the shared global-search script');
 
     const globalSearchPage = await (await fetch(`${origin}/poisk?q=%D0%B1%D0%B0%D0%BD%D0%BA`)).text();
@@ -257,7 +257,7 @@ async function run() {
     assert(companyCheckPage.includes('Проверка контрагента'), 'Counterparty page is missing its H1');
     assert(companyCheckPage.includes('/css/company-check.css?v=20260816-1')
       && companyCheckPage.includes('/js/company-check.js?v=20260816-1')
-      && companyCheckPage.includes('/js/site.js?v=20260904-2'),
+      && companyCheckPage.includes('/js/site.js?v=20260906-1'),
     'Counterparty page assets are missing');
     assert(companyCheckPage.includes('data-nav-kgd') && !companyCheckPage.includes('class="sticky-wa"'),
       'Counterparty page navigation or floating button state is incorrect');

@@ -230,7 +230,7 @@
     })).join('\n');
 
     var whatsappMessage = resultSummary + '\n\nПрошу проверить документы и определить, можно ли сначала отменить документ-основание и прекратить исполнительное производство до оплаты. Понимаю, что результат зависит от документов. Готов(а) начать работу по договору с предоплатой 50% после согласования объёма.';
-    root.querySelector('[data-result-whatsapp]').href = 'https://wa.me/77003097566?text=' + encodeURIComponent(whatsappMessage);
+    root.querySelector('[data-result-whatsapp]').href = 'https://wa.me/77058762795?text=' + encodeURIComponent(whatsappMessage);
 
     questions.forEach(function (question) {
       question.hidden = true;
