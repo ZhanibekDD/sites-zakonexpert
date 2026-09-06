@@ -58,27 +58,22 @@ for (const absolute of files) {
   replacements += compactMatches.length;
   updated = updated.replace(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g, NEW_DISPLAY);
 
-  // Remove the person-specific credential from company meta copy without touching HTML structure.
   updated = updated.replace(/\s*Адвокат РК №24018569\.?/g, '');
 
-  // Retired specialist profiles must not remain in the sitemap.
   if (relative === 'app/routes/sitemaps.js') {
     updated = updated.replace(/^\s*\{ url: '\/(?:advocate|mediator)'[^\n]*\n/gm, '');
   }
 
-  // Cache-bust the assets changed by this release; update guards/tests that reference them too.
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
 
   if (relative === 'public/css/landing.css') {
-    // Replace the white strip under the header with the site's navy background.
     updated = updated.replace(
       /(\.global-site-search\s*\{[\s\S]*?border-bottom:\s*)1px solid #dbe4f0;([\s\S]*?background:\s*)#f6f8fb;/,
       '$1 1px solid rgba(255,255,255,0.08);$2#0f2a4e;'
     );
 
-    // Hide retired entries before JavaScript runs, so there is no visible flash.
     if (!updated.includes(NAV_CSS_MARKER)) {
       updated += `\n\n/* ${NAV_CSS_MARKER} */\n` +
         `a[href^="/advocate"],\n` +
@@ -91,22 +86,23 @@ for (const absolute of files) {
   }
 
   if (relative === 'public/js/site.js' && !updated.includes(NAV_CLEANUP_MARKER)) {
-    updated += `\n\n// ${NAV_CLEANUP_MARKER}\n` +
-      `(function removeRetiredZakonExpertNavigation() {\n` +
-      `  'use strict';\n` +
-      `  function cleanup() {\n` +
+    const anchor = '  onReady(function initializeSiteControls() {\n    initializeGlobalSearch();';
+    const replacement =
+      `  // ${NAV_CLEANUP_MARKER}\n` +
+      `  function removeRetiredNavigationEntries() {\n` +
       `    var selectors = ['a[href^="/advocate"]', 'a[href^="/mediator"]', 'a[href^="/otkrytye-dannye"]'];\n` +
       `    document.querySelectorAll(selectors.join(',')).forEach(function(link) {\n` +
       `      var item = link.closest('li');\n` +
       `      if (item) item.remove(); else link.remove();\n` +
       `    });\n` +
-      `  }\n` +
-      `  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', cleanup, { once: true });\n` +
-      `  else cleanup();\n` +
-      `})();\n`;
+      `  }\n\n` +
+      `  onReady(function initializeSiteControls() {\n` +
+      `    removeRetiredNavigationEntries();\n` +
+      `    initializeGlobalSearch();`;
+    if (!updated.includes(anchor)) throw new Error('site.js ready lifecycle anchor not found');
+    updated = updated.replace(anchor, replacement);
   }
 
-  // Keep the historical URLs technically registered but return 410 Gone before their old handlers.
   if (relative === 'app/create-app.js' && !updated.includes('REMOVED_SPECIALIST_PROFILE_PATHS')) {
     updated = updated.replace(
       '  installMiddleware(app, dependencies);',
@@ -120,7 +116,6 @@ for (const absolute of files) {
   }
 }
 
-// Delete the actual public profile documents. Their legacy URLs are handled by 410 middleware.
 for (const relative of ['public/advocate.html', 'public/mediator.html']) {
   const absolute = path.join(ROOT, relative);
   if (fs.existsSync(absolute)) {
@@ -148,7 +143,7 @@ if (!/\.global-site-search\s*\{[\s\S]*?background:\s*#0f2a4e;/.test(landing)) th
 if (!landing.includes(NAV_CSS_MARKER)) throw new Error('Retired navigation CSS guard is missing');
 
 const siteJs = fs.readFileSync(path.join(ROOT, 'public', 'js', 'site.js'), 'utf8');
-if (!siteJs.includes(NAV_CLEANUP_MARKER)) throw new Error('Retired navigation DOM cleanup is missing');
+if (!siteJs.includes(NAV_CLEANUP_MARKER) || !siteJs.includes('removeRetiredNavigationEntries();')) throw new Error('Retired navigation cleanup is not integrated into the shared ready lifecycle');
 
 if (fs.existsSync(path.join(ROOT, 'public', 'advocate.html')) || fs.existsSync(path.join(ROOT, 'public', 'mediator.html'))) throw new Error('Specialist profile pages still exist');
 
