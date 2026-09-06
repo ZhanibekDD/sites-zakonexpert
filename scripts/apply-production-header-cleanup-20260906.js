@@ -25,14 +25,12 @@ function walk(dir, files = []) {
   return files;
 }
 
-function removeMarketingLinks(source) {
+function removeVisibleMarketingLinks(source) {
   let out = source;
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>/gi, '');
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>/gi, '');
-  out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*,?\s*$/gm, '');
-  out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*:\s*['"][^'"]+['"]\s*,?\s*$/gm, '');
   out = out.replace(/\s*Адвокат РК №24018569\.?/g, '');
   return out;
 }
@@ -64,12 +62,17 @@ for (const absolute of files) {
     }
   }
 
-  // Catch every spacing/hyphen variant, e.g. +7 700 309 7566.
   const compactMatches = updated.match(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g) || [];
   replacements += compactMatches.length;
   updated = updated.replace(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g, NEW_DISPLAY);
 
-  updated = removeMarketingLinks(updated);
+  updated = removeVisibleMarketingLinks(updated);
+
+  // Remove deleted specialist URLs from sitemap source only; keep Express routes for 410 compatibility.
+  if (/sitemap/i.test(relative)) {
+    updated = updated.replace(/^.*['"]\/(?:advocate|mediator)['"].*\n?/gm, '');
+  }
+
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
@@ -78,6 +81,14 @@ for (const absolute of files) {
     updated = updated.replace(
       /(\.global-site-search\s*\{[\s\S]*?border-bottom:\s*)1px solid #dbe4f0;([\s\S]*?background:\s*)#f6f8fb;/,
       '$1 1px solid rgba(255,255,255,0.08);$2#0f2a4e;'
+    );
+  }
+
+  // Keep old URLs as explicit 410 Gone routes after static middleware, so search engines drop them cleanly.
+  if (relative === 'app/create-app.js' && !updated.includes('REMOVED_SPECIALIST_PROFILE_PATHS')) {
+    updated = updated.replace(
+      '  installMiddleware(app, dependencies);',
+      `  installMiddleware(app, dependencies);\n\n  const REMOVED_SPECIALIST_PROFILE_PATHS = new Set(['/advocate', '/mediator']);\n  app.use((req, res, next) => {\n    if (req.method === 'GET' && REMOVED_SPECIALIST_PROFILE_PATHS.has(req.path)) {\n      return res.status(410).type('text/plain; charset=utf-8').send('Страница удалена.');\n    }\n    return next();\n  });`
     );
   }
 
@@ -109,9 +120,7 @@ for (const absolute of checkFiles) {
     if (/href=["']\/(?:advocate|mediator)(?:[?#"'])/i.test(source)
       || /Все открытые данные\s*[—-]/i.test(source)
       || />\s*Наш адвокат\s*</i.test(source)
-      || />\s*Медиатор\s*</i.test(source)) {
-      staleUi.push(relative);
-    }
+      || />\s*Медиатор\s*</i.test(source)) staleUi.push(relative);
   }
 }
 
@@ -122,6 +131,8 @@ if (newPhoneOccurrences < 1) throw new Error('New company phone was not found af
 const landing = fs.readFileSync(path.join(ROOT, 'public', 'css', 'landing.css'), 'utf8');
 if (!/\.global-site-search\s*\{[\s\S]*?background:\s*#0f2a4e;/.test(landing)) throw new Error('Global search strip is not using the navy site background');
 if (fs.existsSync(path.join(ROOT, 'public', 'advocate.html')) || fs.existsSync(path.join(ROOT, 'public', 'mediator.html'))) throw new Error('Specialist profile pages still exist');
+const appSource = fs.readFileSync(path.join(ROOT, 'app', 'create-app.js'), 'utf8');
+if (!appSource.includes("new Set(['/advocate', '/mediator'])")) throw new Error('Removed profile URLs are not protected by 410 middleware');
 
 console.log(`PRODUCTION_CLEANUP_CHANGED_FILES=${new Set(changed).size}`);
 console.log(`PHONE_REPLACEMENTS=${replacements}`);
