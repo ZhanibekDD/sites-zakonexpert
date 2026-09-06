@@ -50,8 +50,8 @@ async function run() {
   assert(!articleHtml.includes('<script>alert(2)</script>'), 'Article body must be escaped');
   assert(articleHtml.includes('data-reading-progress'), 'Reading progress must be present');
   assert(articleHtml.includes('data-reader-size="xlarge"'), 'Font controls must be present');
-  assert(articleHtml.includes('tel:+77777457577'), 'Article CTA must call the advocate directly');
-  assert(articleHtml.includes('/advocate'), 'Article must link to the advocate profile');
+  assert(articleHtml.includes('tel:+77058762795'), 'Article CTA must call ZakonExpert directly');
+  assert(!articleHtml.includes('tel:+77777457577') && !articleHtml.includes('/img/advocate/maulen-erzhanov.jpg'), 'Article must not render the retired personal advocate CTA');
 
   const advocateHtml = fs.readFileSync(path.join(ROOT, 'public', 'advocate.html'), 'utf8');
   assert(advocateHtml.includes('id="adv-articles"'), 'Advocate page must include the legal reading section');

@@ -145,7 +145,7 @@ function paymentStatusLabel(status) {
 function executor() {
   return {
     brand: 'ТОО «ZakonExpert»', bin: cleanText(process.env.CRM_EXECUTOR_BIN || '260740044168', 30), director: cleanText(process.env.CRM_EXECUTOR_DIRECTOR || 'Кияшев Жанибек Даулетович', 160),
-    address: cleanText(process.env.CRM_EXECUTOR_ADDRESS || 'Республика Казахстан, г. Талдыкорган, ул. Акын Сара, 152', 300), phone: cleanText(process.env.CRM_EXECUTOR_PHONE || '+7 700 309 7566', 60), website: cleanText(process.env.CRM_EXECUTOR_WEBSITE || 'zakonexpert.kz', 120),
+    address: cleanText(process.env.CRM_EXECUTOR_ADDRESS || 'Республика Казахстан, г. Талдыкорган, ул. Акын Сара, 152', 300), phone: cleanText(process.env.CRM_EXECUTOR_PHONE || '+7 (705) 876-27-95', 60), website: cleanText(process.env.CRM_EXECUTOR_WEBSITE || 'zakonexpert.kz', 120),
     bankBeneficiary: cleanText(process.env.CRM_BANK_BENEFICIARY || 'ТОО «ZakonExpert»', 160), bankName: cleanText(process.env.CRM_BANK_NAME || '', 160), bankIdentifier: cleanText(process.env.CRM_BANK_IDENTIFIER || '260740044168', 30), bankBic: cleanText(process.env.CRM_BANK_BIC || '', 40), bankIban: cleanText(process.env.CRM_BANK_IBAN || '', 80), paymentPurpose: cleanText(process.env.CRM_BANK_PAYMENT_PURPOSE || 'Оплата по договору оказания услуг', 200), kaspiNumber: cleanText(process.env.CRM_KASPI_NUMBER || '', 60), kaspiReceiver: cleanText(process.env.CRM_KASPI_RECEIVER || '', 160),
   };
 }

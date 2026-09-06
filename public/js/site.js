@@ -13,9 +13,9 @@
     }
   }
 
-  const companyWhatsAppLink = 'https://wa.me/77003097566';
-    const companyPhoneRaw = '77003097566';
-    const companyPhoneDisplay = '+7 (700) 309-75-66';
+  const companyWhatsAppLink = 'https://wa.me/77058762795';
+    const companyPhoneRaw = '77058762795';
+    const companyPhoneDisplay = '+7 (705) 876-27-95';
 
   document.documentElement.classList.add('js-enabled');
 
@@ -373,7 +373,17 @@
     }
   }
 
+  // ZE_RETIRED_NAV_CLEANUP_20260906
+  function removeRetiredNavigationEntries() {
+    var selectors = ['a[href^="/advocate"]', 'a[href^="/mediator"]', 'a[href^="/otkrytye-dannye"]'];
+    document.querySelectorAll(selectors.join(',')).forEach(function(link) {
+      var item = link.closest('li');
+      if (item) item.remove(); else link.remove();
+    });
+  }
+
   onReady(function initializeSiteControls() {
+    removeRetiredNavigationEntries();
     initializeGlobalSearch();
     initializeNavigation();
     initializeFooter();

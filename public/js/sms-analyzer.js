@@ -170,7 +170,7 @@
     var steps = route.steps.map(function (step, index) {
       return '<li><span>' + (index + 1) + '</span><p>' + escapeHtml(step) + '</p></li>';
     }).join('');
-    var whatsappUrl = 'https://wa.me/77003097566?text=' + encodeURIComponent(route.whatsapp);
+    var whatsappUrl = 'https://wa.me/77058762795?text=' + encodeURIComponent(route.whatsapp);
 
     return '<div class="sms-result-head"><span class="sms-result-eyebrow">' + escapeHtml(route.eyebrow) + '</span>'
       + '<h3>' + escapeHtml(route.title) + '</h3><p>' + escapeHtml(route.summary) + '</p></div>'

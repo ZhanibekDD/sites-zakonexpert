@@ -327,8 +327,8 @@ a.brand:has(.brand-full-logo),
 /* Site-wide search */
 .global-site-search {
     padding: 11px 0;
-    border-bottom: 1px solid #dbe4f0;
-    background: #f6f8fb;
+    border-bottom:  1px solid rgba(255,255,255,0.08);
+    background: #0f2a4e;
 }
 .global-site-search__form {
     display: grid;
@@ -1979,3 +1979,12 @@ textarea.ze-input { resize: vertical; min-height: 90px; }
     .search-cta-bar { flex-direction: column; text-align: center; gap: 14px; }
     .search-hero { padding: 52px 0 48px; }
 }
+
+
+/* ZE_RETIRED_NAV_CSS_20260906 */
+a[href^="/advocate"],
+a[href^="/mediator"],
+a[href^="/otkrytye-dannye"] { display: none !important; }
+li:has(> a[href^="/advocate"]),
+li:has(> a[href^="/mediator"]),
+li:has(> a[href^="/otkrytye-dannye"]) { display: none !important; }

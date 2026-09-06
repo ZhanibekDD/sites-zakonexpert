@@ -120,7 +120,7 @@
     var empty = document.querySelector('[data-route-empty]');
     if (!route || !result || !empty) return;
 
-    var whatsapp = 'https://wa.me/77003097566?text=' + encodeURIComponent(route.message);
+    var whatsapp = 'https://wa.me/77058762795?text=' + encodeURIComponent(route.message);
     result.innerHTML =
       '<span class="route-result__badge"><i class="bi bi-check-circle"></i> Предварительный маршрут</span>' +
       '<h2>' + escapeHtml(route.title) + '</h2>' +

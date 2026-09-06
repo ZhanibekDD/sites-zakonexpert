@@ -62,7 +62,7 @@ const sourceUrl = /^https?:\/\//i.test(article.source_url || article.original_ur
 
 const waAdvText = encodeURIComponent('Здравствуйте, Маулен! Пишу с сайта ZakonExpert. Хочу получить консультацию адвоката.');
 const waMaulenUrl = `https://wa.me/77777457577?text=${waAdvText}`;
-const waZakonUrl  = `https://wa.me/77003097566?text=${encodeURIComponent('Здравствуйте. Нужна консультация. Пишу с сайта ZakonExpert.')}`;
+const waZakonUrl  = `https://wa.me/77058762795?text=${encodeURIComponent('Здравствуйте. Нужна консультация. Пишу с сайта ZakonExpert.')}`;
 
 const body = `
 <!-- BREADCRUMB -->
@@ -70,9 +70,7 @@ const body = `
   <div class="landing-container">
     <nav aria-label="breadcrumb" class="news-breadcrumb">
       <a href="/">Главная</a> /
-      ${isAdvokat
-        ? `<a href="/advocate">Адвокат Маулен Ержанов</a>`
-        : `<a href="/news">Новости</a>`} /
+      <a href="/news">Новости</a> /
       <span>${escapeHtml(displayTitle.substring(0,55))}${displayTitle.length > 55 ? '…' : ''}</span>
     </nav>
   </div>
@@ -160,7 +158,7 @@ const body = `
         <p class="news-editorial-note">Материал содержит редакционный юридический разбор ZakonExpert и не заменяет индивидуальную консультацию. Проверяйте применимость норм к вашей ситуации.</p>
         ` : ''}
 
-        ${isAdvokat ? `
+        ${false ? `
         <!-- ADVOAT CTA — только для статей категории Адвокат -->
         <div style="margin:32px 0;padding:24px 28px;background:linear-gradient(135deg,#0d1f3c 0%,#1a3460 100%);border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
           <div style="color:#fff;">
@@ -201,7 +199,7 @@ const body = `
       <!-- SIDEBAR -->
       <aside class="news-sidebar">
 
-        ${isAdvokat ? `
+        ${false ? `
         <div class="news-sidebar-widget" style="background:#0d1f3c;border-radius:14px;padding:20px;">
           <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;">Нужен адвокат?</p>
           <h3 style="color:#fff;margin:0 0 4px;font-size:17px;">Маулен Ержанов</h3>
@@ -234,7 +232,7 @@ const body = `
         </div>
         ` : ''}
 
-        ${isAdvokat ? `
+        ${false ? `
         <div class="news-sidebar-widget">
           <h3>Нормативная база</h3>
           <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;">
@@ -248,9 +246,9 @@ const body = `
         ` : ''}
 
         <div class="news-sidebar-widget">
-          <h3>${isAdvokat ? 'Направления работы' : 'Темы'}</h3>
+          <h3>${false ? 'Направления работы' : 'Темы'}</h3>
           <div class="news-sidebar-tags">
-            ${isAdvokat ? `
+            ${false ? `
             <a href="/advocate#adv-practice">Уголовные дела</a>
             <a href="/advocate#adv-practice">Гражданские споры</a>
             <a href="/advocate#adv-practice">Семейные дела</a>

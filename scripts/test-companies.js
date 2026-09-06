@@ -159,7 +159,7 @@ const companyWithPublisherPhone = {
   ...company,
   contacts: [
     ...(company.contacts || []),
-    { type: 'phone', value: '+7 (700) 309-75-66', normalized: '+77003097566' },
+    { type: 'phone', value: '+7 (705) 876-27-95', normalized: '+77058762795' },
   ],
 };
 assert.strictEqual(company.addresses.some(item => item.value === 'Дополнительный адрес'), true,
@@ -281,9 +281,9 @@ Promise.all([
   ]) {
     assert(html.includes('data-suppress-zakonexpert-contacts'),
       `${page} must disable site-wide ZakonExpert contact injection`);
-    assert(!html.includes('77003097566'), `${page} must not expose the ZakonExpert phone`);
-    assert(!html.includes('+7 (700) 309-75-66'), `${page} must not show the ZakonExpert phone label`);
-    assert(!html.includes('wa.me/77003097566'), `${page} must not link to ZakonExpert WhatsApp`);
+    assert(!html.includes('77058762795'), `${page} must not expose the ZakonExpert phone`);
+    assert(!html.includes('+7 (705) 876-27-95'), `${page} must not show the ZakonExpert phone label`);
+    assert(!html.includes('wa.me/77058762795'), `${page} must not link to ZakonExpert WhatsApp`);
     assert(!html.includes('/js/chatbot.js'), `${page} must not inject a contact widget`);
   }
   assert(!itemHtml.includes('data-company-whatsapp'),
