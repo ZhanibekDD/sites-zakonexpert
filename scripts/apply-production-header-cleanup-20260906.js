@@ -28,19 +28,19 @@ function walk(dir, files = []) {
 function removeMarketingLinks(source) {
   let out = source;
 
-  // Remove simple list items/anchors for the two company specialist profiles.
+  // Remove visible links to the two company specialist profiles.
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>/gi, '');
 
-  // Remove the visible "all open data" entry but keep the underlying datasets/routes intact.
+  // Remove the visible "all open data" entry but preserve the data feature itself.
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>/gi, '');
 
-  // Remove specialist profile paths from simple sitemap/navigation arrays.
+  // Remove specialist profile paths from simple sitemap/navigation arrays/maps.
   out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*,?\s*$/gm, '');
   out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*:\s*['"][^'"]+['"]\s*,?\s*$/gm, '');
 
-  // Remove person-specific credential from the company description.
+  // Remove the person-specific credential from the company description.
   out = out.replace(/\s*Адвокат РК №24018569\.?/g, '');
   return out;
 }
@@ -74,7 +74,7 @@ for (const absolute of files) {
 
   updated = removeMarketingLinks(updated);
 
-  // Cache-bust assets changed by this migration, including test/release references.
+  // Cache-bust assets changed by this migration, including tests/release references.
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
@@ -100,19 +100,6 @@ for (const relative of ['public/advocate.html', 'public/mediator.html']) {
     fs.rmSync(absolute);
     changed.push(relative + ' [deleted]');
   }
-}
-
-// Strengthen the contact regression test: the former production number must never return.
-const contactTest = path.join(ROOT, 'scripts', 'test-contact-number.js');
-if (fs.existsSync(contactTest)) {
-  let source = fs.readFileSync(contactTest, 'utf8');
-  if (!source.includes('700[ ()-]*309[ ()-]*75[ ()-]*66')) {
-    source = source.replace(
-      /const RETIRED_NUMBER = \/(?:\(\?:\\\+\?7[\s\S]*?);\/g,
-      match => match.replace(');/', '|700[ ()-]*309[ ()-]*75[ ()-]*66);/')
-    );
-  }
-  fs.writeFileSync(contactTest, source, 'utf8');
 }
 
 // Verify the production-visible contract.
