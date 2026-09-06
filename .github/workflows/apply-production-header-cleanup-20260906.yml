@@ -74,13 +74,16 @@ jobs:
               raise SystemExit('chatbot cache guard anchor not found')
           trust.write_text(source.replace(old, new), encoding='utf-8')
 
-          notaries = Path('scripts/test-notaries.js')
-          source = notaries.read_text(encoding='utf-8')
-          old = "assert.ok(registryNavFiles.length >= 30, 'all registry navigation variants must be covered');"
-          new = "assert.ok(registryNavFiles.length >= 28, 'all remaining registry navigation variants must be covered after retired specialist profiles are removed');"
-          if old not in source:
-              raise SystemExit('notary navigation coverage anchor not found')
-          notaries.write_text(source.replace(old, new), encoding='utf-8')
+          laws = Path('scripts/test-laws-reader.js')
+          source = laws.read_text(encoding='utf-8')
+          old_phone = "assert(articleHtml.includes('tel:+77777457577'), 'Article CTA must call the advocate directly');"
+          new_phone = "assert(articleHtml.includes('tel:+77058762795'), 'Article CTA must call ZakonExpert directly');"
+          old_profile = "assert(articleHtml.includes('/advocate'), 'Article must link to the advocate profile');"
+          new_profile = "assert(!articleHtml.includes('/advocate'), 'Article must not link to the retired advocate profile');"
+          if old_phone not in source or old_profile not in source:
+              raise SystemExit('law reader advocate guard anchors not found')
+          source = source.replace(old_phone, new_phone).replace(old_profile, new_profile)
+          laws.write_text(source, encoding='utf-8')
           PYCODE
 
       - name: Install dependencies
