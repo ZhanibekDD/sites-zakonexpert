@@ -58,22 +58,27 @@ for (const absolute of files) {
   replacements += compactMatches.length;
   updated = updated.replace(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g, NEW_DISPLAY);
 
+  // Company metadata must not advertise the retired individual advocate profile.
   updated = updated.replace(/\s*Адвокат РК №24018569\.?/g, '');
 
+  // Retired specialist profile URLs must not be discoverable in the sitemap.
   if (relative === 'app/routes/sitemaps.js') {
     updated = updated.replace(/^\s*\{ url: '\/(?:advocate|mediator)'[^\n]*\n/gm, '');
   }
 
+  // Cache-bust the shared assets changed by this release.
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
 
   if (relative === 'public/css/landing.css') {
+    // The white strip under the header is the shared global search shell.
     updated = updated.replace(
       /(\.global-site-search\s*\{[\s\S]*?border-bottom:\s*)1px solid #dbe4f0;([\s\S]*?background:\s*)#f6f8fb;/,
       '$1 1px solid rgba(255,255,255,0.08);$2#0f2a4e;'
     );
 
+    // Hide retired navigation before JS runs, avoiding any flash of old entries.
     if (!updated.includes(NAV_CSS_MARKER)) {
       updated += `\n\n/* ${NAV_CSS_MARKER} */\n` +
         `a[href^="/advocate"],\n` +
@@ -103,24 +108,66 @@ for (const absolute of files) {
     updated = updated.replace(anchor, replacement);
   }
 
+  if (relative === 'views/laws/article.ejs') {
+    updated = updated.replace(
+      /const waMessage = `Здравствуйте\. Вопрос по статье \$\{art\.num\} \$\{art\.codeName\}: \$\{art\.title\}\. Нужна консультация адвоката\.`;/,
+      "const waMessage = `Здравствуйте. Вопрос по статье ${art.num} ${art.codeName}: ${art.title}. Нужен разбор нормы.`;"
+    );
+    updated = updated.replace('Консультация адвоката.`;', 'Разбор нормы.`;');
+    updated = updated.replace(/\n  reviewedBy: \{[\s\S]*?\n  \},/, '');
+    updated = updated.replace('aria-label="Консультация адвоката"', 'aria-label="Помощь ZakonExpert"');
+
+    const cardStart = '        <div class="law-cta-card">';
+    const cardEnd = '\n        <div class="law-nav-card">';
+    const startIndex = updated.indexOf(cardStart);
+    const endIndex = updated.indexOf(cardEnd, startIndex);
+    if (startIndex === -1 || endIndex === -1) throw new Error('law article CTA anchors not found');
+    const genericCard = `        <div class="law-cta-card">\n` +
+      `          <div class="law-cta-title">Вопрос по статье ${'${esc(art.num)}'} ${'${esc(art.codeName)}'}?</div>\n` +
+      `          <div class="law-cta-sub">${'${esc(codeConsult[art.code] || \'Получите разбор по применению этой нормы.\')}'}</div>\n` +
+      `          <a href="https://wa.me/${NEW_RAW}?text=${'${encodeURIComponent(waMessage)}'}" class="law-cta-btn" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Написать в ZakonExpert</a>\n` +
+      `          <a href="tel:+${NEW_RAW}" class="law-cta-btn law-cta-btn--phone"><i class="bi bi-telephone"></i> ${NEW_DISPLAY}</a>\n` +
+      `        </div>`;
+    updated = updated.slice(0, startIndex) + genericCard + updated.slice(endIndex);
+
+    updated = updated.replace(
+      /<div class="law-mobile-advocate"[\s\S]*?<\/div>`;/,
+      `<div class="law-mobile-advocate" aria-label="Связаться с ZakonExpert">\n  <a href="https://wa.me/${NEW_RAW}?text=${'${encodeURIComponent(waMessage)}'}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>\n  <a href="tel:+${NEW_RAW}"><i class="bi bi-telephone"></i> Позвонить</a>\n</div>` + ';'
+    );
+  }
+
+  if (relative === 'views/news/detail.ejs') {
+    // Keep advocate-category articles readable, but remove all live profile/CTA surfaces.
+    updated = updated.replace(
+      /\$\{isAdvokat\n\s*\? `<a href="\/advocate">Адвокат Маулен Ержанов<\/a>`\n\s*: `<a href="\/news">Новости<\/a>`\}/,
+      '<a href="/news">Новости</a>'
+    );
+    updated = updated.replace('${isAdvokat ? `\n        <!-- ADVOAT CTA', '${false ? `\n        <!-- ADVOAT CTA');
+    updated = updated.replace('${isAdvokat ? `\n        <div class="news-sidebar-widget" style="background:#0d1f3c', '${false ? `\n        <div class="news-sidebar-widget" style="background:#0d1f3c');
+    updated = updated.replace('${isAdvokat ? `\n        <div class="news-sidebar-widget">\n          <h3>Нормативная база', '${false ? `\n        <div class="news-sidebar-widget">\n          <h3>Нормативная база');
+    updated = updated.replace("${isAdvokat ? 'Направления работы' : 'Темы'}", "${false ? 'Направления работы' : 'Темы'}");
+    updated = updated.replace('${isAdvokat ? `\n            <a href="/advocate#adv-practice">', '${false ? `\n            <a href="/advocate#adv-practice">');
+  }
+
+  // Intercept retired profile URLs BEFORE static middleware can serve the legacy files.
   if (relative === 'app/create-app.js' && !updated.includes('REMOVED_SPECIALIST_PROFILE_PATHS')) {
     updated = updated.replace(
-      '  installMiddleware(app, dependencies);',
-      `  installMiddleware(app, dependencies);\n\n  const REMOVED_SPECIALIST_PROFILE_PATHS = new Set(['/advocate', '/mediator']);\n  app.use((req, res, next) => {\n    if (req.method === 'GET' && REMOVED_SPECIALIST_PROFILE_PATHS.has(req.path)) {\n      return res.status(410).type('text/plain; charset=utf-8').send('Страница удалена.');\n    }\n    return next();\n  });`
+      '  // Canonical redirects, private-data guard and static assets always run first.\n  installMiddleware(app, dependencies);',
+      `  const REMOVED_SPECIALIST_PROFILE_PATHS = new Set(['/advocate', '/mediator']);\n` +
+      `  app.use((req, res, next) => {\n` +
+      `    if (req.method === 'GET' && REMOVED_SPECIALIST_PROFILE_PATHS.has(req.path)) {\n` +
+      `      return res.status(410).type('text/plain; charset=utf-8').send('Страница удалена.');\n` +
+      `    }\n` +
+      `    return next();\n` +
+      `  });\n\n` +
+      `  // Canonical redirects, private-data guard and static assets always run first.\n` +
+      `  installMiddleware(app, dependencies);`
     );
   }
 
   if (updated !== original) {
     fs.writeFileSync(absolute, updated, 'utf8');
     changed.push(relative);
-  }
-}
-
-for (const relative of ['public/advocate.html', 'public/mediator.html']) {
-  const absolute = path.join(ROOT, relative);
-  if (fs.existsSync(absolute)) {
-    fs.rmSync(absolute);
-    changed.push(relative + ' [deleted]');
   }
 }
 
@@ -134,7 +181,6 @@ for (const absolute of checkFiles) {
   if (/77003097566|\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/.test(source)) stalePhone.push(relative);
   newPhoneOccurrences += (source.match(/77058762795/g) || []).length;
 }
-
 if (stalePhone.length) throw new Error('Old production phone remains in: ' + stalePhone.join(', '));
 if (newPhoneOccurrences < 1) throw new Error('New company phone was not found after migration');
 
@@ -145,13 +191,17 @@ if (!landing.includes(NAV_CSS_MARKER)) throw new Error('Retired navigation CSS g
 const siteJs = fs.readFileSync(path.join(ROOT, 'public', 'js', 'site.js'), 'utf8');
 if (!siteJs.includes(NAV_CLEANUP_MARKER) || !siteJs.includes('removeRetiredNavigationEntries();')) throw new Error('Retired navigation cleanup is not integrated into the shared ready lifecycle');
 
-if (fs.existsSync(path.join(ROOT, 'public', 'advocate.html')) || fs.existsSync(path.join(ROOT, 'public', 'mediator.html'))) throw new Error('Specialist profile pages still exist');
-
 const appSource = fs.readFileSync(path.join(ROOT, 'app', 'create-app.js'), 'utf8');
-if (!appSource.includes("new Set(['/advocate', '/mediator'])")) throw new Error('Removed profile URLs are not protected by 410 middleware');
+const goneIndex = appSource.indexOf("new Set(['/advocate', '/mediator'])");
+const staticIndex = appSource.indexOf('installMiddleware(app, dependencies);');
+if (goneIndex === -1 || staticIndex === -1 || goneIndex > staticIndex) throw new Error('Removed profile URLs must be intercepted before static middleware');
 
 const sitemapSource = fs.readFileSync(path.join(ROOT, 'app', 'routes', 'sitemaps.js'), 'utf8');
 if (/\{ url: '\/(?:advocate|mediator)'/.test(sitemapSource)) throw new Error('Removed specialist profiles remain in sitemap');
+
+const lawArticle = fs.readFileSync(path.join(ROOT, 'views', 'laws', 'article.ejs'), 'utf8');
+if (/77777457577|\/advocate/.test(lawArticle)) throw new Error('Personal advocate CTA remains in law article template');
+if (!lawArticle.includes(`tel:+${NEW_RAW}`)) throw new Error('Law article template does not use the company phone');
 
 console.log(`PRODUCTION_CLEANUP_CHANGED_FILES=${new Set(changed).size}`);
 console.log(`PHONE_REPLACEMENTS=${replacements}`);
