@@ -79,7 +79,7 @@ jobs:
           old_phone = "assert(articleHtml.includes('tel:+77777457577'), 'Article CTA must call the advocate directly');"
           new_phone = "assert(articleHtml.includes('tel:+77058762795'), 'Article CTA must call ZakonExpert directly');"
           old_profile = "assert(articleHtml.includes('/advocate'), 'Article must link to the advocate profile');"
-          new_profile = "assert(!articleHtml.includes('/advocate'), 'Article must not link to the retired advocate profile');"
+          new_profile = "assert(!articleHtml.includes('tel:+77777457577') && !articleHtml.includes('/img/advocate/maulen-erzhanov.jpg'), 'Article must not render the retired personal advocate CTA');"
           if old_phone not in source or old_profile not in source:
               raise SystemExit('law reader advocate guard anchors not found')
           source = source.replace(old_phone, new_phone).replace(old_profile, new_profile)
