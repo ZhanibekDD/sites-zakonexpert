@@ -15,6 +15,7 @@ const NEW_RAW = '77058762795';
 const NEW_DISPLAY = '+7 (705) 876-27-95';
 const NAV_CLEANUP_MARKER = 'ZE_RETIRED_NAV_CLEANUP_20260906';
 const NAV_CSS_MARKER = 'ZE_RETIRED_NAV_CSS_20260906';
+const GONE_MIDDLEWARE_MARKER = 'ZE_RETIRED_SPECIALIST_410_20260906';
 
 function walk(dir, files = []) {
   if (!fs.existsSync(dir)) return files;
@@ -58,27 +59,22 @@ for (const absolute of files) {
   replacements += compactMatches.length;
   updated = updated.replace(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g, NEW_DISPLAY);
 
-  // Company metadata must not advertise the retired individual advocate profile.
   updated = updated.replace(/\s*Адвокат РК №24018569\.?/g, '');
 
-  // Retired specialist profile URLs must not be discoverable in the sitemap.
   if (relative === 'app/routes/sitemaps.js') {
     updated = updated.replace(/^\s*\{ url: '\/(?:advocate|mediator)'[^\n]*\n/gm, '');
   }
 
-  // Cache-bust the shared assets changed by this release.
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
 
   if (relative === 'public/css/landing.css') {
-    // The white strip under the header is the shared global search shell.
     updated = updated.replace(
       /(\.global-site-search\s*\{[\s\S]*?border-bottom:\s*)1px solid #dbe4f0;([\s\S]*?background:\s*)#f6f8fb;/,
       '$1 1px solid rgba(255,255,255,0.08);$2#0f2a4e;'
     );
 
-    // Hide retired navigation before JS runs, avoiding any flash of old entries.
     if (!updated.includes(NAV_CSS_MARKER)) {
       updated += `\n\n/* ${NAV_CSS_MARKER} */\n` +
         `a[href^="/advocate"],\n` +
@@ -137,7 +133,6 @@ for (const absolute of files) {
   }
 
   if (relative === 'views/news/detail.ejs') {
-    // Keep advocate-category articles readable, but remove all live profile/CTA surfaces.
     updated = updated.replace(
       /\$\{isAdvokat\n\s*\? `<a href="\/advocate">Адвокат Маулен Ержанов<\/a>`\n\s*: `<a href="\/news">Новости<\/a>`\}/,
       '<a href="/news">Новости</a>'
@@ -149,20 +144,19 @@ for (const absolute of files) {
     updated = updated.replace('${isAdvokat ? `\n            <a href="/advocate#adv-practice">', '${false ? `\n            <a href="/advocate#adv-practice">');
   }
 
-  // Intercept retired profile URLs BEFORE static middleware can serve the legacy files.
-  if (relative === 'app/create-app.js' && !updated.includes('REMOVED_SPECIALIST_PROFILE_PATHS')) {
-    updated = updated.replace(
-      '  // Canonical redirects, private-data guard and static assets always run first.\n  installMiddleware(app, dependencies);',
+  if (relative === 'app/http/middleware.js' && !updated.includes(GONE_MIDDLEWARE_MARKER)) {
+    const anchor = '  // ===== LEGACY ALIAS URL → CANONICAL URL 301 REDIRECTS =====';
+    const block =
+      `  // ${GONE_MIDDLEWARE_MARKER}\n` +
       `  const REMOVED_SPECIALIST_PROFILE_PATHS = new Set(['/advocate', '/mediator']);\n` +
       `  app.use((req, res, next) => {\n` +
       `    if (req.method === 'GET' && REMOVED_SPECIALIST_PROFILE_PATHS.has(req.path)) {\n` +
       `      return res.status(410).type('text/plain; charset=utf-8').send('Страница удалена.');\n` +
       `    }\n` +
       `    return next();\n` +
-      `  });\n\n` +
-      `  // Canonical redirects, private-data guard and static assets always run first.\n` +
-      `  installMiddleware(app, dependencies);`
-    );
+      `  });\n\n`;
+    if (!updated.includes(anchor)) throw new Error('security middleware insertion anchor not found');
+    updated = updated.replace(anchor, block + anchor);
   }
 
   if (updated !== original) {
@@ -191,10 +185,13 @@ if (!landing.includes(NAV_CSS_MARKER)) throw new Error('Retired navigation CSS g
 const siteJs = fs.readFileSync(path.join(ROOT, 'public', 'js', 'site.js'), 'utf8');
 if (!siteJs.includes(NAV_CLEANUP_MARKER) || !siteJs.includes('removeRetiredNavigationEntries();')) throw new Error('Retired navigation cleanup is not integrated into the shared ready lifecycle');
 
-const appSource = fs.readFileSync(path.join(ROOT, 'app', 'create-app.js'), 'utf8');
-const goneIndex = appSource.indexOf("new Set(['/advocate', '/mediator'])");
-const staticIndex = appSource.indexOf('installMiddleware(app, dependencies);');
-if (goneIndex === -1 || staticIndex === -1 || goneIndex > staticIndex) throw new Error('Removed profile URLs must be intercepted before static middleware');
+const middlewareSource = fs.readFileSync(path.join(ROOT, 'app', 'http', 'middleware.js'), 'utf8');
+const goneIndex = middlewareSource.indexOf(GONE_MIDDLEWARE_MARKER);
+const staticIndex = middlewareSource.indexOf('app.use(express.static');
+const helmetIndex = middlewareSource.indexOf('app.use(helmet');
+if (goneIndex === -1 || staticIndex === -1 || helmetIndex === -1 || goneIndex < helmetIndex || goneIndex > staticIndex) {
+  throw new Error('Removed profile URLs must be intercepted after security middleware and before static assets');
+}
 
 const sitemapSource = fs.readFileSync(path.join(ROOT, 'app', 'routes', 'sitemaps.js'), 'utf8');
 if (/\{ url: '\/(?:advocate|mediator)'/.test(sitemapSource)) throw new Error('Removed specialist profiles remain in sitemap');
