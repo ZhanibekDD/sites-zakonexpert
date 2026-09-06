@@ -1,0 +1,88 @@
+name: Migrate ZakonExpert company phone
+
+on:
+  push:
+    branches:
+      - fix/company-phone-77058762795
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out phone migration branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/company-phone-77058762795
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Replace company phone across source files
+        run: node scripts/apply-company-phone-migration-20260906.js
+
+      - name: Regenerate WhatsApp QR for the new number
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check qrcode
+          python - <<'PYCODE'
+          from pathlib import Path
+          import qrcode
+          from qrcode.image.svg import SvgPathImage
+
+          url = 'https://wa.me/77058762795'
+          target = Path('public/img/contact/whatsapp-zakonexpert-qr.svg')
+          image = qrcode.make(url, image_factory=SvgPathImage, box_size=10, border=4)
+          with target.open('wb') as output:
+              image.save(output)
+          svg = target.read_text(encoding='utf-8')
+          svg = svg.replace(
+              '<svg ',
+              '<svg data-whatsapp-url="https://wa.me/77058762795" role="img" aria-label="QR-код WhatsApp компании ZakonExpert" ',
+              1,
+          )
+          target.write_text(svg, encoding='utf-8')
+          PYCODE
+
+      - name: Verify no stale company phone remains
+        run: node scripts/apply-company-phone-migration-20260906.js
+
+      - name: Run focused contact checks
+        run: |
+          node scripts/test-contact-number.js
+          node --check public/js/site.js
+          node --check public/js/chatbot.js
+          node --check public/js/arrest-route.js
+          node --check public/js/debt-route.js
+          node --check public/js/main.js
+          node --check modules/telegram.js
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run full validation suite
+        run: npm test
+
+      - name: Commit generated phone migration
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f scripts/apply-company-phone-migration-20260906.js
+          rm -f .github/workflows/migrate-company-phone-20260906.yml
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+            exit 0
+          fi
+          git commit -m "Update ZakonExpert company phone to +7 705 876-27-95"
+          git push origin HEAD:fix/company-phone-77058762795
