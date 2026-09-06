@@ -60,18 +60,27 @@ jobs:
       - name: Verify migration is idempotent
         run: node scripts/apply-production-header-cleanup-20260906.js
 
-      - name: Align chatbot cache regression guard
+      - name: Align regression guards after profile removal
         shell: bash
         run: |
           python - <<'PYCODE'
           from pathlib import Path
-          target = Path('scripts/test-trust-legal-security.js')
-          source = target.read_text(encoding='utf-8')
+
+          trust = Path('scripts/test-trust-legal-security.js')
+          source = trust.read_text(encoding='utf-8')
           old = r'js\/chatbot\.js\?v=20260828-1'
           new = r'js\/chatbot\.js\?v=20260906-1'
           if old not in source:
               raise SystemExit('chatbot cache guard anchor not found')
-          target.write_text(source.replace(old, new), encoding='utf-8')
+          trust.write_text(source.replace(old, new), encoding='utf-8')
+
+          notaries = Path('scripts/test-notaries.js')
+          source = notaries.read_text(encoding='utf-8')
+          old = "assert.ok(registryNavFiles.length >= 30, 'all registry navigation variants must be covered');"
+          new = "assert.ok(registryNavFiles.length >= 28, 'all remaining registry navigation variants must be covered after retired specialist profiles are removed');"
+          if old not in source:
+              raise SystemExit('notary navigation coverage anchor not found')
+          notaries.write_text(source.replace(old, new), encoding='utf-8')
           PYCODE
 
       - name: Install dependencies
