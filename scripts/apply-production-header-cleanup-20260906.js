@@ -27,20 +27,12 @@ function walk(dir, files = []) {
 
 function removeMarketingLinks(source) {
   let out = source;
-
-  // Remove visible links to the two company specialist profiles.
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/(?:advocate|mediator)(?:[?#][^"']*)?["'][^>]*>[\s\S]*?<\/a>/gi, '');
-
-  // Remove the visible "all open data" entry but preserve the data feature itself.
   out = out.replace(/\s*<li(?:\s[^>]*)?>\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>\s*<\/li>/gi, '');
   out = out.replace(/\s*<a\b[^>]*href=["']\/otkrytye-dannye(?:[?#][^"']*)?["'][^>]*>[\s\S]*?Все открытые данные[\s\S]*?<\/a>/gi, '');
-
-  // Remove specialist profile paths from simple sitemap/navigation arrays/maps.
   out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*,?\s*$/gm, '');
   out = out.replace(/^\s*['"]\/(?:advocate|mediator)['"]\s*:\s*['"][^'"]+['"]\s*,?\s*$/gm, '');
-
-  // Remove the person-specific credential from the company description.
   out = out.replace(/\s*Адвокат РК №24018569\.?/g, '');
   return out;
 }
@@ -72,14 +64,16 @@ for (const absolute of files) {
     }
   }
 
-  updated = removeMarketingLinks(updated);
+  // Catch every spacing/hyphen variant, e.g. +7 700 309 7566.
+  const compactMatches = updated.match(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g) || [];
+  replacements += compactMatches.length;
+  updated = updated.replace(/\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/g, NEW_DISPLAY);
 
-  // Cache-bust assets changed by this migration, including tests/release references.
+  updated = removeMarketingLinks(updated);
   updated = updated.replace(/((?:^|\/)css\/landing\.css)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/site\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
   updated = updated.replace(/((?:^|\/)js\/chatbot\.js)\?v=[0-9A-Za-z._-]+/g, '$1?v=20260906-1');
 
-  // The white strip under the header is the shared global search shell.
   if (relative === 'public/css/landing.css') {
     updated = updated.replace(
       /(\.global-site-search\s*\{[\s\S]*?border-bottom:\s*)1px solid #dbe4f0;([\s\S]*?background:\s*)#f6f8fb;/,
@@ -93,7 +87,6 @@ for (const absolute of files) {
   }
 }
 
-// Remove the two company specialist profile pages themselves.
 for (const relative of ['public/advocate.html', 'public/mediator.html']) {
   const absolute = path.join(ROOT, relative);
   if (fs.existsSync(absolute)) {
@@ -102,7 +95,6 @@ for (const relative of ['public/advocate.html', 'public/mediator.html']) {
   }
 }
 
-// Verify the production-visible contract.
 const checkFiles = ROOTS.flatMap(root => walk(path.join(ROOT, root)));
 const stalePhone = [];
 const staleUi = [];
@@ -111,7 +103,7 @@ for (const absolute of checkFiles) {
   const relative = path.relative(ROOT, absolute).replace(/\\/g, '/');
   if (relative === SELF || relative === WORKFLOW) continue;
   const source = fs.readFileSync(absolute, 'utf8');
-  if (/77003097566|\+?7\s*\(?700\)?\s*309[-\s]*75[-\s]*66/.test(source)) stalePhone.push(relative);
+  if (/77003097566|\+?7\s*\(?700\)?\s*309[\s-]*75[\s-]*66/.test(source)) stalePhone.push(relative);
   newPhoneOccurrences += (source.match(/77058762795/g) || []).length;
   if (/\.(?:html|ejs)$/i.test(relative)) {
     if (/href=["']\/(?:advocate|mediator)(?:[?#"'])/i.test(source)
@@ -128,12 +120,8 @@ if (staleUi.length) throw new Error('Removed navigation/profile UI remains in: '
 if (newPhoneOccurrences < 1) throw new Error('New company phone was not found after migration');
 
 const landing = fs.readFileSync(path.join(ROOT, 'public', 'css', 'landing.css'), 'utf8');
-if (!/\.global-site-search\s*\{[\s\S]*?background:\s*#0f2a4e;/.test(landing)) {
-  throw new Error('Global search strip is not using the navy site background');
-}
-if (fs.existsSync(path.join(ROOT, 'public', 'advocate.html')) || fs.existsSync(path.join(ROOT, 'public', 'mediator.html'))) {
-  throw new Error('Specialist profile pages still exist');
-}
+if (!/\.global-site-search\s*\{[\s\S]*?background:\s*#0f2a4e;/.test(landing)) throw new Error('Global search strip is not using the navy site background');
+if (fs.existsSync(path.join(ROOT, 'public', 'advocate.html')) || fs.existsSync(path.join(ROOT, 'public', 'mediator.html'))) throw new Error('Specialist profile pages still exist');
 
 console.log(`PRODUCTION_CLEANUP_CHANGED_FILES=${new Set(changed).size}`);
 console.log(`PHONE_REPLACEMENTS=${replacements}`);
