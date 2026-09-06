@@ -67,6 +67,19 @@ for (const absolute of files) {
   }
 }
 
+// Make the contact-number regression test permanently reject the number
+// retired by this migration, not just older historical company numbers.
+const contactTestPath = path.join(ROOT, 'scripts', 'test-contact-number.js');
+if (fs.existsSync(contactTestPath)) {
+  const oldGuardTail = '700[ ()-]*030[ ()-]*00[ ()-]*24)';
+  const newGuardTail = '700[ ()-]*030[ ()-]*00[ ()-]*24|700[ ()-]*309[ ()-]*75[ ()-]*66)';
+  const source = fs.readFileSync(contactTestPath, 'utf8');
+  if (source.includes(oldGuardTail) && !source.includes('700[ ()-]*309[ ()-]*75[ ()-]*66')) {
+    fs.writeFileSync(contactTestPath, source.replace(oldGuardTail, newGuardTail), 'utf8');
+    if (!changed.includes('scripts/test-contact-number.js')) changed.push('scripts/test-contact-number.js');
+  }
+}
+
 const stale = [];
 let newOccurrences = 0;
 for (const absolute of files) {
