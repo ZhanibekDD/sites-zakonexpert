@@ -128,7 +128,7 @@ for (const absolute of files) {
 
     updated = updated.replace(
       /<div class="law-mobile-advocate"[\s\S]*?<\/div>`;/,
-      `<div class="law-mobile-advocate" aria-label="Связаться с ZakonExpert">\n  <a href="https://wa.me/${NEW_RAW}?text=${'${encodeURIComponent(waMessage)}'}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>\n  <a href="tel:+${NEW_RAW}"><i class="bi bi-telephone"></i> Позвонить</a>\n</div>` + ';'
+      `<div class="law-mobile-advocate" aria-label="Связаться с ZakonExpert">\n  <a href="https://wa.me/${NEW_RAW}?text=${'${encodeURIComponent(waMessage)}'}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>\n  <a href="tel:+${NEW_RAW}"><i class="bi bi-telephone"></i> Позвонить</a>\n</div>\`;`
     );
   }
 
