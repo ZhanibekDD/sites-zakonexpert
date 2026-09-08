@@ -203,7 +203,12 @@ async function parseContractInGenerator({ filename, mimeType, dataBase64 }) {
 
 function installCrm(app, express) {
   const router = express.Router();
-  router.use(securityHeaders);
+  // CRM is installed before the public application when crm-entry.js wraps
+  // express(). Keep its private response policy scoped to CRM endpoints only;
+  // mounting it at the router root marks every later public route as noindex.
+  router.use('/crm', securityHeaders);
+  router.use('/api/crm', securityHeaders);
+  router.use('/api/whatsapp/webhook', securityHeaders);
 
   // WhatsApp Cloud API webhook must receive raw JSON so x-hub-signature-256 can be verified.
   router.get('/api/whatsapp/webhook', (req, res) => {

@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const ejs = require('ejs');
+const express = require('express');
 
 async function main() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zke-crm-'));
@@ -103,6 +104,30 @@ async function main() {
   for (const template of ['views/crm/login.ejs', 'views/crm/dashboard.ejs', 'views/crm/sign.ejs']) {
     const source = fs.readFileSync(path.join(__dirname, '..', template), 'utf8');
     ejs.compile(source, { filename: template });
+  }
+
+  // crm-entry.js mounts CRM before the public application. Its security
+  // middleware must protect CRM routes without leaking noindex to public SEO
+  // pages registered afterwards.
+  const { installCrm } = require('../modules/crm-routes');
+  const headerApp = express();
+  installCrm(headerApp, express);
+  headerApp.get('/public-header-probe', (req, res) => res.send('public'));
+  headerApp.get('/api/crm/header-probe', (req, res) => res.send('private'));
+  const headerServer = await new Promise(resolve => {
+    const server = headerApp.listen(0, '127.0.0.1', () => resolve(server));
+  });
+  try {
+    const origin = `http://127.0.0.1:${headerServer.address().port}`;
+    const publicResponse = await fetch(`${origin}/public-header-probe`);
+    assert.equal(publicResponse.headers.get('x-robots-tag'), null,
+      'CRM headers must not mark public pages as noindex');
+    const privateResponse = await fetch(`${origin}/api/crm/header-probe`);
+    assert.match(privateResponse.headers.get('x-robots-tag') || '', /noindex/,
+      'CRM API routes must keep their private noindex policy');
+  } finally {
+    headerServer.closeAllConnections();
+    await new Promise((resolve, reject) => headerServer.close(error => error ? reject(error) : resolve()));
   }
 
   console.log('CRM tests PASS');
