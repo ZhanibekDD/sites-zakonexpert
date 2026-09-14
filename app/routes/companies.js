@@ -3,7 +3,7 @@
 const { INDEXABLE_LOCALES: COMPANY_LOCALES, catalogAlternates, catalogPath: companyCatalogPathFor, companyPath: companyPathFor, getLocale: getCompanyLocale } = require('../../modules/company-i18n');
 
 function registerCompanyRoutes(app, dependencies) {
-  const { companiesDb, regionLabel, sendNotFound, companySuggestLimiter } = dependencies;
+  const { companiesDb, regionLabel, sendNotFound, sendGone, companySuggestLimiter } = dependencies;
 
   function companyLanguageLinks(companySlug = null) {
     return COMPANY_LOCALES.map(code => {
@@ -70,8 +70,10 @@ function registerCompanyRoutes(app, dependencies) {
     const locale = getCompanyLocale(localeCode);
     const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
     let company = id ? companiesDb.findById(id) : null;
+    if (company?.privacy_removed) return sendGone(res);
     if (!company) {
       const redirect = companiesDb.redirectByOldSlug(req.params.slug);
+      if (redirect?.privacy_removed) return sendGone(res);
       if (redirect) return res.redirect(301, companyPathFor(locale.code, redirect.slug));
       return sendNotFound(res);
     }
@@ -155,6 +157,7 @@ function registerCompanyRoutes(app, dependencies) {
       const id = String(req.params.slug || '').match(/^(\d+)/)?.[1];
       const company = id ? companiesDb.findById(id) : null;
       const redirect = company ? null : companiesDb.redirectByOldSlug(req.params.slug);
+      if (company?.privacy_removed || redirect?.privacy_removed) return sendGone(res);
       canonicalSlug = company?.slug || redirect?.slug || canonicalSlug;
     }
     res.redirect(301, `/company/${canonicalSlug}`);

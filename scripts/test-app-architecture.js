@@ -41,6 +41,7 @@ const record = applyRegistryPrivacyOverride('companies', applyCompanyCorrection(
   addresses: [{ value: 'PRIVATE_ADDRESS_TEST' }],
 }));
 record.slug = companySlug(record.id, record.name_ru);
+const removedRecord = { id: 7137600, privacy_removed: true };
 
 let notifications = 0;
 let checks = 0;
@@ -58,8 +59,12 @@ const services = {
     stats: () => ({ available: true, count: 1, updatedAt: '2026-09-04', qualityReady: true }),
     browse: () => ({ items: [record], page: 1, hasMore: false }),
     search: () => ({ items: [record], page: 1, hasMore: false }),
-    findById: id => String(id) === String(record.id) ? record : null,
-    redirectByOldSlug: () => null,
+    findById: id => {
+      if (String(id) === String(record.id)) return record;
+      if (String(id) === String(removedRecord.id)) return removedRecord;
+      return null;
+    },
+    redirectByOldSlug: slug => slug === 'removed-company-old-slug' ? removedRecord : null,
     regionStats: () => [],
     byRegion: () => ({ items: [], page: 1, hasMore: false, label: null }),
     sitemapChunkCount: () => 0,
@@ -160,6 +165,17 @@ async function run() {
     for (const value of ['PRIVATE_EXECUTIVE_TEST', 'PRIVATE_ADDRESS_TEST', 'private@example.test', '77001112233', '77003097566']) {
       assert(!profile.body.includes(value), 'organization page must not leak hidden personal or site contact values');
     }
+    for (const removedPath of [
+      `/company/${removedRecord.id}-removed-company`,
+      `/kk/company/${removedRecord.id}-removed-company`,
+      '/company/removed-company-old-slug',
+    ]) {
+      const removed = await get(removedPath);
+      assert.equal(removed.response.status, 410, `${removedPath}: verified takedown must return 410`);
+      assert.equal(removed.response.headers.get('location'), null, `${removedPath}: takedown must not redirect`);
+      assert.match(removed.response.headers.get('x-robots-tag'), /noindex/);
+      assert.match(removed.body, /name="robots" content="noindex/);
+    }
     const search = await get('/poisk?q=Cave');
     assert.equal(search.response.status, 200);
     assert.equal(search.response.headers.get('cache-control'), 'private, no-store');
@@ -172,6 +188,9 @@ async function run() {
     assert.equal((await post('/api/news/import', {})).response.status, 503);
     assert.equal((await post('/check', {})).response.status, 400);
     assert.equal((await post('/api/company-check', { bin: '123' })).response.status, 400);
+    const removedCheck = await post('/api/company-check', { bin: '221040047658' });
+    assert.equal(removedCheck.response.status, 410);
+    assert.equal(JSON.parse(removedCheck.body).code, 'COMPANY_RECORD_REMOVED');
     assert.equal((await post('/api/lead', {})).response.status, 400);
     assert.equal((await post('/api/chat/send', {})).response.status, 400);
     const firstCheck = await post('/api/company-check', { bin: '251140034546' });

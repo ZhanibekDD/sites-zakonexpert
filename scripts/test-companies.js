@@ -41,6 +41,17 @@ const lowQualitySample = {
   statusru: 'Зарегистрирован',
   bin: '',
 };
+const removedSample = {
+  id: 7137600,
+  registerdate: '2022-10-28',
+  nameru: 'Товарищество с ограниченной ответственностью "InFin AKGroup"',
+  namekz: '"InFin AKGroup" жауапкершілігі шектеулі серіктестігі',
+  bin: '221040047658',
+  fio: 'REMOVED EXECUTIVE MUST NOT LEAK',
+  addressru: 'REMOVED ADDRESS MUST NOT LEAK',
+  okedru: 'Прочая деятельность в области информационных технологий',
+  statusru: 'Деятельность прекращена',
+};
 
 const normalized = normalizeCompanyRow(sample);
 assert(normalized, 'row must normalize');
@@ -53,7 +64,7 @@ assert.strictEqual(parseArgs(['--id=7137497', '--confirm-offline']).targetId, 71
 
 const database = new DatabaseSync(dbPath);
 createSchema(database);
-assert.strictEqual(insertRows(database, [sample, lowQualitySample], '2026-07-16T00:00:00.000Z'), 2);
+assert.strictEqual(insertRows(database, [sample, lowQualitySample, removedSample], '2026-07-16T00:00:00.000Z'), 3);
 database.prepare('UPDATE companies SET phone = ?, email = ? WHERE id = ?')
   .run('+7 (727) 123-45-67', 'info@alpha.kz', sample.id);
 database.prepare('INSERT INTO company_meta(key, value) VALUES(?, ?)').run('source_updated_at', '2026-07-16');
@@ -84,7 +95,7 @@ assert.strictEqual(currentRowsCanBeReconciled(metadataDb), true,
 backfillDatabase(metadataDb);
 assert.strictEqual(
   metadataDb.prepare("SELECT value FROM company_meta WHERE key = 'record_count'").get().value,
-  '2',
+  '3',
   'metadata-only reconciliation must repair the aggregate record count'
 );
 assert(
@@ -117,8 +128,10 @@ assert.strictEqual(qualityRowsNeedBackfill(driftDb), false,
   );
   const browsePlan = driftDb.prepare(`
     EXPLAIN QUERY PLAN
-    SELECT id FROM companies WHERE is_indexable = 1 ORDER BY id LIMIT 31 OFFSET 0
-  `).all().map(row => String(row.detail || '')).join(' | ');
+    SELECT id FROM companies
+    WHERE is_indexable = 1 AND (bin IS NULL OR bin NOT IN (?, ?))
+    ORDER BY id LIMIT 31 OFFSET 0
+  `).all('221040047658', '230240023825').map(row => String(row.detail || '')).join(' | ');
   assert(browsePlan.includes('companies_indexable_idx'),
     `public browsing must use companies_indexable_idx; received: ${browsePlan}`);
   assert(!/TEMP B-TREE/i.test(browsePlan),
@@ -139,11 +152,22 @@ malformedDetailsDb.prepare(`
 malformedDetailsDb.close();
 
 const companies = require('../modules/companies-db');
-assert.strictEqual(companies.stats().count, 2);
-assert.strictEqual(companies.stats().indexableCount, 1);
+assert.strictEqual(companies.stats().count, 3);
+assert.strictEqual(companies.stats().indexableCount, 2);
 assert.strictEqual(companies.stats().excludedCount, 1);
 assert.strictEqual(companies.findById(7137221).bin, '970540001234');
 assert.strictEqual(companies.findByBin('970540001234').leader, 'ИВАНОВ ИВАН ИВАНОВИЧ');
+assert.deepStrictEqual(
+  companies.findById(removedSample.id),
+  { id: removedSample.id, privacy_removed: true },
+  'a removed company URL must resolve only to a 410 tombstone'
+);
+assert.strictEqual(companies.findByBin(removedSample.bin), null,
+  'a removed company must not be returned by BIN lookup');
+assert.strictEqual(companies.search(removedSample.bin).items.length, 0,
+  'a removed company must not be returned by exact BIN search');
+assert.strictEqual(companies.search('InFin AKGroup').items.length, 0,
+  'a removed company must not be returned by name search');
 assert.strictEqual(companies.search('Альфа').items.length, 1);
 assert.strictEqual(companies.search('Альфа').items[0].phone, '+7 (727) 123-45-67');
 assert.strictEqual(companies.search('Альфа').items[0].email, 'info@alpha.kz');
@@ -151,7 +175,8 @@ assert.strictEqual(companies.search('Альфа').items[0].email, 'info@alpha.kz
   assert.deepStrictEqual(companies.browse().items.map(item => item.id), [7137221],
     'public catalog browsing must exclude thin noindex rows');
 assert.strictEqual(companies.sitemapChunkCount(), 1);
-assert.strictEqual(companies.sitemapChunk(1).length, 1);
+assert.deepStrictEqual(companies.sitemapChunk(1).map(item => item.id), [sample.id],
+  'removed companies must never appear in XML sitemaps');
 
 const company = companies.findById(7137221);
 const lowQualityCompany = companies.findById(7137497);
