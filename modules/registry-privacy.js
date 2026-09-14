@@ -19,10 +19,20 @@ function registryRule(registry, recordId) {
   return registryOverrides[String(recordId || '').trim()] || null;
 }
 
+function isRegistryRecordSuppressed(registry, recordId) {
+  return registryRule(registry, recordId)?.suppressRecord === true;
+}
+
+function registrySuppressedRecordIds(registry) {
+  return Object.entries(overrides[registry] || {})
+    .filter(([, rule]) => rule?.suppressRecord === true)
+    .map(([recordId]) => recordId);
+}
+
 function isRegistryContactSuppressed(registry, recordId, value) {
   const normalized = normalizeContact(value);
   const rule = registryRule(registry, recordId);
-  if (rule?.suppressAllContacts) return true;
+  if (rule?.suppressRecord || rule?.suppressAllContacts) return true;
   if (!normalized) return false;
   return Boolean(rule && Array.isArray(rule.suppressContacts)
     && rule.suppressContacts.some(contact => normalizeContact(contact) === normalized));
@@ -30,7 +40,7 @@ function isRegistryContactSuppressed(registry, recordId, value) {
 
 function hasRegistryContactSuppressions(registry, recordId) {
   const rule = registryRule(registry, recordId);
-  return Boolean(rule && (rule.suppressAllContacts
+  return Boolean(rule && (rule.suppressRecord || rule.suppressAllContacts
     || (Array.isArray(rule.suppressContacts) && rule.suppressContacts.length)));
 }
 
@@ -44,6 +54,7 @@ function isRegistrySearchMatchSuppressed(registry, record, query) {
   const rule = registryRule(registry, record.bin);
   const queryTokens = normalizedSearchTokens(query);
   if (!rule || !queryTokens.length) return false;
+  if (rule.suppressRecord) return true;
 
   const normalizedQueryContact = normalizeContact(query);
   if (normalizedQueryContact && Array.isArray(rule.suppressContacts)
@@ -78,6 +89,16 @@ function applyRegistryPrivacyOverride(registry, record) {
   const rule = registryRule(registry, record.bin);
   if (!rule) return record;
 
+  // A verified takedown must survive future registry imports. Retain only the
+  // internal identifiers required to return HTTP 410, never public fields.
+  if (rule.suppressRecord) {
+    return {
+      id: record.id,
+      bin: record.bin,
+      privacy_removed: true,
+    };
+  }
+
   const sanitized = { ...record };
   for (const field of rule.suppressFields || []) {
     if (Object.prototype.hasOwnProperty.call(sanitized, field)) sanitized[field] = '';
@@ -106,5 +127,7 @@ module.exports = {
   applyRegistryPrivacyOverride,
   hasRegistryContactSuppressions,
   isRegistryContactSuppressed,
+  isRegistryRecordSuppressed,
   isRegistrySearchMatchSuppressed,
+  registrySuppressedRecordIds,
 };

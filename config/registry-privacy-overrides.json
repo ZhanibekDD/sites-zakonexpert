@@ -27,6 +27,26 @@
       "noindex": true,
       "reason": "data_subject_privacy_request",
       "effectiveDate": "2026-09-04"
+    },
+    "221040047658": {
+      "suppressRecord": true,
+      "reason": "verified_company_removal_request",
+      "effectiveDate": "2026-09-14",
+      "evidence": {
+        "documentType": "registration_termination_order",
+        "orderNumber": "16626",
+        "orderDate": "2025-06-04"
+      }
+    },
+    "230240023825": {
+      "suppressRecord": true,
+      "reason": "verified_company_removal_request",
+      "effectiveDate": "2026-09-14",
+      "evidence": {
+        "documentType": "registration_termination_order",
+        "orderNumber": "15493",
+        "orderDate": "2025-05-23"
+      }
     }
   }
 }
