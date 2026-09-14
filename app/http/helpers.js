@@ -22,6 +22,7 @@ function createHttpHelpers(dependencies) {
 
   function sendGone(res) {
     res.set('Cache-Control', 'no-store');
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     res.status(410).sendFile(path.join(ROOT_DIR, 'public', '404.html'), error => {
       if (error && !res.headersSent) res.status(410).send('Раздел удалён');
     });

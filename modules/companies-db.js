@@ -15,7 +15,9 @@ const {
   applyRegistryPrivacyOverride,
   hasRegistryContactSuppressions,
   isRegistryContactSuppressed,
+  isRegistryRecordSuppressed,
   isRegistrySearchMatchSuppressed,
+  registrySuppressedRecordIds,
 } = require('./registry-privacy');
 
 const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'companies.sqlite');
@@ -24,6 +26,7 @@ const DB_PATH = process.env.COMPANIES_DB_PATH || DEFAULT_DB_PATH;
 // At 10k URLs one XML response is about 2.4 MB; concurrent crawler requests
 // caused worker 502s and the old in-process cache could grow above 190 MB.
 const SITEMAP_LIMIT = 5000;
+const SUPPRESSED_COMPANY_BINS = registrySuppressedRecordIds('companies');
 
 let db = null;
 
@@ -99,6 +102,15 @@ function publicBrowseFilter(database, qualifier = '') {
   if (!qualityRowsAvailable(database)) return '';
   const prefix = qualifier ? `${qualifier}.` : '';
   return `WHERE ${prefix}is_indexable = 1`;
+}
+
+function publicCompanyCondition(qualifier = '') {
+  const prefix = qualifier ? `${qualifier}.` : '';
+  if (!SUPPRESSED_COMPANY_BINS.length) return { sql: '1 = 1', params: [] };
+  return {
+    sql: `(${prefix}bin IS NULL OR ${prefix}bin NOT IN (${SUPPRESSED_COMPANY_BINS.map(() => '?').join(', ')}))`,
+    params: SUPPRESSED_COMPANY_BINS,
+  };
 }
 
 function optionalMetaCount(database, key) {
@@ -253,6 +265,10 @@ function search(query, page = 1, limit = 30) {
   const offset = (safePage - 1) * safeLimit;
   let items = [];
 
+  if (isRegistryRecordSuppressed('companies', q)) {
+    return { items: [], page: safePage, hasMore: false };
+  }
+
   if (/^\d{12}$/.test(q)) {
     const primarySource = sourceProjection(database);
     const contactSummary = contactSummaryProjection(database);
@@ -266,21 +282,23 @@ function search(query, page = 1, limit = 30) {
     if (!match) return { items: [], page: safePage, hasMore: false };
     const primarySource = sourceProjection(database, 'c');
     const contactSummary = contactSummaryProjection(database, 'c');
+    const visibility = publicCompanyCondition('c');
     items = database.prepare(`
       SELECT c.id, c.bin, c.name_ru, c.name_kk, c.registration_date,
              c.address_ru, c.activity_ru, c.leader, c.status_ru,
              ${contactSummary}, ${primarySource}
       FROM companies_fts f
       JOIN companies c ON c.id = f.rowid
-      WHERE companies_fts MATCH ?
+      WHERE companies_fts MATCH ? AND ${visibility.sql}
       ORDER BY bm25(companies_fts, 14.0, 10.0, 3.0, 5.0, 0.35),
                c.is_indexable DESC, c.quality_score DESC, c.id
       LIMIT ? OFFSET ?
-    `).all(match, safeLimit + 1, offset);
+    `).all(match, ...visibility.params, safeLimit + 1, offset);
   }
 
-  const visibleItems = items.filter(item => !isRegistrySearchMatchSuppressed(
-    'companies', item, q
+  const visibleItems = items.filter(item => (
+    !isRegistryRecordSuppressed('companies', item.bin)
+    && !isRegistrySearchMatchSuppressed('companies', item, q)
   ));
   return {
     items: visibleItems.slice(0, safeLimit).map(addSlug),
@@ -302,14 +320,15 @@ function browse(page = 1, limit = 30) {
   // range scan. The previous ORDER BY is_indexable DESC, id made SQLite sort
   // all 1.2M rows before returning the first 31 cards on production.
   const eligibility = publicBrowseFilter(database);
+  const visibility = publicCompanyCondition();
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
            activity_ru, leader, status_ru, ${primarySource}
     FROM companies
-    ${eligibility}
+    ${eligibility} ${eligibility ? 'AND' : 'WHERE'} ${visibility.sql}
     ORDER BY id
     LIMIT ? OFFSET ?
-  `).all(safeLimit + 1, offset);
+  `).all(...visibility.params, safeLimit + 1, offset);
   return {
     items: items.slice(0, safeLimit).map(addSlug),
     page: safePage,
@@ -488,6 +507,9 @@ function findById(id) {
       || !Number.isSafeInteger(numericId) || numericId <= 0) return null;
   const row = database.prepare('SELECT * FROM companies WHERE id = ?').get(numericId);
   if (!row) return null;
+  if (isRegistryRecordSuppressed('companies', row.bin)) {
+    return { id: row.id, privacy_removed: true };
+  }
   try {
     return addSlug(hydrateDetails(database, row));
   } catch (error) {
@@ -499,7 +521,8 @@ function findById(id) {
 function findByBin(bin) {
   const database = open();
   const safeBin = String(bin || '').replace(/\D/g, '');
-  if (!database || !getMeta(database, 'completed_at') || !/^\d{12}$/.test(safeBin)) return null;
+  if (!database || !getMeta(database, 'completed_at') || !/^\d{12}$/.test(safeBin)
+      || isRegistryRecordSuppressed('companies', safeBin)) return null;
   const row = database.prepare('SELECT * FROM companies WHERE bin = ? ORDER BY id LIMIT 1').get(safeBin);
   if (!row) return null;
   try {
@@ -514,11 +537,12 @@ function regionStats() {
   const database = open();
   if (!database || !getMeta(database, 'completed_at')) return [];
   const eligibility = publicBrowseFilter(database);
+  const visibility = publicCompanyCondition();
   const rows = database.prepare(`
     SELECT region_slug, COUNT(*) AS count FROM companies
-    ${eligibility ? `${eligibility} AND` : 'WHERE'} region_slug IS NOT NULL
+    ${eligibility ? `${eligibility} AND` : 'WHERE'} ${visibility.sql} AND region_slug IS NOT NULL
     GROUP BY region_slug
-  `).all();
+  `).all(...visibility.params);
   const counts = new Map(rows.map(r => [r.region_slug, Number(r.count)]));
   return REGIONS
     .map(([slug, label]) => ({ slug, label, count: counts.get(slug) || 0 }))
@@ -537,12 +561,13 @@ function byRegion(slug, page = 1, limit = 30) {
   const offset = (safePage - 1) * safeLimit;
   const primarySource = sourceProjection(database);
   const qualityFilter = qualityRowsAvailable(database) ? 'AND is_indexable = 1' : '';
+  const visibility = publicCompanyCondition();
   const items = database.prepare(`
     SELECT id, bin, name_ru, name_kk, registration_date, address_ru,
            activity_ru, leader, status_ru, ${primarySource}
-    FROM companies WHERE region_slug = ? ${qualityFilter}
+    FROM companies WHERE region_slug = ? ${qualityFilter} AND ${visibility.sql}
     ORDER BY id LIMIT ? OFFSET ?
-  `).all(slug, safeLimit + 1, offset);
+  `).all(slug, ...visibility.params, safeLimit + 1, offset);
   return {
     items: items.slice(0, safeLimit).map(addSlug),
     page: safePage,
@@ -555,27 +580,41 @@ function redirectByOldSlug(oldSlug) {
   const database = open();
   if (!database || !hasTable(database, 'organization_redirects')) return null;
   const row = database.prepare(`
-    SELECT c.id, c.name_ru, c.name_kk
+    SELECT c.id, c.bin, c.name_ru, c.name_kk
     FROM organization_redirects r
     JOIN companies c ON c.id = r.company_id
     WHERE r.old_slug = ?
   `).get(String(oldSlug || ''));
+  if (row && isRegistryRecordSuppressed('companies', row.bin)) {
+    return { id: row.id, privacy_removed: true };
+  }
   return addSlug(row);
 }
 
 function sitemapChunkCount() {
   const info = stats();
-  return info.available && info.qualityReady ? Math.ceil(info.indexableCount / SITEMAP_LIMIT) : 0;
+  if (!info.available || !info.qualityReady) return 0;
+  const database = open();
+  if (!database || !SUPPRESSED_COMPANY_BINS.length) {
+    return Math.ceil(info.indexableCount / SITEMAP_LIMIT);
+  }
+  const suppressedIndexable = Number(database.prepare(`
+    SELECT COUNT(*) AS count FROM companies
+    WHERE is_indexable = 1 AND bin IN (${SUPPRESSED_COMPANY_BINS.map(() => '?').join(', ')})
+  `).get(...SUPPRESSED_COMPANY_BINS).count || 0);
+  return Math.ceil(Math.max(0, info.indexableCount - suppressedIndexable) / SITEMAP_LIMIT);
 }
 
 function sitemapChunk(chunk) {
   const database = open();
   const safeChunk = Number.parseInt(chunk, 10);
   if (!database || !stats().qualityReady || !Number.isInteger(safeChunk) || safeChunk < 1) return [];
+  const visibility = publicCompanyCondition();
   return database.prepare(`
     SELECT id, bin, name_ru, name_kk, quality_score, is_indexable
-    FROM companies WHERE is_indexable = 1 ORDER BY id LIMIT ? OFFSET ?
-  `).all(SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT)
+    FROM companies WHERE is_indexable = 1 AND ${visibility.sql}
+    ORDER BY id LIMIT ? OFFSET ?
+  `).all(...visibility.params, SITEMAP_LIMIT, (safeChunk - 1) * SITEMAP_LIMIT)
     .map(addSlug)
     .filter(company => !company.privacy_noindex);
 }

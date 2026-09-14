@@ -4,6 +4,7 @@ const axios = require('axios');
 const xml2js = require('xml2js');
 const { v4: uuidv4 } = require('uuid');
 const { validateBin } = require('../../modules/kgd-counterparty');
+const { isRegistryRecordSuppressed } = require('../../modules/registry-privacy');
 
 function registerCheckRoutes(app, dependencies) {
   const {
@@ -398,6 +399,12 @@ function registerCheckRoutes(app, dependencies) {
       return res.status(400).json({
         error: 'Введите БИН из 12 цифр.',
         code: 'INVALID_BIN',
+      });
+    }
+    if (isRegistryRecordSuppressed('companies', bin)) {
+      return res.status(410).json({
+        error: 'Запись удалена по подтверждённому обращению.',
+        code: 'COMPANY_RECORD_REMOVED',
       });
     }
     const cached = companyCheckCache.get(bin);
