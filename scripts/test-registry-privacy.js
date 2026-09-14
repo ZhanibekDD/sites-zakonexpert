@@ -6,7 +6,9 @@ const path = require('path');
 const {
   applyRegistryPrivacyOverride,
   isRegistryContactSuppressed,
+  isRegistryRecordSuppressed,
   isRegistrySearchMatchSuppressed,
+  registrySuppressedRecordIds,
 } = require('../modules/registry-privacy');
 
 const ROOT = path.join(__dirname, '..');
@@ -99,6 +101,30 @@ assert.strictEqual(
   }, 'Test company'),
   false,
   'search by the organization name must remain available'
+);
+
+for (const removedBin of ['221040047658', '230240023825']) {
+  assert.strictEqual(
+    isRegistryRecordSuppressed('companies', removedBin),
+    true,
+    `verified takedown must remain active for BIN ${removedBin}`
+  );
+  assert.deepStrictEqual(
+    applyRegistryPrivacyOverride('companies', {
+      id: 1,
+      bin: removedBin,
+      name_ru: 'MUST NOT LEAK',
+      leader: 'MUST NOT LEAK',
+      address_ru: 'MUST NOT LEAK',
+    }),
+    { id: 1, bin: removedBin, privacy_removed: true },
+    'suppressed records must be reduced to a non-renderable tombstone'
+  );
+}
+assert.deepStrictEqual(
+  registrySuppressedRecordIds('companies').sort(),
+  ['221040047658', '230240023825'],
+  'the permanent company takedown list must contain both verified BINs'
 );
 
 console.log('Registry privacy correction OK');
