@@ -5,6 +5,19 @@ function freeze(value) {
 }
 
 const COMPANY_CORRECTIONS = freeze({
+  '040340003399': freeze({
+    bin: '040340003399',
+    leaderRu: 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА',
+    addressRu: '050057, ГОРОД АЛМАТЫ, БОСТАНДЫКСКИЙ РАЙОН, УЛ. АУЭЗОВА, Д. 175, Н.П. 7',
+    correction: freeze({
+      title: 'Сведения актуализированы по официальному реестру',
+      summary: 'Для ТОО «ҚОРҒАНЫС ЛТД» актуализированы руководитель и юридический адрес по сведениям государственного реестра: руководитель — Накисбекова Гульмира Касымкановна; юридический адрес — г. Алматы, Бостандыкский район, ул. Ауэзова, д. 175, н.п. 7.',
+      sourceLabel: 'Электронное правительство Республики Казахстан — реестр юридических лиц',
+      sourceDate: '2026-05-03',
+      verifiedAt: '2026-09-28',
+      statusNote: 'Подтверждённые регистрационные сведения имеют приоритет над устаревшими значениями из предыдущих выгрузок и справочников.',
+    }),
+  }),
   '050240002031': freeze({
     bin: '050240002031',
     statusRu: 'Деятельность прекращена 29.02.2024 путем присоединения',
@@ -52,19 +65,29 @@ function applyCompanyCorrection(company) {
   const correction = getCompanyCorrection(company.bin);
   if (!correction) return company;
 
-  return {
+  const result = {
     ...company,
-    status_ru: correction.statusRu,
-    dissolution_date: correction.dissolutionDate,
-    reorganization_type: correction.reorganizationType,
-    successor_name_ru: correction.successorNameRu,
+    correction: { ...correction.correction },
+  };
+
+  if (correction.statusRu !== undefined) result.status_ru = correction.statusRu;
+  if (correction.dissolutionDate !== undefined) result.dissolution_date = correction.dissolutionDate;
+  if (correction.reorganizationType !== undefined) result.reorganization_type = correction.reorganizationType;
+  if (correction.successorNameRu !== undefined) result.successor_name_ru = correction.successorNameRu;
+  if (correction.addressRu !== undefined) result.address_ru = correction.addressRu;
+
+  if (correction.leaderRu !== undefined) {
+    result.leader = correction.leaderRu;
+    result.leader_display = correction.leaderRu;
+  } else if (correction.leaderDisplayRu !== undefined) {
     // The historical source may still contain a natural person's name. Once
     // the legal entity has ceased activity, it must not be presented as a
     // current executive on ZakonExpert.
-    leader: null,
-    leader_display: correction.leaderDisplayRu,
-    correction: { ...correction.correction },
-  };
+    result.leader = null;
+    result.leader_display = correction.leaderDisplayRu;
+  }
+
+  return result;
 }
 
 module.exports = {

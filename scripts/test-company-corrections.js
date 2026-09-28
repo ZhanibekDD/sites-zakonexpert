@@ -30,6 +30,19 @@ const unrelated = { bin: '260740044168', leader: 'КИЯШЕВ ЖАНИБЕК Д
 assert.strictEqual(applyCompanyCorrection(unrelated), unrelated, 'unrelated companies must remain untouched');
 assert.strictEqual(getCompanyCorrection('05 024 000 2031').bin, '050240002031');
 
+const qorganys = applyCompanyCorrection({
+  id: 1,
+  bin: '040340003399',
+  name_ru: 'ТОО «ҚОРҒАНЫС ЛТД»',
+  leader: 'УСТАРЕВШИЙ РУКОВОДИТЕЛЬ',
+  address_ru: 'УСТАРЕВШИЙ АДРЕС',
+});
+assert.strictEqual(qorganys.leader, 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА');
+assert.strictEqual(qorganys.leader_display, 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА');
+assert.match(qorganys.address_ru, /АУЭЗОВА, Д\. 175, Н\.П\. 7/);
+assert.match(qorganys.correction.sourceLabel, /Электронное правительство/);
+assert.strictEqual(qorganys.correction.verifiedAt, '2026-09-28');
+
 const caveGroup = applyCompanyCorrection({
   id: 350784397,
   bin: '251140034546',
@@ -50,4 +63,4 @@ assert.match(itemTemplate, /company\.correction/);
 assert.match(itemTemplate, /прекращ\|реорганиз/);
 assert.match(itemTemplate, /company\.privacy_noindex/);
 
-console.log('Company corrections OK: ALИАСКАР-2005 status and leader presentation are corrected');
+console.log('Company corrections OK: verified company corrections are applied');
