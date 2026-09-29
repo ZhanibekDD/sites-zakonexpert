@@ -36,10 +36,14 @@ const qorganys = applyCompanyCorrection({
   name_ru: 'ТОО «ҚОРҒАНЫС ЛТД»',
   leader: 'УСТАРЕВШИЙ РУКОВОДИТЕЛЬ',
   address_ru: 'УСТАРЕВШИЙ АДРЕС',
+  addresses: [{ value: 'СТАРЫЙ ДОПОЛНИТЕЛЬНЫЙ АДРЕС', sourceLabel: 'legacy' }],
 });
 assert.strictEqual(qorganys.leader, 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА');
 assert.strictEqual(qorganys.leader_display, 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА');
 assert.match(qorganys.address_ru, /АУЭЗОВА, Д\. 175, Н\.П\. 7/);
+assert(qorganys.addresses.some(item => /ТОЛЕ БИ, Д\. 83/.test(item.value)), 'company-reported contact address must be shown separately');
+assert(qorganys.addresses.some(item => item.sourceLabel === 'legacy'), 'existing additional addresses must remain');
+assert.match(qorganys.correction.summary, /контактный адрес/i);
 assert.match(qorganys.correction.sourceLabel, /Электронное правительство/);
 assert.strictEqual(qorganys.correction.verifiedAt, '2026-09-28');
 
