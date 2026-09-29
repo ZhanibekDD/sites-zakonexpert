@@ -8,7 +8,8 @@ const SEARCH_ROOTS = ['public', 'views', 'modules', 'docs'];
 const TEXT_EXTENSIONS = new Set(['.css', '.ejs', '.html', '.js', '.json', '.md', '.svg', '.txt', '.xml']);
 const EXPECTED_RAW = '77058762795';
 const EXPECTED_DISPLAY = '+7 (705) 876-27-95';
-const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/77058762795';
+const OFFICIAL_WHATSAPP_LINK = 'https://wa.me/77003097566';
+const RETIRED_WHATSAPP_LINK = 'https://wa.me/77058762795';
 const RETIRED_NUMBER = /(?:\+?7[ ()-]*)?(?:747[ ()-]*995[ ()-]*76[ ()-]*35|775[ ()-]*299[ ()-]*87[ ()-]*38|700[ ()-]*311[ ()-]*06[ ()-]*38|700[ ()-]*030[ ()-]*00[ ()-]*24)/g;
 
 function listTextFiles(directory) {
@@ -30,6 +31,7 @@ for (const file of files) {
   RETIRED_NUMBER.lastIndex = 0;
   rawCount += source.split(EXPECTED_RAW).length - 1;
   displayCount += source.split(EXPECTED_DISPLAY).length - 1;
+  if (source.includes(RETIRED_WHATSAPP_LINK)) staleFiles.push(path.relative(ROOT, file));
 }
 
 if (staleFiles.length) {
@@ -48,6 +50,9 @@ if (!siteScript.includes(OFFICIAL_WHATSAPP_LINK)
   || !contactRu.includes(OFFICIAL_WHATSAPP_LINK)
   || !contactKk.includes(OFFICIAL_WHATSAPP_LINK)) {
   throw new Error('The official WhatsApp Business link is missing from the site-wide QR experience.');
+}
+if (!siteScript.includes("const whatsappNumber = companyWhatsAppRaw")) {
+  throw new Error('The contact form must route to the AI WhatsApp number.');
 }
 if (!fs.existsSync(qrPath) || fs.statSync(qrPath).size < 1000) {
   throw new Error('The local WhatsApp QR asset is missing or invalid.');

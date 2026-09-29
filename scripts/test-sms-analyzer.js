@@ -32,7 +32,7 @@ assert.strictEqual(Object.keys(analyzer.routes).length, 7, 'Seven safe fixed rou
 assert(html.includes('data-sms-analyzer'), 'Analyzer container is missing');
 assert(html.includes('data-sms-input'), 'SMS input is missing');
 assert(html.includes('/css/sms-analyzer.css?v=20260824-2'), 'Dedicated stylesheet is missing');
-assert(html.includes('/js/sms-analyzer.js?v=20260824-2'), 'Dedicated analyzer script is missing');
+assert(html.includes('/js/sms-analyzer.js?v=20260930-1'), 'Dedicated analyzer script is missing');
 assert(html.includes('БНАЖ-дан хабарлама'), 'Anonymized real-world ENIS/BNAZH example is missing');
 assert(html.includes('Это ещё не постановление ЧСИ'), 'Early-stage ENIS explanation is missing');
 assert(html.includes('не отправляется на сервер'), 'Browser-only privacy notice is missing');
