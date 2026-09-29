@@ -9,9 +9,15 @@ const COMPANY_CORRECTIONS = freeze({
     bin: '040340003399',
     leaderRu: 'НАКИСБЕКОВА ГУЛЬМИРА КАСЫМКАНОВНА',
     addressRu: '050057, ГОРОД АЛМАТЫ, БОСТАНДЫКСКИЙ РАЙОН, УЛ. АУЭЗОВА, Д. 175, Н.П. 7',
+    additionalAddresses: freeze([
+      freeze({
+        value: 'Г. АЛМАТЫ, УЛ. ТОЛЕ БИ, Д. 83, БЦ «АМБАССАДОР», ОФИС 404',
+        sourceLabel: 'Контактный адрес, сообщённый представителем организации 29.09.2026',
+      }),
+    ]),
     correction: freeze({
       title: 'Сведения актуализированы по официальному реестру',
-      summary: 'Для ТОО «ҚОРҒАНЫС ЛТД» актуализированы руководитель и юридический адрес по сведениям государственного реестра: руководитель — Накисбекова Гульмира Касымкановна; юридический адрес — г. Алматы, Бостандыкский район, ул. Ауэзова, д. 175, н.п. 7.',
+      summary: 'Для ТОО «ҚОРҒАНЫС ЛТД» актуализированы руководитель и юридический адрес по сведениям государственного реестра: руководитель — Накисбекова Гульмира Касымкановна; юридический адрес — г. Алматы, Бостандыкский район, ул. Ауэзова, д. 175, н.п. 7. Дополнительно указан контактный адрес, сообщённый представителем организации: г. Алматы, ул. Толе би, д. 83, БЦ «Амбассадор», офис 404.',
       sourceLabel: 'Электронное правительство Республики Казахстан — реестр юридических лиц',
       sourceDate: '2026-05-03',
       verifiedAt: '2026-09-28',
@@ -75,6 +81,14 @@ function applyCompanyCorrection(company) {
   if (correction.reorganizationType !== undefined) result.reorganization_type = correction.reorganizationType;
   if (correction.successorNameRu !== undefined) result.successor_name_ru = correction.successorNameRu;
   if (correction.addressRu !== undefined) result.address_ru = correction.addressRu;
+  if (Array.isArray(correction.additionalAddresses)) {
+    const existing = Array.isArray(result.addresses) ? result.addresses : [];
+    const seen = new Set(existing.map(item => String(item?.value || '').trim().toLocaleLowerCase('ru-RU')));
+    const additions = correction.additionalAddresses
+      .filter(item => item?.value && !seen.has(String(item.value).trim().toLocaleLowerCase('ru-RU')))
+      .map(item => ({ ...item }));
+    result.addresses = [...existing, ...additions];
+  }
 
   if (correction.leaderRu !== undefined) {
     result.leader = correction.leaderRu;
