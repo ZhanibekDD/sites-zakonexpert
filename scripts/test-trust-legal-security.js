@@ -90,12 +90,15 @@ const staleSiteScriptRefs = userFacingFiles
 assert.deepStrictEqual(staleSiteScriptRefs, [],
   `stale site.js cache keys remain in: ${staleSiteScriptRefs.join(', ')}`);
 
+const chatbotScriptAsset = require('../modules/release-config').assets
+  .find(asset => asset.startsWith('/js/chatbot.js?v='));
+assert(chatbotScriptAsset, 'release manifest must version the shared chatbot script');
 const staleChatbotScriptRefs = userFacingFiles
   .filter(filename => /\.(?:html|ejs)$/i.test(filename))
   .filter(filename => {
     const source = fs.readFileSync(filename, 'utf8');
-    return /(?:^|\/)js\/chatbot\.js/.test(source)
-      && !/(?:^|\/)js\/chatbot\.js\?v=20260906-1/.test(source);
+    const references = source.match(/(?:^|\/)js\/chatbot\.js(?:\?[^"'\s<>]+)?/g) || [];
+    return references.some(reference => '/' + reference.replace(/^\//, '') !== chatbotScriptAsset);
   })
   .map(filename => path.relative(ROOT, filename));
 assert.deepStrictEqual(staleChatbotScriptRefs, [],
