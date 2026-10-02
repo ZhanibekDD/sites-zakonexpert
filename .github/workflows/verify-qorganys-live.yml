@@ -1,0 +1,63 @@
+name: Verify Qorganys live card
+
+on:
+  push:
+    branches:
+      - verify/qorganys-live-20261003
+    paths:
+      - .github/workflows/verify-qorganys-live.yml
+
+permissions: {}
+
+jobs:
+  verify-public-card:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read canonical and uncached public company card
+        shell: bash
+        run: |
+          node <<'NODE'
+          'use strict';
+          const base = 'https://zakonexpert.kz/company/8891814-tovarishestvo-s-ogranichennoj-otvetstvennostyu-korganys-ltd';
+          const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+          async function inspect(url) {
+            const response = await fetch(url, {
+              redirect: 'follow',
+              headers: { accept: 'text/html', 'cache-control': 'no-cache', 'user-agent': 'ZakonExpert-Company-Verification/1.0' },
+              signal: AbortSignal.timeout(15000),
+            });
+            const html = await response.text();
+            const text = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            const checks = {
+              http200: response.status === 200,
+              correctHost: new URL(response.url).hostname === 'zakonexpert.kz',
+              correctDirector: /НАКИСБЕКОВА\s+ГУЛЬМИРА\s+КАСЫМКАНОВНА/i.test(text),
+              toleBiAddress: /ТОЛЕ\s+БИ,?\s*(?:Д\.?)?\s*83/i.test(text),
+              businessCentre: /АМБАССАДОР/i.test(text),
+              office404: /ОФИС\s+404/i.test(text),
+              oldDirectorAbsent: !/НАКИСБЕКОВ\s+НАРИМАН\s+УРАЛОВИЧ/i.test(text),
+            };
+            return {
+              checkedAt: new Date().toISOString(),
+              url, finalUrl: response.url, status: response.status,
+              cacheControl: response.headers.get('cache-control'),
+              age: response.headers.get('age'),
+              checks, ok: Object.values(checks).every(Boolean),
+              excerpt: text.match(/Руководитель.{0,1600}/i)?.[0] || text.slice(0,500),
+            };
+          }
+          (async () => {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              const reports = [];
+              for (const url of [base, `${base}?deployment_check=822c52f-${Date.now()}`]) {
+                try { reports.push(await inspect(url)); }
+                catch (error) { reports.push({ url, ok: false, error: error.message }); }
+              }
+              console.log(JSON.stringify({ attempt, reports }, null, 2));
+              if (reports.every(report => report.ok)) return;
+              if (attempt < 3) await delay(20000);
+            }
+            process.exitCode = 1;
+          })().catch(error => { console.error(error.message); process.exitCode = 1; });
+          NODE
