@@ -331,3 +331,13 @@ html body .btn-dok-wa { background: var(--zx-green); }
 html body .btn-dok-wa:hover { background: var(--zx-green-hover); }
 html body .professional-card__license { border-color: var(--zx-line); background: var(--zx-soft); color: var(--zx-ink-2); }
 html body .professional-card__license i { color: var(--zx-blue); }
+
+/* IIN results on phones (2026-10-09): long values ran off the card and «Подробнее» sat 46px past the edge,
+   because .ip-list-action was width:100% plus margin-left:46px and every meta line was nowrap. */
+@media (max-width: 640px) {
+  html body #debtors-section, html body #restrictions-section { padding-left: 14px; padding-right: 14px; }
+  html body .ip-list-item { gap: 12px; padding: 16px 14px; }
+  html body .ip-list-meta span, html body .ip-chsi-fee { white-space: normal; overflow-wrap: anywhere; }
+  html body .ip-list-action { width: calc(100% - 42px); margin-left: 42px; }
+  html body .ip-list-action .btn-details-card { width: 100%; white-space: normal; }
+}

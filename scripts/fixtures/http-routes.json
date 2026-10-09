@@ -816,6 +816,12 @@
     ]
   },
   {
+    "path": "/proverka-po-iin",
+    "methods": [
+      "get"
+    ]
+  },
+  {
     "path": "/zapret-na-vyezd-iz-kazahstana",
     "methods": [
       "get"

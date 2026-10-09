@@ -329,7 +329,7 @@
           <form id="search-form" novalidate class="search-main-form ze-home-checker">
             <label for="iin" class="ze-home-checker__label">Проверьте свои ограничения бесплатно</label>
             <div class="search-row">
-              <input class="search-main-input" type="text" id="iin" name="iin"
+              <input class="search-main-input ym-disable-keys" type="text" id="iin" name="iin"
                      inputmode="numeric" autocomplete="off" maxlength="12"
                      aria-describedby="iin-privacy-note iin-validation"
                      placeholder="ИИН — 12 цифр">
@@ -400,7 +400,7 @@
       <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
         <i class="bi bi-exclamation-triangle me-2"></i><strong>Ошибка:</strong> <span id="error-text"></span>
       </div>
-      <div id="results" class="search-results-area">
+      <div id="results" class="search-results-area ym-hide-content">
         <section id="debtors-section" style="display:none;">
           <h3 class="results-title">Найденные исполнительные производства</h3>
           <p class="results-section-lead">Нажмите «Подробнее» для деталей или отправьте результаты специалисту в WhatsApp.</p>
@@ -848,7 +848,7 @@
         <h2 class="modal-title fs-5">Детали исполнительного производства</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
       </div>
-      <div class="modal-body" id="debtorDetailsContent"></div>
+      <div class="modal-body ym-hide-content" id="debtorDetailsContent"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
       </div>
@@ -861,7 +861,7 @@
   <div class="landing-container footer-shell">
     <div class="footer-brand">
       <div class="brand">
-        <img src="/img/migration/brand/zakonexpert-logo.png" width="1983" height="793"
+        <img src="/img/brand/zakonexpert-logo-transparent-600.png" width="600" height="240"
              alt="Закон Эксперт (ZakonExpert) — логотип"
              class="brand-full-logo brand-full-logo--footer" loading="lazy">
       </div>
@@ -893,6 +893,7 @@
           <a href="/chambers">Палаты нот. и ЧСИ</a>
           <a href="/companies">Компании РК</a>
           <a href="/proverka-kontragenta">Проверка по БИН</a>
+          <a href="/proverka-po-iin">Проверка арестов по ИИН</a>
           <a href="/proverka-bankrotstva">Проверка банкротства</a>
           <a href="/collectors">Коллекторы РК</a>
           <a href="/lombards">Ломбарды РК</a>

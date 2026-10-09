@@ -158,7 +158,7 @@
           <form id="search-form" novalidate class="search-main-form ze-home-checker">
             <label for="iin" class="ze-home-checker__label">Шектеулеріңізді тегін тексеріңіз</label>
             <div class="search-row">
-              <input class="search-main-input" type="text" id="iin" name="iin"
+              <input class="search-main-input ym-disable-keys" type="text" id="iin" name="iin"
                      inputmode="numeric" autocomplete="off" maxlength="12"
                      aria-describedby="iin-privacy-note iin-validation"
                      placeholder="ЖСН — 12 сан">
@@ -229,7 +229,7 @@
       <div id="error-message" class="alert alert-danger d-none mt-4" role="alert">
         <i class="bi bi-exclamation-triangle me-2"></i><strong>Қате:</strong> <span id="error-text"></span>
       </div>
-      <div id="results" class="search-results-area">
+      <div id="results" class="search-results-area ym-hide-content">
         <section id="debtors-section" style="display:none;">
           <h3 class="results-title">Табылған атқарушылық іс жүргізулер</h3>
           <p class="results-section-lead">Әр іс жүргізу жеке құқықтық талдауды қажет етеді — жағдайды талдау үшін «Талдау» батырмасын басыңыз.</p>
@@ -563,7 +563,7 @@
         <h2 class="modal-title fs-5">Атқарушылық іс жүргізу мәліметтері</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Жабу"></button>
       </div>
-      <div class="modal-body" id="debtorDetailsContent"></div>
+      <div class="modal-body ym-hide-content" id="debtorDetailsContent"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Жабу</button>
       </div>
