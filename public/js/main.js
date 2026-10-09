@@ -24,7 +24,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const restrictionsTable = document.getElementById('restrictions-table');
 
     const isKz = document.documentElement.lang && document.documentElement.lang.startsWith('kk');
-    const locale = isKz ? 'kk-KZ' : 'ru-RU';
+    // Russian plural forms: 1 производство, 2 производства, 5 производств.
+    function plural(n, one, few, many) {
+        const mod10 = n % 10, mod100 = n % 100;
+        if (mod10 === 1 && mod100 !== 11) return one;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+        return many;
+    }
+    // Numbers and dates use the Russian pattern on both languages (565 350,00 ₸, 27.09.2026):
+    // some browsers have no kk-KZ data and fall back to US formats (565,350.00, 09/27/2026).
+    const locale = 'ru-RU';
     const baseLabels = {
         debtorNum: 'Номер ИП',
         date: 'Дата',
@@ -66,12 +75,47 @@ document.addEventListener('DOMContentLoaded', function() {
         helpMany: 'Нужна помощь по этим производствам?',
         helpOne: 'Нужна помощь по этому производству?',
         helpText: 'Напишите в WhatsApp — разберём каждое производство и объясним ваши права бесплатно',
-        noArrestsTitle: 'У вас нет активных арестов',
-        noArrestsText: 'По данному ИИН исполнительных производств не найдено.',
+        noArrestsTitle: 'Исполнительных производств не найдено',
+        noArrestsText: 'По этому ИИН в реестре должников нет открытых производств у судебных исполнителей.',
         noArrestsNote: 'Если у вас непонятная ситуация — напишите нам, разберёмся бесплатно.',
         waNoArrest: 'Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.',
         chsiFee: 'Услуга ЧСИ',
-        chsiFeeLink: '— убрать проценты ЧСИ →'
+        chsiFeeLink: '— убрать проценты ЧСИ →',
+        resKicker: 'Результат проверки по ИИН',
+        resTitle: (n) => `Найдено ${n} ${plural(n, 'исполнительное производство', 'исполнительных производства', 'исполнительных производств')}`,
+        resTotal: 'Сумма к взысканию',
+        resTotalNote: '+ оплата деятельности ЧСИ и расходы — их часто можно уменьшить',
+        resActive: 'Активных',
+        resBanStat: 'От 40 МРП',
+        resNewStat: 'Новых за 30 дней',
+        resBanTitle: 'Возможен запрет на выезд',
+        resBanText: (n, threshold) => `По ${n} ${plural(n, 'производству', 'производствам', 'производствам')} сумма от 40 МРП (${threshold}). По закону исполнитель обязан ограничить выезд — проверьте статус перед поездкой.`,
+        resAlimonyText: 'Алименты: при долге больше трёх месяцев выезд ограничивают.',
+        resBanLink: 'Проверить статус в реестре Минюста',
+        resWaAll: 'Разобрать все производства в WhatsApp',
+        resWaNote: 'Отправим список специалисту — первичный разбор бесплатно, ответ в течение 10 минут.',
+        resToCollect: 'к взысканию',
+        resChipActive: 'Активно',
+        resChipClosed: 'Окончено',
+        resChipBan: 'от 40 МРП · возможен запрет на выезд',
+        resChipNew: (d) => d === 0 ? 'Новое · сегодня' : `Новое · ${d} ${plural(d, 'день', 'дня', 'дней')} назад`,
+        resCaseNo: 'Номер производства',
+        resStarted: 'Возбуждено',
+        resIssuer: 'Кто выдал документ',
+        resExecutor: 'Исполнитель',
+        resOffice: 'Исполнительный округ',
+        resAddress: 'Адрес исполнителя',
+        resCopy: 'Копировать',
+        resCopied: 'Скопировано',
+        resFeeLink: 'Уменьшить оплату ЧСИ',
+        resFindExecutor: 'Контакты исполнителя',
+        resMap: 'Адрес в 2ГИС',
+        resWaOne: 'Разобрать в WhatsApp',
+        resEmptyWhy: 'Если счёт всё равно заблокирован, арест мог наложить не ЧСИ, а налоговый орган или следствие — таких арестов нет в реестре исполнительных производств.',
+        resEmptyBan: 'Запрет на выезд проверяйте в реестре Минюста',
+        resSource: 'Источник: реестр должников АИС ОИП Министерства юстиции через data.egov.kz, данные на момент проверки.',
+        resBasisLabels: { notary: 'Исполнительная надпись нотариуса', court: 'Решение суда', alimony: 'Алименты', fine: 'Штраф', other: 'Исполнительный документ' },
+        resNext: { notary: 'Можно ли отменить надпись', court: 'Как обжаловать решение суда', alimony: 'Алименты и аресты', fine: 'Штраф у ЧСИ: что делать', other: 'Как снять арест' }
     };
     const kzText = {
         iinInvalid: 'ЖСН 12 саннан тұруы керек',
@@ -103,12 +147,47 @@ document.addEventListener('DOMContentLoaded', function() {
         helpMany: 'Осы іс жүргізулер бойынша көмек керек пе?',
         helpOne: 'Осы іс жүргізу бойынша көмек керек пе?',
         helpText: 'WhatsApp-қа жазыңыз — әр іс жүргізуді талдап, құқықтарыңызды тегін түсіндіреміз',
-        noArrestsTitle: 'Белсенді арест табылмады',
-        noArrestsText: 'Бұл ЖСН бойынша атқарушылық іс жүргізулер табылмады.',
+        noArrestsTitle: 'Атқарушылық іс жүргізу табылмады',
+        noArrestsText: 'Бұл ЖСН бойынша борышкерлер тізілімінде сот орындаушыларында ашық іс жүргізу жоқ.',
         noArrestsNote: 'Жағдай түсініксіз болса — бізге жазыңыз, тегін талдаймыз.',
         waNoArrest: 'Сәлеметсіз бе! ЖСН бойынша тексердім — арест табылмады, бірақ қарыз бойынша сұрағым бар.',
         chsiFee: 'ЖСО қызметі',
-        chsiFeeLink: '— ЖСО пайыздарын алып тастау →'
+        chsiFeeLink: '— ЖСО пайыздарын алып тастау →',
+        resKicker: 'ЖСН бойынша тексеру нәтижесі',
+        resTitle: (n) => `${n} атқарушылық іс жүргізу табылды`,
+        resTotal: 'Өндірілетін сома',
+        resTotalNote: '+ ЖСО қызметіне ақы және шығыстар — оларды жиі азайтуға болады',
+        resActive: 'Белсенді',
+        resBanStat: '40 АЕК-тен',
+        resNewStat: 'Соңғы 30 күнде',
+        resBanTitle: 'Шетелге шығуға тыйым салынуы мүмкін',
+        resBanText: (n, threshold) => `${n} іс жүргізу бойынша сома 40 АЕК-тен асады (${threshold}). Заң бойынша орындаушы шетелге шығуды шектеуге міндетті — сапар алдында мәртебені тексеріңіз.`,
+        resAlimonyText: 'Алимент: 3 айдан артық қарыз болса, шетелге шығу шектеледі.',
+        resBanLink: 'Әділет министрлігінің тізілімінде тексеру',
+        resWaAll: 'Барлық іс жүргізуді WhatsApp-та талдау',
+        resWaNote: 'Тізімді маманға жібереміз — алғашқы талдау тегін, жауап 10 минут ішінде.',
+        resToCollect: 'өндіріледі',
+        resChipActive: 'Белсенді',
+        resChipClosed: 'Аяқталған',
+        resChipBan: '40 АЕК-тен · шетелге шығуға тыйым мүмкін',
+        resChipNew: (d) => d === 0 ? 'Жаңа · бүгін' : `Жаңа · ${d} күн бұрын`,
+        resCaseNo: 'Іс жүргізу нөмірі',
+        resStarted: 'Қозғалған күні',
+        resIssuer: 'Құжатты берген',
+        resExecutor: 'Орындаушы',
+        resOffice: 'Атқару округі',
+        resAddress: 'Орындаушының мекенжайы',
+        resCopy: 'Көшіру',
+        resCopied: 'Көшірілді',
+        resFeeLink: 'ЖСО ақысын азайту',
+        resFindExecutor: 'Орындаушының байланысы',
+        resMap: '2ГИС-тегі мекенжай',
+        resWaOne: 'WhatsApp-та талдау',
+        resEmptyWhy: 'Шот бәрібір бұғатталса, арестті ЖСО емес, салық органы немесе тергеу салуы мүмкін — мұндай арестер атқарушылық іс жүргізу тізілімінде жоқ.',
+        resEmptyBan: 'Шетелге шығуға тыйымды Әділет министрлігінің тізілімінен тексеріңіз',
+        resSource: 'Дереккөз: Әділет министрлігінің АІЖ АЖ борышкерлер тізілімі (data.egov.kz), тексеру сәтіндегі деректер.',
+        resBasisLabels: { notary: 'Нотариустың атқарушылық жазбасы', court: 'Сот шешімі', alimony: 'Алимент', fine: 'Айыппұл', other: 'Атқарушылық құжат' },
+        resNext: { notary: 'Жазбаны жоюға бола ма', court: 'Сот шешіміне шағым', alimony: 'Алимент және арест', fine: 'ЖСО-дағы айыппұл', other: 'Арестті қалай алу' }
     };
     const kzLabels = {
         debtorNum: 'АІЖ нөмірі',
@@ -338,35 +417,78 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Определяет статус-рекомендацию для производства (без ложных обещаний)
-     * @param {Object} debtorData - Данные производства
-     * @returns {{ text: string, cls: string }} - текст и CSS-класс статуса
-     */
-    function getStatusRecommendation(debtorData) {
-        if (!debtorData) return { text: T.statusAnalysis, cls: 'status-neutral' };
+    // 40 МРП: from this unpaid amount the bailiff must restrict travel abroad
+    // (Law «Об исполнительном производстве и статусе судебных исполнителей», art. 33).
+    // МРП comes from the republican budget law; add next year's value in January —
+    // for an unknown year the travel-ban hint is simply not shown.
+    const MRP_BY_YEAR = { 2026: 4325 };
+    const CURRENT_MRP = MRP_BY_YEAR[new Date().getFullYear()];
+    const BAN_THRESHOLD = CURRENT_MRP ? CURRENT_MRP * 40 : null;
 
-        const ipEndDate = debtorData.ipEndDate;
-        const isActive = !ipEndDate || String(ipEndDate).trim() === '' || String(ipEndDate).includes('nil="true"');
-        const creditor = (debtorData.recovererTitle || '').toLowerCase();
-        const category = (debtorData.categoryRu || '').toLowerCase();
-        const organ = (debtorData.ilOrganRu || '').toLowerCase();
+    const NEXT_STEPS = {
+        notary: { href: '/otmena-ispolnitelnoi-nadpisi', label: T.resNext.notary },
+        court: { href: '/otmena-resheniya-suda', label: T.resNext.court },
+        alimony: { href: '/alimenty-i-aresty', label: T.resNext.alimony },
+        fine: { href: '/shtrafy-i-aresty', label: T.resNext.fine },
+        other: { href: '/snyatie-aresta-so-scheta', label: T.resNext.other },
+    };
 
-        const isNotarial = organ.includes('нотариальн');
-        const isAlimony = category.includes('алимент');
-        const isFine = category.includes('штраф') || category.includes('административ');
-        const isStateCreditor = creditor.includes('государств') || creditor.includes('министерство') || creditor.includes('акимат') || creditor.includes('дгд');
+    const ICONS = {
+        doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 0v5h5M9 13h6M9 17h4"/></svg>',
+        plane: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z"/></svg>',
+        copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+        check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.2 4.2L19 7"/></svg>',
+        wa: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="zx-res-wa"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21c5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2Zm5.8 14.06c-.24.68-1.41 1.32-1.95 1.37-.5.05-1.13.07-1.83-.11-.42-.13-.96-.31-1.65-.61-2.9-1.25-4.79-4.17-4.94-4.36-.14-.2-1.18-1.57-1.18-3s.75-2.13 1.02-2.42c.26-.29.57-.36.76-.36h.55c.18 0 .42-.07.65.5.24.57.82 1.99.89 2.13.07.15.12.32.02.51-.1.2-.15.32-.29.49-.15.17-.31.38-.44.51-.15.15-.3.31-.13.6.17.29.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.35 1.45.29.15.46.12.63-.07.17-.2.73-.85.92-1.14.2-.29.39-.24.65-.15.27.1 1.7.8 1.99.95.29.15.48.22.55.34.07.12.07.7-.17 1.38Z"/></svg>',
+    };
 
-        if (!isActive) {
-            return { text: T.statusSettle, cls: 'status-neutral' };
-        }
-        if (isAlimony || (isFine && isStateCreditor)) {
-            return { text: T.statusDocs, cls: 'status-neutral' };
-        }
-        if (isNotarial) {
-            return { text: T.statusReview, cls: 'status-info' };
-        }
-        return { text: T.statusAnalysis, cls: 'status-info' };
+    // Registry fields arrive as strings, one-element arrays (xml2js) or empty objects for nil values.
+    function pickText(value) {
+        if (Array.isArray(value)) return pickText(value[0]);
+        if (value == null || typeof value === 'object') return '';
+        return String(value).trim();
+    }
+
+    function parseRegistryDate(value) {
+        if (!value) return null;
+        const ru = value.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+        const date = ru ? new Date(Number(ru[3]), Number(ru[2]) - 1, Number(ru[1])) : new Date(value);
+        return isNaN(date) ? null : date;
+    }
+
+    function classifyBasis(debtor) {
+        const organ = pickText(debtor.ilOrganRu).toLowerCase();
+        const category = pickText(debtor.categoryRu).toLowerCase();
+        if (category.includes('алимент')) return 'alimony';
+        if (category.includes('штраф') || category.includes('административ')) return 'fine';
+        if (organ.includes('нотари')) return 'notary';
+        if (organ.includes('суд')) return 'court';
+        return 'other';
+    }
+
+    function describeDebtor(debtor) {
+        const amount = parseFloat(pickText(debtor.recoveryAmount).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+        const ipEnd = pickText(debtor.ipEndDate);
+        const startText = pickText(debtor.ipStartDate);
+        const startDate = parseRegistryDate(startText);
+        const ageDays = startDate ? Math.max(0, Math.floor((Date.now() - startDate.getTime()) / 86400000)) : null;
+        const executorParts = [debtor.officerSurname, debtor.officerName, debtor.officerSecondname].map(pickText).filter(Boolean);
+        const basis = classifyBasis(debtor);
+        return {
+            number: pickText(debtor.execProcNum) || '-',
+            amount,
+            isActive: !ipEnd || ipEnd.includes('nil="true"'),
+            ageDays,
+            started: startText ? formatDate(startText) : '',
+            creditor: pickText(debtor.recovererTitle) || '-',
+            organ: pickText(debtor.ilOrganRu),
+            office: pickText(debtor.disaNameRu),
+            address: pickText(debtor.disaDepartmentAddress),
+            executor: executorParts.join(' '),
+            executorQuery: executorParts.slice(0, 2).join(' '),
+            basis,
+            basisLabel: T.resBasisLabels[basis],
+            overBanThreshold: BAN_THRESHOLD != null && amount >= BAN_THRESHOLD,
+        };
     }
 
     /**
@@ -396,107 +518,153 @@ document.addEventListener('DOMContentLoaded', function() {
         debtorsContainer.innerHTML = '';
         restrictionsTableBody.innerHTML = '';
 
-        // --- Отображение карточек исполнительных производств ---
+        // --- Отображение карточек исполнительных производств (2026-10-09: сводка + карточки) ---
+        debtorsSection.querySelectorAll('.zx-res-summary, .wa-all-block').forEach(el => el.remove());
+
         if (debtors && debtors.length > 0) {
             debtorsSection.style.display = 'block';
 
-            // Build single WhatsApp message with ALL arrests
             const iinVal = document.getElementById('iin')?.value || '';
-            const waIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+            const items = debtors.map(describeDebtor);
+            const active = items.filter(item => item.isActive);
+            const counted = active.length ? active : items;
+            const total = counted.reduce((sum, item) => sum + item.amount, 0);
+            const banCount = items.filter(item => item.isActive && item.overBanThreshold).length;
+            const alimonyCount = items.filter(item => item.isActive && item.basis === 'alimony').length;
+            const newCount = items.filter(item => item.ageDays != null && item.ageDays <= 30).length;
+
+            // One WhatsApp message with every proceeding, so the specialist sees the whole picture.
             let waAllText = 'Здравствуйте! Прошу разобрать ситуацию по исполнительным производствам.\n';
             if (iinVal) waAllText += `ИИН: ${iinVal}\n`;
             waAllText += `\nНайдено производств: ${debtors.length}\n\n`;
-
-            debtors.forEach((debtor, index) => {
-                const debtorNum = debtor.execProcNum || '-';
-                const debtorDate = formatDate(debtor.ipStartDate);
-                const debtorAmountStr = debtor.recoveryAmount || '0';
-                const debtorAmount = parseFloat(String(debtorAmountStr).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
-                const authority = debtor.ilOrganRu || '-';
-                const executorSurname = debtor.officerSurname || '';
-                const executorName = debtor.officerName || '';
-                const executorSecondnameRaw = debtor.officerSecondname;
-                let executorSecondname = '';
-                if (Array.isArray(executorSecondnameRaw) && executorSecondnameRaw.length > 0) {
-                    executorSecondname = executorSecondnameRaw[0] || '';
-                } else if (typeof executorSecondnameRaw === 'string') {
-                    executorSecondname = executorSecondnameRaw;
-                }
-                const executor = `${executorSurname} ${executorName} ${executorSecondname}`.trim() || '-';
-                const creditor = debtor.recovererTitle || '-';
-                const { text: statusText, cls: statusCls } = getStatusRecommendation(debtor);
-
-                // Accumulate into WhatsApp message
-                waAllText += `${index + 1}. № ${debtorNum}\n`;
-                waAllText += `   Взыскатель: ${creditor}\n`;
-                waAllText += `   Сумма: ${formatAmount(debtorAmount)}\n`;
-                waAllText += `   Орган: ${authority}\n`;
-                if (executor !== '-') waAllText += `   ЧСИ: ${executor}\n`;
+            items.forEach((item, index) => {
+                waAllText += `${index + 1}. № ${item.number}\n`;
+                waAllText += `   Взыскатель: ${item.creditor}\n`;
+                waAllText += `   Сумма: ${formatAmount(item.amount)}\n`;
+                waAllText += `   Основание: ${item.basisLabel}\n`;
+                if (item.executor) waAllText += `   Исполнитель: ${item.executor}\n`;
                 waAllText += '\n';
+            });
+            const waAllUrl = `https://wa.me/77003097566?text=${encodeURIComponent(waAllText)}`;
 
-                const card = document.createElement('div');
-                card.className = 'ip-list-item';
+            const summary = document.createElement('div');
+            summary.className = 'zx-res-summary';
+            summary.innerHTML = `
+                <div class="zx-res-summary__head">
+                    <span class="zx-res-summary__icon" aria-hidden="true">${ICONS.doc}</span>
+                    <div>
+                        <p class="zx-res-summary__kicker">${T.resKicker}</p>
+                        <h3 class="zx-res-summary__title">${T.resTitle(debtors.length)}</h3>
+                    </div>
+                </div>
+                <div class="zx-res-stats">
+                    <div class="zx-res-stat zx-res-stat--total">
+                        <span>${T.resTotal}</span>
+                        <strong>${formatAmount(total)}</strong>
+                        <small>${T.resTotalNote}</small>
+                    </div>
+                    <div class="zx-res-stat"><span>${T.resActive}</span><strong>${active.length}</strong></div>
+                    <div class="zx-res-stat${banCount ? ' zx-res-stat--warn' : ''}"><span>${T.resBanStat}</span><strong>${banCount}</strong></div>
+                    <div class="zx-res-stat"><span>${T.resNewStat}</span><strong>${newCount}</strong></div>
+                </div>
+                ${banCount || alimonyCount ? `
+                <div class="zx-res-alert" role="note">
+                    <span class="zx-res-alert__icon" aria-hidden="true">${ICONS.plane}</span>
+                    <div>
+                        <strong>${T.resBanTitle}</strong>
+                        ${banCount ? `<p>${T.resBanText(banCount, formatAmount(BAN_THRESHOLD))}</p>` : ''}
+                        ${alimonyCount ? `<p>${T.resAlimonyText}</p>` : ''}
+                        <a href="https://aisoip.adilet.gov.kz/debtors" target="_blank" rel="noopener">${T.resBanLink} →</a>
+                    </div>
+                </div>` : ''}
+                <div class="zx-res-summary__cta">
+                    <a href="${waAllUrl}" target="_blank" rel="noopener" class="zx-res-btn zx-res-btn--wa">${ICONS.wa} ${T.resWaAll}</a>
+                    <p>${T.resWaNote}</p>
+                </div>`;
+            debtorsContainer.insertAdjacentElement('beforebegin', summary);
+
+            items.forEach((item, index) => {
+                const waOne = `https://wa.me/77003097566?text=${encodeURIComponent(
+                    `Здравствуйте! Прошу разобрать производство № ${item.number}.\nВзыскатель: ${item.creditor}\nСумма: ${formatAmount(item.amount)}\nОснование: ${item.basisLabel}`
+                )}`;
+                const next = NEXT_STEPS[item.basis] || NEXT_STEPS.other;
+                const chips = [
+                    item.isActive ? `<span class="zx-chip zx-chip--active">${T.resChipActive}</span>` : `<span class="zx-chip">${T.resChipClosed}</span>`,
+                    item.isActive && item.overBanThreshold ? `<span class="zx-chip zx-chip--warn">${ICONS.plane} ${T.resChipBan}</span>` : '',
+                    item.ageDays != null && item.ageDays <= 30 ? `<span class="zx-chip zx-chip--new">${T.resChipNew(item.ageDays)}</span>` : '',
+                ].join('');
+                const rows = [
+                    [T.resStarted, item.started],
+                    [T.resIssuer, item.organ],
+                    [T.resExecutor, item.executor],
+                    [T.resOffice, item.office],
+                    [T.resAddress, item.address],
+                ].filter(([, value]) => value && value !== '-');
+
+                const card = document.createElement('article');
+                card.className = `zx-res-card${item.isActive && item.overBanThreshold ? ' zx-res-card--warn' : ''}`;
+                card.style.setProperty('--i', String(index));
                 card.innerHTML = `
-                    <div class="ip-list-num">${index + 1}</div>
-                    <div class="ip-list-body">
-                        <div class="ip-list-header">
-                            <span class="ip-list-docnum">№ ${escapeHtml(debtorNum)}</span>
-                            <span class="status ${statusCls}">${statusText}</span>
+                    <header class="zx-res-card__head">
+                        <div class="zx-res-card__who">
+                            <span class="zx-res-card__basis zx-res-card__basis--${item.basis}">${escapeHtml(item.basisLabel)}</span>
+                            <h4 class="zx-res-card__creditor">${escapeHtml(item.creditor)}</h4>
                         </div>
-                        <div class="ip-list-meta">
-                            <span><b>${T.labels.creditor}:</b> ${escapeHtml(creditor)}</span>
-                            <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
-                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>${T.chsiFee}</b> <a href="https://wa.me/77003097566?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">${T.chsiFeeLink}</a></span>` : ''}
-                            <span><b>${T.labels.date}:</b> ${escapeHtml(debtorDate)}</span>
-                            <span><b>${T.labels.organ}:</b> ${escapeHtml(authority)}</span>
-                            ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${escapeHtml(executor)}</span>` : ''}
+                        <div class="zx-res-card__sum">
+                            <strong>${formatAmount(item.amount)}</strong>
+                            <span>${T.resToCollect}</span>
                         </div>
+                    </header>
+                    <div class="zx-res-card__chips">${chips}</div>
+                    <dl class="zx-res-card__grid">
+                        <div class="zx-res-card__field zx-res-card__field--num">
+                            <dt>${T.resCaseNo}</dt>
+                            <dd><span class="zx-res-mono">${escapeHtml(item.number)}</span>
+                                <button type="button" class="zx-res-copy" data-copy="${escapeHtml(item.number)}" aria-label="${T.resCopy}">${ICONS.copy}<span>${T.resCopy}</span></button></dd>
+                        </div>
+                        ${rows.map(([label, value]) => `<div class="zx-res-card__field"><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`).join('')}
+                    </dl>
+                    <div class="zx-res-card__links">
+                        <a href="${next.href}">${next.label} →</a>
+                        ${item.amount > 0 ? `<a href="/ubrat-procenty-i-rashody-chsi">${T.resFeeLink} →</a>` : ''}
+                        ${item.executorQuery ? `<a href="/bailiff-search?q=${encodeURIComponent(item.executorQuery)}">${T.resFindExecutor} →</a>` : ''}
+                        ${item.address ? `<a href="https://2gis.kz/search/${encodeURIComponent(item.address)}" target="_blank" rel="noopener">${T.resMap} →</a>` : ''}
                     </div>
-                    <div class="ip-list-action">
-                        <button class="btn-details-card view-details-btn"
-                            data-bs-toggle="modal"
-                            data-bs-target="#debtorDetailsModal"
-                            data-debtor-index="${index}">
-                            ${T.details}
-                        </button>
-                    </div>
-                `;
+                    <footer class="zx-res-card__actions">
+                        <button class="zx-res-btn zx-res-btn--ghost btn-details-card view-details-btn"
+                            data-bs-toggle="modal" data-bs-target="#debtorDetailsModal" data-debtor-index="${index}">${T.details}</button>
+                        <a href="${waOne}" target="_blank" rel="noopener" class="zx-res-btn zx-res-btn--wa">${ICONS.wa} ${T.resWaOne}</a>
+                    </footer>`;
                 debtorsContainer.appendChild(card);
             });
 
-            // Single WhatsApp button after all cards
-            const waAllUrl = `https://wa.me/77003097566?text=${encodeURIComponent(waAllText)}`;
             const waBlock = document.createElement('div');
-            waBlock.className = 'wa-all-block';
+            waBlock.className = 'wa-all-block zx-res-bottom';
             waBlock.innerHTML = `
-                <div class="wa-all-inner">
-                    <div class="wa-all-text">
-                        <strong>${debtors.length > 1 ? T.helpMany : T.helpOne}</strong>
-                        <p>${T.helpText}</p>
-                    </div>
-                    <a href="${waAllUrl}" target="_blank" rel="noopener" class="wa-btn-single">
-                        ${waIcon} ${T.waWrite}
-                    </a>
+                <div>
+                    <strong>${debtors.length > 1 ? T.helpMany : T.helpOne}</strong>
+                    <p>${T.helpText}</p>
                 </div>
-            `;
+                <a href="${waAllUrl}" target="_blank" rel="noopener" class="zx-res-btn zx-res-btn--wa">${ICONS.wa} ${T.waWrite}</a>
+                <p class="zx-res-source">${T.resSource}</p>`;
             debtorsSection.appendChild(waBlock);
 
         } else {
-            // No arrests found
             debtorsSection.style.display = 'block';
             const waNoArrestUrl = `https://wa.me/77003097566?text=${encodeURIComponent(T.waNoArrest)}`;
             debtorsContainer.innerHTML = `
-                <div class="no-arrests-block">
-                    <div class="no-arrests-icon">✅</div>
+                <div class="zx-res-empty">
+                    <span class="zx-res-empty__icon" aria-hidden="true">${ICONS.check}</span>
                     <h3>${T.noArrestsTitle}</h3>
                     <p>${T.noArrestsText}</p>
+                    <ul class="zx-res-empty__notes">
+                        <li>${T.resEmptyWhy}</li>
+                        <li>${T.resEmptyBan} — <a href="https://aisoip.adilet.gov.kz/debtors" target="_blank" rel="noopener">aisoip.adilet.gov.kz</a></li>
+                    </ul>
                     <p class="no-arrests-note">${T.noArrestsNote}</p>
-                    <a href="${waNoArrestUrl}" target="_blank" rel="noopener" class="wa-btn-single">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        ${T.waWrite}
-                    </a>
-                </div>
-            `;
+                    <a href="${waNoArrestUrl}" target="_blank" rel="noopener" class="zx-res-btn zx-res-btn--wa">${ICONS.wa} ${T.waWrite}</a>
+                    <p class="zx-res-source">${T.resSource}</p>
+                </div>`;
         }
 
         // --- Отображение таблицы ограничений (остается без изменений, т.к. restrictions пуст) ---
@@ -594,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
             debtorsContainer.innerHTML = '';
         }
         if (debtorsSection) {
-            debtorsSection.querySelectorAll('.wa-all-block').forEach(el => el.remove());
+            debtorsSection.querySelectorAll('.wa-all-block, .zx-res-summary').forEach(el => el.remove());
         }
         if (restrictionsTableBody) {
             restrictionsTableBody.innerHTML = '';
@@ -691,6 +859,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.value.length === 12 && iinValidation) {
                 iinValidation.style.display = 'none';
             }
+        });
+    }
+
+    if (results) {
+        results.addEventListener('click', function(event) {
+            const copyButton = event.target.closest('.zx-res-copy');
+            if (!copyButton || !navigator.clipboard) return;
+            navigator.clipboard.writeText(copyButton.getAttribute('data-copy') || '').then(() => {
+                const label = copyButton.querySelector('span');
+                if (!label) return;
+                label.textContent = T.resCopied;
+                copyButton.classList.add('is-done');
+                setTimeout(() => { label.textContent = T.resCopy; copyButton.classList.remove('is-done'); }, 1600);
+            }).catch(() => {});
         });
     }
 

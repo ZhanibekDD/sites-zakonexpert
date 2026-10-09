@@ -15,8 +15,8 @@
 
   const companyWhatsAppLink = 'https://wa.me/77003097566';
   const companyWhatsAppRaw = '77003097566';
-    const companyPhoneRaw = '77058762795';
-    const companyPhoneDisplay = '+7 (705) 876-27-95';
+    const companyPhoneRaw = '77003097566';
+    const companyPhoneDisplay = '+7 (700) 309-75-66';
 
   document.documentElement.classList.add('js-enabled');
 

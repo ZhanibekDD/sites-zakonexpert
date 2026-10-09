@@ -162,7 +162,7 @@ async function run() {
     assert.match(profile.response.headers.get('x-robots-tag'), /noindex/);
     assert.match(profile.body, /name="robots" content="noindex/);
     assert(profile.body.includes('Деятельность прекращена 20.08.2026'));
-    for (const value of ['PRIVATE_EXECUTIVE_TEST', 'PRIVATE_ADDRESS_TEST', 'private@example.test', '77001112233', '77058762795']) {
+    for (const value of ['PRIVATE_EXECUTIVE_TEST', 'PRIVATE_ADDRESS_TEST', 'private@example.test', '77001112233', '77058762795', '77003097566']) {
       assert(!profile.body.includes(value), 'organization page must not leak hidden personal or site contact values');
     }
     for (const removedPath of [

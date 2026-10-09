@@ -194,7 +194,7 @@
       });
       if (!response.ok) throw new Error('chat rejected');
     } catch (_) {
-      addMsg('Сообщение не доставлено. Оставьте телефон в форме ниже или напишите в WhatsApp: +7 705 876-27-95.', 'bot');
+      addMsg('Сообщение не доставлено. Оставьте телефон в форме ниже или напишите в WhatsApp: +7 700 309-75-66.', 'bot');
     }
   }
 
@@ -323,7 +323,7 @@
       const msgs = document.getElementById('zke-messages');
       const s = document.createElement('div');
       s.className = 'zke-success';
-      s.innerHTML = `<strong>Не удалось сохранить заявку</strong><span><a href="https://wa.me/77003097566" target="_blank" rel="noopener">Напишите в WhatsApp</a> или позвоните: +7 705 876-27-95.</span>`;
+      s.innerHTML = `<strong>Не удалось сохранить заявку</strong><span><a href="https://wa.me/77003097566" target="_blank" rel="noopener">Напишите в WhatsApp</a> или позвоните: +7 700 309-75-66.</span>`;
       msgs.appendChild(s);
       msgs.scrollTop = msgs.scrollHeight;
     }
