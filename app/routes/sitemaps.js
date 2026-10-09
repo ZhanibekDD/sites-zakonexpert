@@ -99,6 +99,7 @@ function registerSitemapRoutes(app, dependencies) {
       { url: '/calculator',     priority: '0.85', freq: 'monthly' },
       { url: '/marshrut-dolzhnika', priority: '0.9', freq: 'monthly' },
       { url: '/diagnostika-aresta', priority: '0.95', freq: 'monthly', lastmod: '2026-08-24' },
+      { url: '/proverka-po-iin', priority: '0.95', freq: 'monthly', lastmod: '2026-10-09' },
       { url: '/bin-search',     priority: '0.8',  freq: 'monthly' },
       { url: '/gallery',        priority: '0.85', freq: 'monthly' },
       { url: '/press',          priority: '0.7',  freq: 'monthly' },

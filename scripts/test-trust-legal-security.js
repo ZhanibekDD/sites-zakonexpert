@@ -257,6 +257,6 @@ assert.match(server, /Необходимо согласие на разовую 
 assert.match(server, /purgeOlderThan/);
 
 const lock = require(path.join(ROOT, 'package-lock.json'));
-assert.strictEqual(lock.packages['node_modules/undici']?.version, '7.29.0', 'undici security override is not locked');
+assert.strictEqual(lock.packages['node_modules/undici']?.version, '7.30.0', 'undici security override is not locked');
 
 console.log(`Trust/legal/security OK: ${userFacingFiles.length} user-facing assets and ${publicPages.length} pages checked.`);

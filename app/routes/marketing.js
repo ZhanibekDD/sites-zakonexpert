@@ -154,6 +154,7 @@ function registerMarketingRoutes(app, dependencies) {
     '/services':                         'services.html',
     '/contact':                          'contact.html',
     '/sms-1414':                         'sms-1414.html',
+    '/proverka-po-iin':                  'proverka-po-iin.html',
     '/zapret-na-vyezd-iz-kazahstana':    'zapret-na-vyezd-iz-kazahstana.html',
     '/zhaloba-na-chsi':                  'zhaloba-na-chsi.html',
     '/chsi-ne-snimaet-arest-posle-oplaty': 'chsi-ne-snimaet-arest-posle-oplaty.html',

@@ -50,6 +50,8 @@ function installMiddleware(app, dependencies) {
             'https://maps.google.com',
             'https://www.google.com',
             'https://yandex.ru',
+            // Contact page map (public/contact.html, contact_kz.html) is an OpenStreetMap embed.
+            'https://www.openstreetmap.org',
           ],
           upgradeInsecureRequests: [],
         },

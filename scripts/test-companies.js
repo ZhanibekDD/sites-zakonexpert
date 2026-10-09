@@ -306,8 +306,8 @@ Promise.all([
   ]) {
     assert(html.includes('data-suppress-zakonexpert-contacts'),
       `${page} must disable site-wide ZakonExpert contact injection`);
-    assert(!html.includes('77058762795'), `${page} must not expose the ZakonExpert phone`);
-    assert(!html.includes('+7 (705) 876-27-95'), `${page} must not show the ZakonExpert phone label`);
+    assert(!html.includes('77058762795') && !html.includes('77003097566'), `${page} must not expose the ZakonExpert phone`);
+    assert(!html.includes('+7 (705) 876-27-95') && !html.includes('+7 (700) 309-75-66'), `${page} must not show the ZakonExpert phone label`);
     assert(!html.includes('wa.me/77058762795'), `${page} must not link to ZakonExpert WhatsApp`);
     assert(!html.includes('/js/chatbot.js'), `${page} must not inject a contact widget`);
   }

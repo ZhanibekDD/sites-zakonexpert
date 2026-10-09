@@ -30,13 +30,14 @@ const safeSchemaJson = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') 
   <link rel="stylesheet" href="/css/style.css?v=20260823-1">
   <link rel="stylesheet" href="/css/news.css?v=20260720-1">
   <link rel="stylesheet" href="/css/company-directory.css?v=20260904-1">
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261009-1">
 </head>
 <body>
 <%- include('../partials/yandex-metrika') %>
 <header class="site-header">
   <div class="landing-container nav-shell">
     <a class="brand" href="/">
-      <img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793" alt="ZakonExpert" class="brand-full-logo">
+      <img src="/img/brand/zakonexpert-logo-dark-600.png" width="600" height="240" alt="ZakonExpert" class="brand-full-logo">
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Menu" data-nav-toggle>
       <i class="bi bi-list fs-4"></i>
@@ -67,7 +68,7 @@ const safeSchemaJson = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') 
   <div class="footer-top-line"></div>
   <div class="landing-container footer-shell">
     <div class="footer-brand">
-      <img src="/img/brand/zakonexpert-logo-transparent-hd.png" width="1983" height="793" alt="ZakonExpert" class="brand-full-logo brand-full-logo--footer" loading="lazy">
+      <img src="/img/brand/zakonexpert-logo-transparent-600.png" width="600" height="240" alt="ZakonExpert" class="brand-full-logo brand-full-logo--footer" loading="lazy">
       <p class="mt-3"><%= copy.sourcePolicy %></p>
     </div>
     <div class="footer-cols">
@@ -76,7 +77,7 @@ const safeSchemaJson = schema ? JSON.stringify(schema).replace(/</g, '\\u003c') 
   </div>
   <div class="landing-container footer-bottom"><span>© <span class="current-year"></span> ZakonExpert</span><span class="ze-legal-entity">ТОО «ZakonExpert» · БИН 260740044168</span><span>Kazakhstan</span></div>
 </footer>
-<script src="/js/site.js?v=20260930-1"></script>
+<script src="/js/site.js?v=20261009-1"></script>
 <script src="/js/analytics-events.js?v=20260828-2"></script>
 <script>
 document.querySelector('[data-language-switch]')?.addEventListener('change', function () {

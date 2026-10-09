@@ -1,0 +1,87 @@
+/* /proverka-po-iin — IIN check landing (2026-10-09).
+   Builds on home-refresh.css (body.zr-home) and zx-theme.css tokens; only page-specific parts live here. */
+
+.zx-iin-page .zx-iin-hero__grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); align-items: start; }
+.zx-iin-page .zx-iin-title { font-size: clamp(2.3rem, 1.4rem + 2.6vw, 3.6rem); }
+.zx-iin-page .zx-iin-crumbs {
+  display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px;
+  color: var(--zx-muted, #5d6b80); font-size: .875rem; font-weight: 600;
+}
+.zx-iin-page .zx-iin-crumbs a { color: var(--zx-blue, #1d4ed8); text-decoration: none; }
+.zx-iin-page .zx-iin-crumbs a:hover { text-decoration: underline; }
+.zx-iin-page .zx-iin-source { margin: 14px 0 0; max-width: 62ch; color: var(--zx-muted, #5d6b80); font-size: .875rem; line-height: 1.55; }
+
+/* Side cards */
+.zx-iin-page .zx-iin-aside { display: grid; gap: 14px; padding-top: 48px; }
+.zx-iin-page .zx-iin-card {
+  padding: 24px; border: 1px solid var(--zx-line, #e4e9f1); border-radius: var(--zx-radius, 20px);
+  background: #fff; box-shadow: var(--zx-shadow);
+}
+.zx-iin-page .zx-iin-card--soft { background: var(--zx-soft, #f4f7fb); box-shadow: none; }
+.zx-iin-page .zx-iin-card__title { margin: 0 0 14px; color: var(--zx-ink, #0e1b2e); font-size: 1.125rem; font-weight: 800; letter-spacing: -0.01em; }
+.zx-iin-page .zx-iin-card p { margin: 0 0 10px; color: var(--zx-ink-2, #2a3a52); font-size: .9375rem; line-height: 1.55; }
+.zx-iin-page .zx-iin-card p:last-child { margin-bottom: 0; }
+.zx-iin-page .zx-iin-card a { color: var(--zx-blue, #1d4ed8); text-decoration: underline; text-underline-offset: 2px; }
+.zx-iin-page .zx-iin-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.zx-iin-page .zx-iin-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; color: var(--zx-ink-2, #2a3a52); font-size: .9375rem; line-height: 1.5; }
+.zx-iin-page .zx-iin-list svg {
+  width: 24px; height: 24px; padding: 4px; border-radius: 50%;
+  background: var(--zx-blue-soft, #e8efff); color: var(--zx-blue, #1d4ed8);
+}
+.zx-iin-page .zx-iin-list strong { color: var(--zx-ink, #0e1b2e); font-weight: 800; }
+
+/* Where-to-check table */
+.zx-iin-page .zx-iin-table-wrap { border: 1px solid var(--zx-line, #e4e9f1); border-radius: var(--zx-radius, 20px); overflow: hidden; background: #fff; }
+.zx-iin-page .zx-iin-table { width: 100%; margin: 0; border-collapse: collapse; font-size: .9375rem; line-height: 1.5; }
+.zx-iin-page .zx-iin-table thead th {
+  padding: 14px 20px; background: var(--zx-soft, #f4f7fb); color: var(--zx-muted, #5d6b80);
+  font-size: .8125rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: left;
+}
+.zx-iin-page .zx-iin-table tbody th, .zx-iin-page .zx-iin-table td { padding: 18px 20px; border-top: 1px solid var(--zx-line, #e4e9f1); vertical-align: top; text-align: left; }
+.zx-iin-page .zx-iin-table tbody th { width: 28%; color: var(--zx-ink, #0e1b2e); font-weight: 800; }
+.zx-iin-page .zx-iin-table td { color: var(--zx-ink-2, #2a3a52); }
+.zx-iin-page .zx-iin-table a { color: var(--zx-blue, #1d4ed8); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Next steps */
+.zx-iin-page .zx-iin-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 36px; padding: 0; list-style: none; }
+.zx-iin-page .zx-iin-steps li { padding: 22px; border-radius: var(--zx-radius, 20px); background: #fff; box-shadow: var(--zx-shadow); }
+.zx-iin-page .zx-iin-steps__num {
+  display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 12px; border-radius: 50%;
+  background: var(--zx-blue, #1d4ed8); color: #fff; font-weight: 800;
+}
+.zx-iin-page .zx-iin-steps strong { display: block; margin-bottom: 6px; color: var(--zx-ink, #0e1b2e); font-size: 1.0625rem; font-weight: 800; }
+.zx-iin-page .zx-iin-steps p { margin: 0; color: var(--zx-muted, #5d6b80); font-size: .9375rem; line-height: 1.55; }
+.zx-iin-page .zx-iin-links { margin-bottom: 28px; }
+.zx-iin-page .zx-iin-actions { margin-top: 8px; }
+
+/* Law block */
+.zx-iin-page .zx-iin-law .zr-head a { color: var(--zx-blue, #1d4ed8); text-decoration: underline; text-underline-offset: 2px; }
+.zx-iin-page .zx-iin-law__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.zx-iin-page .zx-iin-more { display: inline-block; margin-top: 18px; color: var(--zx-blue, #1d4ed8); font-weight: 800; text-decoration: none; }
+.zx-iin-page .zx-iin-more:hover { text-decoration: underline; }
+
+.zx-iin-page .zr-quick__note a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+
+@media (max-width: 1024px) {
+  .zx-iin-page .zx-iin-hero__grid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .zx-iin-page .zx-iin-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 24px; }
+}
+@media (max-width: 768px) {
+  .zx-iin-page .zx-iin-title { font-size: clamp(2rem, 1.3rem + 3.6vw, 2.5rem); }
+  .zx-iin-page .zx-iin-aside { grid-template-columns: minmax(0, 1fr); }
+  .zx-iin-page .zx-iin-card { padding: 20px; }
+  .zx-iin-page .zx-iin-steps, .zx-iin-page .zx-iin-law__grid { grid-template-columns: minmax(0, 1fr); }
+  /* The table becomes one card per row */
+  .zx-iin-page .zx-iin-table thead { display: none; }
+  .zx-iin-page .zx-iin-table, .zx-iin-page .zx-iin-table tbody, .zx-iin-page .zx-iin-table tr,
+  .zx-iin-page .zx-iin-table tbody th, .zx-iin-page .zx-iin-table td { display: block; width: 100%; }
+  .zx-iin-page .zx-iin-table tr { padding: 16px 18px; border-top: 1px solid var(--zx-line, #e4e9f1); }
+  .zx-iin-page .zx-iin-table tr:first-child { border-top: 0; }
+  .zx-iin-page .zx-iin-table tbody th, .zx-iin-page .zx-iin-table td { padding: 0; border: 0; }
+  .zx-iin-page .zx-iin-table tbody th { margin-bottom: 8px; font-size: 1rem; }
+  .zx-iin-page .zx-iin-table td { margin-top: 6px; }
+  .zx-iin-page .zx-iin-table td::before {
+    content: attr(data-label); display: block; color: var(--zx-muted, #5d6b80);
+    font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  }
+}

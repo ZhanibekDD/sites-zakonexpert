@@ -287,11 +287,30 @@ function registerEngagementRoutes(app, dependencies) {
   }));
 
   // ===== КОММЕНТАРИИ =====
+  // Only same-site paths are allowed as redirect targets; anything else (absolute URLs,
+  // protocol-relative //host, backslash tricks) falls back to the homepage.
+  const safeBackPath = (value) => {
+    if (typeof value !== 'string') return null;
+    const candidate = value.trim();
+    if (!candidate.startsWith('/') || candidate.startsWith('//') || candidate.includes('\\')) return null;
+    return candidate.slice(0, 500);
+  };
+  const sameSiteReferer = (req) => {
+    try {
+      const referer = new URL(req.headers.referer || '');
+      if (referer.host !== req.headers.host) return null;
+      return safeBackPath(referer.pathname + referer.search);
+    } catch (error) {
+      return null;
+    }
+  };
+
   app.post('/comments', commentLimiter, express.urlencoded({ extended: true }), asyncHandler(async (req, res) => {
-    if (!commentsDb) return res.redirect(req.headers.referer || '/');
+    if (!commentsDb) return res.redirect(sameSiteReferer(req) || '/');
     const { type, slug, name, rating, text, backUrl, privacyConsent } = req.body;
+    const backPath = safeBackPath(backUrl) || sameSiteReferer(req) || '/';
     if (!privacyConsent || !type || !slug || !text || text.trim().length < 3) {
-      return res.redirect(backUrl || req.headers.referer || '/');
+      return res.redirect(backPath);
     }
     await commentsDb.add({
       type:   type.slice(0, 20),
@@ -301,7 +320,7 @@ function registerEngagementRoutes(app, dependencies) {
       text:   text.trim().slice(0, 600),
       ip:     req.ip,
     });
-    res.redirect((backUrl || req.headers.referer || '/') + '?comment=sent');
+    res.redirect(backPath.split('#')[0].split('?')[0] + '?comment=sent');
   }));
 
   app.get('/admin/comments', requireAdminPassword, asyncHandler(async (req, res) => {
