@@ -60,7 +60,18 @@ document.addEventListener('DOMContentLoaded', function() {
         tableNotFound: 'Не найдены элементы таблиц или секций.',
         noDetails: 'Подробные детали для этого производства отсутствуют.',
         detailsLoadError: 'Ошибка: Не удалось загрузить детали.',
-        waPrefix: 'Здравствуйте! Прошу разобрать ситуацию по исполнительному производству.'
+        waPrefix: 'Здравствуйте! Прошу разобрать ситуацию по исполнительному производству.',
+        errorLabel: 'Ошибка:',
+        waWrite: 'Написать в WhatsApp',
+        helpMany: 'Нужна помощь по этим производствам?',
+        helpOne: 'Нужна помощь по этому производству?',
+        helpText: 'Напишите в WhatsApp — разберём каждое производство и объясним ваши права бесплатно',
+        noArrestsTitle: 'У вас нет активных арестов',
+        noArrestsText: 'По данному ИИН исполнительных производств не найдено.',
+        noArrestsNote: 'Если у вас непонятная ситуация — напишите нам, разберёмся бесплатно.',
+        waNoArrest: 'Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.',
+        chsiFee: 'Услуга ЧСИ',
+        chsiFeeLink: '— убрать проценты ЧСИ →'
     };
     const kzText = {
         iinInvalid: 'ЖСН 12 саннан тұруы керек',
@@ -86,7 +97,18 @@ document.addEventListener('DOMContentLoaded', function() {
         tableNotFound: 'Нәтижелерді көрсету үшін элементтер табылмады.',
         noDetails: 'Бұл өндіріс бойынша толық деректер жоқ.',
         detailsLoadError: 'Қате: толық мәліметтерді жүктеу мүмкін болмады.',
-        waPrefix: 'Сәлеметсіз бе! Атқарушылық өндіріс бойынша жағдайды талдауды сұраймын.'
+        waPrefix: 'Сәлеметсіз бе! Атқарушылық өндіріс бойынша жағдайды талдауды сұраймын.',
+        errorLabel: 'Қате:',
+        waWrite: 'WhatsApp-қа жазу',
+        helpMany: 'Осы іс жүргізулер бойынша көмек керек пе?',
+        helpOne: 'Осы іс жүргізу бойынша көмек керек пе?',
+        helpText: 'WhatsApp-қа жазыңыз — әр іс жүргізуді талдап, құқықтарыңызды тегін түсіндіреміз',
+        noArrestsTitle: 'Белсенді арест табылмады',
+        noArrestsText: 'Бұл ЖСН бойынша атқарушылық іс жүргізулер табылмады.',
+        noArrestsNote: 'Жағдай түсініксіз болса — бізге жазыңыз, тегін талдаймыз.',
+        waNoArrest: 'Сәлеметсіз бе! ЖСН бойынша тексердім — арест табылмады, бірақ қарыз бойынша сұрағым бар.',
+        chsiFee: 'ЖСО қызметі',
+        chsiFeeLink: '— ЖСО пайыздарын алып тастау →'
     };
     const kzLabels = {
         debtorNum: 'АІЖ нөмірі',
@@ -103,6 +125,13 @@ document.addEventListener('DOMContentLoaded', function() {
         ...(isKz ? kzText : baseText),
         labels: isKz ? kzLabels : baseLabels
     };
+
+    // Registry (eGov) values are untrusted text: escape them before they reach innerHTML.
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, (c) => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+        ));
+    }
 
 
     // Вспомогательная функция для ограничения времени выполнения промиса
@@ -411,16 +440,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="ip-list-num">${index + 1}</div>
                     <div class="ip-list-body">
                         <div class="ip-list-header">
-                            <span class="ip-list-docnum">№ ${debtorNum}</span>
+                            <span class="ip-list-docnum">№ ${escapeHtml(debtorNum)}</span>
                             <span class="status ${statusCls}">${statusText}</span>
                         </div>
                         <div class="ip-list-meta">
-                            <span><b>${T.labels.creditor}:</b> ${creditor}</span>
+                            <span><b>${T.labels.creditor}:</b> ${escapeHtml(creditor)}</span>
                             <span><b>${T.labels.amount}:</b> <span class="ip-amount">${formatAmount(debtorAmount)}</span></span>
-                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>Услуга ЧСИ</b> <a href="https://wa.me/77003097566?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">— убрать проценты ЧСИ →</a></span>` : ''}
-                            <span><b>${T.labels.date}:</b> ${debtorDate}</span>
-                            <span><b>${T.labels.organ}:</b> ${authority}</span>
-                            ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${executor}</span>` : ''}
+                            ${debtorAmount > 0 ? `<span class="ip-chsi-fee"><b>${T.chsiFee}</b> <a href="https://wa.me/77003097566?text=${encodeURIComponent('Здравствуйте! Хочу убрать проценты ЧСИ, прошу помочь.')}" target="_blank" rel="noopener" class="ip-save-link">${T.chsiFeeLink}</a></span>` : ''}
+                            <span><b>${T.labels.date}:</b> ${escapeHtml(debtorDate)}</span>
+                            <span><b>${T.labels.organ}:</b> ${escapeHtml(authority)}</span>
+                            ${executor !== '-' ? `<span><b>${T.labels.executor}:</b> ${escapeHtml(executor)}</span>` : ''}
                         </div>
                     </div>
                     <div class="ip-list-action">
@@ -442,11 +471,11 @@ document.addEventListener('DOMContentLoaded', function() {
             waBlock.innerHTML = `
                 <div class="wa-all-inner">
                     <div class="wa-all-text">
-                        <strong>Нужна помощь по ${debtors.length > 1 ? 'этим производствам' : 'этому производству'}?</strong>
-                        <p>Напишем в WhatsApp — разберём каждое производство и объясним ваши права бесплатно</p>
+                        <strong>${debtors.length > 1 ? T.helpMany : T.helpOne}</strong>
+                        <p>${T.helpText}</p>
                     </div>
                     <a href="${waAllUrl}" target="_blank" rel="noopener" class="wa-btn-single">
-                        ${waIcon} Написать в WhatsApp
+                        ${waIcon} ${T.waWrite}
                     </a>
                 </div>
             `;
@@ -455,16 +484,16 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // No arrests found
             debtorsSection.style.display = 'block';
-            const waNoArrestUrl = `https://wa.me/77003097566?text=${encodeURIComponent('Здравствуйте! Проверил(а) по ИИН — арестов не найдено, но у меня есть вопрос по задолженности.')}`;
+            const waNoArrestUrl = `https://wa.me/77003097566?text=${encodeURIComponent(T.waNoArrest)}`;
             debtorsContainer.innerHTML = `
                 <div class="no-arrests-block">
                     <div class="no-arrests-icon">✅</div>
-                    <h3>У вас нет активных арестов</h3>
-                    <p>По данному ИИН исполнительных производств не найдено.</p>
-                    <p class="no-arrests-note">Если у вас непонятная ситуация — напишите нам, разберёмся бесплатно.</p>
+                    <h3>${T.noArrestsTitle}</h3>
+                    <p>${T.noArrestsText}</p>
+                    <p class="no-arrests-note">${T.noArrestsNote}</p>
                     <a href="${waNoArrestUrl}" target="_blank" rel="noopener" class="wa-btn-single">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                        Написать в WhatsApp
+                        ${T.waWrite}
                     </a>
                 </div>
             `;
@@ -500,10 +529,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
                 row.innerHTML = `
-                    <td data-label="${T.labels.restrictionType}">${type}</td>
-                    <td data-label="${T.labels.status}"><span class="status ${statusClass}">${status}</span></td>
-                    <td data-label="${T.labels.organ}">${authority}</td>
-                    <td data-label="${T.labels.date}">${date}</td>
+                    <td data-label="${T.labels.restrictionType}">${escapeHtml(type)}</td>
+                    <td data-label="${T.labels.status}"><span class="status ${statusClass}">${escapeHtml(status)}</span></td>
+                    <td data-label="${T.labels.organ}">${escapeHtml(authority)}</td>
+                    <td data-label="${T.labels.date}">${escapeHtml(date)}</td>
                     <!-- <td data-label="Детали"> ${status.toLowerCase().includes('детали') ? '<button class="btn btn-sm btn-outline-secondary">Детали</button>' : '-'} </td> -->
                 `;
                 restrictionsTableBody.appendChild(row);
@@ -528,10 +557,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const waUrl = `https://wa.me/77003097566?text=${encodeURIComponent(T.waPrefix)}`;
         errorMessage.innerHTML = `
             <i class="bi bi-exclamation-triangle me-2"></i>
-            <strong>Ошибка:</strong> <span>${msg}</span>
+            <strong>${T.errorLabel}</strong> <span>${escapeHtml(msg)}</span>
             <div class="mt-3">
                 <a href="${waUrl}" target="_blank" rel="noopener" class="btn-wa-error">
-                    <i class="bi bi-whatsapp me-1"></i> Написать в WhatsApp
+                    <i class="bi bi-whatsapp me-1"></i> ${T.waWrite}
                 </a>
             </div>`;
         errorMessage.classList.remove('d-none');
@@ -701,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         function miRow(label, value) {
                             if (!value || value === '') return '';
-                            return `<div class="mi-row"><span class="mi-label">${label}</span><span class="mi-value">${value}</span></div>`;
+                            return `<div class="mi-row"><span class="mi-label">${label}</span><span class="mi-value">${escapeHtml(value)}</span></div>`;
                         }
 
                         const blockDebtor = `<div class="mi-block">
