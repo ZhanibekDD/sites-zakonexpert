@@ -129,7 +129,7 @@ function installMiddleware(app, dependencies) {
   const HTML_SUFFIX_REDIRECT_EXCLUDE = new Set([
     '/googlerGbK9GM3kA42xzTzGMQs4VZju46dDdZjQdmOigQjnKY.html',
     '/yandex_decc99fa3bf371ce.html',
-    '/yandex_f7122fcf5ddd2abb.html',
+    '/yandex_2bb19345fa647114.html',
   ]);
   // Any future Yandex/Google verification stub is excluded too, so adding one is a file drop only.
   const VERIFICATION_FILE = /^\/(?:yandex_[0-9a-f]+|google[0-9A-Za-z_-]+)\.html$/;
