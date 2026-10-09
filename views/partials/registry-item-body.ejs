@@ -56,6 +56,12 @@ var analyticsEntityType = detail.analyticsEntityType || '';
       <div class="collector-layout">
         <section class="collector-card" aria-label="Сведения об организации">
           <% (detail.rows || []).forEach(function(row) { %><%- rowHtml(row) %><% }); %>
+          <%# Phones: the help card sits below the details and the map, so offer the WhatsApp step right after the contacts. %>
+          <a class="registry-quick-cta" href="https://wa.me/77003097566?text=<%= whatsAppText %>" target="_blank" rel="noopener"
+            <% if (analyticsEvent) { %>data-product-event="<%= analyticsEvent %>" data-event-target="registry-whatsapp" data-event-cta="profile_inline_mobile" data-source-entity-type="<%= analyticsEntityType %>"<% } %>>
+            <span class="registry-quick-cta__text"><strong><%= detail.help.title %></strong><small>Ответим в WhatsApp, первичный разбор бесплатно</small></span>
+            <span class="registry-quick-cta__btn"><i class="bi bi-whatsapp" aria-hidden="true"></i> Написать</span>
+          </a>
           <% if (detail.address) { %>
             <div class="collector-map">
               <iframe src="https://maps.google.com/maps?q=<%= mapQuery %>&output=embed&hl=ru&z=15" loading="lazy" title="Карта расположения <%= detail.name %>" allowfullscreen></iframe>

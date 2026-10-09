@@ -244,3 +244,90 @@ html body .site-header .header-contacts > a[href*="wa.me"]:not(.header-wa-btn):h
 /* Same compact language switch on every page (the homepage size) */
 html body .site-header .lang-switcher { padding: 2px; gap: 2px; border-radius: 999px; }
 html body .site-header .lang-switcher a { min-width: 34px; min-height: 31px; padding: 0 6px; font-size: .74rem; font-weight: 800; border-radius: 999px; display: inline-grid; place-items: center; }
+
+/* ── Full-audit fixes, 2026-10-09 ──────────────────────────────────────────
+   Contrast below WCAG AA (4.5:1) found by axe on 337 of 341 audited pages, and the last gold accents. */
+html body :is(.ze-result-showcase__footer span, .ze-result-showcase__hint, .ze-form-note,
+  .professional-catalog__meta, .professional-catalog__region small, .ze-trust-item span,
+  .news-empty p, .news-empty p a, span.disabled, .professional-card__missing,
+  .legal-disclaimer, .zg-answer > span, .zg-eyebrow) { color: var(--zx-muted) !important; }
+html body .professional-card__rows span { color: var(--zx-ink-2); }
+html body :is(.professional-card a, .professional-card__link) { color: var(--zx-blue); }
+/* «Деятельность прекращена» is said by the status badge; fading the whole card made it unreadable */
+html body .professional-card--inactive { opacity: 1; }
+html body .professional-card__status--inactive { color: #b42318; background: #fef3f2; }
+html body .professional-card--inactive .professional-card__license span { color: #8a5a00; }
+html body a[data-event-cta="region_bottom"] { background: var(--zx-green) !important; border-color: var(--zx-green) !important; }
+/* Legal disclaimer inside the dark article CTA (/zakony and law pages) */
+html body .article-cta .legal-disclaimer,
+html body .article-cta .legal-disclaimer a { color: rgba(255, 255, 255, .78) !important; }
+html body .article-cta .legal-disclaimer strong { color: #fff !important; }
+/* Dark footer: small print was rgba(255,255,255,.4) inline */
+html body footer :is(p, .footer-region, .footer-note, .ze-privacy-settings) { color: rgba(255, 255, 255, .74) !important; }
+/* Last gold accents */
+html body .law-nav-link .num { color: var(--zx-blue) !important; }
+html body .zg-answer { border-left-color: var(--zx-blue); }
+html body .npage-cta-label { color: var(--zx-blue) !important; }
+html body :is(.od-kicker, .od-eyebrow) { color: var(--zx-blue) !important; }
+html body .notary-search-btn { background: var(--zx-blue) !important; border-color: var(--zx-blue) !important; color: #fff !important; }
+html body .notary-cta-tag { color: var(--zx-blue) !important; }
+html body .ze-result-showcase__status strong { color: #fff; }
+
+/* Directory profiles (ЧСИ, нотариусы, МФО…): ~70% of search visitors land here */
+html body .collector-badge { border-color: rgba(255, 255, 255, .34); background: rgba(255, 255, 255, .1); color: #fff; border-radius: 999px; }
+html body .collector-badge--active { border-color: rgba(134, 239, 172, .55); color: #bbf7d0; }
+html body .collector-hero::after { display: none; }
+html body .registry-quick-cta { display: none; }
+@media (max-width: 820px) {
+  html body .registry-quick-cta {
+    display: flex; align-items: center; gap: 12px; margin: 14px 0 6px; padding: 14px;
+    border: 1px solid var(--zx-line); border-radius: 18px; background: var(--zx-soft);
+    color: var(--zx-ink); text-decoration: none;
+  }
+  html body .registry-quick-cta__text { display: grid; flex: 1 1 auto; gap: 2px; min-width: 0; }
+  html body .registry-quick-cta__text strong { font-size: .95rem; line-height: 1.3; }
+  html body .registry-quick-cta__text small { color: var(--zx-muted); font-size: .8rem; }
+  html body .registry-quick-cta__btn {
+    display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 42px; padding: 0 14px;
+    border-radius: 999px; background: var(--zx-green); color: #fff; font-weight: 800; font-size: .9rem;
+  }
+}
+
+/* One typeface: the serif (Georgia) leftovers of the old design, and form controls,
+   which do not inherit the page font by default */
+html body :is(button, input, select, textarea) { font-family: inherit; }
+html body :is(
+  .ad-faq h2, .ad-hero h1, .ad-principle h2, .ad-question__heading h2, .ad-resources h2,
+  .ad-result__main > h2, .bailiff-region-help__heading h2, .bc-explain h2, .bc-hero h1, .bc-section-intro h2,
+  .cc-final-cta h2, .cc-hero h1, .cc-result-head h2, .cc-section-intro h2, .cc-section-number,
+  .collector-hero h1, .collector-more .law-faq > h2, .collector-step__number, .dok-card h3, .dok-cta h2,
+  .dok-guide__heading h2, .dok-guide__steps li > span, .dok-hero h1, .dok-paper--front > strong,
+  .dok-section-title, .law-art-title, .law-code-card strong, .law-hero-title, .law-result-badge,
+  .notary-archive__cta h2, .notary-archive__explain h2, .notary-archive__flow strong,
+  .notary-archive__hero h1, .notary-archive__section-head h2, .professional-catalog__heading h2,
+  .professional-reviews__heading h2, .registry-changes__cta h2, .registry-changes__hero h1,
+  .registry-changes__toolbar h2, .rez-v2-card__amount, .rez-v2-cta h2, .rez-v2-heading h2, .rez-v2-hero h1,
+  .rez-v2-summary > strong, .rez-v2-totals strong, .ze-home-hero.search-hero .search-hero-title,
+  .ze-home-result__content h2, .ze-process-step__number, .ze-registry-feature h3, .ze-section-heading h2
+) { font-family: var(--zx-font) !important; }
+
+/* Muted text on light cards: the page palettes used greys at 2.7–4.4:1; one muted ink that passes AA */
+:root { --zg-muted: #5a6b80; --collector-muted: #5a6b80; --dok-muted: #5a6b80; }
+html body .od-page { --od-muted: #56677b; }
+html body :is(.professional-pagination > span, .bailiff-region-help__steps p, .bailiff-region-help__routes small,
+  .zg-card-label, .od-meta-inline dt, .od-table-card td:first-child) { color: var(--zx-muted) !important; }
+html body section > span[style*="#a17624"] { color: var(--zx-blue) !important; }
+/* Results (/rezultaty) and documents (/dokumenty): small print and kickers */
+html body :is(.rez-viewer__copy small, .rez-viewer__help, .rez-viewer__footer span, .rez-v2-archive-count span,
+  .rez-v2-card__pages, .rez-v2-archive-note, .rez-v2-heading p, .dok-nav a small, a[href^="#sec-"] small) { color: var(--zx-muted) !important; }
+html body .rez-v2-heading > span { color: var(--zx-blue) !important; }
+html body .rez-v2-badge { color: #116b3c; }
+html body footer :is(.landing-container, a[style*="rgba(255,255,255,.35)"]) { color: rgba(255, 255, 255, .74) !important; }
+html body .rez-viewer__option.is-active .rez-viewer__copy small { color: rgba(255, 255, 255, .78) !important; }
+html body .rez-viewer__option.is-active .rez-viewer__arrow { color: #fff; }
+html body :is(.dok-guide__heading > span, .dok-section-index) { color: var(--zx-blue) !important; }
+html body .dok-hint { color: var(--zx-muted); }
+html body .btn-dok-wa { background: var(--zx-green); }
+html body .btn-dok-wa:hover { background: var(--zx-green-hover); }
+html body .professional-card__license { border-color: var(--zx-line); background: var(--zx-soft); color: var(--zx-ink-2); }
+html body .professional-card__license i { color: var(--zx-blue); }
