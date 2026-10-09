@@ -33,7 +33,7 @@ function setTab(t) {
   document.querySelectorAll('.calc-tab').forEach(function(el){ el.classList.toggle('active', el.dataset.tab === t); });
   document.getElementById('field-rate').style.display = t === 'mfo' ? '' : 'none';
   document.getElementById('field-rate-bank').style.display = t === 'bank' ? '' : 'none';
-  document.getElementById('field-penalty').parentElement.style.display = t === 'mfo' ? '' : 'none';
+  document.getElementById('field-penalty').style.display = t === 'mfo' ? '' : 'none';
   document.getElementById('result-box').classList.remove('show');
 }
 function fmt(n) { return Math.round(n).toLocaleString('ru-RU') + ' ₸'; }
@@ -103,7 +103,7 @@ const body = CSS
   + '<div class="calc-group"><label class="calc-label">Дата расчёта</label><input id="date-to" class="calc-input" type="date"></div>'
   + '</div>'
   + '<div class="calc-row">'
-  + '<div class="calc-group"><label class="calc-label">Пеня (% в день)</label><input id="penalty" class="calc-input" type="number" value="0.5" min="0" max="5" step="0.01"></div>'
+  + '<div id="field-penalty" class="calc-group"><label class="calc-label">Пеня (% в день)</label><input id="penalty" class="calc-input" type="number" value="0.5" min="0" max="5" step="0.01"></div>'
   + '<div class="calc-group" style="justify-content:flex-end;padding-top:24px"><button class="calc-btn" onclick="calculate()">Рассчитать</button></div>'
   + '</div>'
   + '<div id="result-box" class="calc-result">'

@@ -1988,3 +1988,57 @@ a[href^="/otkrytye-dannye"] { display: none !important; }
 li:has(> a[href^="/advocate"]),
 li:has(> a[href^="/mediator"]),
 li:has(> a[href^="/otkrytye-dannye"]) { display: none !important; }
+
+/* ZE_HEADER_FIT_20261009
+   The header container is capped at ~1240px, so at every desktop width the full menu, language
+   switch, phone and WhatsApp button did not fit: the phone and WhatsApp were pushed off-screen and
+   pages scrolled sideways. Items that are also reachable elsewhere are dropped from the top bar
+   («Новости» and «Отзывы» live in «Полезное»/footer, «Как мы работаем» is a homepage anchor) and
+   the phone collapses to an icon. `html` raises specificity above home-hero-v2.css, which loads
+   after this file on the homepage. */
+@media (min-width: 981px) {
+    html .site-header .nav-shell { gap: 16px; }
+    html .site-header nav { min-width: 0; }
+    html .site-header .nav-links { gap: 2px; }
+    html .site-header .nav-link { padding-inline: 9px; font-size: .84rem; }
+    html .site-header .brand-full-logo { width: 168px; max-height: 56px; }
+    html .site-header .nav-links > li:has(> a[href="/news"]),
+    html .site-header .nav-links > li[data-nav-reviews],
+    html .site-header .nav-links > li:has(> a[href="#how-we-work"]),
+    html .site-header .nav-links > li:has(> a[href="/#how-we-work"]) { display: none; }
+    html .site-header .header-contacts > a[href^="tel:"] { font-size: 0; gap: 0; width: 42px; height: 42px; justify-content: center; border-radius: 10px; background: rgba(255,255,255,.08); }
+    html .site-header .header-contacts > a[href^="tel:"] svg { width: 18px; height: 18px; }
+}
+@media (min-width: 981px) and (max-width: 1199px) {
+    html .site-header .lang-switcher { display: none; }
+    html .site-header .header-wa-btn { font-size: 0; gap: 0; min-width: 42px; padding: 0 11px; }
+    html .site-header .brand-full-logo { width: 140px; }
+    html .site-header .nav-link { padding-inline: 7px; font-size: .8rem; }
+}
+
+/* ZE_FLOATING_WIDGETS_20261009
+   The privacy choice used to sit in the page flow under the header and pushed the first screen down
+   by ~160px; it is now a compact card pinned to the bottom-left corner. On phones the chat button no
+   longer spans the full width over the content. */
+html body #ze-privacy-banner {
+    /* Above the chat launcher (z-index 9998) until the visitor makes a choice. */
+    position: fixed; left: 16px; bottom: 16px; right: auto; z-index: 10000;
+    width: min(420px, calc(100vw - 32px)); max-width: none; margin: 0;
+    flex-direction: column; align-items: stretch; gap: 12px; padding: 16px 18px;
+    font-family: 'Manrope', Arial, sans-serif;
+    box-shadow: 0 18px 48px rgba(2, 12, 27, .35);
+}
+html body #ze-privacy-banner .ze-privacy-banner__actions { justify-content: stretch; flex-wrap: nowrap; }
+html body #ze-privacy-banner .ze-privacy-banner__actions button { flex: 1; }
+@media (max-width: 720px) {
+    html body #ze-privacy-banner { left: 10px; right: 10px; bottom: 10px; width: auto; }
+    html body #zke-chat-btn { left: auto; right: 12px; bottom: 12px; width: auto; padding: 0 18px; border-radius: 999px; }
+}
+
+/* ZE_FOOTER_GRID_20261009
+   `grid-template-columns: auto 1fr` let the brand paragraph size its column to one long line
+   (~1030px), squeezing the link columns and pushing the page wider than the viewport. */
+@media (min-width: 981px) {
+    html .landing-footer .footer-shell { grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); }
+    html .landing-footer .footer-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
