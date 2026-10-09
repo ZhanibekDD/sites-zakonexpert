@@ -43,7 +43,8 @@ const exemptHtml = new Set([
   'yandex_decc99fa3bf371ce.html',
 ]);
 for (const filename of fs.readdirSync(path.join(root, 'public')).filter(name => name.endsWith('.html'))) {
-  if (exemptHtml.has(filename)) continue;
+  // Search-console verification stubs (yandex_*.html, google*.html) are plain text files, not pages.
+  if (exemptHtml.has(filename) || /^(?:google|yandex_).*\.html$/i.test(filename)) continue;
   const source = fs.readFileSync(path.join(root, 'public', filename), 'utf8');
   assert.ok(source.includes('/js/site.js') || source.includes('data-global-site-search'),
     `${filename} must expose the global site search`);

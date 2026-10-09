@@ -129,9 +129,12 @@ function installMiddleware(app, dependencies) {
   const HTML_SUFFIX_REDIRECT_EXCLUDE = new Set([
     '/googlerGbK9GM3kA42xzTzGMQs4VZju46dDdZjQdmOigQjnKY.html',
     '/yandex_decc99fa3bf371ce.html',
+    '/yandex_f7122fcf5ddd2abb.html',
   ]);
+  // Any future Yandex/Google verification stub is excluded too, so adding one is a file drop only.
+  const VERIFICATION_FILE = /^\/(?:yandex_[0-9a-f]+|google[0-9A-Za-z_-]+)\.html$/;
   app.get(/^\/.+\.html$/, (req, res, next) => {
-    if (HTML_SUFFIX_REDIRECT_EXCLUDE.has(req.path)) return next();
+    if (HTML_SUFFIX_REDIRECT_EXCLUDE.has(req.path) || VERIFICATION_FILE.test(req.path)) return next();
     const cleanPath = req.path === '/index.html' ? '/' : req.path.slice(0, -'.html'.length);
     const filePath = path.join(ROOT_DIR, 'public', req.path);
     if (!fs.existsSync(filePath)) return next();
