@@ -9,6 +9,34 @@
   if (root.dataset.zxMotion) return;
   root.dataset.zxMotion = '1';
 
+  // Section bars (services categories): highlight the section being read. Navigation aid, not motion,
+  // so it runs for everyone. A link is current while its section crosses the upper part of the screen.
+  if ('IntersectionObserver' in window) {
+    document.querySelectorAll('.services-category-nav').forEach((bar) => {
+      const links = Array.from(bar.querySelectorAll('a[href^="#"]'));
+      const sections = links.map((a) => document.getElementById(a.getAttribute('href').slice(1))).filter(Boolean);
+      if (!sections.length) return;
+      const visible = new Set();
+      const setCurrent = () => {
+        const current = sections.find((s) => visible.has(s));
+        links.forEach((a) => {
+          const on = !!current && a.getAttribute('href') === `#${current.id}`;
+          if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
+          const inner = a.parentElement;
+          if (on && inner.scrollWidth > inner.clientWidth) {
+            const left = a.offsetLeft - inner.clientWidth / 2 + a.offsetWidth / 2;
+            inner.scrollTo({ left, behavior: 'smooth' });
+          }
+        });
+      };
+      const spy = new IntersectionObserver((entries) => {
+        entries.forEach((e) => { if (e.isIntersecting) visible.add(e.target); else visible.delete(e.target); });
+        setCurrent();
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach((s) => spy.observe(s));
+    });
+  }
+
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const bot = /bot\b|bot\/|crawl|spider|slurp|lighthouse|pagespeed|headlesschrome/i.test(navigator.userAgent || '');
   if (reduce || bot || !('IntersectionObserver' in window)) return;
@@ -67,7 +95,7 @@
 
   // Sequences first: their children come in one after another, so nothing else may claim them
   const limit = vh() * 0.92;
-  const seqBoxes = Array.from(scope.querySelectorAll('.ze-home-process__grid, .ze-home-result__facts, .zr-faq'))
+  const seqBoxes = Array.from(scope.querySelectorAll('.ze-home-process__grid, .ze-home-result__facts, .zr-faq, .collector-steps__grid, .bailiff-region-help__steps'))
     .filter((box) => !isSkipped(box) && box.getBoundingClientRect().top >= limit);
   seqBoxes.forEach((box) => {
     marked.add(box);

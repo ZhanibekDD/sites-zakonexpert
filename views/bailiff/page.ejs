@@ -83,6 +83,11 @@ var detail = {
     { icon: 'bi-file-earmark-text', title: 'Получите постановление', text: 'Запросите документы об аресте и расчёт расходов ЧСИ.' },
     { icon: 'bi-shield-check', title: 'Снимите ограничение', text: 'Оспорьте основание либо согласуйте законный порядок исполнения.' },
   ],
+  seal: {
+    ring: (bailiff.license ? 'ЛИЦЕНЗИЯ № ' + bailiff.license + ' • ' : '') + 'РЕЕСТР ЧСИ • ' + String(bailiff.region || 'КАЗАХСТАН').toUpperCase() + ' • ',
+    top: 'ЧСИ',
+    bottom: bailiff.license ? '№ ' + bailiff.license : '',
+  },
   moreHtml: reviewsHtml,
   backUrl: '/bailiffs',
   backLabel: 'Все ЧСИ Казахстана',

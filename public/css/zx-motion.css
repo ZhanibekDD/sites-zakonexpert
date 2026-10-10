@@ -56,6 +56,9 @@ html.zx-scrolled body .site-header { box-shadow: 0 12px 30px -20px rgba(15, 30, 
   .zx-rv { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
 }
 
+/* The older scroll fade (.fade-in-section, site.js) is replaced by the reveal above; it ignored reduced motion */
+:root .js-enabled .fade-in-section, :root.js-enabled .fade-in-section, .js-enabled.fade-in-section { opacity: 1; transform: none; }
+
 /* Sequences: children come in one after another (process steps, lists of facts) */
 .zx-seq > * { opacity: 0; transform: translate3d(0, 18px, 0); }
 .zx-seq.is-in > * {
@@ -109,7 +112,7 @@ html.zx-scrolled body .site-header { box-shadow: 0 12px 30px -20px rgba(15, 30, 
   body.seo-premium .legal-hero::before { animation: zx-card-in 1.1s var(--zx-ease) .25s backwards; }
 }
 @keyframes zx-title-in { from { transform: translateY(26px); filter: blur(10px); } }
-@keyframes zx-rise { from { opacity: 0; transform: translateY(20px); } }
+@keyframes zx-rise { from { transform: translateY(20px); } } /* no fade: the lead can be the largest element (LCP) */
 @keyframes zx-card-in { from { transform: translateY(30px) rotate(3deg) scale(.94); } }
 @keyframes zx-pop { from { opacity: 0; transform: scale(.6); } }
 

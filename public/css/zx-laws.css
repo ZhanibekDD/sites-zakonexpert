@@ -1,0 +1,217 @@
+/* Law library: /statyi, /statya/*, /zakony (2026-10-10).
+   A reading room in the «Печать» system: the code or article number stamped in the header, codes as
+   book spines with their own colour, articles as numbered paragraphs, a calm reading column. */
+
+html body {
+  --zl-ink: var(--zx-ink, #0f1e3a);
+  --zl-ink-2: var(--zx-ink-2, #34425c);
+  --zl-muted: var(--zx-muted, #586579);
+  --zl-line: var(--zx-line, #e1e6ee);
+  --zl-paper: var(--zx-soft, #f4f6fa);
+  --zl-blue: var(--zx-blue, #2b3fa8);
+  --zl-blue-soft: var(--zx-blue-soft, #eceffb);
+  --zl-ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* ---------- The stamp (shared with zx-seal partial) ---------- */
+html body .zx-seal-stamp { position: relative; width: 210px; aspect-ratio: 1; color: var(--zl-blue) !important; transform: rotate(-8deg); }
+html body .zx-seal-stamp svg { display: block; width: 100%; height: 100%; opacity: .92; }
+@media (prefers-reduced-motion: no-preference) {
+  html body .zx-seal-stamp { animation: zl-slam .62s cubic-bezier(.2, 1.4, .45, 1) .45s backwards; }
+}
+@keyframes zl-slam {
+  0% { opacity: 0; transform: translateY(-50px) rotate(-30deg) scale(1.3); filter: blur(4px); }
+  70% { opacity: 1; transform: rotate(-6deg) scale(.94); filter: blur(0); }
+}
+
+/* ---------- Header of /statyi and /statya ---------- */
+html body .law-hero.zl-hero { position: relative; overflow: hidden; padding: 34px 0 40px; border-bottom: 1px solid var(--zl-line); background: #fff; color: var(--zl-ink); }
+html body .law-hero.zl-hero::after { content: none; }
+html body .zl-hero__grid { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 48px; align-items: center; }
+html body .zl-hero .law-hero-kicker { display: none; }
+html body .zl-hero .law-hero-title,
+html body .zl-hero .law-art-title {
+  max-width: 18em; margin: 0; color: var(--zl-ink); font: 800 clamp(34px, 4.4vw, 60px)/1.02 var(--zx-display, sans-serif); letter-spacing: -0.04em; text-wrap: balance;
+}
+html body .zl-hero .law-hero-lead { max-width: 40em; margin: 16px 0 0; color: var(--zl-ink-2); font-size: 18px; line-height: 1.55; }
+html body .zl-hero .law-breadcrumb { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 16px; color: var(--zl-muted); font-size: 14px; }
+html body .zl-hero .law-breadcrumb a { color: var(--zl-ink-2); text-decoration: none; }
+html body .zl-hero .law-breadcrumb a:hover { color: var(--zl-blue); text-decoration: underline; }
+html body .zl-hero .law-art-num {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0 0 14px; padding: 5px 12px; border-radius: 999px;
+  background: var(--zl-blue-soft); color: var(--zl-blue); font-size: 14px; font-weight: 700; letter-spacing: 0; text-transform: none;
+}
+html body .zl-hero .law-art-meta { margin: 14px 0 0; color: var(--zl-muted); font-size: 15px; }
+
+/* ---------- Body ---------- */
+html body .law-body { padding: 32px 0 64px; background: var(--zl-paper); }
+html body :is(.law-index-grid, .law-reader-grid) { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+html body .law-main-card { padding: 24px; border: 1px solid var(--zl-line); border-radius: 22px; background: #fff; box-shadow: none; }
+
+/* Search as a line on a blank */
+html body .law-main-card .law-search-bar { display: flex; gap: 12px; align-items: flex-end; margin: 0 0 18px; padding: 0; border: 0; background: none; box-shadow: none; }
+html body .law-main-card .law-search-field { position: relative; display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; border-bottom: 2px solid var(--zl-ink); border-radius: 0; background: none; box-shadow: none; }
+html body .law-main-card .law-search-field:focus-within { border-bottom-color: var(--zl-blue); }
+html body .law-main-card .law-search-field i { position: static; transform: none; color: var(--zl-muted); font-size: 18px; }
+html body .law-main-card .law-search-input { width: 100%; height: 52px; padding: 0; border: 0; background: none; box-shadow: none; color: var(--zl-ink); font: 600 18px var(--zx-font, sans-serif); }
+html body .law-main-card .law-search-input:focus { outline: none; }
+html body .law-main-card .law-search-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 22px; border: 0; border-radius: 12px; background: var(--zl-ink); color: #fff;
+  font-weight: 700; white-space: nowrap;
+}
+html body .law-main-card .law-search-btn:hover { background: var(--zl-blue); }
+
+/* Code tabs */
+html body .law-code-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 22px; padding: 0; border: 0; }
+html body .law-code-tab {
+  display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border: 1px solid var(--zl-line); border-radius: 999px; background: #fff;
+  color: var(--zl-ink-2); font-size: 14px; font-weight: 700; text-decoration: none; transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+}
+html body .law-code-tab:hover { border-color: var(--zl-ink); color: var(--zl-ink); }
+html body .law-code-tab.active { border-color: var(--zl-ink); background: var(--zl-ink); color: #fff; }
+html body .law-results-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin: 0 0 14px; color: var(--zl-muted); font-size: 14px; }
+html body .law-results-head > span:first-child { color: var(--zl-ink); font: 800 20px var(--zx-display, sans-serif); }
+
+/* Codes as book spines */
+html body .law-code-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html body .law-code-card {
+  --spine: var(--zl-blue);
+  position: relative; display: block; overflow: hidden; padding: 20px 20px 20px 34px; border: 1px solid var(--zl-line); border-radius: 6px 16px 16px 6px;
+  background: #fff; color: var(--zl-ink); text-decoration: none; box-shadow: none; transition: transform .35s var(--zl-ease), box-shadow .35s ease, border-color .2s ease;
+}
+html body .law-code-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 14px; background: var(--spine);
+  box-shadow: inset -3px 0 0 rgba(0, 0, 0, .14), inset 0 10px 0 -6px rgba(255, 255, 255, .25), inset 0 -10px 0 -6px rgba(255, 255, 255, .25);
+}
+html body .law-code-card:hover { transform: translateX(6px); border-color: #c4ccea; box-shadow: -10px 18px 34px -24px rgba(15, 30, 58, .45); color: var(--zl-ink); }
+html body .law-code-card strong { display: flex; align-items: center; justify-content: space-between; margin: 0 0 6px; font: 800 22px var(--zx-display, sans-serif); letter-spacing: -0.02em; }
+html body .law-code-card strong i { color: var(--spine); font-size: 18px; }
+html body .law-code-card span { color: var(--zl-ink-2); font-size: 14.5px; line-height: 1.5; }
+html body .law-code-card--uk { --spine: #8c2f39; }
+html body .law-code-card--upk { --spine: #7a4a1d; }
+html body .law-code-card--koap { --spine: #2b3fa8; }
+html body .law-code-card--gk { --spine: #1f6b4f; }
+html body .law-code-card--sk { --spine: #6a3b9c; }
+html body .law-code-card--tk { --spine: #9a6a12; }
+
+/* Article cards: a paragraph mark with the number */
+html body .law-results-grid { display: grid; gap: 10px; }
+html body .law-result-card {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) 34px; gap: 16px; align-items: center; padding: 14px 16px 14px 14px; border: 1px solid var(--zl-line);
+  border-radius: 16px; background: #fff; color: var(--zl-ink); text-decoration: none; box-shadow: none; transition: border-color .2s ease, transform .3s var(--zl-ease), box-shadow .3s ease;
+}
+html body .law-result-card:hover { border-color: #c4ccea; transform: translateY(-2px); box-shadow: 0 20px 36px -26px rgba(15, 30, 58, .42); color: var(--zl-ink); }
+html body .law-result-badge {
+  display: grid; place-items: center; width: 64px; height: 64px; border-radius: 14px; background: var(--zl-paper); color: var(--zl-ink);
+  font: 800 19px var(--zx-display, sans-serif); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+html body .law-result-badge::before { content: "§"; margin-right: 2px; color: var(--zl-blue); font-weight: 700; }
+html body .law-result-num { display: block; color: var(--zl-muted); font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+html body .law-result-title { display: block; margin-top: 3px; color: var(--zl-ink); font: 700 17px/1.3 var(--zx-display, sans-serif); }
+html body .law-result-snippet { display: block; margin-top: 5px; color: var(--zl-ink-2); font-size: 14px; line-height: 1.5; }
+html body .law-result-arrow {
+  display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--zl-paper); color: var(--zl-ink);
+  transition: background-color .2s ease, color .2s ease, transform .3s var(--zl-ease);
+}
+html body .law-result-card:hover .law-result-arrow { background: var(--zl-ink); color: #fff; transform: translateX(3px); }
+html body .law-pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 22px 0 0; }
+html body .law-page-link {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 42px; min-height: 42px; padding: 0 12px; border: 1px solid var(--zl-line);
+  border-radius: 12px; background: #fff; color: var(--zl-ink); font-weight: 700; text-decoration: none;
+}
+html body .law-page-link.active { border-color: var(--zl-ink); background: var(--zl-ink); color: #fff; }
+
+/* Sidebar */
+html body .law-sidebar { position: sticky; top: 92px; display: grid; gap: 14px; }
+html body .law-cta-card {
+  position: relative; overflow: hidden; padding: 24px; border-radius: 22px; background: radial-gradient(120% 90% at 100% 0%, #24398f 0%, var(--zl-ink) 58%);
+  box-shadow: none; color: #fff;
+}
+html body .law-cta-card::after {
+  content: ""; position: absolute; right: -50px; bottom: -50px; width: 170px; height: 170px; border: 3px solid rgba(255, 255, 255, .1); border-radius: 50%;
+  box-shadow: inset 0 0 0 18px rgba(255, 255, 255, .04); pointer-events: none;
+}
+html body .law-cta-title { color: #fff; font: 800 20px/1.25 var(--zx-display, sans-serif); }
+html body .law-cta-sub { margin-top: 8px; color: rgba(255, 255, 255, .8); font-size: 14.5px; line-height: 1.5; }
+html body .law-cta-btn {
+  position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; margin-top: 12px; border-radius: 13px;
+  background: var(--zx-green, #15803d); color: #fff; font-weight: 700; text-decoration: none;
+}
+html body .law-cta-btn--phone { border: 1.5px solid rgba(255, 255, 255, .35); background: none; }
+html body .law-cta-btn:hover { color: #fff; filter: brightness(1.08); }
+html body .law-advocate-role { color: rgba(255, 255, 255, .7) !important; letter-spacing: 0; text-transform: none; }
+html body .law-nav-card { padding: 18px; border: 1px solid var(--zl-line); border-radius: 18px; background: #fff; box-shadow: none; }
+html body .law-nav-title { margin: 0 0 10px; color: var(--zl-ink); font: 800 16px var(--zx-display, sans-serif); letter-spacing: 0; text-transform: none; }
+html body .law-nav-link {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px;
+  color: var(--zl-ink-2); font-size: 14.5px; text-decoration: none;
+}
+html body .law-nav-link:hover { background: var(--zl-paper); color: var(--zl-ink); }
+html body .law-nav-link .num { color: var(--zl-blue); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ---------- Reading an article ---------- */
+html body .law-reading-progress { background: var(--zl-blue) !important; }
+html body .law-article-card { overflow: hidden; border: 1px solid var(--zl-line); border-radius: 22px; background: #fff; box-shadow: none; }
+html body .law-reader-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--zl-line); background: #fbfcfe; }
+html body .law-tool-btn { min-height: 36px; padding: 0 12px; border: 1px solid var(--zl-line); border-radius: 10px; background: #fff; color: var(--zl-ink); font-weight: 700; }
+html body .law-tool-btn.active { border-color: var(--zl-ink); background: var(--zl-ink); color: #fff; }
+html body .law-tool-label { color: var(--zl-muted); font-size: 13px; letter-spacing: 0; text-transform: none; }
+html body .law-article-intro { margin: 18px 24px 0; padding: 12px 14px; border-radius: 12px; background: var(--zl-blue-soft); color: var(--zl-ink-2); font-size: 14px; }
+html body .law-text { max-width: 70ch; margin: 0 auto; padding: 18px 28px 34px; color: #1c2a3e; line-height: 1.8; }
+html body .lp-block { margin: 18px 0; border: 0; border-left: 3px solid var(--zl-line); border-radius: 0; background: none; }
+html body .lp-num {
+  display: inline-block; margin: 0 0 4px 14px; padding: 2px 9px; border: 0; border-radius: 6px; background: var(--zl-paper); color: var(--zl-blue);
+  font-size: 12.5px; font-weight: 800; letter-spacing: 0; text-transform: none;
+}
+html body .lp-text { padding: 4px 0 4px 16px; }
+html body .lp-item { padding: 3px 0 3px 34px; }
+html body .lp-sanction {
+  margin: 8px 0 4px 14px; padding: 12px 14px; border-radius: 12px; background: #fff6f5; color: #5c1b16; border: 1px solid #f6d6d2;
+}
+html body .law-article-footer { padding: 0 24px 24px; }
+html body .law-adjacent { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+html body .law-adjacent-link { display: block; padding: 14px 16px; border: 1px solid var(--zl-line); border-radius: 14px; background: #fff; color: var(--zl-ink); text-decoration: none; transition: border-color .2s ease; }
+html body .law-adjacent-link:hover { border-color: var(--zl-ink); color: var(--zl-ink); }
+html body .law-adjacent-link small { display: block; color: var(--zl-muted); }
+html body .law-source-note { padding: 12px 14px; border: 1px dashed #cfd6e3; border-radius: 12px; color: var(--zl-ink-2); font-size: 13.5px; }
+html body .law-related { margin-top: 28px; }
+html body .law-related-title { margin: 0 0 14px; font: 800 24px var(--zx-display, sans-serif); letter-spacing: -0.02em; }
+
+/* ---------- /zakony hub: stamp beside the header ---------- */
+html body.legal-hub .zl-hub-hero .legal-container { position: relative; }
+html body.legal-hub .zl-hub-hero .zl-seal--hub { position: absolute; right: 0; top: 50%; width: 200px; margin-top: -100px; }
+html body.legal-hub .zl-hub-hero h1 { max-width: calc(100% - 250px); }
+html body.legal-hub .zl-hub-hero h1 span { color: inherit !important; background: none !important; -webkit-text-fill-color: currentColor; }
+html body.legal-hub .zl-hub-hero .legal-hero-lead { max-width: calc(100% - 260px); }
+
+/* ---------- Tablet and phone ---------- */
+@media (max-width: 1020px) {
+  html body :is(.law-index-grid, .law-reader-grid) { grid-template-columns: minmax(0, 1fr); }
+  html body .law-sidebar { position: static; }
+}
+@media (max-width: 760px) {
+  html body .law-hero.zl-hero { padding: 22px 0 28px; }
+  html body .zl-hero__grid { grid-template-columns: minmax(0, 1fr) 92px; gap: 14px; align-items: start; }
+  html body .zl-hero .zx-seal-stamp { width: 92px; }
+  html body .zl-hero :is(.law-hero-title, .law-art-title) { font-size: clamp(28px, 8.4vw, 38px); }
+  html body .zl-hero .law-hero-lead { font-size: 16px; }
+  html body .law-main-card { padding: 16px; }
+  html body .law-main-card .law-search-bar { flex-direction: column; align-items: stretch; }
+  html body .law-code-cards { grid-template-columns: minmax(0, 1fr); }
+  html body .law-result-card { grid-template-columns: 52px minmax(0, 1fr); }
+  html body .law-result-badge { width: 52px; height: 52px; font-size: 16px; }
+  html body .law-result-arrow { display: none; }
+  html body .law-text { padding: 14px 16px 26px; }
+  html body .law-adjacent { grid-template-columns: minmax(0, 1fr); }
+  html body.legal-hub .zl-hub-hero .zl-seal--hub { top: 0; right: 0; width: 86px; margin-top: 0; }
+  html body.legal-hub .zl-hub-hero h1 { max-width: none; }
+  html body.legal-hub .zl-hub-hero .legal-hero-kicker { max-width: calc(100% - 100px); }
+  html body.legal-hub .zl-hub-hero .legal-hero-lead { max-width: none; }
+}
+
+/* /zakony: section labels read as quiet blue lines, not gold capitals with a rule */
+html body.legal-hub .legal-section .section-kicker {
+  display: block; margin: 0 0 8px; padding: 0; color: var(--zl-blue); font-size: 14px; font-weight: 700; letter-spacing: 0; text-transform: none;
+}
+html body.legal-hub .legal-section .section-kicker::before,
+html body.legal-hub .legal-section .section-kicker::after { content: none; display: none; }

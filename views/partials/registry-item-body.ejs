@@ -31,10 +31,13 @@ var diagnosticHref = diagnostic
   : '';
 var analyticsEvent = detail.analyticsEvent || '';
 var analyticsEntityType = detail.analyticsEntityType || '';
+var seal = detail.seal || null;
 %>
+<link rel="stylesheet" href="/css/zx-registry.css?v=20261010-1">
 <div class="collector-detail-page">
-  <section class="collector-hero">
-    <div class="collector-container">
+  <section class="collector-hero zr-reg-hero zr-reg-hero--item">
+    <div class="collector-container<%= seal ? ' zr-reg-hero__grid' : '' %>">
+      <div class="zr-reg-hero__text">
       <nav class="collector-breadcrumbs" aria-label="breadcrumb">
         <a href="/">Главная</a>
         <% (detail.breadcrumbs || []).forEach(function(crumb) { %>
@@ -49,6 +52,25 @@ var analyticsEntityType = detail.analyticsEntityType || '';
       </div>
       <h1><%= detail.name %></h1>
       <% if (detail.subtitle) { %><p class="registry-hero-subtitle"><%= detail.subtitle %></p><% } %>
+      </div>
+      <% if (seal) { %>
+        <%# A licence stamp: the record's own status and licence number in seal form (decorative, aria-hidden) %>
+        <div class="zr-reg-seal zr-reg-seal--item<%= seal.inactive ? ' zr-reg-seal--inactive' : '' %>" aria-hidden="true">
+          <svg viewBox="0 0 200 200" focusable="false">
+            <defs>
+              <path id="zr-ring" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/>
+              <filter id="zr-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="11"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.3 1.55"/><feComposite in="SourceGraphic" operator="in"/></filter>
+            </defs>
+            <g filter="url(#zr-ink)" fill="none" stroke="currentColor">
+              <circle cx="100" cy="100" r="96" stroke-width="4"/>
+              <circle cx="100" cy="100" r="64" stroke-width="2.5"/>
+              <text font-family="Geologica, sans-serif" font-weight="800" font-size="13" fill="currentColor" stroke="none" textLength="494" lengthAdjust="spacingAndGlyphs"><textPath href="#zr-ring"><%= seal.ring %></textPath></text>
+              <text x="100" y="98" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="<%= String(seal.top).length > 8 ? 17 : 24 %>" fill="currentColor" stroke="none"><%= seal.top %></text>
+              <% if (seal.bottom) { %><text x="100" y="124" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="<%= String(seal.bottom).length > 10 ? 13 : 16 %>" fill="currentColor" stroke="none"><%= seal.bottom %></text><% } %>
+            </g>
+          </svg>
+        </div>
+      <% } %>
     </div>
   </section>
   <div class="collector-main">

@@ -70,9 +70,10 @@
   <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-3">
-  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-1">
-  <script src="/js/zx-motion.js?v=20261010-1" defer></script>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-4">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-2">
+  <script src="/js/zx-motion.js?v=20261010-2" defer></script>
+  <link rel="stylesheet" href="/css/zx-laws.css?v=20261010-1">
 </head>
 <body>
 <%- include('../partials/yandex-metrika') %>
@@ -88,7 +89,7 @@
       <ul class="nav-links" data-nav-links>
         <li><a class="nav-link" href="/">Главная</a></li>
         <li><a class="nav-link" href="/services">Услуги</a></li>
-        <li class="nav-has-dropdown<% if (typeof activeNav !== 'undefined' && activeNav === 'statyi') { %> is-open<% } %>"><a class="nav-link nav-dropdown-toggle" href="/statyi" aria-haspopup="true">Законы <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/statyi?code=uk"><i class="bi bi-journal-text"></i> УК РК — Уголовный</a></li><li><a href="/statyi?code=upk"><i class="bi bi-journal-text"></i> УПК РК — Процессуальный</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=koap"><i class="bi bi-journal-text"></i> КоАП РК — Административные</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=gk"><i class="bi bi-journal-text"></i> ГК РК — Гражданский</a></li><li><a href="/statyi?code=sk"><i class="bi bi-journal-text"></i> СК РК — Семейный</a></li><li><a href="/statyi?code=tk"><i class="bi bi-journal-text"></i> ТК РК — Трудовой</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi"><i class="bi bi-search"></i> Поиск по всем</a></li></ul></li>
+        <% const zxLawsCurrent = typeof activeNav !== 'undefined' && activeNav === 'statyi'; %><li class="nav-has-dropdown<% if (zxLawsCurrent) { %> is-current<% } %>"><a class="nav-link nav-dropdown-toggle<% if (zxLawsCurrent) { %> active<% } %>" href="/statyi" aria-haspopup="true">Законы <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/statyi?code=uk"><i class="bi bi-journal-text"></i> УК РК — Уголовный</a></li><li><a href="/statyi?code=upk"><i class="bi bi-journal-text"></i> УПК РК — Процессуальный</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=koap"><i class="bi bi-journal-text"></i> КоАП РК — Административные</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi?code=gk"><i class="bi bi-journal-text"></i> ГК РК — Гражданский</a></li><li><a href="/statyi?code=sk"><i class="bi bi-journal-text"></i> СК РК — Семейный</a></li><li><a href="/statyi?code=tk"><i class="bi bi-journal-text"></i> ТК РК — Трудовой</a></li><li class="nav-dropdown-divider"></li><li><a href="/statyi"><i class="bi bi-search"></i> Поиск по всем</a></li></ul></li>
         <li><a class="nav-link" href="/news">Новости</a></li>
         <li><a class="nav-link" href="/tools">Инструменты</a></li>
         <li class="nav-has-dropdown">

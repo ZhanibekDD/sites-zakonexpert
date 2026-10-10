@@ -1,0 +1,10 @@
+<%#
+  A notary-blue stamp (decorative, aria-hidden): ring text around, one big line and one small line inside.
+  Locals: id (unique per page), ring, big, small, cls (extra classes).
+%><%
+const zxSealId = (typeof id !== 'undefined' && id) ? String(id) : 'zx-seal';
+const zxBig = (typeof big !== 'undefined' && big != null) ? String(big) : '';
+const zxSmall = (typeof small !== 'undefined' && small != null) ? String(small) : '';
+const zxBigSize = zxBig.length <= 3 ? 42 : zxBig.length <= 5 ? 32 : zxBig.length <= 7 ? 25 : 19;
+const zxSmallSize = zxSmall.length <= 10 ? 14 : 11;
+%><div class="zx-seal-stamp<%= (typeof cls !== 'undefined' && cls) ? ' ' + cls : '' %>" aria-hidden="true"><svg viewBox="0 0 200 200" focusable="false"><defs><path id="<%= zxSealId %>-ring" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/><filter id="<%= zxSealId %>-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="5"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.3 1.55"/><feComposite in="SourceGraphic" operator="in"/></filter></defs><g filter="url(#<%= zxSealId %>-ink)" fill="none" stroke="currentColor"><circle cx="100" cy="100" r="96" stroke-width="4"/><circle cx="100" cy="100" r="64" stroke-width="2.5"/><text font-family="Geologica, sans-serif" font-weight="800" font-size="13" fill="currentColor" stroke="none" textLength="494" lengthAdjust="spacingAndGlyphs"><textPath href="#<%= zxSealId %>-ring"><%= ring %></textPath></text><text x="100" y="<%= zxSmall ? 104 : 114 %>" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="<%= zxBigSize %>" fill="currentColor" stroke="none"><%= zxBig %></text><% if (zxSmall) { %><text x="100" y="128" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="700" font-size="<%= zxSmallSize %>" fill="currentColor" stroke="none"><%= zxSmall %></text><% } %></g></svg></div>

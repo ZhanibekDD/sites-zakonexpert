@@ -83,12 +83,22 @@ if (pages > 1) {
   for (let number = start; number <= end; number += 1) pageNumbers.push(number);
 }
 
+const lawSeal = include('../partials/zx-seal', {
+  id: 'zl-seal',
+  ring: 'ПРАВОВАЯ БИБЛИОТЕКА ZAKONEXPERT • ' + (code ? (codeLabels[code] || code).toUpperCase() : 'КОДЕКСЫ РЕСПУБЛИКИ КАЗАХСТАН') + ' • ',
+  big: code ? (codeLabels[code] || code) : String(tabCodes.length),
+  small: code ? 'кодекс' : 'кодексов',
+  cls: 'zl-seal',
+});
 const body = `
-<section class="law-hero">
-  <div class="landing-container">
-    <div class="law-hero-kicker">Правовая библиотека ZakonExpert</div>
-    <h1 class="law-hero-title">${code ? `Статьи ${esc(codeLabels[code] || code)}` : 'Законы Республики Казахстан'}</h1>
-    <p class="law-hero-lead">${code ? esc(codeDesc[code] || '') : 'Найдите нужную норму по номеру или названию. Читайте без перегруженных таблиц и получите консультацию адвоката по своей ситуации.'}</p>
+<section class="law-hero zl-hero">
+  <div class="landing-container zl-hero__grid">
+    <div>
+      <div class="law-hero-kicker">Правовая библиотека ZakonExpert</div>
+      <h1 class="law-hero-title">${code ? `Статьи ${esc(codeLabels[code] || code)}` : 'Законы Республики Казахстан'}</h1>
+      <p class="law-hero-lead">${code ? esc(codeDesc[code] || '') : 'Найдите нужную норму по номеру или названию. Читайте без перегруженных таблиц и получите консультацию адвоката по своей ситуации.'}</p>
+    </div>
+    ${lawSeal}
   </div>
 </section>
 
@@ -146,7 +156,7 @@ const body = `
           <div class="law-results-head"><span>Выберите кодекс</span><span>Поиск доступен по всем разделам</span></div>
           <div class="law-code-cards">
             ${Object.entries(codeLabels).map(([key, name]) => `
-              <a href="/statyi?code=${key}" class="law-code-card">
+              <a href="/statyi?code=${key}" class="law-code-card law-code-card--${key}">
                 <strong>${esc(name)} <i class="bi bi-arrow-up-right"></i></strong>
                 <span>${esc(codeDesc[key])}</span>
               </a>`).join('')}

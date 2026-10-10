@@ -103,6 +103,12 @@ var detail = {
     { icon: 'bi-search', title: 'Проверьте основания', text: 'Проверьте срок, уведомление и наличие спора по долгу.' },
     { icon: 'bi-shield-check', title: 'Подайте возражение', text: 'Направьте документы нотариусу и затем ЧСИ для снятия ограничений.' },
   ],
+  seal: {
+    ring: (notary.license ? 'ЛИЦЕНЗИЯ № ' + notary.license + ' • ' : '') + 'РЕЕСТР ЕНИС • ' + String(notary.region || 'КАЗАХСТАН').toUpperCase() + ' • ',
+    top: 'НОТАРИУС',
+    bottom: notary.active === false ? 'ПРЕКРАЩЕНА' : 'ДЕЙСТВУЕТ',
+    inactive: notary.active === false,
+  },
   moreHtml: reviewsHtml,
   backUrl: '/notaries',
   backLabel: 'Все нотариусы Казахстана',
