@@ -45,7 +45,12 @@
   ]
 }
 </script>
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-4">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-2">
+  <script src="/js/zx-motion.js?v=20261010-2" defer></script>
 </head><body class="legal-hub">
 <script src="/js/privacy-consent.js?v=20260828-1"></script>
 <header class="site-header"><div class="landing-container nav-shell">
@@ -55,6 +60,14 @@
       <li class="nav-has-dropdown"><a class="nav-link nav-dropdown-toggle" href="/advocate" aria-haspopup="true">Адвокат <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg></a><ul class="nav-dropdown-menu"><li><a href="/advocate#adv-bio"><i class="bi bi-person-badge"></i> Об адвокате</a></li><li><a href="/advocate#adv-news"><i class="bi bi-newspaper"></i> Новости и дела</a></li><li><a href="/advocate#adv-practice"><i class="bi bi-briefcase"></i> Направления работы</a></li><li class="nav-dropdown-divider"></li><li><a href="https://wa.me/77777457577?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9D%D1%83%D0%B6%D0%BD%D0%B0+%D0%BA%D0%BE%D0%BD%D1%81%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%86%D0%B8%D1%8F+%D0%B0%D0%B4%D0%B2%D0%BE%D0%BA%D0%B0%D1%82%D0%B0." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Записаться</a></li></ul></li><li><a class="nav-link" href="/mediator">Медиатор</a></li><li><a class="nav-link" href="/contact">Контакты</a></li></ul></nav>
   <div class="header-side"><div class="header-contacts"><a href="tel:+77003097566"><i class="bi bi-telephone"></i> +7 (700) 309-75-66</a><a href="https://wa.me/77003097566" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a></div></div>
 </div></header>
+<section class="global-site-search" data-global-site-search aria-label="Поиск по всему сайту">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Поиск по всему сайту</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, ЧСИ, закон, услуга…" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit">Найти</button>
+    </form>
+  </div>
+</section>
 <main>
 <section class="legal-hero"><div class="legal-container">
   <div class="legal-hero-kicker">КоАП РК</div>

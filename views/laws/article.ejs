@@ -94,10 +94,18 @@ function formatLawText(text) {
 }
 
 const textFormatted = formatLawText(art.text);
+const lawSeal = include('../partials/zx-seal', {
+  id: 'zl-seal',
+  ring: String(codeFullNames[art.code] || art.codeName).toUpperCase() + ' • СТАТЬЯ ' + art.num + ' • ',
+  big: '§ ' + art.num,
+  small: art.codeName,
+  cls: 'zl-seal',
+});
 const body = `
 <div class="law-reading-progress" data-reading-progress aria-hidden="true"></div>
-<section class="law-hero">
-  <div class="landing-container">
+<section class="law-hero zl-hero">
+  <div class="landing-container zl-hero__grid">
+  <div>
     <nav class="law-breadcrumb" aria-label="Хлебные крошки">
       <a href="/">Главная</a><span>›</span>
       <a href="/statyi">Законы</a><span>›</span>
@@ -107,6 +115,8 @@ const body = `
     <div class="law-art-num"><i class="bi bi-book me-2" aria-hidden="true"></i>Статья ${esc(art.num)} · ${esc(art.codeName)}</div>
     <h1 class="law-art-title">${esc(art.title)}</h1>
     <div class="law-art-meta">${esc(codeFullNames[art.code] || art.codeName)} · удобный формат для чтения</div>
+  </div>
+  ${lawSeal}
   </div>
 </section>
 

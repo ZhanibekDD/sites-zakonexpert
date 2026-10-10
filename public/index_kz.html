@@ -98,9 +98,14 @@
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
   <link rel="stylesheet" href="css/home-hero-v2.css?v=20260826-14">
   <link rel="stylesheet" href="css/home-refresh.css?v=20261009-1">
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-4">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-2">
+  <script src="/js/zx-motion.js?v=20261010-2" defer></script>
   <link rel="stylesheet" href="/css/iin-results.css?v=20261009-1">
-  <link rel="stylesheet" href="/css/home-pechat.css?v=20261010-1">
+  <link rel="stylesheet" href="/css/home-pechat.css?v=20261010-2">
 </head>
 <body class="zr-home">
 <script src="/js/privacy-consent.js?v=20260828-1"></script>
@@ -138,6 +143,14 @@
     </div>
   </div>
 </header>
+<section class="global-site-search" data-global-site-search aria-label="Бүкіл сайт бойынша іздеу">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Бүкіл сайт бойынша іздеу</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БСН, нотариус, ЖСО, заң, қызмет…" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit">Іздеу</button>
+    </form>
+  </div>
+</section>
 
 <main>
   <!-- HERO (fintech, 2026-10-09) — all checker IDs kept; #iin-consent added because POST /check requires consent === true. -->
@@ -149,7 +162,8 @@
         <form id="search-form" novalidate class="zp-blank search-main-form ze-home-checker">
           <div class="zp-blank__row">
             <label class="zp-blank__field" for="iin"><span>Сіздің ЖСН</span>
-              <input class="search-main-input ym-disable-keys" type="text" id="iin" name="iin" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="iin-privacy-note iin-validation" placeholder="12 сан">
+              <input class="search-main-input ym-disable-keys has-cells" type="text" id="iin" name="iin" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="iin-privacy-note iin-validation" placeholder="12 сан">
+              <span class="zp-cells" data-zx-cells aria-hidden="true"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i><i style="--k:7"></i><i style="--k:8"></i><i style="--k:9"></i><i style="--k:10"></i><i style="--k:11"></i></span>
             </label>
             <button id="search-button" type="submit" class="zp-btn">Тегін тексеру</button>
           </div>
@@ -162,13 +176,14 @@
           <span>WhatsApp-та 10 минут ішінде жауап береміз</span>
         </div>
         <dl class="zp-facts">
-          <div><dt><a href="/rezultaty">79</a></dt><dd>атқарушылық жазба жойылды</dd></div>
-          <div><dt>43,41 млн ₸</dt><dd>жойылған жазбалардың сомасы</dd></div>
+          <div><dt data-zx-count data-zx-count-delay="0.45"><a href="/rezultaty">79</a></dt><dd>атқарушылық жазба жойылды</dd></div>
+          <div><dt data-zx-count data-zx-count-delay="0.5">43,41 млн ₸</dt><dd>жойылған жазбалардың сомасы</dd></div>
           <div><dt>Тегін</dt><dd>ЖСН бойынша тексеру және алғашқы талдау</dd></div>
         </dl>
         <p class="zp-also">Басқа тексерулер: <a class="ze-home-company-check" href="/proverka-kontragenta">Ұйымды БСН бойынша тексеру</a> <a class="ze-home-company-check ze-home-company-check--bankruptcy" href="/proverka-bankrotstva">ЖСН бойынша банкроттық мәртебесін тексеру</a></p>
       </div>
-      <div class="zp-hero__visual" aria-hidden="true">
+      <div class="zp-hero__visual" aria-hidden="true" data-zx-play>
+        <div class="zp-aura"><i></i><i></i></div>
         <div class="zp-sheet"></div>
         <img class="zp-portrait" src="/img/hero/hero-woman-zakonexpert-v8.webp" width="490" height="1654" alt="" fetchpriority="high" decoding="async">
         <div class="zp-seal"><svg viewBox="0 0 200 200" focusable="false">
@@ -184,6 +199,10 @@
             <text x="100" y="122" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="22" fill="currentColor" stroke="none" textLength="98" lengthAdjust="spacingAndGlyphs">АЛЫНДЫ</text>
           </g>
         </svg></div>
+        <span class="zp-ripple"></span>
+        <div class="zp-chip zp-chip--arrest"><span class="zp-chip__icon">!</span><span><b>Шотқа арест</b><small>ЖСО қаулысы</small></span></div>
+        <div class="zp-chip zp-chip--basis"><span class="zp-chip__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5"/></svg></span><span><b>Негіз анықталды</b><small>Атқарушылық жазба</small></span></div>
+        <div class="zp-chip zp-chip--free"><span class="zp-chip__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.2 4.2L19 7"/></svg></span><span><b>Шот қайта қолжетімді</b><small>Шектеу алынды</small></span></div>
       </div>
     </div>
 
@@ -221,14 +240,14 @@
       </div>
     </div>
 
-    <nav class="zp-where" aria-labelledby="zp-where-title">
+    <nav class="zp-where" aria-labelledby="zp-where-title" data-zx-play>
       <div class="landing-container zp-where__row">
-        <p id="zp-where-title">Ақша қай жерде бұғатталды?</p>
-        <a class="zp-bank" href="/arest-kaspi"><img src="/img/banks/icons/kaspi.png" width="96" height="96" alt="" aria-hidden="true"><span>Kaspi</span></a>
-        <a class="zp-bank" href="/arest-halyk-bank"><img src="/img/banks/icons/halyk.png" width="96" height="96" alt="" aria-hidden="true"><span>Halyk</span></a>
-        <a class="zp-bank" href="/arest-freedom-bank"><img src="/img/banks/icons/freedom.png" width="96" height="96" alt="" aria-hidden="true"><span>Freedom</span></a>
-        <a class="zp-bank" href="/arest-scheta-v-bankah-kazahstana"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18M12 3l9 5H3l9-5Z"/></svg></span><span>Басқа банк</span></a>
-        <a class="zp-bank" href="/snyatie-ogranichenii-chsi"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 0v5h5M9 13h6M9 17h4"/></svg></span><span>ЖСО тыйым салды</span></a>
+        <p id="zp-where-title" style="--k:0">Ақша қай жерде бұғатталды?</p>
+        <a class="zp-bank" href="/arest-kaspi" style="--k:1"><img src="/img/banks/icons/kaspi.png" width="96" height="96" alt="" aria-hidden="true"><span>Kaspi</span></a>
+        <a class="zp-bank" href="/arest-halyk-bank" style="--k:2"><img src="/img/banks/icons/halyk.png" width="96" height="96" alt="" aria-hidden="true"><span>Halyk</span></a>
+        <a class="zp-bank" href="/arest-freedom-bank" style="--k:3"><img src="/img/banks/icons/freedom.png" width="96" height="96" alt="" aria-hidden="true"><span>Freedom</span></a>
+        <a class="zp-bank" href="/arest-scheta-v-bankah-kazahstana" style="--k:4"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18M12 3l9 5H3l9-5Z"/></svg></span><span>Басқа банк</span></a>
+        <a class="zp-bank" href="/snyatie-ogranichenii-chsi" style="--k:5"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 0v5h5M9 13h6M9 17h4"/></svg></span><span>ЖСО тыйым салды</span></a>
       </div>
     </nav>
   </section>
@@ -320,8 +339,8 @@
         <h2 id="home-result-title">43,41 млн ₸ сомасына 79 атқарушылық жазба жойылды</h2>
         <p>Банктер мен қаржы компанияларының атқарушылық жазбаларын жою туралы нотариустардың 79 ресми қаулысы жарияланды. Толық мұрағат жеке бетте ашық.</p>
         <ul class="ze-home-result__facts">
-          <li><i class="bi bi-check-circle-fill"></i><span>79 атқарушылық жазба жойылды</span></li>
-          <li><i class="bi bi-check-circle-fill"></i><span>Жалпы сомасы — 43 408 585,56 ₸</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span data-zx-count>79 атқарушылық жазба жойылды</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span data-zx-count>Жалпы сомасы — 43 408 585,56 ₸</span></li>
           <li><i class="bi bi-shield-lock-fill"></i><span>Клиенттердің деректері, QR және тексеру кодтары жасырылған</span></li>
         </ul>
         <div class="ze-home-result__actions">

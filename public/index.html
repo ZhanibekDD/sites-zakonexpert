@@ -195,9 +195,14 @@
     .wa-contact-note{font-size:0.78rem;color:rgba(255,255,255,0.4);margin:0;}
     @media(max-width:900px){.hero-team-sidebar{display:none!important;}}
   </style>
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-4">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-2">
+  <script src="/js/zx-motion.js?v=20261010-2" defer></script>
   <link rel="stylesheet" href="/css/iin-results.css?v=20261009-1">
-  <link rel="stylesheet" href="/css/home-pechat.css?v=20261010-1">
+  <link rel="stylesheet" href="/css/home-pechat.css?v=20261010-2">
 </head>
 <body class="zr-home">
 <script src="/js/privacy-consent.js?v=20260828-1"></script>
@@ -309,6 +314,14 @@
     </div>
   </div>
 </header>
+<section class="global-site-search" data-global-site-search aria-label="Поиск по всему сайту">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Поиск по всему сайту</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БИН, нотариус, ЧСИ, закон, услуга…" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit">Найти</button>
+    </form>
+  </div>
+</section>
 
 <main>
   <!-- HERO (fintech, 2026-10-09) — IIN checker IDs, BIN/bankruptcy links and the approved portrait are preserved. -->
@@ -320,7 +333,8 @@
         <form id="search-form" novalidate class="zp-blank search-main-form ze-home-checker">
           <div class="zp-blank__row">
             <label class="zp-blank__field" for="iin"><span>Ваш ИИН</span>
-              <input class="search-main-input ym-disable-keys" type="text" id="iin" name="iin" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="iin-privacy-note iin-validation" placeholder="12 цифр">
+              <input class="search-main-input ym-disable-keys has-cells" type="text" id="iin" name="iin" inputmode="numeric" autocomplete="off" maxlength="12" aria-describedby="iin-privacy-note iin-validation" placeholder="12 цифр">
+              <span class="zp-cells" data-zx-cells aria-hidden="true"><i style="--k:0"></i><i style="--k:1"></i><i style="--k:2"></i><i style="--k:3"></i><i style="--k:4"></i><i style="--k:5"></i><i style="--k:6"></i><i style="--k:7"></i><i style="--k:8"></i><i style="--k:9"></i><i style="--k:10"></i><i style="--k:11"></i></span>
             </label>
             <button id="search-button" type="submit" class="zp-btn">Проверить бесплатно</button>
           </div>
@@ -333,13 +347,14 @@
           <span>Ответ в WhatsApp — в течение 10 минут</span>
         </div>
         <dl class="zp-facts">
-          <div><dt><a href="/rezultaty">79</a></dt><dd>исполнительных надписей отменено</dd></div>
-          <div><dt>43,41 млн ₸</dt><dd>сумма по отменённым надписям</dd></div>
+          <div><dt data-zx-count data-zx-count-delay="0.45"><a href="/rezultaty">79</a></dt><dd>исполнительных надписей отменено</dd></div>
+          <div><dt data-zx-count data-zx-count-delay="0.5">43,41 млн ₸</dt><dd>сумма по отменённым надписям</dd></div>
           <div><dt>Бесплатно</dt><dd>проверка по ИИН и первый разбор</dd></div>
         </dl>
         <p class="zp-also">Ещё проверки: <a class="ze-home-company-check" href="/proverka-kontragenta">Проверить организацию по БИН</a> <a class="ze-home-company-check ze-home-company-check--bankruptcy" href="/proverka-bankrotstva">Проверить статус банкротства по ИИН</a></p>
       </div>
-      <div class="zp-hero__visual" aria-hidden="true">
+      <div class="zp-hero__visual" aria-hidden="true" data-zx-play>
+        <div class="zp-aura"><i></i><i></i></div>
         <div class="zp-sheet"></div>
         <img class="zp-portrait" src="/img/hero/hero-woman-zakonexpert-v8.webp" width="490" height="1654" alt="" fetchpriority="high" decoding="async">
         <div class="zp-seal"><svg viewBox="0 0 200 200" focusable="false">
@@ -355,6 +370,10 @@
             <text x="100" y="122" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="23" fill="currentColor" stroke="none">СНЯТ</text>
           </g>
         </svg></div>
+        <span class="zp-ripple"></span>
+        <div class="zp-chip zp-chip--arrest"><span class="zp-chip__icon">!</span><span><b>Арест на счёт</b><small>Постановление ЧСИ</small></span></div>
+        <div class="zp-chip zp-chip--basis"><span class="zp-chip__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5"/></svg></span><span><b>Основание найдено</b><small>Исполнительная надпись</small></span></div>
+        <div class="zp-chip zp-chip--free"><span class="zp-chip__icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.2 4.2L19 7"/></svg></span><span><b>Счёт снова доступен</b><small>Ограничение снято</small></span></div>
       </div>
     </div>
 
@@ -392,14 +411,14 @@
       </div>
     </div>
 
-    <nav class="zp-where" aria-labelledby="zp-where-title">
+    <nav class="zp-where" aria-labelledby="zp-where-title" data-zx-play>
       <div class="landing-container zp-where__row">
-        <p id="zp-where-title">Где заблокировали деньги?</p>
-        <a class="zp-bank" href="/arest-kaspi"><img src="/img/banks/icons/kaspi.png" width="96" height="96" alt="" aria-hidden="true"><span>Kaspi</span></a>
-        <a class="zp-bank" href="/arest-halyk-bank"><img src="/img/banks/icons/halyk.png" width="96" height="96" alt="" aria-hidden="true"><span>Halyk</span></a>
-        <a class="zp-bank" href="/arest-freedom-bank"><img src="/img/banks/icons/freedom.png" width="96" height="96" alt="" aria-hidden="true"><span>Freedom</span></a>
-        <a class="zp-bank" href="/arest-scheta-v-bankah-kazahstana"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18M12 3l9 5H3l9-5Z"/></svg></span><span>Другой банк</span></a>
-        <a class="zp-bank" href="/snyatie-ogranichenii-chsi"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 0v5h5M9 13h6M9 17h4"/></svg></span><span>Арест у ЧСИ</span></a>
+        <p id="zp-where-title" style="--k:0">Где заблокировали деньги?</p>
+        <a class="zp-bank" href="/arest-kaspi" style="--k:1"><img src="/img/banks/icons/kaspi.png" width="96" height="96" alt="" aria-hidden="true"><span>Kaspi</span></a>
+        <a class="zp-bank" href="/arest-halyk-bank" style="--k:2"><img src="/img/banks/icons/halyk.png" width="96" height="96" alt="" aria-hidden="true"><span>Halyk</span></a>
+        <a class="zp-bank" href="/arest-freedom-bank" style="--k:3"><img src="/img/banks/icons/freedom.png" width="96" height="96" alt="" aria-hidden="true"><span>Freedom</span></a>
+        <a class="zp-bank" href="/arest-scheta-v-bankah-kazahstana" style="--k:4"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18M12 3l9 5H3l9-5Z"/></svg></span><span>Другой банк</span></a>
+        <a class="zp-bank" href="/snyatie-ogranichenii-chsi" style="--k:5"><span class="zp-bank__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Zm0 0v5h5M9 13h6M9 17h4"/></svg></span><span>Арест у ЧСИ</span></a>
       </div>
     </nav>
   </section>
@@ -498,8 +517,8 @@
         <h2 id="home-result-title">79 исполнительных надписей отменены на 43,41 млн ₸</h2>
         <p>Опубликованы 79 официальных постановлений нотариусов об отмене исполнительных надписей банков и финансовых компаний. Справа показаны четыре крупных примера, полный архив открыт на отдельной странице.</p>
         <ul class="ze-home-result__facts">
-          <li><i class="bi bi-check-circle-fill"></i><span>79 отменённых исполнительных надписей</span></li>
-          <li><i class="bi bi-check-circle-fill"></i><span>Общая сумма отмен — 43 408 585,56 ₸</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span data-zx-count>79 отменённых исполнительных надписей</span></li>
+          <li><i class="bi bi-check-circle-fill"></i><span data-zx-count>Общая сумма отмен — 43 408 585,56 ₸</span></li>
           <li><i class="bi bi-shield-lock-fill"></i><span>Данные клиентов, QR- и коды проверки скрыты</span></li>
         </ul>
         <div class="ze-home-result__actions">
@@ -507,7 +526,7 @@
           <a class="ze-home-result__source" href="/rezultaty#other-results"><i class="bi bi-collection"></i> 105 уникальных документов</a>
         </div>
       </div>
-      <div class="ze-result-showcase" data-result-viewer>
+      <div class="ze-result-showcase" data-result-viewer data-zx-play>
         <div class="ze-result-showcase__stage">
           <div class="ze-result-showcase__status">
             <span data-result-label>Исполнительная надпись отменена</span>
@@ -525,10 +544,10 @@
           </div>
         </div>
         <div class="ze-result-showcase__tabs" role="tablist" aria-label="Выбор результата">
-          <button class="is-active" type="button" role="tab" aria-selected="true" data-result-option data-marker="72.6%" data-src="/img/rezultaty/cancellation-6942105.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге" data-amount="6 942 105,30 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,94 млн ₸</strong></button>
-          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-marker="70.2%" data-src="/img/rezultaty/cancellation-6047478.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 047 477,95 тенге" data-amount="6 047 477,95 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,05 млн ₸</strong></button>
-          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-marker="68.2%" data-src="/img/rezultaty/cancellation-4091645.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 4 091 645 тенге" data-amount="4 091 645 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>4,09 млн ₸</strong></button>
-          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option data-marker="66.6%" data-src="/img/rezultaty/cancellation-3780371.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 3 780 371,08 тенге" data-amount="3 780 371,08 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>3,78 млн ₸</strong></button>
+          <button class="is-active" type="button" role="tab" aria-selected="true" data-result-option style="--k:0" data-marker="72.6%" data-src="/img/rezultaty/cancellation-6942105.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 942 105,30 тенге" data-amount="6 942 105,30 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,94 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option style="--k:1" data-marker="70.2%" data-src="/img/rezultaty/cancellation-6047478.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 6 047 477,95 тенге" data-amount="6 047 477,95 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>6,05 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option style="--k:2" data-marker="68.2%" data-src="/img/rezultaty/cancellation-4091645.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 4 091 645 тенге" data-amount="4 091 645 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>4,09 млн ₸</strong></button>
+          <button type="button" role="tab" aria-selected="false" tabindex="-1" data-result-option style="--k:3" data-marker="66.6%" data-src="/img/rezultaty/cancellation-3780371.webp" data-alt="Обезличенное постановление об отмене исполнительной надписи на 3 780 371,08 тенге" data-amount="3 780 371,08 ₸" data-label="Исполнительная надпись отменена"><small>Отменено</small><strong>3,78 млн ₸</strong></button>
         </div>
         <p class="ze-result-showcase__hint"><i class="bi bi-hand-index-thumb"></i> Нажмите сумму, чтобы сменить пример · ещё 75 постановлений доступны в архиве</p>
       </div>

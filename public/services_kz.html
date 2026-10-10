@@ -25,9 +25,15 @@
   <link rel="stylesheet" href="css/landing.css?v=20260904-1">
   <link rel="stylesheet" href="css/style.css?v=20260823-1">
   <link rel="stylesheet" href="css/legal.css?v=20260504-2">
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-4">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-2">
+  <script src="/js/zx-motion.js?v=20261010-2" defer></script>
+  <link rel="stylesheet" href="/css/zx-services.css?v=20261010-1">
 </head>
-<body>
+<body class="services-page">
 <script src="/js/privacy-consent.js?v=20260828-1"></script>
 <header class="site-header">
   <div class="landing-container nav-shell">
@@ -59,6 +65,14 @@
     </div>
   </div>
 </header>
+<section class="global-site-search" data-global-site-search aria-label="Бүкіл сайт бойынша іздеу">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden">Бүкіл сайт бойынша іздеу</span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="Компания, БСН, нотариус, ЖСО, заң, қызмет…" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit">Іздеу</button>
+    </form>
+  </div>
+</section>
 <main>
   <section class="page-hero">
     <div class="landing-container">
@@ -74,6 +88,7 @@
             </div>
           </div>
           <aside class="page-hero-side">
+            <div class="zs-seal" aria-hidden="true"><svg viewBox="0 0 200 200" focusable="false"><defs><path id="zs-ring" d="M100,100 m-75,0 a75,75 0 1,1 150,0 a75,75 0 1,1 -150,0"/><filter id="zs-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.3 1.55"/><feComposite in="SourceGraphic" operator="in"/></filter></defs><g filter="url(#zs-ink)" fill="none" stroke="currentColor"><circle cx="100" cy="100" r="95" stroke-width="5"/><circle cx="100" cy="100" r="59" stroke-width="3"/><text font-family="Geologica, sans-serif" font-weight="800" font-size="15" fill="currentColor" stroke="none" textLength="462" lengthAdjust="spacingAndGlyphs"><textPath href="#zs-ring">ZAKONEXPERT • ШАРТ БОЙЫНША • БҮКІЛ ҚАЗАҚСТАН •</textPath></text><text x="100" y="96" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="23" fill="currentColor" stroke="none">ШАРТ</text><text x="100" y="121" text-anchor="middle" font-family="Geologica, sans-serif" font-weight="800" font-size="23" fill="currentColor" stroke="none">БОЙЫНША</text></g></svg></div>
             <h3>Жұмысқа не кіреді</h3>
             <ul class="list-clean">
               <li><i class="bi bi-check2-circle"></i><span>Құжаттар мен өндіріп алу негіздерін талдау</span></li>

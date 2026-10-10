@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = Object.freeze({
-  id: '2026-10-10-pechat-v1',
+  id: '2026-10-10-inner-v1',
   assets: Object.freeze([
     '/js/privacy-consent.js?v=20260828-1',
     '/js/site.js?v=20261009-1',
