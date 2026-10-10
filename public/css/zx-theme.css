@@ -94,52 +94,109 @@ html body :is(.cc-input-row button, .bc-input-row button) { background: var(--zx
 html body :is(.btn-outline-landing, .landing-btn-secondary) { border-radius: 999px; }
 html body a[href*="wa.me"]:is(.btn, .btn-wa, .btn-whatsapp, .wa-btn, [class*="btn-wa"], [class*="whatsapp-btn"]) { background: var(--zx-green); border-color: var(--zx-green); color: #fff; }
 
-/* ---------- Inner page heroes: app-style banner card on a white page ---------- */
+/* ---------- Inner page heroes: light, like the homepage (owner's choice 2026-10-10) ----------
+   One pale-blue-to-white band, dark bold type, blue actions. Text inside the hero inherits the ink
+   colour (page stylesheets had painted it white for the old navy banners); links and buttons keep
+   their own colours. :where() keeps the reset at low specificity so the rules below can refine it. */
+:root { --zx-hero-light: linear-gradient(180deg, #eef4ff 0%, #f6f9ff 55%, #ffffff 100%); }
 html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero,
-  .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero) {
-  background: var(--zx-hero);
-  margin: 16px 16px 0;
-  border-radius: var(--zx-radius-lg);
-  overflow: hidden;
-  isolation: isolate;
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) {
+  background: var(--zx-hero-light) !important;
+  color: var(--zx-ink) !important;
+  margin: 0; border-radius: 0; overflow: hidden; isolation: isolate;
+  border-bottom: 1px solid var(--zx-line);
 }
 html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero,
-  .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero)::before {
-  /* old gold and blue glows */
-  background: radial-gradient(circle at 88% 0%, rgba(96, 165, 250, .28), transparent 42%);
-  opacity: 1;
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero)::before,
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero)::after { display: none !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :where(*:not(a, button, a *, button *, svg, svg *, input, select, textarea)) { color: inherit !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(h1, h2, h3, h4) { color: var(--zx-ink) !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) h1 { letter-spacing: -0.035em; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) h1 :is(span, em, mark) { color: var(--zx-blue) !important; background: none; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) > * p, html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) p { color: var(--zx-ink-2) !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(nav, [class*="breadcrumb"]) { color: var(--zx-muted) !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(nav, [class*="breadcrumb"]) a { color: var(--zx-blue) !important; text-decoration: none; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) a:not([class*="btn"]):not([class*="button"]):not([href*="wa.me"]) { color: var(--zx-blue); }
+/* Kickers, eyebrows and badges: soft blue pills */
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is([class*="kicker"], [class*="eyebrow"], [class*="badge"]) {
+  background: var(--zx-blue-soft) !important; border-color: transparent !important; color: var(--zx-blue) !important;
+  text-transform: none !important; letter-spacing: 0 !important;
+}
+/* Dark photo backdrops behind hero text */
+html body :is(.dok-hero__backdrop, .legal-hero > .overlay) { display: none !important; }
+/* Glass panels that sat on the navy banner become white cards */
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(.page-hero-panel, .page-hero-side, .zg-hero-card, .zg-hero-note, .sa-hero-card,
+  .rez-v2-summary, .rez-v2-totals, .od-hero-stats, .od-stat, .ad-hero__panel, .ad-path, .dok-paper,
+  .collector-search, .law-search, .news-search, .od-visual, .od-hero__metrics > div, .od-stat-ribbon span) {
+  background: #fff !important; border: 1px solid var(--zx-line) !important; box-shadow: var(--zx-shadow) !important; color: var(--zx-ink) !important;
+}
+/* Actions on the light band */
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(.btn-landing, .btn-legal-cta, .rez-v2-btn--gold, .dok-hero__primary, .landing-btn-primary, .ad-button--gold, .zg-button--primary) {
+  background: var(--zx-blue) !important; border-color: var(--zx-blue) !important; color: #fff !important; box-shadow: 0 8px 20px rgba(29, 78, 216, .22) !important;
 }
 html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero,
-  .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero) h1 :is(span, em, mark) {
-  color: inherit; background: none;
-}
-/* Gold kickers and badges inside heroes become quiet white pills. */
-html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero,
-  .notary-hero, .press-hero, .adv-hero, .med-hero) :is([class*="kicker"], [class*="eyebrow"]) {
-  background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .22); color: #fff;
-  text-transform: none; letter-spacing: 0;
-}
-/* Primary actions on the blue banner are white with navy text. */
-html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero)
-  :is(.btn-landing, .btn-legal-cta, .rez-v2-btn--gold, .dok-hero__primary, .landing-btn-primary) {
-  background: #fff; color: var(--zx-navy); box-shadow: 0 8px 24px rgba(3, 12, 30, .25);
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(.btn-landing, .btn-legal-cta, .rez-v2-btn--gold, .dok-hero__primary, .landing-btn-primary, .ad-button--gold, .zg-button--primary):hover {
+  background: var(--zx-blue-hover) !important; color: #fff !important;
 }
 html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-  .collector-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero)
-  :is(.btn-landing, .btn-legal-cta, .rez-v2-btn--gold, .dok-hero__primary, .landing-btn-primary):hover {
-  background: var(--zx-blue-soft); color: var(--zx-navy);
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) :is(.btn-legal-outline, .btn-outline-landing, .landing-btn-secondary, .rez-v2-btn--ghost, .dok-hero__secondary, .ad-button--ghost, .zg-button--ghost, .zg-button:not(.zg-button--primary)) {
+  background: #fff !important; border: 1px solid var(--zx-line) !important; color: var(--zx-navy) !important;
 }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) a[href*="wa.me"]:is([class*="btn"], [class*="button"]) { background: var(--zx-green) !important; border-color: var(--zx-green) !important; color: #fff !important; }
 @media (max-width: 768px) {
   html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero,
-    .tools-hero, .route-hero, .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero,
-    .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero) {
-    margin: 10px 10px 0; border-radius: 22px;
-  }
+  .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero,
+  .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero) { margin: 0; border-radius: 0; }
+}
+
+/* SEO landings with a photo (Kaspi, ЧСИ, запрет на выезд…): the photo becomes a rounded picture card
+   on the right instead of a darkened full-width background. */
+html body.seo-premium .legal-hero { min-height: 520px; padding: 56px 0 64px !important; background: var(--zx-hero-light) !important; }
+html body.seo-premium .legal-hero::before {
+  display: block !important; content: ""; position: absolute; z-index: 0;
+  top: 32px; bottom: 40px; left: auto; right: max(20px, calc((100% - 1160px) / 2));
+  width: min(44%, 540px); border-radius: 28px;
+  background: var(--ze-hero-image) 68% center / cover no-repeat !important;
+  box-shadow: var(--zx-shadow-lg);
+}
+html body.seo-premium .legal-hero .legal-container { z-index: 1; }
+html body.seo-premium .legal-hero .legal-container > * { max-width: min(600px, 52%); }
+@media (max-width: 900px) {
+  html body.seo-premium .legal-hero { min-height: 0; padding: 252px 0 44px !important; align-items: flex-start; }
+  html body.seo-premium .legal-hero::before { top: 12px; bottom: auto; left: 12px; right: 12px; width: auto; height: 224px; border-radius: 22px; background-position: 70% 30% !important; }
+  html body.seo-premium .legal-hero .legal-container > * { max-width: 100%; }
 }
 
 /* ---------- Footer ---------- */
@@ -169,23 +226,16 @@ html body .btn-legal-cta {
   background: var(--zx-blue) !important; border-color: var(--zx-blue) !important; color: #fff !important; box-shadow: none !important; border-radius: 999px !important;
 }
 html body.seo-premium .btn-legal-cta:hover, html body .btn-legal-cta:hover { background: var(--zx-blue-hover) !important; }
-html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .ad-hero) .btn-legal-cta {
-  background: #fff !important; border-color: #fff !important; color: var(--zx-navy) !important;
-}
+html body .ad-button--gold { background: var(--zx-blue); color: #fff; border-color: var(--zx-blue); box-shadow: none; }
+html body .ad-button--gold:hover { background: var(--zx-blue-hover); color: #fff; }
+html body.seo-urgent .legal-hero :is(.legal-kicker, .legal-hero-kicker) { color: #b42318 !important; background: #fef3f2 !important; }
+html body .collector-badge { border-radius: 999px; }
+html body .collector-badge--active { background: #e7f6ec !important; color: #166534 !important; }
 /* Outline buttons were white-on-transparent everywhere, invisible in light sidebars. */
 html body.seo-premium .btn-legal-outline,
 html body .btn-legal-outline {
   background: #fff !important; border: 1px solid var(--zx-line) !important; color: var(--zx-navy) !important; border-radius: 999px !important; -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .ad-hero) .btn-legal-outline {
-  background: rgba(255, 255, 255, .1) !important; border-color: rgba(255, 255, 255, .34) !important; color: #fff !important;
-}
-html body.seo-premium .legal-kicker, html body .legal-kicker {
-  background: rgba(255, 255, 255, .12) !important; border-color: rgba(255, 255, 255, .24) !important; color: #fff !important;
-  text-transform: none !important; letter-spacing: 0 !important;
-}
-html body .ad-button--gold { background: #fff; color: var(--zx-navy); border-color: #fff; box-shadow: 0 8px 24px rgba(3, 12, 30, .25); }
-html body .ad-button--gold:hover { background: var(--zx-blue-soft); color: var(--zx-navy); }
 html body :is(.sms-analyzer-submit, .contact-form-wrap button[type="submit"]) {
   background: var(--zx-blue); background-image: none; border-color: var(--zx-blue); color: #fff; border-radius: 14px; box-shadow: none;
 }
@@ -216,10 +266,6 @@ html body [style*="background:rgba(215,167,66"] {
 html body [style*="color:#f0c040"] { color: #a9c4ff !important; }
 html body [style*="border:1.5px solid rgba(215,167,66"] { border-color: rgba(255, 255, 255, .35) !important; }
 /* hero CTAs on SEO pages: body itself carries .seo-premium */
-html body.seo-premium :is(.legal-hero, .zg-hero) .btn-legal-cta { background: #fff !important; border-color: #fff !important; color: var(--zx-navy) !important; }
-html body.seo-premium :is(.legal-hero, .zg-hero) .btn-legal-outline { background: rgba(255, 255, 255, .1) !important; border-color: rgba(255, 255, 255, .34) !important; color: #fff !important; }
-html body.seo-premium .legal-hero-kicker { background: rgba(255, 255, 255, .12) !important; border-color: rgba(255, 255, 255, .24) !important; color: #fff !important; text-transform: none; letter-spacing: 0; }
-html body.seo-urgent .legal-kicker { color: #ffd2d2 !important; background: rgba(201, 70, 70, .25) !important; border-color: rgba(239, 104, 104, .5) !important; }
 html body a[style*="background:#f0c040"] { background: var(--zx-blue) !important; color: #fff !important; border-radius: 999px !important; }
 
 /* Header contacts, legacy markup (37 pages still use icon fonts and a plain WhatsApp link):
@@ -274,8 +320,6 @@ html body .notary-cta-tag { color: var(--zx-blue) !important; }
 html body .ze-result-showcase__status strong { color: #fff; }
 
 /* Directory profiles (ЧСИ, нотариусы, МФО…): ~70% of search visitors land here */
-html body .collector-badge { border-color: rgba(255, 255, 255, .34); background: rgba(255, 255, 255, .1); color: #fff; border-radius: 999px; }
-html body .collector-badge--active { border-color: rgba(134, 239, 172, .55); color: #bbf7d0; }
 html body .collector-hero::after { display: none; }
 html body .registry-quick-cta { display: none; }
 @media (max-width: 820px) {
@@ -341,3 +385,53 @@ html body .professional-card__license i { color: var(--zx-blue); }
   html body .ip-list-action { width: calc(100% - 42px); margin-left: 42px; }
   html body .ip-list-action .btn-details-card { width: 100%; white-space: normal; }
 }
+
+/* Light SEO heroes: seo-conversion-v2.css pins the lead and breadcrumb to white with !important */
+html body.seo-premium .legal-hero :is(.legal-lead, .legal-hero-lead) { color: var(--zx-ink-2) !important; max-width: min(600px, 52%) !important; }
+html body.seo-premium .legal-hero :is(.legal-breadcrumb, .legal-breadcrumb span, nav span) { color: var(--zx-muted) !important; }
+html body.seo-premium .legal-hero .legal-breadcrumb a { color: var(--zx-blue) !important; }
+html body .dok-hero .copy-link-btn { background: #fff !important; border: 1px solid var(--zx-line) !important; color: var(--zx-navy) !important; }
+@media (max-width: 900px) {
+  html body.seo-premium .legal-hero :is(.legal-lead, .legal-hero-lead) { max-width: 100% !important; }
+}
+
+/* News filter: the active chip is a link on the light hero band; keep its text white on blue */
+html body .news-categories a.active { color: #fff !important; }
+/* Global search: a slimmer strip under the header */
+html body .global-site-search { padding: 8px 0; background: #fff; }
+html body :is(.global-site-search__input, .global-site-search__button) { min-height: 42px; }
+/* Floating «Оставить заявку»: calmer badge, same pill style as the rest of the site */
+html body #zke-chat-btn { height: 48px; font-size: 14px; border: 0; }
+html body #zke-chat-btn .zke-badge { animation: none; }
+@media (prefers-reduced-motion: reduce) { html body #zke-chat-btn { transition: none; } }
+
+/* Contrast pass on the light pages (axe, 2026-10-10) */
+html body .dok-hero :is(.dok-format--docx, .dok-format--pdf) { color: #fff !important; }
+html body :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .collector-hero, .notary-hero) p a,
+html body .ze-form-note a { text-decoration: underline; text-underline-offset: 2px; }
+html body :is(li[data-progress-step], .ad-question__heading > span, .ad-option small, button[data-value] small,
+  .notary-archive__section-head > p, .notary-archive__compact-row small, .sms-analyzer-counter, .sa-security-note) { color: var(--zx-muted) !important; }
+html body :is(.notary-archive__section-head > div > span, .ze-decision-head > span, .ze-sidebar-kicker,
+  .ad-question__heading > span) { color: var(--zx-blue) !important; }
+html body .law-card > span { color: #7a4a00 !important; }
+html body .mechanism-num { color: #6b85b8 !important; }
+html body .case-card blockquote small { color: #2f6b4a !important; }
+html body footer .brand-subtitle { color: rgba(255, 255, 255, .74) !important; }
+html body [style*="background:#25d366"], html body [style*="background: #25d366"],
+html body .reviews-cta a[href*="wa.me"] { background: var(--zx-green) !important; color: #fff !important; }
+html body [style*="color:#94a3b8"], html body [style*="color: #94a3b8"] { color: var(--zx-muted) !important; }
+html body [style*="color:#dc2626"], html body [style*="color: #dc2626"] { color: #b42318 !important; }
+html body [style*="color:#64748b"] { color: #556476 !important; }
+html body .ad-privacy, html body:has(.ad-hero) a > span > small { color: var(--zx-muted) !important; }
+html body .ad-section-kicker { color: var(--zx-blue) !important; }
+html body :is(.notary-archive article p, .notary-archive__cta p) { color: #556476 !important; }
+html body .notary-archive__cta a[href*="wa.me"] { background: var(--zx-green) !important; color: #fff !important; }
+html body :is(.collector-hero, .notary-hero, .law-hero, .news-hero) :is(span, small, li, div) > a:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
+html body .professional-catalog__source a { text-decoration: underline; text-underline-offset: 2px; }
+/* Same inline greys inside the old navy blocks (forms, gallery CTA): light text there */
+html body :is([style*="background:#0d1f3c"], [style*="background: #0d1f3c"], [style*="background:#0f2044"], [style*="background:#0a1628"]) :is([style*="color:#94a3b8"], [style*="color:#64748b"], [style*="color:rgba(255,255,255,.45)"], [style*="color:rgba(255,255,255,.35)"], [style*="color:#626d80"], [style*="color:#7a8494"]) {
+  color: rgba(255, 255, 255, .78) !important;
+}
+html body :is(.cc-leader, .cc-dim, .cc-full, .gsi-nophone) { color: var(--zx-muted) !important; }
+html body :is(p, label span, [style*="font-size"]) > a[href^="http"]:not([class]),
+html body label span > a[href="/privacy"]:not([class]) { text-decoration: underline; text-underline-offset: 2px; }

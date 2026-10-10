@@ -111,7 +111,7 @@
   let state = { step: 'start', issue: null, name: null, phone: null };
 
   function buildWidget() {
-    if (document.querySelector('.ze-mobile-cta, .zg-mobile-actions, [data-cta-position="mobile-sticky"], .company-mobile-cta')) {
+    if (document.querySelector('.ze-mobile-cta, .zg-mobile-actions, .ad-mobile-bar, [data-cta-position="mobile-sticky"], .company-mobile-cta')) {
       document.documentElement.classList.add('zke-has-page-cta');
     }
     const style = document.createElement('style');
