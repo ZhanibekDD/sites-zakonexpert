@@ -52,7 +52,8 @@
 }
 </script>
   <link rel="stylesheet" href="/css/bank-arrest-cluster.css?v=20260823-1">
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-1">
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="stylesheet" href="/css/bank-screen.css?v=20261010-1">
 </head>
 <body>
 <script src="/js/privacy-consent.js?v=20260828-1"></script>
@@ -85,6 +86,45 @@
       </div>
     </div>
   </section>
+
+  <section class="zb-screen" aria-labelledby="zb-screen-title">
+    <div class="zb-screen__inner">
+      <div class="zb-screen__text">
+        <h2 id="zb-screen-title">Как арест выглядит в приложении Freedom Bank</h2>
+        <p>Деньги на счёте обычно видны, но перевести, снять или оплатить ими нельзя — в пределах суммы ареста. Банк только исполняет постановление: снимает ограничение тот, кто его наложил.</p>
+        <ol class="zb-steps">
+          <li><strong>Узнаём основание.</strong> По ИИН видно, кто наложил арест, на какую сумму и по какому документу.</li>
+          <li><strong>Выбираем способ.</strong> Оспорить документ, уменьшить сумму или договориться о графике.</li>
+          <li><strong>Получаем постановление о снятии.</strong> После него операции по счёту снова доступны.</li>
+        </ol>
+        <div class="zb-actions">
+          <a class="zb-btn" href="/proverka-po-iin">Проверить по ИИН</a>
+          <a class="zb-btn zb-btn--wa" href="https://wa.me/77003097566?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21%20%D0%92%20%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B8%20Freedom%20Bank%20%D0%B0%D1%80%D0%B5%D1%81%D1%82.%20%D0%A5%D0%BE%D1%87%D1%83%20%D0%BF%D0%BE%D0%BD%D1%8F%D1%82%D1%8C%20%D0%BE%D1%81%D0%BD%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5%20%D0%B8%20%D0%BA%D0%B0%D0%BA%20%D1%81%D0%BD%D1%8F%D1%82%D1%8C." target="_blank" rel="noopener">Написать юристу</a>
+        </div>
+      </div>
+      <figure class="zb-figure">
+        <div class="zb-phone">
+          <div class="zb-ui is-arrest" data-zb-screen>
+            <div class="zb-ui__app">Мой банк</div>
+            <div class="zb-ui__card"><small>Карта •• 4821</small><b>186 400 ₸</b></div>
+            <div class="zb-ui__status"><i aria-hidden="true"><span class="zb-a">!</span><span class="zb-f">✓</span></i><span><span class="zb-a">Арест по постановлению ЧСИ</span><span class="zb-f">Ограничение снято</span></span></div>
+            <ul class="zb-ui__ops">
+              <li><span>Перевод с карты</span><b><span class="zb-a">недоступен</span><span class="zb-f">доступен</span></b></li>
+              <li><span>Снятие наличных</span><b><span class="zb-a">недоступно</span><span class="zb-f">доступно</span></b></li>
+              <li><span>Оплата покупок</span><b><span class="zb-a">недоступна</span><span class="zb-f">доступна</span></b></li>
+            </ul>
+            <div class="zb-ui__why"><small>Основание</small><b>Исполнительная надпись нотариуса</b><small>Наложил</small><b>Частный судебный исполнитель</b></div>
+          </div>
+        </div>
+        <div class="zb-toggle" role="group" aria-label="Пример экрана">
+          <button type="button" aria-pressed="true" data-zb-state="arrest">Сейчас</button>
+          <button type="button" aria-pressed="false" data-zb-state="free">После снятия</button>
+        </div>
+        <figcaption>Пример экрана для наглядности — не приложение банка.</figcaption>
+      </figure>
+    </div>
+  </section>
+
   <section class="legal-section">
     <div class="legal-container">
       <div class="row g-4">
@@ -204,5 +244,6 @@
 <script src="/js/site.js?v=20261009-1"></script>
 <script src="/js/analytics-events.js?v=20260828-2"></script>
 <script src="/js/chatbot.js?v=20261010-1" defer></script>
+<script src="/js/bank-screen.js?v=20261010-1" defer></script>
 </body>
 </html>

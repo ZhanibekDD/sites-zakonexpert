@@ -1,0 +1,161 @@
+/* Homepage first screen, «Печать» direction (2026-10-10).
+   The question the visitor is asking, one action (the IIN line on a blank), proof in numbers,
+   and one memorable thing: a notary-blue seal «Арест снят» landing on a real document.
+   Scoped to body.zr-home; tokens come from zx-theme.css. */
+
+.zr-home .zp-hero { position: relative; overflow: hidden; background: #fff; }
+.zr-home .zp-hero__grid {
+  display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: 24px; align-items: end; min-height: 660px;
+}
+.zr-home .zp-hero__text { position: relative; z-index: 2; min-width: 0; padding: 48px 0 44px; }
+.zr-home .zp-hero__title {
+  max-width: 10.5em; margin: 0; color: var(--zx-ink);
+  font: 800 clamp(44px, 5.2vw, 76px)/.98 var(--zx-display); letter-spacing: -0.045em; text-wrap: balance;
+}
+.zr-home .zp-hero__lead { max-width: 30em; margin: 20px 0 0; color: var(--zx-ink-2); font-size: 20px; line-height: 1.55; }
+
+/* The IIN form reads like a line on an official blank */
+.zr-home .zp-blank.search-main-form {
+  max-width: 600px; margin: 28px 0 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.zr-home .zp-blank__row { display: flex; align-items: flex-end; gap: 14px; }
+.zr-home .zp-blank__field { flex: 1 1 auto; display: grid; gap: 2px; min-width: 0; margin: 0; }
+.zr-home .zp-blank__field > span { color: var(--zx-ink-2); font-size: 14px; font-weight: 600; }
+.zr-home .zp-blank .search-main-input {
+  width: 100%; height: 58px; margin: 0; padding: 0 2px; border: 0; border-bottom: 2px solid var(--zx-ink); border-radius: 0;
+  background: transparent; box-shadow: none; color: var(--zx-ink);
+  font: 700 26px/1 var(--zx-font); letter-spacing: .12em;
+}
+.zr-home .zp-blank .search-main-input::placeholder { color: #8d97a8; font-size: 20px; font-weight: 500; letter-spacing: .02em; }
+.zr-home .zp-blank .search-main-input:focus { outline: none; border-bottom-color: var(--zx-blue); background: linear-gradient(180deg, transparent 70%, var(--zx-blue-soft) 100%); }
+.zr-home .zp-btn,
+.zr-home .zp-blank #search-button {
+  flex: 0 0 auto; width: auto; min-height: 58px; margin: 0; padding: 0 26px; border: 0; border-radius: 12px;
+  background: var(--zx-ink); background-image: none; color: #fff; box-shadow: none;
+  font: 700 16px var(--zx-font); cursor: pointer; transition: background-color .15s ease;
+}
+.zr-home .zp-blank #search-button:hover { background: var(--zx-blue); }
+.zr-home .zp-blank #search-button:focus-visible { outline: 3px solid #9aa8ec; outline-offset: 2px; }
+.zr-home .zp-blank #search-button:disabled { opacity: .7; }
+.zr-home .zp-blank .invalid-feedback { margin-top: 8px; color: #b42318; font-size: 14px; text-align: left; }
+.zr-home .zp-consent { display: flex; align-items: flex-start; gap: 10px; margin: 14px 0 0; color: var(--zx-ink-2); font-size: 13px; line-height: 1.5; }
+.zr-home .zp-consent input { flex: 0 0 auto; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--zx-ink); }
+.zr-home .zp-note { margin: 2px 0 0 28px; color: var(--zx-muted); font-size: 13px; line-height: 1.5; }
+.zr-home .zp-also { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 16px 0 0; color: var(--zx-ink-2); font-size: 14px; }
+.zr-home :is(.zp-consent, .zp-also) a { color: var(--zx-blue); text-decoration: underline; text-underline-offset: 3px; }
+
+.zr-home .zp-hero__alt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 20px; }
+.zr-home .zp-wa {
+  display: inline-flex; align-items: center; gap: 9px; min-height: 48px; padding: 0 20px; border-radius: 12px;
+  background: var(--zx-green); color: #fff; font-weight: 700; text-decoration: none;
+}
+.zr-home .zp-wa:hover { background: var(--zx-green-hover); color: #fff; }
+.zr-home .zp-wa__icon { width: 20px; height: 20px; }
+.zr-home .zp-hero__alt > span { color: var(--zx-muted); font-size: 15px; }
+
+.zr-home .zp-facts {
+  display: grid; grid-template-columns: repeat(3, minmax(0, max-content)); gap: 34px; margin: 28px 0 0; padding: 20px 0 0;
+  border-top: 1px solid var(--zx-line);
+}
+.zr-home .zp-facts dt { margin: 0; color: var(--zx-ink); font: 800 28px/1.1 var(--zx-display); letter-spacing: -0.02em; white-space: nowrap; }
+.zr-home .zp-facts dt a { color: inherit; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; text-decoration-color: var(--zx-blue); }
+.zr-home .zp-facts dd { max-width: 14em; margin: 4px 0 0; color: var(--zx-ink-2); font-size: 14px; line-height: 1.4; }
+
+/* Visual: the lawyer in front of a real decision, the seal lands once */
+.zr-home .zp-hero__visual { position: relative; align-self: stretch; min-height: 600px; }
+.zr-home .zp-sheet {
+  position: absolute; right: -40px; bottom: 0; width: 440px; height: 560px; border: 1px solid var(--zx-line);
+  background: #fff url("/img/rezultaty/cancellation-6942105.webp") center top / cover no-repeat;
+  opacity: .22; transform: rotate(4deg); transform-origin: bottom right;
+}
+.zr-home .zp-portrait {
+  position: absolute; right: 60px; bottom: 0; width: auto; height: min(640px, 100%); max-width: none;
+  filter: drop-shadow(0 30px 40px rgba(15, 30, 58, .18));
+}
+.zr-home .zp-seal {
+  position: absolute; left: 4px; bottom: 150px; width: 250px; height: 250px; color: var(--zx-blue);
+  opacity: .94; transform: rotate(-9deg); animation: zp-seal .55s cubic-bezier(.2, 1.6, .4, 1) .35s both;
+}
+.zr-home .zp-seal svg { display: block; width: 100%; height: 100%; }
+@keyframes zp-seal { from { opacity: 0; transform: rotate(-24deg) scale(1.7); } to { opacity: .94; transform: rotate(-9deg) scale(1); } }
+
+/* Results of the check sit right under the form */
+.zr-home .zp-hero .zx-hero__results:empty { display: none; }
+.zr-home .zp-hero .zx-hero__results { position: relative; z-index: 2; }
+
+/* Where the money is blocked */
+.zr-home .zp-where { border-top: 1px solid var(--zx-line); border-bottom: 1px solid var(--zx-line); background: #fff; }
+.zr-home .zp-where__row { display: grid; grid-template-columns: 230px repeat(5, minmax(0, 1fr)); }
+.zr-home .zp-where__row > p { align-self: center; margin: 0; padding: 22px 16px 22px 0; color: var(--zx-ink); font-weight: 700; font-size: 15px; }
+.zr-home .zp-bank {
+  display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 0 18px; border-left: 1px solid var(--zx-line);
+  color: var(--zx-ink); font-weight: 700; text-decoration: none; transition: background-color .15s ease;
+}
+.zr-home .zp-bank:hover { background: var(--zx-soft); color: var(--zx-ink); }
+.zr-home .zp-bank:focus-visible { outline: 3px solid #9aa8ec; outline-offset: -3px; }
+.zr-home .zp-bank img, .zr-home .zp-bank__icon { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; }
+.zr-home .zp-bank__icon { display: grid; place-items: center; background: var(--zx-blue-soft); color: var(--zx-blue); }
+.zr-home .zp-bank__icon svg { width: 18px; height: 18px; }
+
+@media (max-width: 1100px) {
+  .zr-home .zp-hero__grid { grid-template-columns: minmax(0, 1fr) minmax(0, .7fr); }
+  .zr-home .zp-portrait { right: 10px; height: 580px; }
+  .zr-home .zp-seal { width: 210px; height: 210px; left: -20px; }
+  .zr-home .zp-where__row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .zr-home .zp-where__row > p { grid-column: 1 / -1; padding: 18px 0 10px; }
+  .zr-home .zp-bank { border-left: 0; border-top: 1px solid var(--zx-line); min-height: 64px; padding: 0 8px; }
+}
+@media (max-width: 760px) {
+  .zr-home .zp-hero__grid { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 0; }
+  .zr-home .zp-hero__text { padding: 30px 0 6px; }
+  .zr-home .zp-hero__title { font-size: clamp(34px, 10vw, 46px); line-height: 1.02; }
+  .zr-home .zp-hero__lead { margin-top: 16px; font-size: 17px; }
+  .zr-home .zp-blank.search-main-form { margin-top: 26px; }
+  .zr-home .zp-blank__row { flex-direction: column; align-items: stretch; }
+  .zr-home .zp-blank #search-button { width: 100%; }
+  .zr-home .zp-hero__alt .zp-wa { flex: 1 1 100%; justify-content: center; }
+  .zr-home .zp-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 26px; padding-top: 18px; }
+  .zr-home .zp-facts dt { font-size: 19px; white-space: normal; }
+  .zr-home .zp-facts dd { font-size: 12px; }
+  .zr-home .zp-hero__visual { min-height: 400px; margin-top: 8px; }
+  .zr-home .zp-portrait { right: 18px; height: 400px; }
+  .zr-home .zp-sheet { width: 260px; height: 330px; right: -24px; }
+  .zr-home .zp-seal { width: 150px; height: 150px; left: 0; bottom: 70px; }
+  .zr-home .zp-where__row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 370px) {
+  .zr-home .zp-facts { gap: 8px; }
+  .zr-home .zp-facts dt { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zr-home .zp-seal { animation: none; }
+  .zr-home :is(.zp-bank, .zp-blank #search-button) { transition: none; }
+}
+
+/* Results: the real decision with a highlighter on the amount and a green «Отменена» sticker */
+.zr-home .ze-result-showcase__document img { height: auto; aspect-ratio: 850 / 813; object-fit: cover; }
+.zr-home .zp-marker {
+  position: absolute; left: 1.5%; top: var(--mt, 69.4%); width: 97%; height: 3.6%; border-radius: 3px 10px 4px 12px;
+  background: #ffe14d; mix-blend-mode: multiply; pointer-events: none;
+  transform: rotate(-.5deg) scaleX(0); transform-origin: left center;
+}
+.zr-home .zp-marker.is-drawn, .zr-home .zp-marker:not(.is-drawn) { animation: zp-mark .7s ease-out .3s forwards; }
+@keyframes zp-mark { to { transform: rotate(-.5deg) scaleX(1); } }
+.zr-home .zp-stamp {
+  position: absolute; right: 18px; top: 72px; z-index: 2; display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%;
+  background: var(--zx-green); color: #fff; font: 800 17px/1 var(--zx-display); letter-spacing: -0.01em; text-align: center;
+  transform: rotate(10deg); box-shadow: 0 14px 28px rgba(21, 128, 61, .3); pointer-events: none;
+}
+.zr-home .ze-result-showcase__stage { overflow: visible; }
+@media (max-width: 760px) {
+  .zr-home .zp-stamp { width: 78px; height: 78px; right: 10px; top: 60px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zr-home .zp-marker, .zr-home .zp-marker.is-drawn { animation: none; transform: rotate(-.5deg); }
+}
+/* The BIN and bankruptcy checks stay on the first screen as plain text links */
+.zr-home .zp-also .ze-home-company-check {
+  display: inline; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+  color: var(--zx-blue); font-weight: 600; text-decoration: underline; text-underline-offset: 3px;
+}
+.zr-home .zp-also .ze-home-company-check:hover { color: var(--zx-blue-hover); }

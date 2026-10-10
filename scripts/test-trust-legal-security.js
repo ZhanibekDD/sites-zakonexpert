@@ -177,7 +177,7 @@ assert.match(resultsPage, /results-v2\.css\?v=20260816-4/,
   'results page must use the redesigned results stylesheet');
 assert.match(resultsPage, /results-archive-data\.js\?v=20260816-2/,
   'results page must load the additional rulings archive');
-assert.match(resultsPage, /results-v2\.js\?v=20260816-4/,
+assert.match(resultsPage, /results-v2\.js\?v=20261010-1/,
   'results page must load the interactive document viewer');
 assert.match(resultsPage, /101 постановление можно прочитать и открыть в полном размере/,
   'results archive must explain that the documents are readable');
@@ -210,7 +210,7 @@ for (const item of resultsArchive) {
   assert(fs.existsSync(thumbPath), `archive thumbnail is missing: ${item.thumbSrc}`);
   assert(fs.statSync(thumbPath).size <= 95 * 1024, `archive thumbnail is too large: ${item.thumbSrc}`);
 }
-assert.match(home, /data-result-viewer[\s\S]{0,1200}data-result-option/,
+assert.match(home, /data-result-viewer[\s\S]{0,1500}data-result-option/,
   'homepage must expose a large interactive result viewer');
 assert.doesNotMatch(resultsPage, /Наша команда|komanda-0[12]\.jpeg|rez-v2-team/,
   'results page must not render the removed team section');
