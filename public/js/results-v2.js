@@ -25,6 +25,14 @@
       if (amount) amount.textContent = option.dataset.amount;
       if (counter) counter.textContent = `${options.indexOf(option) + 1} из ${options.length}`;
       if (label) label.textContent = option.dataset.label || 'Исполнительная надпись отменена';
+      // Highlighter over the amount line of the shown decision; replay the stroke on every switch.
+      const marker = viewer.querySelector('[data-result-marker]');
+      if (marker && option.dataset.marker) {
+        marker.style.setProperty('--mt', option.dataset.marker);
+        marker.classList.remove('is-drawn');
+        void marker.offsetWidth;
+        marker.classList.add('is-drawn');
+      }
 
       const opener = viewer.querySelector('[data-result-open]');
       if (opener) {

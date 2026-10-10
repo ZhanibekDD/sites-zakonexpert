@@ -1,0 +1,72 @@
+/* «Как арест выглядит в приложении банка» — bank pages (2026-10-10).
+   A generic phone (not any bank's interface) that switches from «Сейчас» to «После снятия».
+   Tokens come from zx-theme.css; the block carries its own spacing so it fits both page families. */
+
+.zb-screen { padding: 72px 20px; background: var(--zx-soft, #f4f6fa); border-top: 1px solid var(--zx-line, #e1e6ee); border-bottom: 1px solid var(--zx-line, #e1e6ee); }
+.zb-screen__inner {
+  display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 64px; align-items: center;
+  width: min(1120px, 100%); margin: 0 auto;
+}
+.zb-screen h2 { margin: 0; color: var(--zx-ink, #0f1e3a); font: 800 clamp(28px, 3.2vw, 44px)/1.08 var(--zx-display, sans-serif); letter-spacing: -0.03em; }
+.zb-screen__text > p { max-width: 36em; margin: 18px 0 0; color: var(--zx-ink-2, #34425c); font-size: 18px; line-height: 1.6; }
+.zb-steps { display: grid; gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; counter-reset: zb; }
+.zb-steps li { position: relative; padding-left: 50px; color: var(--zx-ink-2, #34425c); line-height: 1.5; counter-increment: zb; }
+.zb-steps li::before {
+  content: counter(zb); position: absolute; left: 0; top: -2px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--zx-ink, #0f1e3a); color: #fff; font: 800 15px var(--zx-display, sans-serif);
+}
+.zb-steps strong { color: var(--zx-ink, #0f1e3a); }
+.zb-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.zb-btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 22px; border-radius: 12px;
+  background: var(--zx-ink, #0f1e3a); color: #fff; font-weight: 700; text-decoration: none;
+}
+.zb-btn:hover { background: var(--zx-blue, #2b3fa8); color: #fff; }
+.zb-btn--wa { background: var(--zx-green, #15803d); }
+.zb-btn--wa:hover { background: var(--zx-green-hover, #116a32); }
+.zb-btn:focus-visible, .zb-toggle button:focus-visible { outline: 3px solid #9aa8ec; outline-offset: 2px; }
+
+/* Phone */
+.zb-figure { margin: 0; }
+.zb-phone { width: 330px; margin: 0 auto; padding: 13px; border-radius: 50px; background: var(--zx-ink, #0f1e3a); box-shadow: 0 40px 80px rgba(15, 30, 58, .28); }
+.zb-ui { position: relative; min-height: 600px; padding: 52px 18px 20px; border-radius: 38px; background: #f5f8fc; overflow: hidden; }
+.zb-ui::before { content: ""; position: absolute; top: 14px; left: 50%; width: 88px; height: 24px; border-radius: 20px; background: var(--zx-ink, #0f1e3a); transform: translateX(-50%); }
+.zb-ui__app { color: var(--zx-ink-2, #34425c); font-weight: 700; font-size: 15px; }
+.zb-ui__card { margin-top: 12px; padding: 18px; border-radius: 20px; background: linear-gradient(140deg, #1d2f55, #3b4f80); color: #fff; }
+.zb-ui__card small { opacity: .78; font-size: 13px; }
+.zb-ui__card b { display: block; margin-top: 6px; font: 800 28px var(--zx-display, sans-serif); letter-spacing: -0.02em; }
+.zb-ui__status { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 13px 14px; border-radius: 16px; font-weight: 700; font-size: 15px; line-height: 1.3; transition: background-color .5s ease, color .5s ease; }
+.zb-ui__status i { display: grid; flex: 0 0 30px; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; font-style: normal; transition: background-color .5s ease; }
+.zb-ui__ops { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.zb-ui__ops li { display: flex; justify-content: space-between; gap: 8px; padding: 12px 14px; border-radius: 14px; background: #fff; color: var(--zx-ink, #0f1e3a); font-size: 14px; }
+.zb-ui__ops b { transition: color .5s ease; }
+.zb-ui__why { display: grid; gap: 2px; margin-top: 12px; padding: 13px 14px; border-radius: 14px; background: #fff; font-size: 13.5px; color: var(--zx-ink, #0f1e3a); }
+.zb-ui__why small { color: var(--zx-muted, #586579); font-size: 12px; }
+.zb-ui__why b { margin-bottom: 6px; }
+.zb-ui .zb-f, .zb-ui.is-free .zb-a { display: none; }
+.zb-ui.is-free .zb-f { display: inline; }
+.zb-ui.is-arrest .zb-ui__status { background: #fde8ea; color: #b42318; }
+.zb-ui.is-arrest .zb-ui__status i { background: #d92d3a; }
+.zb-ui.is-arrest .zb-ui__ops b { color: #b42318; }
+.zb-ui.is-free .zb-ui__status { background: #e1f5eb; color: #0e6b41; }
+.zb-ui.is-free .zb-ui__status i { background: #15803d; }
+.zb-ui.is-free .zb-ui__ops b { color: #0e6b41; }
+.zb-toggle { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+.zb-toggle button {
+  min-height: 42px; padding: 0 18px; border: 1px solid var(--zx-line, #e1e6ee); border-radius: 999px; background: #fff;
+  color: var(--zx-ink-2, #34425c); font: 600 14px var(--zx-font, sans-serif); cursor: pointer;
+}
+.zb-toggle button[aria-pressed="true"] { border-color: var(--zx-ink, #0f1e3a); background: var(--zx-ink, #0f1e3a); color: #fff; }
+.zb-figure figcaption { margin-top: 10px; color: var(--zx-muted, #586579); font-size: 13px; text-align: center; }
+
+@media (max-width: 900px) {
+  .zb-screen { padding: 48px 16px; }
+  .zb-screen__inner { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .zb-screen__text > p { font-size: 16px; }
+  .zb-actions .zb-btn { flex: 1 1 100%; }
+  .zb-phone { width: min(310px, 100%); }
+  .zb-ui { min-height: 560px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zb-ui__status, .zb-ui__status i, .zb-ui__ops b { transition: none; }
+}

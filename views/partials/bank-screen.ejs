@@ -1,0 +1,38 @@
+<%# «Сейчас / после снятия»: the generic bank-app example; bankName and waHref come from bank-arrest-page-body %>
+<section class="zb-screen" aria-labelledby="zb-screen-title">
+    <div class="zb-screen__inner">
+      <div class="zb-screen__text">
+        <h2 id="zb-screen-title">Как арест выглядит в приложении <%= bankName %></h2>
+        <p>Деньги на счёте обычно видны, но перевести, снять или оплатить ими нельзя — в пределах суммы ареста. Банк только исполняет постановление: снимает ограничение тот, кто его наложил.</p>
+        <ol class="zb-steps">
+          <li><strong>Узнаём основание.</strong> По ИИН видно, кто наложил арест, на какую сумму и по какому документу.</li>
+          <li><strong>Выбираем способ.</strong> Оспорить документ, уменьшить сумму или договориться о графике.</li>
+          <li><strong>Получаем постановление о снятии.</strong> После него операции по счёту снова доступны.</li>
+        </ol>
+        <div class="zb-actions">
+          <a class="zb-btn" href="/proverka-po-iin">Проверить по ИИН</a>
+          <a class="zb-btn zb-btn--wa" href="<%= waHref %>" target="_blank" rel="noopener">Написать юристу</a>
+        </div>
+      </div>
+      <figure class="zb-figure">
+        <div class="zb-phone">
+          <div class="zb-ui is-arrest" data-zb-screen>
+            <div class="zb-ui__app">Мой банк</div>
+            <div class="zb-ui__card"><small>Карта •• 4821</small><b>186 400 ₸</b></div>
+            <div class="zb-ui__status"><i aria-hidden="true"><span class="zb-a">!</span><span class="zb-f">✓</span></i><span><span class="zb-a">Арест по постановлению ЧСИ</span><span class="zb-f">Ограничение снято</span></span></div>
+            <ul class="zb-ui__ops">
+              <li><span>Перевод с карты</span><b><span class="zb-a">недоступен</span><span class="zb-f">доступен</span></b></li>
+              <li><span>Снятие наличных</span><b><span class="zb-a">недоступно</span><span class="zb-f">доступно</span></b></li>
+              <li><span>Оплата покупок</span><b><span class="zb-a">недоступна</span><span class="zb-f">доступна</span></b></li>
+            </ul>
+            <div class="zb-ui__why"><small>Основание</small><b>Исполнительная надпись нотариуса</b><small>Наложил</small><b>Частный судебный исполнитель</b></div>
+          </div>
+        </div>
+        <div class="zb-toggle" role="group" aria-label="Пример экрана">
+          <button type="button" aria-pressed="true" data-zb-state="arrest">Сейчас</button>
+          <button type="button" aria-pressed="false" data-zb-state="free">После снятия</button>
+        </div>
+        <figcaption>Пример экрана для наглядности — не приложение банка.</figcaption>
+      </figure>
+    </div>
+  </section>
