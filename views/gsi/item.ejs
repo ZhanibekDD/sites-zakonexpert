@@ -1,5 +1,11 @@
 <%
-const pageTitle = item.name + ' — ГСИ, контакты | ZakonExpert';
+// Title: the department by region, without the long official wrapper («РГУ "…" Министерства юстиции РК»)
+const gsiShortName = String(item.name || '')
+  .replace(/^РГУ\s*"?/i, '')
+  .replace(/\s*Министерства юстиции(?: Республики Казахстан| РК)?"?\s*$/i, '')
+  .replace(/"/g, '')
+  .trim();
+const pageTitle = (gsiShortName || item.name) + ' — ГСИ, контакты | ZakonExpert';
 const pageDesc = item.name + ' (' + item.region + '): адрес и официальные контакты. Помощь при незаконном аресте.';
 const canonical = 'https://zakonexpert.kz/gsi/' + item.slug;
 const schema = { '@context': 'https://schema.org', '@type': 'GovernmentOrganization', name: item.name,

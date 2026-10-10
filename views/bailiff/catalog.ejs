@@ -6,10 +6,10 @@ const bailiffs = regionItems || [];
 const total = regions.reduce(function(sum, item) { return sum + (item.count || 0); }, 0);
 const pageTitle = currentRegion
   ? ('ЧСИ ' + currentRegion.genitive + ': список, контакты и адреса | ZakonExpert')
-  : 'Каталог ЧСИ Казахстана — контакты и лицензии | ZakonExpert';
+  : ('Реестр ЧСИ Казахстана — база ' + total + ' ЧСИ с контактами | ZakonExpert');
 const pageDesc = currentRegion
   ? ('Список ЧСИ ' + currentRegion.genitive + ': ' + bailiffs.length + ' частных судебных исполнителей. Поиск по ФИО, телефоны, адреса, лицензии и порядок действий при аресте счёта.')
-  : ('Каталог ' + total + ' частных судебных исполнителей Казахстана. Поиск по ФИО, контакты, адреса и номера лицензий.');
+  : ('Реестр частных судебных исполнителей Казахстана: база ' + total + ' ЧСИ по всем регионам. Поиск по ФИО, телефоны, адреса и номера лицензий.');
 const canonical = currentRegion
   ? ('https://zakonexpert.kz' + currentRegion.path)
   : 'https://zakonexpert.kz/bailiffs';
@@ -59,8 +59,8 @@ const catalog = {
   items: bailiffs,
   lastUpdated,
   pluralLabel: 'Каталог ЧСИ',
-  registryLabel: 'Реестр ЧСИ Казахстана',
-  title: 'Частные судебные исполнители Казахстана',
+  registryLabel: 'Частные судебные исполнители',
+  title: 'Реестр ЧСИ Казахстана',
   regionTitle: currentRegion ? ('ЧСИ ' + currentRegion.genitive) : 'ЧСИ',
   regionH1: currentRegion ? ('ЧСИ ' + currentRegion.genitive + ': список и контакты') : '',
   regionIntro: currentRegion
