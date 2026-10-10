@@ -1,0 +1,119 @@
+/* Motion layer for the whole site (2026-10-10).
+   Vocabulary from the subject: paper slides in, a seal lands, a marker draws, numbers count.
+   - Page transitions and the reading-progress line are progressive CSS: older browsers skip them.
+   - Hidden «before reveal» states exist only on elements /js/zx-motion.js marked below the fold,
+     so nothing stays hidden if the script does not run. The script does nothing for visitors with
+     reduced motion and for crawlers.
+   - Every keyframe defines only its start (fill: backwards), so elements end on their own styles. */
+
+:root {
+  --zx-ease: cubic-bezier(.16, 1, .3, 1);
+  --zx-ease-pop: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ---------- Smooth page-to-page transitions (Chromium browsers, incl. Yandex Browser) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: zx-vt-out .18s ease-in both; }
+  ::view-transition-new(root) { animation: zx-vt-in .5s var(--zx-ease) both; }
+  ::view-transition-group(zx-header) { animation-duration: .3s; }
+}
+@keyframes zx-vt-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes zx-vt-in { from { opacity: 0; transform: translateY(16px); } }
+
+/* ---------- Reading progress line ---------- */
+.zx-progress {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, var(--zx-blue, #2b3fa8), #6d83ff);
+  transform: scaleX(0); transform-origin: 0 50%;
+}
+@supports (animation-timeline: scroll()) {
+  .zx-progress { animation: zx-progress linear both; animation-timeline: scroll(root); }
+}
+@keyframes zx-progress { to { transform: scaleX(1); } }
+
+/* Header lifts off the page once you scroll */
+html body .site-header { transition: box-shadow .3s ease, background-color .3s ease; }
+html.zx-scrolled body .site-header { box-shadow: 0 12px 30px -20px rgba(15, 30, 58, .45); }
+
+/* ---------- Reveal on scroll (classes set by zx-motion.js) ---------- */
+.zx-rv { opacity: 0; transform: translate3d(0, 30px, 0); }
+.zx-rv.zx-rv--left { transform: translate3d(-34px, 0, 0); }
+.zx-rv.zx-rv--zoom { transform: translate3d(0, 26px, 0) scale(.95); }
+.zx-rv.zx-rv--title { transform: translate3d(0, 24px, 0); filter: blur(8px); }
+.zx-rv.zx-rv--wipe { opacity: 1; transform: none; clip-path: inset(0 0 calc(100% - 2px) 0 round 16px); }
+.zx-rv.zx-rv--media img { transform: scale(1.14); }
+.zx-rv.is-in {
+  opacity: 1; transform: none; filter: none; clip-path: inset(0 0 0 0 round 0);
+  transition:
+    opacity .7s var(--zx-ease) var(--zx-d, 0s),
+    transform .95s var(--zx-ease) var(--zx-d, 0s),
+    filter .8s var(--zx-ease) var(--zx-d, 0s),
+    clip-path 1s var(--zx-ease) var(--zx-d, 0s);
+}
+.zx-rv.zx-rv--media.is-in img { transform: none; transition: transform 1.6s var(--zx-ease) var(--zx-d, 0s); }
+@media print {
+  .zx-rv { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
+}
+
+/* Sequences: children come in one after another (process steps, lists of facts) */
+.zx-seq > * { opacity: 0; transform: translate3d(0, 18px, 0); }
+.zx-seq.is-in > * {
+  opacity: 1; transform: none;
+  transition: opacity .6s var(--zx-ease) calc(var(--i, 0) * .14s), transform .8s var(--zx-ease) calc(var(--i, 0) * .14s);
+}
+
+/* ---------- Light that follows the cursor on cards ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .zx-lit::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), var(--zx-lit, rgba(43, 63, 168, .11)), transparent 62%);
+    opacity: 0; transition: opacity .35s ease;
+  }
+  .zx-lit:hover::after { opacity: 1; }
+  .zx-lit--dark { --zx-lit: rgba(255, 255, 255, .14); }
+  .zx-tilt { transition: transform .6s var(--zx-ease), box-shadow .4s ease; transform-style: preserve-3d; }
+  .zx-tilt.is-tilting { transition: transform .12s linear, box-shadow .4s ease; box-shadow: 0 30px 60px -28px rgba(15, 30, 58, .38); }
+}
+
+/* ---------- Buttons: a sheen passes over on hover, a soft press ---------- */
+.zx-shine {
+  background-image: linear-gradient(115deg, transparent 0 38%, rgba(255, 255, 255, .32) 50%, transparent 62% 100%) !important;
+  background-size: 260% 100% !important; background-position: 140% 0 !important; background-repeat: no-repeat !important;
+  transition: background-position .9s var(--zx-ease), background-color .2s ease, color .2s ease, box-shadow .25s ease, transform .2s var(--zx-ease) !important;
+}
+.zx-shine:hover { background-position: -40% 0 !important; }
+.zx-shine:active { transform: scale(.97); }
+.zx-magnet { transition: transform .5s var(--zx-ease), background-position .9s var(--zx-ease), background-color .2s ease !important; }
+
+/* ---------- FAQ and other <details> open smoothly ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  @supports selector(::details-content) {
+    details { interpolate-size: allow-keywords; }
+    details::details-content {
+      block-size: 0; overflow-y: clip;
+      transition: block-size .45s var(--zx-ease), content-visibility .45s allow-discrete;
+    }
+    details[open]::details-content { block-size: auto; }
+  }
+}
+
+/* ---------- First screen of inner pages: title and photo arrive ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero, .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero, .zx-iin-hero, .npage-hero, .cc-hero, .bc-hero) h1 {
+    animation: zx-title-in .9s var(--zx-ease) .05s backwards;
+  }
+  :is(.legal-hero, .page-hero, .zg-hero, .law-hero, .news-hero, .rez-v2-hero, .od-hero, .collector-hero, .ad-hero, .dok-hero, .dl-hero, .reviews-hero, .notary-hero, .press-hero, .adv-hero, .med-hero, .news-detail-hero, .od-detail-hero, .notary-archive__hero, .zx-iin-hero, .npage-hero, .cc-hero, .bc-hero) h1 ~ :is(p, div, ul, form, a) {
+    animation: zx-rise .8s var(--zx-ease) .2s backwards;
+  }
+  body.seo-premium .legal-hero::before { animation: zx-card-in 1.1s var(--zx-ease) .25s backwards; }
+}
+@keyframes zx-title-in { from { transform: translateY(26px); filter: blur(10px); } }
+@keyframes zx-rise { from { opacity: 0; transform: translateY(20px); } }
+@keyframes zx-card-in { from { transform: translateY(30px) rotate(3deg) scale(.94); } }
+@keyframes zx-pop { from { opacity: 0; transform: scale(.6); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .zx-progress { display: none; }
+  .zx-rv, .zx-seq > * { opacity: 1 !important; transform: none !important; filter: none !important; clip-path: none !important; }
+}

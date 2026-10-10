@@ -67,7 +67,12 @@
     .law-result-snippet { font-size:0.8rem; color:#64748b; margin-top:5px; line-height:1.55; }
   </style>
   <link rel="stylesheet" href="/css/laws-reader.css?v=20260720-1">
-  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-2">
+  <link rel="preload" href="/fonts/geologica-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/geologica-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/onest-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/zx-theme.css?v=20261010-3">
+  <link rel="stylesheet" href="/css/zx-motion.css?v=20261010-1">
+  <script src="/js/zx-motion.js?v=20261010-1" defer></script>
 </head>
 <body>
 <%- include('../partials/yandex-metrika') %>
@@ -122,6 +127,24 @@
     </div>
   </div>
 </header>
+<%
+  const zxSearchCopy = {
+    ru: ['Поиск по всему сайту', 'Компания, БИН, нотариус, ЧСИ, закон, услуга…', 'Найти'],
+    kk: ['Бүкіл сайт бойынша іздеу', 'Компания, БСН, нотариус, ЖСО, заң, қызмет…', 'Іздеу'],
+    en: ['Search the entire site', 'Company, BIN, notary, bailiff, law, service…', 'Search'],
+    zh: ['搜索整个网站', '公司、BIN、公证员、执法人员、法律、服务…', '搜索'],
+    tr: ['Tüm sitede ara', 'Şirket, BIN, noter, icra memuru, kanun, hizmet…', 'Ara'],
+  };
+  const zxSearch = zxSearchCopy[String('ru').toLowerCase().split('-')[0]] || zxSearchCopy.ru;
+%>
+<section class="global-site-search" data-global-site-search aria-label="<%= zxSearch[0] %>">
+  <div class="landing-container">
+    <form class="global-site-search__form" action="/poisk" method="get" role="search">
+      <label class="global-site-search__field"><i class="bi bi-search" aria-hidden="true"></i><span class="visually-hidden"><%= zxSearch[0] %></span><input class="global-site-search__input" type="search" name="q" minlength="2" maxlength="120" placeholder="<%= zxSearch[1] %>" autocomplete="off"></label>
+      <button class="global-site-search__button" type="submit"><%= zxSearch[2] %></button>
+    </form>
+  </div>
+</section>
 
 <main>
   <%- body %>

@@ -321,9 +321,9 @@ html body .professional-card__status--inactive { color: #b42318; background: #fe
 html body .professional-card--inactive .professional-card__license span { color: #8a5a00; }
 html body a[data-event-cta="region_bottom"] { background: var(--zx-green) !important; border-color: var(--zx-green) !important; }
 /* Legal disclaimer inside the dark article CTA (/zakony and law pages) */
-html body .article-cta .legal-disclaimer,
-html body .article-cta .legal-disclaimer a { color: rgba(255, 255, 255, .78) !important; }
-html body .article-cta .legal-disclaimer strong { color: #fff !important; }
+html body :is(.article-cta, .legal-section--dark) .legal-disclaimer,
+html body :is(.article-cta, .legal-section--dark) .legal-disclaimer a { color: rgba(255, 255, 255, .78) !important; }
+html body :is(.article-cta, .legal-section--dark) .legal-disclaimer strong { color: #fff !important; }
 /* Dark footer: small print was rgba(255,255,255,.4) inline */
 html body footer :is(p, .footer-region, .footer-note, .ze-privacy-settings) { color: rgba(255, 255, 255, .74) !important; }
 /* Last gold accents */
@@ -451,3 +451,13 @@ html body :is([style*="background:#0d1f3c"], [style*="background: #0d1f3c"], [st
 html body :is(.cc-leader, .cc-dim, .cc-full, .gsi-nophone) { color: var(--zx-muted) !important; }
 html body :is(p, label span, [style*="font-size"]) > a[href^="http"]:not([class]),
 html body label span > a[href="/privacy"]:not([class]) { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- Layout stability (2026-10-10) ----------
+   The privacy banner was inserted into the page flow under the header on a first visit and pushed the
+   whole page down (~0.3 CLS). It now floats at the bottom of the screen with the same text and buttons.
+   (The site-search bar is now in the page markup, so nothing else is inserted above the content.) */
+html body #ze-privacy-banner {
+  position: fixed !important; left: 50%; bottom: 16px; z-index: 2147483001;
+  width: min(980px, calc(100% - 24px)); margin: 0 !important; transform: translateX(-50%);
+  box-shadow: 0 24px 60px -20px rgba(2, 12, 27, .55);
+}
