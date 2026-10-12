@@ -157,8 +157,8 @@ assert.doesNotMatch(home, /ze-home-specialist-card|Специалист по с�
   'homepage must not render the removed specialist badge');
 const resultsPage = fs.readFileSync(path.join(PUBLIC, 'rezultaty.html'), 'utf8');
 for (const source of [home, resultsPage]) {
-  assert(source.includes('43 480 085,56 ₸'), 'results must show the combined amount across all cancellations');
-  assert(source.includes('80'), 'results must show the full cancellation count');
+  assert(source.includes('43 618 822,56 ₸'), 'results must show the combined amount across all cancellations');
+  assert(source.includes('81'), 'results must show the full cancellation count');
   assert(!source.includes('79 300 ₸'), 'the old low-value featured result must be removed');
 }
 for (const filename of [
@@ -173,13 +173,13 @@ for (const filename of [
   assert(fs.existsSync(imagePath), `${filename} is missing`);
   assert(fs.statSync(imagePath).size <= 100 * 1024, `${filename} is too large`);
 }
-assert.match(resultsPage, /results-v2\.css\?v=20260816-4/,
+assert.match(resultsPage, /results-v2\.css\?v=20261012-1/,
   'results page must use the redesigned results stylesheet');
-assert.match(resultsPage, /results-archive-data\.js\?v=20261012-1/,
+assert.match(resultsPage, /results-archive-data\.js\?v=20261012-2/,
   'results page must load the additional rulings archive');
-assert.match(resultsPage, /results-v2\.js\?v=20261010-1/,
+assert.match(resultsPage, /results-v2\.js\?v=20261012-1/,
   'results page must load the interactive document viewer');
-assert.match(resultsPage, /94 постановления можно прочитать и открыть в полном размере/,
+assert.match(resultsPage, /97 документов можно прочитать и открыть в полном размере/,
   'results archive must explain that the documents are readable');
 assert.match(resultsPage, /Открыть документ отдельно и увеличить/,
   'results lightbox must provide a direct high-resolution document link');
@@ -187,17 +187,17 @@ const resultsArchiveSource = fs.readFileSync(path.join(PUBLIC, 'js', 'results-ar
 const resultsArchiveSandbox = { window: {} };
 vm.runInNewContext(resultsArchiveSource, resultsArchiveSandbox);
 const resultsArchive = resultsArchiveSandbox.window.ZAKONEXPERT_RESULTS_ARCHIVE;
-assert.strictEqual(resultsArchive.length, 94,
-  'results archive must expose 94 unique additional documents');
+assert.strictEqual(resultsArchive.length, 97,
+  'results archive must expose 97 unique additional documents');
 assert.strictEqual(new Set(resultsArchive.map(item => item.id)).size, resultsArchive.length,
   'results archive document IDs must be unique');
 const cancellationArchive = resultsArchive.filter(item => item.category === 'cancellation');
-assert.strictEqual(cancellationArchive.length + 4, 80,
-  'results archive plus four featured rulings must expose 80 cancellations');
+assert.strictEqual(cancellationArchive.length + 4, 81,
+  'results archive plus four featured rulings must expose 81 cancellations');
 const amountToCents = label => Math.round(Number(label.replace(/₸/g, '').replace(/\s/g, '').replace(',', '.')) * 100);
 const archiveCancellationCents = cancellationArchive.reduce((total, item) => total + amountToCents(item.amountLabel), 0);
-assert.strictEqual(archiveCancellationCents + 2086159933, 4348008556,
-  'all published cancellations must total 43 480 085,56 tenge');
+assert.strictEqual(archiveCancellationCents + 2086159933, 4361882256,
+  'all published cancellations must total 43 618 822,56 tenge');
 // Only results in the client's favour are published, and copies without redaction never ship.
 for (const removedId of ['735000', '926413-13', '36000', '7097', '118141-00', '69383', '21210-4']) {
   assert(!resultsArchive.some(item => item.id === removedId), `refusal or fee approval ${removedId} must not be published`);
@@ -208,6 +208,13 @@ for (const unredacted of ['otmena-nadpisi-01.jpeg', 'otmena-nadpisi-02.jpeg', 'o
   'prekrashchenie-01.jpeg', 'grafik-soglashenie-01.jpeg']) {
   assert(!fs.existsSync(path.join(PUBLIC, 'img', 'rezultaty', unredacted)), `unredacted copy ${unredacted} must not be public`);
 }
+// The 2026 cases section shows real dated steps and links each case to its redacted document.
+assert.match(resultsPage, /id="cases-2026"/, 'results page must show the 2026 cases');
+for (const caseId of ['6887183-96', '138737', '146856-sud']) {
+  assert(resultsPage.includes(`/img/rezultaty/archive/${caseId}.webp`), `case ${caseId} must open its document`);
+  assert(resultsArchive.some(item => item.id === caseId), `case ${caseId} must also be in the archive`);
+}
+assert.match(resultsPage, /Это промежуточный результат/, 'the court suspension must be described as an interim result');
 assert(resultsArchive.every(item => ['cancellation', 'enforcement'].includes(item.category)),
   'every published archive document must be a cancellation or an enforcement result');
 for (const item of resultsArchive) {

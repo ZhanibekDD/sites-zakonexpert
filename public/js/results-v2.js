@@ -101,7 +101,10 @@
 
     const eyebrow = document.querySelector('[data-cancellation-summary-eyebrow]');
     if (eyebrow) {
-      eyebrow.innerHTML = `<i class="bi bi-shield-check" aria-hidden="true"></i> Подтверждено ${cancellationCount} постановлениями об отмене`;
+      const n10 = cancellationCount % 10;
+      const n100 = cancellationCount % 100;
+      const word = n10 === 1 && n100 !== 11 ? 'постановлением' : 'постановлениями';
+      eyebrow.innerHTML = `<i class="bi bi-shield-check" aria-hidden="true"></i> Подтверждено ${cancellationCount} ${word} об отмене`;
     }
   }
 
@@ -141,7 +144,7 @@
     opener.type = 'button';
     opener.dataset.resultOpen = '';
     opener.dataset.lbSrc = item.src;
-    opener.dataset.lbAlt = `Читаемая первая страница документа на сумму ${item.amountLabel}`;
+    opener.dataset.lbAlt = item.alt || `Читаемая первая страница документа на сумму ${item.amountLabel}`;
     opener.dataset.lbCaption = `${item.title} — ${item.amountLabel}. Персональные данные скрыты.`;
 
     const image = document.createElement('img');
@@ -160,7 +163,9 @@
     zoom.className = 'rez-v2-card__zoom';
     zoom.innerHTML = '<i class="bi bi-arrows-fullscreen" aria-hidden="true"></i><span>Читать документ</span>';
 
-    opener.append(image, ordinal, zoom);
+    // Only number-like IDs read as a document number; others (e.g. a court ruling) carry no badge.
+    if (/^\d[\d-]*$/.test(item.id)) opener.append(image, ordinal, zoom);
+    else opener.append(image, zoom);
 
     const body = document.createElement('div');
     body.className = 'rez-v2-card__body';
