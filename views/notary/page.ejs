@@ -18,8 +18,8 @@ var phoneText = rawPhones.map(formatPhone).join(' · ');
 var firstPhone = rawPhones.length ? rawPhones[0].replace(/\D/g, '') : '';
 if (firstPhone.length === 11 && firstPhone[0] === '8') firstPhone = '7' + firstPhone.slice(1);
 if (firstPhone.length === 10) firstPhone = '7' + firstPhone;
-var verifiedDate = notary.updatedAt
-  ? new Date(notary.updatedAt).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
+var verifiedDate = (notary.sourceGeneratedAt || notary.updatedAt)
+  ? new Date(notary.sourceGeneratedAt || notary.updatedAt).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
   : '';
 var archiveSearchUrl = '/zamena-notariusa?q=' + encodeURIComponent(notary.name || '');
 var detailRows = [
@@ -116,4 +116,4 @@ var detail = {
 var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260824-1">'
   + include('../partials/registry-item-body', { detail });
 %>
-<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>
+<%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: Boolean(notary.privacy_noindex), body }) %>

@@ -12,6 +12,7 @@ async function render(view, data) {
 }
 
 async function run() {
+  await require('./test-upk-content').run();
   const listHtml = await render('list.ejs', {
     q: '<img src=x onerror=alert(1)>',
     code: 'uk',
@@ -52,6 +53,15 @@ async function run() {
   assert(articleHtml.includes('data-reader-size="xlarge"'), 'Font controls must be present');
   assert(articleHtml.includes('tel:+77003097566'), 'Article CTA must call ZakonExpert directly');
   assert(!articleHtml.includes('tel:+77777457577') && !articleHtml.includes('/img/advocate/maulen-erzhanov.jpg'), 'Article must not render the retired personal advocate CTA');
+
+  const upk = require('../config/law-sources/upk-rk-repair-2026-10-28.json').articles.find(article => article.num === '64');
+  const upkHtml = await render('article.ejs', {
+    article: { ...upk, sourceUrl: 'https://adilet.zan.kz/rus/docs/K1400000231#z509' },
+    adjacent: {}, related: [], codes: [],
+  });
+  assert(upkHtml.includes('Подозреваемым является лицо'), 'Public article must render the repaired body');
+  assert(upkHtml.includes('Сноска. Статья 64'), 'Official amendment notes must remain visible');
+  assert(upkHtml.includes('href="https://adilet.zan.kz/rus/docs/K1400000231#z509"'), 'Source link must point to the exact official article');
 
   const advocateHtml = fs.readFileSync(path.join(ROOT, 'public', 'advocate.html'), 'utf8');
   assert(advocateHtml.includes('id="adv-articles"'), 'Advocate page must include the legal reading section');

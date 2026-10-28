@@ -1,0 +1,66 @@
+<%
+function esc(value) {
+  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function displayDate(value) {
+  return new Date(value).toLocaleDateString('ru-RU', { timeZone: 'Asia/Qyzylorda' });
+}
+const historical = notary.registryHistory;
+const snapshotDate = displayDate(historical.snapshotAt);
+const checkedDate = displayDate(historical.checkedAt);
+const canonical = 'https://zakonexpert.kz/notary/' + notary.slug;
+const name = notary.name.toLowerCase().replace(/(^|\s)\S/g, letter => letter.toUpperCase());
+const title = 'Нотариус ' + name + ' — исторические сведения | ZakonExpert';
+const description = 'Историческая запись ЕНИС о нотариусе ' + name + ' от ' + snapshotDate
+  + '. Актуальный статус не подтверждён. Проверка источника: ' + checkedDate + '.';
+const schema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://zakonexpert.kz/' },
+      { '@type': 'ListItem', position: 2, name: 'Нотариусы', item: 'https://zakonexpert.kz/notaries' },
+      { '@type': 'ListItem', position: 3, name, item: canonical },
+    ] },
+    { '@type': 'WebPage', name: title, url: canonical, description,
+      dateModified: historical.checkedAt,
+      about: { '@type': 'Person', name },
+      isBasedOn: notary.sourceUrl },
+  ],
+};
+const body = `
+<section class="collector-hero">
+  <div class="collector-container">
+    <nav class="collector-breadcrumbs" aria-label="Хлебные крошки">
+      <a href="/">Главная</a><span>/</span><a href="/notaries">Нотариусы</a><span>/</span><span>${esc(name)}</span>
+    </nav>
+    <div class="collector-hero__badges"><span class="collector-badge"><i class="bi bi-archive" aria-hidden="true"></i> Историческая запись</span></div>
+    <h1>${esc(name)}</h1>
+    <p>Актуальный статус нотариуса не подтверждён</p>
+  </div>
+</section>
+<section class="collector-main">
+  <div class="collector-container">
+    <article class="collector-card">
+      <h2>Что известно из прежней записи ЕНИС</h2>
+      <dl>
+        <dt>ФИО в историческом снимке</dt><dd>${esc(notary.name)}</dd>
+        <dt>Нотариальная палата в историческом снимке</dt><dd>${esc(notary.region)}</dd>
+        <dt>Номер лицензии в историческом снимке</dt><dd>${esc(notary.license)}</dd>
+        <dt>Дата лицензии в историческом снимке</dt><dd>${esc(notary.licenseDate)}</dd>
+        <dt>Дата исторического снимка</dt><dd>${esc(snapshotDate)}</dd>
+      </dl>
+      <h2>Результат проверки ${esc(checkedDate)}</h2>
+      <p>${esc(historical.notice)}</p>
+      <p>Старые телефоны, адрес, email и режим работы не показываются, поскольку их актуальность не подтверждена.</p>
+      <h2>Как уточнить актуальные сведения</h2>
+      <p>Проверьте ФИО и прежний номер лицензии в официальном поиске ЕНИС. Если поиск не находит запись, уточните статус и сведения о документах в нотариальной палате. Эта страница не подтверждает, что нотариус сейчас ведёт или прекратил деятельность.</p>
+      <p><a href="${esc(notary.sourceUrl)}" target="_blank" rel="noopener">Официальный поиск нотариуса ЕНИС</a></p>
+      <p><a href="${esc(notary.sourceChamberUrl)}" target="_blank" rel="noopener">Реестр соответствующей нотариальной палаты</a></p>
+      <p><a href="/zamena-notariusa?q=${encodeURIComponent(notary.name)}">Проверить опубликованные сведения о передаче архива</a></p>
+      <p><a href="/notaries">Перейти к каталогу нотариусов</a></p>
+    </article>
+  </div>
+</section>`;
+%>
+<%- include('../news/layout', { title, description, canonical, ogType: 'website', ogImage: null, schema, noindex: true, enableAutoAds: false, body }) %>

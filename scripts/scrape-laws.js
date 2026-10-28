@@ -12,6 +12,7 @@ const cheerio = require('cheerio');
 const https   = require('https');
 const path    = require('path');
 const lawsDb  = require('../modules/laws-db');
+const { API_URL: UPK_API_URL, parseUpkDocument, sha256 } = require('../modules/upk-source');
 
 // adilet.zan.kz uses a cert that doesn't verify locally
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -142,10 +143,22 @@ async function scrapeLaw(law, debug = false) {
   console.log(`   URL: ${law.url}`);
 
   let html;
+  let upkDocument = null;
+  let sourceFetchedAt = null;
   try {
-    html = await fetchText(law.url);
+    if (law.code === 'upk') {
+      // The current Adilet page is a JavaScript shell. Use the public endpoint
+      // used by its official UI, and validate identity/currentness before writes.
+      const response = await axios.get(UPK_API_URL, { headers: HEADERS, timeout: 60000, maxContentLength: 10 * 1024 * 1024 });
+      upkDocument = response.data.document || response.data;
+      html = upkDocument.text_content;
+      sourceFetchedAt = new Date().toISOString();
+    } else {
+      html = await fetchText(law.url);
+    }
   } catch (e) {
     console.error(`   ❌ Ошибка загрузки: ${e.message}`);
+    if (law.code === 'upk') throw e;
     return 0;
   }
 
@@ -167,13 +180,20 @@ async function scrapeLaw(law, debug = false) {
     process.exit(0);
   }
 
-  const articles = parseArticles(html, law);
+  const articles = law.code === 'upk' ? parseUpkDocument(upkDocument) : parseArticles(html, law);
+  const sourceHtmlSha256 = upkDocument ? sha256(html) : null;
   console.log(`   📋 Найдено статей: ${articles.length}`);
 
   let saved = 0;
   for (const art of articles) {
     const numSlug = art.num.replace(/\./g, '-');
     art.slug = `${law.shortName}-${numSlug}`;
+    if (law.code === 'upk') {
+      art.sourceUrl = `${law.url}${art.sourceFragment ? `#${art.sourceFragment}` : ''}`;
+      art.sourceFetchedAt = sourceFetchedAt;
+      art.sourceHtmlSha256 = sourceHtmlSha256;
+      art.updatedAt = new Date();
+    }
     // Generate short snippet for list cards (no re-scrape needed later)
     if (art.text) {
       let sn = art.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -185,6 +205,7 @@ async function scrapeLaw(law, debug = false) {
       await lawsDb.upsert(art);
       saved++;
     } catch (e) {
+      if (law.code === 'upk') throw e;
       // Duplicate slug from different law parts — skip silently
     }
   }

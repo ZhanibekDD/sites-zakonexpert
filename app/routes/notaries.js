@@ -6,6 +6,7 @@ const { getRegionEmblem } = require('../../modules/region-emblems');
 const { getNotaryRegionBySlug, getNotaryRegionByName, withNotaryRegionPaths } = require('../../modules/notary-regions');
 const { normalizeRegionKey } = require('../../modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('../../modules/notary-changes');
+const { resolveNotaryProfile } = require('../../modules/notary-history');
 const { ROOT_DIR } = require('../paths');
 
 function registerNotaryRoutes(app, dependencies) {
@@ -92,9 +93,14 @@ function registerNotaryRoutes(app, dependencies) {
   // Individual notary page
   app.get('/notary/:slug', asyncHandler(async (req, res) => {
     if (!notariesDb) return res.status(503).send('Notary module not available');
-    const notary = await notariesDb.findBySlug(req.params.slug);
+    const current = await notariesDb.findBySlug(req.params.slug);
+    const notary = resolveNotaryProfile(req.params.slug, current);
     if (!notary) return sendNotFound(res);
     if (notary.slug !== req.params.slug) return res.redirect(301, `/notary/${notary.slug}`);
+    if (notary.registryHistory) {
+      res.set('X-Robots-Tag', 'noindex, follow');
+      return res.render('notary/history', { notary });
+    }
     const [comments, commentStats] = commentsDb
       ? await Promise.all([commentsDb.getApproved('notary', req.params.slug), commentsDb.stats('notary', req.params.slug)])
       : [[], null];

@@ -33,6 +33,7 @@ const pageTitle = `Статья ${art.num} ${art.codeName} — ${art.title} | Za
 const cleanDescription = String(art.text || '').replace(/\s+/g, ' ').trim().slice(0, 145);
 const pageDescription = `Статья ${art.num} ${art.codeName}: ${art.title}. ${cleanDescription}${cleanDescription ? '…' : ''} Разбор нормы.`;
 const canonical = `https://zakonexpert.kz/statya/${encodeURIComponent(art.slug)}`;
+const officialSourceUrl = /^https:\/\/adilet\.zan\.kz\/rus\/docs\//.test(String(art.sourceUrl || '')) ? art.sourceUrl : 'https://adilet.zan.kz';
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'Legislation',
@@ -66,7 +67,6 @@ function formatLawText(text) {
 
   for (const line of lines) {
     const value = line.trim();
-    if (/^Сноска/i.test(value)) continue;
     const part = value.match(/^(\d+)\.\s+([\s\S]+)/);
     if (part) {
       if (partOpen) html += '</div>';
@@ -144,7 +144,7 @@ const body = `
               ${adj.prev ? `<a href="/statya/${encodeURIComponent(adj.prev.slug)}" class="law-adjacent-link"><small>← Предыдущая статья</small><strong>Ст. ${esc(adj.prev.num)} · ${esc(adj.prev.title)}</strong></a>` : '<span></span>'}
               ${adj.next ? `<a href="/statya/${encodeURIComponent(adj.next.slug)}" class="law-adjacent-link"><small>Следующая статья →</small><strong>Ст. ${esc(adj.next.num)} · ${esc(adj.next.title)}</strong></a>` : ''}
             </nav>` : ''}
-            <div class="law-source-note"><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Источник: ${esc(codeFullNames[art.code] || art.codeName)}. Перед применением нормы проверьте действующую редакцию на <a href="https://adilet.zan.kz" target="_blank" rel="noopener">adilet.zan.kz</a>. Материал не заменяет индивидуальную юридическую консультацию.</div>
+            <div class="law-source-note"><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Источник: ${esc(codeFullNames[art.code] || art.codeName)}. Перед применением нормы проверьте действующую редакцию на <a href="${esc(officialSourceUrl)}" target="_blank" rel="noopener">adilet.zan.kz</a>. Материал не заменяет индивидуальную юридическую консультацию.</div>
           </footer>
         </article>
 
