@@ -29,14 +29,17 @@ const schema = {
   ],
 };
 const body = `
-<section class="collector-hero">
+<link rel="stylesheet" href="/css/registry-item.css?v=20260824-1">
+<link rel="stylesheet" href="/css/zx-registry.css?v=20261010-1">
+<div class="collector-detail-page">
+<section class="collector-hero zr-reg-hero zr-reg-hero--item">
   <div class="collector-container">
     <nav class="collector-breadcrumbs" aria-label="Хлебные крошки">
       <a href="/">Главная</a><span>/</span><a href="/notaries">Нотариусы</a><span>/</span><span>${esc(name)}</span>
     </nav>
     <div class="collector-hero__badges"><span class="collector-badge"><i class="bi bi-archive" aria-hidden="true"></i> Историческая запись</span></div>
     <h1>${esc(name)}</h1>
-    <p>Актуальный статус нотариуса не подтверждён</p>
+    <p class="registry-hero-subtitle">Актуальный статус нотариуса не подтверждён</p>
   </div>
 </section>
 <section class="collector-main">
@@ -61,6 +64,7 @@ const body = `
       <p><a href="/notaries">Перейти к каталогу нотариусов</a></p>
     </article>
   </div>
-</section>`;
+</section>
+</div>`;
 %>
 <%- include('../news/layout', { title, description, canonical, ogType: 'website', ogImage: null, schema, noindex: true, enableAutoAds: false, body }) %>
