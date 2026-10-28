@@ -1,0 +1,45 @@
+{
+  "source": "ЕНІС",
+  "sourceUrl": "https://enis.kz/NotarySearch",
+  "snapshotAt": "2026-07-19T22:48:13.116Z",
+  "snapshotSha256": "434b8ab825fce046ad5c1ccb3afd4d3864f82029eca5238db306a4a8bbec1670",
+  "checkedAt": "2026-10-28T18:53:26.423Z",
+  "checkNote": "Записи не найдены при сверке всех 20 нотариальных палат ЕНИС и поиске по прежним номерам лицензий. Отсутствие записи не подтверждает прекращение деятельности.",
+  "records": [
+    {
+      "slug": "balganbaev-erlan-maratovich",
+      "name": "БАЛГАНБАЕВ ЕРЛАН МАРАТОВИЧ",
+      "region": "город Астана",
+      "license": "24034335",
+      "licenseDate": "06.12.2024"
+    },
+    {
+      "slug": "ismaganbetov-maksut-irguzhaevich",
+      "name": "ИСМАГАНБЕТОВ МАКСУТ ИРГУЖАЕВИЧ",
+      "region": "город Астана",
+      "license": "24029558",
+      "licenseDate": "04.10.2024"
+    },
+    {
+      "slug": "fathutdinova-zarina-petrovna",
+      "name": "ФАТХУТДИНОВА ЗАРИНА ПЕТРОВНА",
+      "region": "Восточно-Казахстанская область",
+      "license": "24032739",
+      "licenseDate": "15.11.2024"
+    },
+    {
+      "slug": "abdihanov-ajdos-nurbolovich",
+      "name": "АБДИХАНОВ АЙДОС НУРБОЛОВИЧ",
+      "region": "Западно-Казахстанская область",
+      "license": "24027588",
+      "licenseDate": "11.09.2024"
+    },
+    {
+      "slug": "bajmuratov-bagdat-karnakbaevich",
+      "name": "БАЙМУРАТОВ БАГДАТ КАРНАКБАЕВИЧ",
+      "region": "Туркестанская область",
+      "license": "24033404",
+      "licenseDate": "22.11.2024"
+    }
+  ]
+}

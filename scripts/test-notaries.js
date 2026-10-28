@@ -303,6 +303,7 @@ assert.strictEqual(
   assert.match(changesHtml, /href="\/zamena-notariusa\?q=/);
   assert.doesNotMatch(changesHtml, /noindex,follow/, 'populated base change feed must be indexable');
 
+  await require('./test-notary-history').main();
   console.log(`Notary data OK: ${notaries.length} records, ${regions.size} chambers`);
 })().catch(error => {
   console.error(error);

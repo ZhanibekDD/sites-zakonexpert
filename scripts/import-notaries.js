@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const Datastore = require('nedb-promises');
 const slugify = require('slugify');
 const { compactDatastore } = require('../modules/db-maintenance');
 const { readRegistrySource } = require('../modules/registry-source');
@@ -11,8 +10,7 @@ const { extractArchiveTransfer, officialChamberUrl } = require('../modules/notar
 const { inheritLegacySlugs } = require('../modules/seo-url-policy');
 
 const SOURCE_PATH = path.join(__dirname, '..', 'registry', 'notaries.json.gz');
-const DB_PATH  = path.join(__dirname, '..', 'data', 'notaries.db');
-const DB_VERSION = 8; // preserves canonical URL history across registry refreshes
+const DB_VERSION = 9; // shared live store and source-content freshness metadata
 
 // Extend slugify with Kazakh Cyrillic characters not covered by 'ru' locale
 slugify.extend({
@@ -111,24 +109,41 @@ function buildNotaries(rows, sourceMtime, sourceFingerprint = '') {
   return { notaries, skipped };
 }
 
-async function importNotaries() {
-  if (!fs.existsSync(SOURCE_PATH)) {
-    console.error('[Notaries] Registry source not found:', SOURCE_PATH);
+let importQueue = Promise.resolve();
+
+function importNotaries(options = {}) {
+  const queuedOptions = { ...options };
+  const operation = importQueue.then(() => runImportNotaries(queuedOptions));
+  // A failed refresh must not prevent later requests from reaching the queue.
+  importQueue = operation.catch(() => {});
+  return operation;
+}
+
+async function runImportNotaries(options) {
+  const sourcePath = options.sourcePath || SOURCE_PATH;
+  if (!fs.existsSync(sourcePath)) {
+    console.error('[Notaries] Registry source not found:', sourcePath);
     return 0;
   }
 
-  const source = readRegistrySource(SOURCE_PATH, 'notaries');
+  const source = readRegistrySource(sourcePath, 'notaries');
   const sourceMtime = source.sourceMtime;
   const sourceFingerprint = source.sourceFingerprint;
+  const sourceTime = Date.parse(source.generatedAt);
+  if (!Number.isFinite(sourceTime)) throw new Error('[Notaries] Snapshot generatedAt is missing or invalid');
 
   // Check if DB is already up to date
-  const db = Datastore.create({ filename: DB_PATH, autoload: true });
+  const db = require('../modules/notaries-store');
   await db.ensureIndex({ fieldName: 'slug' }).catch(() => {});
   await db.ensureIndex({ fieldName: 'name'  }).catch(() => {});
   await db.ensureIndex({ fieldName: 'active' }).catch(() => {});
 
-  const existing = await db.findOne({}, { updatedAt: 1, sourceMtime: 1, sourceFingerprint: 1, sourceRecordCount: 1, dbVersion: 1 });
+  const existing = await db.findOne({}, { sourceGeneratedAt: 1, sourceFingerprint: 1, sourceRecordCount: 1, dbVersion: 1 });
   const count = await db.count({});
+  if (existing && Date.parse(existing.sourceGeneratedAt) > sourceTime) {
+    console.warn(`[Notaries] Keeping ${count} newer records: database source ${existing.sourceGeneratedAt} is newer than snapshot ${source.generatedAt}`);
+    return count;
+  }
   if (existing && existing.sourceFingerprint === sourceFingerprint
       && existing.dbVersion === DB_VERSION && existing.sourceRecordCount === count) {
     console.log(`[Notaries] DB is up to date (${count} records). Skipping import.`);
@@ -148,7 +163,10 @@ async function importNotaries() {
     item => item.license,
     item => `${item.name || ''}|${item.region || ''}`,
   ]);
-  notaries.forEach(notary => { notary.sourceRecordCount = notaries.length; });
+  notaries.forEach(notary => {
+    notary.sourceRecordCount = notaries.length;
+    notary.sourceGeneratedAt = source.generatedAt;
+  });
 
   const regionCount = new Set(notaries.map(notary => notary.region)).size;
   const phoneCount = notaries.filter(notary => notary.phone).length;
