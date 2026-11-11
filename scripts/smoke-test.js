@@ -195,6 +195,11 @@ async function run() {
       '/otzyvy must permanently redirect to /reviews');
 
     const redirectCases = [
+      ['/spornost-dolga?source=legacy', '/vozrazhenie-na-ispolnitelnuyu-nadpis?source=legacy'],
+      [
+        '/ispolnitelnaya-nadpis.html?utm_source=old&utm_campaign=site%20move&utm_source=legacy',
+        '/otmena-ispolnitelnoi-nadpisi?utm_source=old&utm_campaign=site%20move&utm_source=legacy',
+      ],
       ['/proverka-kontragenta?bin=260740044168', '/proverka-kontragenta#bin=260740044168'],
       ['/notary-search?fio=Иванов', '/notary-search#fio=%D0%98%D0%B2%D0%B0%D0%BD%D0%BE%D0%B2'],
       ['/news?cat=finance&page=2', '/news/category/finance?page=2'],
