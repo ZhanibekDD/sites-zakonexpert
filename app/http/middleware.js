@@ -108,7 +108,11 @@ function installMiddleware(app, dependencies) {
     '/grafik-platezhey':                '/grafik-oplaty-zadolzhennosti',
   };
   for (const [oldPath, newPath] of Object.entries(LEGACY_ALIAS_REDIRECTS)) {
-    app.get([oldPath, oldPath + '.html'], (req, res) => res.redirect(301, newPath));
+    app.get([oldPath, oldPath + '.html'], (req, res) => {
+      const queryStart = req.url.indexOf('?');
+      const query = queryStart === -1 ? '' : req.url.slice(queryStart);
+      res.redirect(301, newPath + query);
+    });
   }
 
   // Search terms belong in the client-side state, not in crawlable canonical
