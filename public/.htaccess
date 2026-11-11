@@ -1,0 +1,25 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Match the original request so Apache's internal index lookup stays local.
+    RewriteCond %{THE_REQUEST} "\s/+index\.html[?\s]"
+    RewriteRule ^index\.html$ https://zakonexpert.kz/ [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+(?:services|zakony|snyatie-aresta-so-scheta)\.html[?\s]"
+    RewriteRule ^(services|zakony|snyatie-aresta-so-scheta)\.html$ https://zakonexpert.kz/$1 [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+ispolnitelnaya-nadpis(?:\.html)?[?\s]"
+    RewriteRule ^ispolnitelnaya-nadpis(?:\.html)?$ https://zakonexpert.kz/otmena-ispolnitelnoi-nadpisi [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+spornost-dolga(?:\.html)?[?\s]"
+    RewriteRule ^spornost-dolga(?:\.html)?$ https://zakonexpert.kz/vozrazhenie-na-ispolnitelnuyu-nadpis [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+chsi-arest-schetov(?:\.html)?[?\s]"
+    RewriteRule ^chsi-arest-schetov(?:\.html)?$ https://zakonexpert.kz/snyatie-ogranichenii-chsi [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+zapret-registracionnyh-deystviy(?:\.html)?[?\s]"
+    RewriteRule ^zapret-registracionnyh-deystviy(?:\.html)?$ https://zakonexpert.kz/snyatie-zapreta-registracionnyh-deistvii [R=301,END,NE]
+
+    RewriteCond %{THE_REQUEST} "\s/+grafik-platezhey(?:\.html)?[?\s]"
+    RewriteRule ^grafik-platezhey(?:\.html)?$ https://zakonexpert.kz/grafik-oplaty-zadolzhennosti [R=301,END,NE]
+</IfModule>
