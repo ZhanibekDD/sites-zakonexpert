@@ -26,5 +26,5 @@ jobs:
         with:
           node-version: 22
 
-      - name: Verify production health and release
+      - name: Verify production availability and old-domain redirects
         run: node scripts/monitor-live-release.js
