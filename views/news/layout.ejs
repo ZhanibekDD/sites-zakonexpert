@@ -18,6 +18,46 @@ const pageExtraScripts = (typeof extraScripts !== 'undefined' && Array.isArray(e
   .filter(function(asset) { return /^\/js\/[a-z0-9._/?=&-]+$/i.test(asset); });
 const suppressOwnContacts = typeof suppressZakonExpertContacts !== 'undefined'
   && Boolean(suppressZakonExpertContacts);
+// Search snippets: Google shows about 60–70 characters of a title and ~160 of a description.
+// Long titles lose the brand suffix first, then a parenthesised region, then the tail after the
+// last « — »; only then are they cut at a word. Registry names that lost their closing quote
+// («ТОО "Ромашка — …») get it back. Descriptions over 180 characters end at a sentence.
+function zxBalanceQuotes(text) {
+  const value = String(text || '');
+  if ((value.match(/"/g) || []).length % 2 === 0) return value;
+  const open = value.lastIndexOf('"');
+  const rest = value.slice(open + 1);
+  const stop = rest.search(/ — |: | \| |\. |…$/);
+  return stop >= 0 ? value.slice(0, open + 1 + stop) + '"' + value.slice(open + 1 + stop) : value + '"';
+}
+function zxCut(text, max) {
+  const cut = text.slice(0, max - 1);
+  const space = cut.lastIndexOf(' ');
+  return zxBalanceQuotes((space > max * 0.5 ? cut.slice(0, space) : cut).replace(/[\s,;:—–-]+$/, '') + '…');
+}
+function zxFitTitle(text, max) {
+  let value = zxBalanceQuotes(String(text || '').replace(/\s+/g, ' ').trim());
+  if (value.length <= max) return value;
+  // Without the brand a whole phrase a few characters over is better than an ellipsis
+  value = value.replace(/ \| ZakonExpert(?: Казахстан| Қазақстан)?$/, '');
+  if (value.length <= max + 4) return value;
+  value = value.replace(/\s*\([^()]*\)/, '');
+  if (value.length <= max + 4) return value;
+  const dash = value.lastIndexOf(' — ');
+  if (dash > 20) {
+    value = value.slice(0, dash);
+    if (value.length <= max) return value;
+  }
+  return zxCut(value, max);
+}
+function zxFitDescription(text, max) {
+  const value = zxBalanceQuotes(String(text || '').replace(/\s+/g, ' ').trim());
+  if (value.length <= max) return value;
+  const sentence = value.slice(0, max).lastIndexOf('. ');
+  return sentence >= 100 ? value.slice(0, sentence + 1) : zxCut(value, max);
+}
+const pageTitleText = zxFitTitle(title, 70);
+const pageDescriptionText = zxFitDescription(description, 180);
 %><!DOCTYPE html>
 <html lang="ru"<% if (suppressOwnContacts) { %> data-suppress-zakonexpert-contacts<% } %>>
 <head>
@@ -27,14 +67,14 @@ const suppressOwnContacts = typeof suppressZakonExpertContacts !== 'undefined'
   <link rel="apple-touch-icon" href="/favicon.png">
   <meta name="google-site-verification" content="rGbK9GM3kA42xzTzGMQs4VZju46dDdZjQdmOigQjnKY">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= title %></title>
-  <meta name="description" content="<%= description %>">
+  <title><%= pageTitleText %></title>
+  <meta name="description" content="<%= pageDescriptionText %>">
   <% if (typeof noindex !== 'undefined' && noindex) { %><meta name="robots" content="noindex,follow"><% } else { %><meta name="robots" content="index, follow"><% } %>
   <link rel="canonical" href="<%= canonical %>">
   <meta property="og:type" content="<%= ogType || 'website' %>">
   <meta property="og:url" content="<%= canonical %>">
-  <meta property="og:title" content="<%= title %>">
-  <meta property="og:description" content="<%= description %>">
+  <meta property="og:title" content="<%= pageTitleText %>">
+  <meta property="og:description" content="<%= pageDescriptionText %>">
   <meta property="og:locale" content="ru_KZ">
   <meta property="og:image" content="<%= resolvedOgImage %>">
   <% if (typeof schema !== 'undefined' && schema) { %>

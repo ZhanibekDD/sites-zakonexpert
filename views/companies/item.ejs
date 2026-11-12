@@ -55,7 +55,32 @@ const official = Boolean(company.is_official_source);
 const hasVerifiedBin = /^\d{12}$/.test(String(company.bin || '').trim());
 const quality = companyQuality || { score: 0, minScore: 7, indexable: false };
 const canonical = 'https://zakonexpert.kz/company/' + company.slug;
-const pageTitle = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '');
+// In the title (not the heading) the legal form is written the way people search for it:
+// «ТОО "Ромашка" — БИН …» instead of «Товарищество с ограниченной ответственностью "Ромашка" — …».
+const LEGAL_FORM_ABBREVIATIONS = [
+  [/некоммерческое акционерное общество/i, 'НАО'],
+  [/республиканское государственное предприятие на праве хозяйственного ведения/i, 'РГП на ПХВ'],
+  [/государственное коммунальное предприятие на праве хозяйственного ведения/i, 'ГКП на ПХВ'],
+  [/государственное коммунальное каз[её]нное предприятие/i, 'ГККП'],
+  [/республиканское государственное учреждение/i, 'РГУ'],
+  [/коммунальное государственное учреждение/i, 'КГУ'],
+  [/государственное учреждение/i, 'ГУ'],
+  [/товарищество с ограниченной ответственностью/i, 'ТОО'],
+  [/товарищество с дополнительной ответственностью/i, 'ТДО'],
+  [/акционерное общество/i, 'АО'],
+  [/индивидуальный предприниматель/i, 'ИП'],
+  [/общественное объединение/i, 'ОО'],
+  [/частное учреждение/i, 'ЧУ'],
+  [/жауапкершілігі шектеулі серіктестігі/i, 'ЖШС'],
+  [/акционерлік қоғамы/i, 'АҚ'],
+];
+function shortLegalForm(value) {
+  return LEGAL_FORM_ABBREVIATIONS
+    .reduce(function(text, rule) { return text.replace(rule[0], rule[1]); }, String(value || ''))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+const pageTitle = shortLegalForm(name) + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '');
 const pageDesc = name + (company.bin ? ' — ' + copy.bin + ' ' + company.bin : '')
   + (company.address_ru ? '. ' + copy.legalAddress + ': ' + company.address_ru : '')
   + '. ' + (official ? copy.officialNotice : copy.directoryNotice);
