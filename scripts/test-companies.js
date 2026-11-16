@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const ejs = require('ejs');
 const { DatabaseSync } = require('node:sqlite');
+const { registrySuppressedRecordIds } = require('../modules/registry-privacy');
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zakonexpert-companies-'));
 const dbPath = path.join(tempDir, 'companies.sqlite');
@@ -129,9 +130,9 @@ assert.strictEqual(qualityRowsNeedBackfill(driftDb), false,
   const browsePlan = driftDb.prepare(`
     EXPLAIN QUERY PLAN
     SELECT id FROM companies
-    WHERE is_indexable = 1 AND (bin IS NULL OR bin NOT IN (?, ?))
+    WHERE is_indexable = 1 AND (bin IS NULL OR bin NOT IN (${registrySuppressedRecordIds('companies').map(() => '?').join(', ')}))
     ORDER BY id LIMIT 31 OFFSET 0
-  `).all('221040047658', '230240023825').map(row => String(row.detail || '')).join(' | ');
+  `).all(...registrySuppressedRecordIds('companies')).map(row => String(row.detail || '')).join(' | ');
   assert(browsePlan.includes('companies_indexable_idx'),
     `public browsing must use companies_indexable_idx; received: ${browsePlan}`);
   assert(!/TEMP B-TREE/i.test(browsePlan),
