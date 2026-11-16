@@ -103,11 +103,11 @@ assert.strictEqual(
   'search by the organization name must remain available'
 );
 
-for (const removedBin of ['221040047658', '230240023825']) {
+for (const removedBin of ['160340020185', '221040047658', '230240023825']) {
   assert.strictEqual(
     isRegistryRecordSuppressed('companies', removedBin),
     true,
-    `verified takedown must remain active for BIN ${removedBin}`
+    `privacy takedown must remain active for BIN ${removedBin}`
   );
   assert.deepStrictEqual(
     applyRegistryPrivacyOverride('companies', {
@@ -123,8 +123,8 @@ for (const removedBin of ['221040047658', '230240023825']) {
 }
 assert.deepStrictEqual(
   registrySuppressedRecordIds('companies').sort(),
-  ['221040047658', '230240023825'],
-  'the permanent company takedown list must contain both verified BINs'
+  ['160340020185', '221040047658', '230240023825'],
+  'the permanent company takedown list must retain all requested BINs'
 );
 
 console.log('Registry privacy correction OK');
