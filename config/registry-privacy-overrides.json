@@ -9,6 +9,11 @@
     }
   },
   "companies": {
+    "160340020185": {
+      "suppressRecord": true,
+      "reason": "data_subject_privacy_request",
+      "effectiveDate": "2026-11-16"
+    },
     "101140004980": {
       "suppressContacts": [
         "77781670117"
