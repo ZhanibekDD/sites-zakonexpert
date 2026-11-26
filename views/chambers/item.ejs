@@ -17,13 +17,13 @@ const detail = {
     { icon: 'bi-file-earmark-text', label: 'Нотариальная палата', value: chamber.notary_name },
     { icon: 'bi-person', label: 'Руководитель палаты нотариусов', value: chamber.notary_leader },
     { icon: 'bi-geo-alt', label: 'Адрес палаты нотариусов', value: chamber.notary_address },
-    { icon: 'bi-telephone', label: 'Телефон палаты нотариусов', value: chamber.notary_phone || 'Не опубликован в источнике', href: chamber.notary_phoneRaw ? 'tel:' + chamber.notary_phoneRaw : '' },
+    { label: 'Телефон палаты нотариусов', phones: [chamber.notary_phone || chamber.notary_phoneRaw], fallback: 'Не опубликован в источнике' },
     { icon: 'bi-envelope', label: 'Email палаты нотариусов', value: chamber.notary_email, href: chamber.notary_email ? 'mailto:' + chamber.notary_email : '' },
     { icon: 'bi-globe2', label: 'Сайт палаты нотариусов', value: chamber.notary_web, href: webHref(chamber.notary_web), external: true },
     { icon: 'bi-bank', label: 'Палата ЧСИ', value: chamber.chsi_name },
     { icon: 'bi-person', label: 'Руководитель палаты ЧСИ', value: chamber.chsi_leader },
     { icon: 'bi-geo-alt', label: 'Адрес палаты ЧСИ', value: chamber.chsi_address },
-    { icon: 'bi-telephone', label: 'Телефон палаты ЧСИ', value: chamber.chsi_phone || 'Не опубликован в источнике', href: chamber.chsi_phoneRaw ? 'tel:' + chamber.chsi_phoneRaw : '' },
+    { label: 'Телефон палаты ЧСИ', phones: [chamber.chsi_phone || chamber.chsi_phoneRaw], fallback: 'Не опубликован в источнике' },
     { icon: 'bi-envelope', label: 'Email палаты ЧСИ', value: chamber.chsi_email, href: chamber.chsi_email ? 'mailto:' + chamber.chsi_email : '' },
     { icon: 'bi-globe2', label: 'Сайт палаты ЧСИ', value: chamber.chsi_web, href: webHref(chamber.chsi_web), external: true },
   ],
@@ -40,6 +40,6 @@ const detail = {
   ],
   backUrl: '/chambers', backLabel: 'Все региональные палаты',
 };
-const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

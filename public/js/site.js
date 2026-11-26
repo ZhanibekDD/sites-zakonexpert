@@ -15,8 +15,8 @@
 
   const companyWhatsAppLink = 'https://wa.me/77003097566';
   const companyWhatsAppRaw = '77003097566';
-    const companyPhoneRaw = '77003097566';
-    const companyPhoneDisplay = '+7 (700) 309-75-66';
+  const companyPhoneRaw = '77003097566';
+  const companyPhoneDisplay = '+7 (700) 309-75-66';
 
   document.documentElement.classList.add('js-enabled');
 
@@ -256,16 +256,16 @@
       qrDock.innerHTML = `
       <button class="ze-wa-qr-trigger" type="button" aria-expanded="false" aria-controls="ze-wa-qr-panel">
         <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
-        <span>WhatsApp QR</span>
+        <span>WhatsApp ZakonExpert</span>
       </button>
       <div class="ze-wa-qr-panel" id="ze-wa-qr-panel" hidden>
         <button class="ze-wa-qr-close" type="button" aria-label="Закрыть QR-код">&times;</button>
-        <span class="ze-wa-qr-kicker">Напишите компании ZakonExpert</span>
+        <span class="ze-wa-qr-kicker">Юридическая помощь ZakonExpert</span>
         <strong>Отсканируйте камерой телефона</strong>
         <a class="ze-wa-qr-image-link" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
           <img src="/img/contact/whatsapp-zakonexpert-qr.svg?v=20260930-1" width="320" height="320" alt="QR-код WhatsApp компании ZakonExpert" loading="lazy">
         </a>
-        <a class="ze-wa-qr-phone" href="tel:+${companyPhoneRaw}">${companyPhoneDisplay}</a>
+        <a class="ze-wa-qr-phone" href="tel:+${companyPhoneRaw}" aria-label="Номер юридической компании ZakonExpert: ${companyPhoneDisplay}">${companyPhoneDisplay}</a>
         <a class="ze-wa-qr-button" href="${companyWhatsAppLink}" target="_blank" rel="noopener" data-whatsapp-qr-link>
           <i class="bi bi-whatsapp" aria-hidden="true"></i> Открыть WhatsApp
         </a>

@@ -12,7 +12,7 @@ const detail = {
   badges: [{ icon: 'bi-file-earmark-text', label: 'Реестр АРРФР' }, { icon: 'bi-shield-check', label: 'Страховая компания', active: true }],
   rows: [
     { icon: 'bi-geo-alt', label: 'Адрес', value: item.address },
-    { icon: 'bi-telephone', label: 'Телефон', value: item.phone, href: item.phone ? 'tel:' + (item.phoneRaw || item.phone.replace(/[^\d+]/g, '')) : '' },
+    { label: 'Телефон страховой компании', phones: [item.phone || item.phoneRaw], fallback: 'Номер не опубликован' },
     { icon: 'bi-envelope', label: 'Email', value: item.email, href: item.email ? 'mailto:' + item.email : '' },
     { icon: 'bi-globe2', label: 'Веб-сайт', value: item.web, href: webHref, external: true },
     { icon: 'bi-person', label: 'Председатель правления', value: item.leader },
@@ -31,6 +31,6 @@ const detail = {
   ],
   moreHtml: lowContentBoost({ entityLabel: 'эта страховая' }), backUrl: '/insurance', backLabel: 'Все страховые компании',
 };
-const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

@@ -23,8 +23,8 @@ const detail = {
   breadcrumbs: [{ href: '/banks', label: 'Банки Казахстана' }, { label: bank.shortName }],
   badges: [{ icon: 'bi-bank', label: bank.tag || 'Банк РК' }, { icon: 'bi-shield-check', label: 'Лицензируемая организация', active: true }],
   rows: [
+    { label: 'Телефон банка', phones: [bank.phone || bank.phoneRaw], fallback: 'Номер не опубликован' },
     { icon: 'bi-geo-alt', label: 'Адрес', value: [bank.city, bank.address].filter(Boolean).join(', ') },
-    { icon: 'bi-telephone', label: 'Телефон', value: bank.phone, href: bank.phoneRaw ? 'tel:' + bank.phoneRaw : '' },
     { icon: 'bi-envelope', label: 'Email', value: bank.email, href: bank.email ? 'mailto:' + bank.email : '' },
     { icon: 'bi-globe2', label: 'Веб-сайт', value: bank.web, href: webHref, external: true },
     { icon: 'bi-person', label: 'Председатель правления', value: bank.chairman },
@@ -49,6 +49,6 @@ const detail = {
     + lowContentBoost({ entityLabel: bank.shortName }),
   backUrl: '/banks', backLabel: 'Все банки Казахстана',
 };
-const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

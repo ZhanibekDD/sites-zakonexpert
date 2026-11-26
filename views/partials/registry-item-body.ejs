@@ -77,11 +77,15 @@ var seal = detail.seal || null;
     <div class="collector-container">
       <div class="collector-layout">
         <section class="collector-card" aria-label="Сведения об организации">
-          <% (detail.rows || []).forEach(function(row) { %><%- rowHtml(row) %><% }); %>
+          <% (detail.rows || []).forEach(function(row) { %>
+            <% if (row.phones) { %>
+              <%- include('registry-phone-row', { label: row.label, phones: row.phones, fallback: row.fallback }) %>
+            <% } else { %><%- rowHtml(row) %><% } %>
+          <% }); %>
           <%# Phones: the help card sits below the details and the map, so offer the WhatsApp step right after the contacts. %>
           <a class="registry-quick-cta" href="https://wa.me/77003097566?text=<%= whatsAppText %>" target="_blank" rel="noopener"
             <% if (analyticsEvent) { %>data-product-event="<%= analyticsEvent %>" data-event-target="registry-whatsapp" data-event-cta="profile_inline_mobile" data-source-entity-type="<%= analyticsEntityType %>"<% } %>>
-            <span class="registry-quick-cta__text"><strong><%= detail.help.title %></strong><small>Ответим в WhatsApp, первичный разбор бесплатно</small></span>
+            <span class="registry-quick-cta__text"><strong>Юридическая помощь ZakonExpert</strong><small>Первичный разбор в WhatsApp бесплатно</small></span>
             <span class="registry-quick-cta__btn"><i class="bi bi-whatsapp" aria-hidden="true"></i> Написать</span>
           </a>
           <% if (detail.address) { %>
@@ -114,7 +118,7 @@ var seal = detail.seal || null;
               <% } %>
               <a class="collector-help__cta" href="https://wa.me/77003097566?text=<%= whatsAppText %>" target="_blank" rel="noopener"
                 <% if (analyticsEvent) { %>data-product-event="<%= analyticsEvent %>" data-event-target="registry-whatsapp" data-event-cta="profile_sidebar" data-source-entity-type="<%= analyticsEntityType %>"<% } %>>
-                <i class="bi bi-whatsapp"></i> Написать специалисту
+                <i class="bi bi-whatsapp" aria-hidden="true"></i> Получить юридическую помощь в ZakonExpert
               </a>
             </div>
             <p class="collector-help__response"><i class="bi bi-shield-check"></i> Сначала проверяем документ-основание и возможность отмены</p>

@@ -11,8 +11,8 @@ const detail = {
   breadcrumbs: [{ href: '/courts', label: 'Суды Казахстана' }, { label: court.region }],
   badges: [{ icon: 'bi-bank', label: court.level || 'Суд РК' }, { icon: 'bi-shield-check', label: 'Судебная система', active: true }],
   rows: [
+    { label: 'Телефон суда', phones: [court.phone || court.phoneRaw], fallback: 'Номер не опубликован' },
     { icon: 'bi-geo-alt', label: 'Адрес', value: court.address },
-    { icon: 'bi-telephone', label: 'Телефон', value: court.phone, href: court.phone ? 'tel:' + (court.phoneRaw || court.phone.replace(/[^\d+]/g, '')) : '' },
     { icon: 'bi-envelope', label: 'Email', value: court.email, href: court.email ? 'mailto:' + court.email : '' },
     { icon: 'bi-globe2', label: 'Веб-сайт', value: court.web, href: webHref, external: true },
     { icon: 'bi-person', label: 'Председатель', value: court.chairman },
@@ -31,6 +31,6 @@ const detail = {
   ],
   backUrl: '/courts', backLabel: 'Все суды Казахстана',
 };
-const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

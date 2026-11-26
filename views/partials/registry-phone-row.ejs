@@ -1,0 +1,39 @@
+<%
+const numbers = phones.flatMap(phone => String(phone || '').split(/[,;·\n]+/))
+  .map(phone => phone.trim())
+  .filter(Boolean)
+  .flatMap(phone => {
+    const shortCode = phone.match(/^(\+7.+\d)\s+\((\d{3,6})\)$/);
+    return shortCode ? [shortCode[1], shortCode[2]] : [phone];
+  });
+
+function dialNumber(value) {
+  // Keep descriptive text such as «физ. (24/7)» out of the dial target.
+  const match = value.match(/^\+?(?:\(\d+\)|\d+)[\d\s().-]*/);
+  if (!match) return '';
+  const digits = match[0].replace(/\D/g, '');
+  if (/^8800\d{7}$/.test(digits)) return digits;
+  if (/^[78]\d{10}$/.test(digits)) return '+7' + digits.slice(1);
+  if (match[0].startsWith('+') && /^\d{7,15}$/.test(digits)) return '+' + digits;
+  if (/^\d{10}$/.test(digits)) return '+7' + digits;
+  return /^\d{3,7}$/.test(digits) ? digits : '';
+}
+%>
+<div class="collector-data-row collector-data-row--phone">
+  <span class="collector-data-row__icon" aria-hidden="true"><i class="bi bi-telephone"></i></span>
+  <span class="collector-data-row__label"><%= label %></span>
+  <div class="collector-data-row__value">
+    <% if (numbers.length) { %>
+      <ul class="registry-phone-numbers">
+        <% numbers.forEach(function(number) {
+          const dial = dialNumber(number);
+        %>
+          <li>
+            <% if (dial) { %><a class="collector-link" href="tel:<%= dial %>"><%= number %></a>
+            <% } else { %><%= number %><% } %>
+          </li>
+        <% }); %>
+      </ul>
+    <% } else { %><%= fallback %><% } %>
+  </div>
+</div>

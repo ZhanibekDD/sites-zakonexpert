@@ -3,6 +3,7 @@
 const assert = require('assert');
 const path = require('path');
 const ejs = require('ejs');
+const release = require('../modules/release-config');
 const {
   COUNTERPARTY_PATH,
   validateBin,
@@ -71,7 +72,7 @@ const client = createKgdCounterpartyClient({
   const html = await ejs.renderFile(path.join(__dirname, '..', 'views', 'company-check.ejs'));
   assert(html.includes('https://zakonexpert.kz/proverka-kontragenta'), 'Canonical URL is missing');
   assert(html.includes('/css/company-check.css?v=20260816-1'), 'Page stylesheet is missing');
-  assert(html.includes('/js/site.js?v=20261009-1'), 'Shared site script cache key is stale');
+  assert(html.includes(release.assets.find(asset => asset.startsWith('/js/site.js?'))), 'Shared site script cache key is stale');
   assert(html.includes('/js/company-check.js?v=20260816-1'), 'Page script is missing');
   assert(html.includes('data-nav-kgd') && html.includes('href="/proverka-kontragenta"'),
     'KGD navigation item is missing');
