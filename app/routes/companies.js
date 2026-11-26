@@ -35,6 +35,12 @@ function registerCompanyRoutes(app, dependencies) {
     res.set('Server-Timing', `company-db;dur=${durationMs.toFixed(1)}`);
   }
 
+  function redirectCompany(req, res, pathname) {
+    const queryStart = req.url.indexOf('?');
+    const query = queryStart === -1 ? '' : req.url.slice(queryStart);
+    return res.redirect(301, pathname + query);
+  }
+
   function renderCompaniesCatalog(req, res, localeCode = 'ru') {
     const started = process.hrtime.bigint();
     const locale = getCompanyLocale(localeCode);
@@ -74,11 +80,11 @@ function registerCompanyRoutes(app, dependencies) {
     if (!company) {
       const redirect = companiesDb.redirectByOldSlug(req.params.slug);
       if (redirect?.privacy_removed) return sendGone(res);
-      if (redirect) return res.redirect(301, companyPathFor(locale.code, redirect.slug));
+      if (redirect) return redirectCompany(req, res, companyPathFor(locale.code, redirect.slug));
       return sendNotFound(res);
     }
     if (company.slug !== req.params.slug) {
-      return res.redirect(301, companyPathFor(locale.code, company.slug));
+      return redirectCompany(req, res, companyPathFor(locale.code, company.slug));
     }
     const sourceUpdatedAt = companiesDb.stats().updatedAt;
     const regionName = company.region_slug ? regionLabel(company.region_slug) : null;
@@ -160,7 +166,7 @@ function registerCompanyRoutes(app, dependencies) {
       if (company?.privacy_removed || redirect?.privacy_removed) return sendGone(res);
       canonicalSlug = company?.slug || redirect?.slug || canonicalSlug;
     }
-    res.redirect(301, `/company/${canonicalSlug}`);
+    return redirectCompany(req, res, companyPathFor('ru', canonicalSlug));
   });
   app.get('/company/:slug', (req, res) => renderCompanyItem(req, res, 'ru'));
 

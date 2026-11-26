@@ -4,6 +4,16 @@ const path = require('path');
 const crypto = require('crypto');
 const { ROOT_DIR } = require('../paths');
 
+function requestSearchParams(req) {
+  const queryStart = req.url.indexOf('?');
+  return new URLSearchParams(queryStart === -1 ? '' : req.url.slice(queryStart + 1));
+}
+
+function pathWithSearchParams(pathname, params) {
+  const query = params.toString();
+  return query ? pathname + '?' + query : pathname;
+}
+
 function createHttpHelpers(dependencies) {
   const { logger } = dependencies;
 
@@ -71,4 +81,4 @@ function createHttpHelpers(dependencies) {
   return { asyncHandler, sendNotFound, sendGone, checkAdminKey, requireAdminPassword };
 }
 
-module.exports = { createHttpHelpers };
+module.exports = { createHttpHelpers, requestSearchParams, pathWithSearchParams };

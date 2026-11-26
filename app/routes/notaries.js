@@ -7,7 +7,22 @@ const { getNotaryRegionBySlug, getNotaryRegionByName, withNotaryRegionPaths } = 
 const { normalizeRegionKey } = require('../../modules/notary-archive');
 const { notaryKey, readNotaryChanges } = require('../../modules/notary-changes');
 const { resolveNotaryProfile } = require('../../modules/notary-history');
+const { requestSearchParams, pathWithSearchParams } = require('../http/helpers');
 const { ROOT_DIR } = require('../paths');
+
+function normalizeCatalogPage(params) {
+  const values = params.getAll('page');
+  const parsedPage = Number.parseInt(values[0], 10);
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const changed = page === 1
+    ? values.length > 0
+    : values.length !== 1 || values[0] !== String(page);
+  if (changed) {
+    if (page === 1) params.delete('page');
+    else params.set('page', String(page));
+  }
+  return { page, changed };
+}
 
 function registerNotaryRoutes(app, dependencies) {
   const {
@@ -169,11 +184,14 @@ function registerNotaryRoutes(app, dependencies) {
   const NOTARY_PAGE_SIZE = 60;
 
   app.get('/notaries', asyncHandler(async (req, res) => {
-    const region = (req.query.region || '').trim();
     if (!notariesDb) return res.status(503).send('Notary module not available');
+    const params = requestSearchParams(req);
+    const region = (params.get('region') || '').trim();
     if (region) {
-      const regionPage = getNotaryRegionByName(region);
-      return res.redirect(301, regionPage ? regionPage.path : '/notaries');
+      const regionPage = getNotaryRegionByName(region) || getNotaryRegionBySlug(region);
+      params.delete('region');
+      if (regionPage) normalizeCatalogPage(params);
+      return res.redirect(301, pathWithSearchParams(regionPage?.path || '/notaries', params));
     }
     const [allRegions, lastUpdated] = await Promise.all([
       notariesDb.getRegions(),
@@ -222,19 +240,17 @@ function registerNotaryRoutes(app, dependencies) {
     if (!notariesDb) return res.status(503).send('Notary module not available');
     const regionPage = getNotaryRegionBySlug(req.params.regionSlug);
     if (!regionPage) return sendNotFound(res);
-    const parsedPage = Number.parseInt(req.query.page, 10);
-    const requestedPage = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    const params = requestSearchParams(req);
+    const { page, changed } = normalizeCatalogPage(params);
     const [allRegions, total, lastUpdated] = await Promise.all([
       notariesDb.getRegions(),
       notariesDb.countByRegion(regionPage.sourceName),
       notariesDb.getLastUpdated(),
     ]);
     const totalPages = Math.max(1, Math.ceil(total / NOTARY_PAGE_SIZE));
-    if (requestedPage > totalPages) return sendNotFound(res);
-    const page = requestedPage;
-    const normalizedPath = regionPage.path + (page > 1 ? `?page=${page}` : '');
-    if (req.query.page !== undefined && String(req.query.page) !== (page > 1 ? String(page) : '')) {
-      return res.redirect(301, normalizedPath);
+    if (page > totalPages) return sendNotFound(res);
+    if (changed) {
+      return res.redirect(301, pathWithSearchParams(regionPage.path, params));
     }
     const regionItems = await notariesDb.findByRegion(
       regionPage.sourceName,

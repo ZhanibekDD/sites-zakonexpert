@@ -5,7 +5,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const ejs = require('ejs');
+const express = require('express');
 const { DatabaseSync } = require('node:sqlite');
+const { createHttpHelpers } = require('../app/http/helpers');
+const { registerCompanyRoutes } = require('../app/routes/companies');
 const { registrySuppressedRecordIds } = require('../modules/registry-privacy');
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zakonexpert-companies-'));
@@ -226,6 +229,41 @@ const localizedCatalogPromises = INDEXABLE_LOCALES.map(code => ejs.renderFile(
   }
 ));
 
+async function testCompanyRedirectQueries() {
+  const app = express();
+  const { sendGone, sendNotFound } = createHttpHelpers({});
+  const oldSlug = '372133652-tovarishchestvo-s-ogranichennoj-otvetstvennostyu-rs-shopkz';
+  const canonicalSlug = '372133652-tovarishestvo-s-ogranichennoj-otvetstvennostyu-rs-shopkz';
+  registerCompanyRoutes(app, {
+    companiesDb: {
+      available: () => true,
+      findById: id => id === '372133652' ? { slug: canonicalSlug } : companies.findById(id),
+      redirectByOldSlug: slug => slug === 'rs-shopkz' ? { slug: canonicalSlug } : null,
+    },
+    companySuggestLimiter: (_req, _res, next) => next(),
+    sendGone,
+    sendNotFound,
+  });
+  const server = await new Promise(resolve => {
+    const listener = app.listen(0, '127.0.0.1', () => resolve(listener));
+  });
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const query = '?utm_source=old+link&utm_source=landing%2Fpage&utm_campaign=';
+  try {
+    for (const source of [`/zh/company/${oldSlug}`, `/company/${oldSlug}`, '/company/rs-shopkz']) {
+      const response = await fetch(origin + source + query, { redirect: 'manual' });
+      assert.strictEqual(response.status, 301);
+      assert.strictEqual(response.headers.get('location'), `/company/${canonicalSlug}${query}`);
+    }
+    const removed = await fetch(`${origin}/zh/company/${removedSample.id}-removed${query}`, { redirect: 'manual' });
+    assert.strictEqual(removed.status, 410);
+    assert.match(removed.headers.get('x-robots-tag'), /noindex/);
+  } finally {
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
 Promise.all([
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'catalog.ejs'), catalogData),
   ejs.renderFile(path.join(__dirname, '..', 'views', 'companies', 'item.ejs'), {
@@ -281,7 +319,7 @@ Promise.all([
     results: { label: 'Алматы', items: [company], page: 1, hasMore: false },
   }),
   ...localizedCatalogPromises,
-]).then(([
+]).then(async ([
   catalogHtml,
   itemHtml,
   lowQualityHtml,
@@ -291,6 +329,7 @@ Promise.all([
   regionHtml,
   ...localizedCatalogs
 ]) => {
+  await testCompanyRedirectQueries();
   assert(catalogHtml.includes('Альфа Право'));
   assert(catalogHtml.includes('noindex'));
   assert(itemHtml.includes('БИН 970540001234'));

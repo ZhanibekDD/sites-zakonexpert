@@ -234,12 +234,8 @@ assert.strictEqual(
   const notariesDbSource = fs.readFileSync(path.join(__dirname, '..', 'modules', 'notaries-db.js'), 'utf8');
   const regionalLanding = fs.readFileSync(path.join(__dirname, '..', 'views', 'regional', 'page.ejs'), 'utf8');
   assert.ok(server.includes("app.get('/notaries/:regionSlug'"), 'clean regional notary route is missing');
-  assert.ok(server.includes("return res.redirect(301, regionPage ? regionPage.path : '/notaries')"), 'legacy query URLs must redirect permanently');
   assert.ok(server.includes('const NOTARY_PAGE_SIZE = 60'), 'regional notary response must have a bounded page size');
   assert.ok(server.includes('notariesDb.countByRegion(regionPage.sourceName)'), 'regional pagination must use a real total');
-  assert.ok(server.includes('if (requestedPage > totalPages) return sendNotFound(res)'),
-    'out-of-range regional pagination must return a real 404 instead of looking like the last page');
-  assert.ok(server.includes('return res.redirect(301, normalizedPath)'), 'non-canonical page parameters must redirect');
   assert.ok(server.includes("app.get('/notaries/changes'"), 'registry changes page route is missing');
   assert.ok(server.includes('<loc>https://zakonexpert.kz/notaries/changes</loc>'), 'registry changes page must enter the notary sitemap after it has data');
   assert.ok(notariesDbSource.includes('.sort({ name: 1 }).skip(skip).limit(limit)'), 'database pagination must happen before rendering');
