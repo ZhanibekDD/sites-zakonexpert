@@ -162,7 +162,17 @@ async function run() {
     const regulatorListedMfo = await get('/mfo/' + mfoByBin('210940040183').slug);
     assert(regulatorListedMfo.body.includes('href="tel:+77779772777"'));
     assert(regulatorListedMfo.body.includes('href="https://www.gov.kz/org/ardfm/financial-organizations/53?lang=ru"'));
-    const noPublishedPhone = await get('/mfo/' + mfoByBin('260440014195').slug);
+    const satcredit = await get('/mfo/' + mfoByBin('240940008155').slug);
+    assert(satcredit.body.includes('href="tel:+77080000247"'));
+    assert(satcredit.body.includes('href="https://satcredit.kz/help/contacts"'));
+    const kapital = await get('/lombards/lombard-kapital');
+    const secondKapital = await get('/lombards/lombard-kapital-160240005643');
+    assert(kapital.body.includes('href="tel:+77718907465"') && !kapital.body.includes('href="tel:+77028812051"'));
+    assert(secondKapital.body.includes('href="tel:+77028812051"') && !secondKapital.body.includes('href="tel:+77718907465"'));
+    const nomad = await get('/mfo/' + mfoByBin('260440014195').slug);
+    assert(nomad.body.includes('href="tel:+77771216161"'));
+    assert(nomad.body.includes('href="https://opi.dfo.kz/ru/opi/list?'));
+    const noPublishedPhone = await get('/mfo/' + mfoByBin('060740006371').slug);
     const directPhoneSection = noPublishedPhone.body.match(/collector-data-row--phone[\s\S]*?<\/div>/)?.[0];
     assert.match(directPhoneSection, /Нет подтверждённого номера/);
     assert(!directPhoneSection.includes('tel:'), 'missing MFO numbers must not fall back to the publisher');

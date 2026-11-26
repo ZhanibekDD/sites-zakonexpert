@@ -405,6 +405,7 @@ function createCatalogData() {
     if (!_mfoCache) {
       const rows = parseSemicolonCSV(path.join(ROOT_DIR, 'МФО_Ломбарды_КредТоварищества_Казахстана.csv'));
       _mfoCache = { mfo: [], lombards: [], kredTov: [] };
+      const lombardSlugs = new Set();
       rows.forEach(r => {
         const cat = (r['Категория'] || '').trim();
         const entryName = (r['Название (реестр АРРФР)'] || '')
@@ -424,7 +425,11 @@ function createCatalogData() {
           note: cleanScrapedNote(r['Примечание']),
         };
         if (cat === 'МФО') _mfoCache.mfo.push(entry);
-        else if (cat === 'Ломбард') _mfoCache.lombards.push(entry);
+        else if (cat === 'Ломбард') {
+          if (lombardSlugs.has(entry.slug)) entry.slug += `-${entry.bin}`;
+          lombardSlugs.add(entry.slug);
+          _mfoCache.lombards.push(entry);
+        }
         else if (cat === 'Кредитное товарищество') _mfoCache.kredTov.push(entry);
       });
     }
