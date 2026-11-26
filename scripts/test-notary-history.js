@@ -88,6 +88,21 @@ async function main() {
       const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
     });
     const origin = 'http://127.0.0.1:' + server.address().port;
+    const legacyPage = new URLSearchParams({ region: 'город Астана', page: '02', utm_source: 'legacy' });
+    for (const [url, target] of [
+      ['/notaries?' + new URLSearchParams({ region: 'город Астана' }), '/notaries/astana'],
+      ['/notaries?' + legacyPage, '/notaries/astana?page=2&utm_source=legacy'],
+      ['/notaries?region=ASTANA&page=1&utm_source=legacy', '/notaries/astana?utm_source=legacy'],
+      ['/notaries/astana?page=02&utm_source=legacy', '/notaries/astana?page=2&utm_source=legacy'],
+    ]) {
+      const redirect = await fetch(origin + url, { redirect: 'manual' });
+      assert.equal(redirect.status, 301, url);
+      assert.equal(redirect.headers.get('location'), target, url);
+    }
+    const regionalPage = await fetch(origin + '/notaries/astana?page=2&utm_source=legacy');
+    assert.equal(regionalPage.status, 200);
+    assert.match(await regionalPage.text(), /<link rel="canonical" href="https:\/\/zakonexpert\.kz\/notaries\/astana\?page=2">/);
+    assert.equal((await fetch(origin + '/notaries/astana?page=999999')).status, 404);
     for (const entry of history.records) {
       const response = await fetch(origin + '/notary/' + entry.slug);
       const html = await response.text();

@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const ejs = require('ejs');
 const { importBailiffs, parseCombinedField } = require('./import-bailiffs');
+const { registerBailiffRoutes } = require('../app/routes/bailiffs');
 const { readRegistrySource } = require('../modules/registry-source');
 const { getRegionEmblem } = require('../modules/region-emblems');
 const {
@@ -68,8 +69,20 @@ async function main() {
 
   const serverSource = require('./lib/source-files').readServerSource();
   assert.ok(serverSource.includes("app.get('/bailiffs/:regionSlug'"), 'clean regional route is missing');
-  assert.ok(serverSource.includes("res.redirect(301, regionPage ? regionPage.path : '/bailiffs')"), 'legacy region redirect is missing');
   assert.ok(!serverSource.includes('<loc>https://zakonexpert.kz/bailiffs?region='), 'sitemap must not publish legacy query URLs');
+
+  const routes = new Map();
+  registerBailiffRoutes({ get: (pathname, handler) => routes.set(pathname, handler), post() {} }, {
+    bailiffsDb,
+    asyncHandler: handler => handler,
+  });
+  const legacyQuery = new URLSearchParams({ region: 'город Астана' });
+  await routes.get('/bailiffs')({ url: '/bailiffs?' + legacyQuery }, {
+    redirect: (status, pathname) => assert.deepEqual([status, pathname], [301, '/bailiffs/astana']),
+  });
+  await routes.get('/bailiffs')({ url: '/bailiffs?region=SHYMKENT&utm_source=legacy' }, {
+    redirect: (status, pathname) => assert.deepEqual([status, pathname], [301, '/bailiffs/shymkent?utm_source=legacy']),
+  });
 
   console.log(`Bailiff data OK: ${rows.length} records, ${astana.length} Astana records, 20 clean regional URLs`);
 }

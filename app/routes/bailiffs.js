@@ -2,6 +2,7 @@
 
 const { getRegionEmblem } = require('../../modules/region-emblems');
 const { getBailiffRegionBySlug, getBailiffRegionByName, withBailiffRegionPaths } = require('../../modules/bailiff-regions');
+const { requestSearchParams, pathWithSearchParams } = require('../http/helpers');
 
 function registerBailiffRoutes(app, dependencies) {
   const { bailiffsDb, importBailiffs, commentsDb, asyncHandler, sendNotFound, checkAdminKey } = dependencies;
@@ -23,11 +24,13 @@ function registerBailiffRoutes(app, dependencies) {
   }));
 
   app.get('/bailiffs', asyncHandler(async (req, res) => {
-    const region = (req.query.region || '').trim();
     if (!bailiffsDb) return res.status(503).send('Bailiff module not available');
+    const params = requestSearchParams(req);
+    const region = (params.get('region') || '').trim();
     if (region) {
-      const regionPage = getBailiffRegionByName(region);
-      return res.redirect(301, regionPage ? regionPage.path : '/bailiffs');
+      const regionPage = getBailiffRegionByName(region) || getBailiffRegionBySlug(region);
+      params.delete('region');
+      return res.redirect(301, pathWithSearchParams(regionPage?.path || '/bailiffs', params));
     }
     const [allRegions, lastUpdated] = await Promise.all([
       bailiffsDb.getRegions(),
