@@ -35,11 +35,12 @@ const staleFiles = [];
 
 for (const file of files) {
   const source = fs.readFileSync(file, 'utf8');
-  if (RETIRED_NUMBER.test(source) && !KEEPS_RETIRED_NUMBER.has(path.relative(ROOT, file))) staleFiles.push(path.relative(ROOT, file));
+  const relativeFile = path.relative(ROOT, file).split(path.sep).join('/');
+  if (RETIRED_NUMBER.test(source) && !KEEPS_RETIRED_NUMBER.has(relativeFile)) staleFiles.push(relativeFile);
   RETIRED_NUMBER.lastIndex = 0;
   rawCount += source.split(EXPECTED_RAW).length - 1;
   displayCount += source.split(EXPECTED_DISPLAY).length - 1;
-  if (source.includes(RETIRED_WHATSAPP_LINK)) staleFiles.push(path.relative(ROOT, file));
+  if (source.includes(RETIRED_WHATSAPP_LINK)) staleFiles.push(relativeFile);
 }
 
 if (staleFiles.length) {

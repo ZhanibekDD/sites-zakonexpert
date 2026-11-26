@@ -183,6 +183,30 @@ body {
   text-decoration: underline;
 }
 
+.collector-data-row--phone .collector-data-row__label {
+  font-weight: 750;
+}
+
+.registry-phone-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.registry-phone-numbers a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 4px 10px;
+  border: 1px solid var(--collector-line);
+  border-radius: 8px;
+  background: var(--zr-blue-soft, #edf3ff);
+  font-weight: 750;
+}
+
 .collector-map {
   overflow: hidden;
   margin-top: 12px;

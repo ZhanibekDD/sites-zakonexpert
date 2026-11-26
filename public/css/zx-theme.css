@@ -298,6 +298,30 @@ html body .site-header .header-contacts > a[href*="wa.me"]:not(.header-wa-btn):h
   html body .site-header .header-contacts > a[href*="wa.me"]:not(.header-wa-btn) { font-size: 0; gap: 0; min-width: 42px; padding: 0 12px; justify-content: center; }
   html body .site-header .header-contacts > a[href*="wa.me"]:not(.header-wa-btn) i.bi { font-size: 18px; line-height: 1; }
 }
+html body .site-header .header-contacts--legal > .header-legal-phone {
+  width: auto;
+  min-height: 44px;
+  height: auto;
+  padding: 6px 10px;
+  gap: 8px;
+  font-size: .8rem;
+  line-height: 1.2;
+  border-radius: 10px;
+}
+.header-legal-copy { display: grid; gap: 2px; }
+.header-legal-copy > span { font-size: .71rem; color: var(--zx-ink-2); }
+html body .site-header .header-contacts--legal > .header-legal-whatsapp {
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.1rem;
+}
+.header-legal-whatsapp > span { display: none; }
+@media (min-width: 1280px) {
+  html body .site-header .header-contacts--legal > .header-legal-whatsapp { width: auto; padding-inline: 14px; }
+  .header-legal-whatsapp > span { display: inline; font-size: .82rem; }
+}
 /* Phones: menu button at the far right instead of between the logo and the contacts */
 @media (max-width: 980px) {
   html body .site-header .header-side { order: 2; margin-left: auto; }

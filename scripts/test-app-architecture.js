@@ -149,6 +149,23 @@ async function run() {
       const { response } = await get(prefix + item.slug);
       assert.equal(response.status, 200, `${prefix}: existing detail must render`);
     }
+    const bank = await get('/banks/kaspi-bank');
+    assert.match(bank.body, /Телефон банка/);
+    for (const number of ['9999', '88000801800', '+77272585955']) {
+      assert(bank.body.includes(`href="tel:${number}"`), `Kaspi Bank must have a separate call link for ${number}`);
+    }
+    const mfoByBin = bin => catalog.getMfoData().mfo.find(item => item.bin === bin);
+    const creditPlus = await get('/mfo/' + mfoByBin('200340016315').slug);
+    assert.match(creditPlus.body, /Телефон МФО/);
+    assert(creditPlus.body.includes('href="tel:+77007771707"'));
+    assert(creditPlus.body.includes('href="https://creditplus.kz/kontakty/"'));
+    const regulatorListedMfo = await get('/mfo/' + mfoByBin('210940040183').slug);
+    assert(regulatorListedMfo.body.includes('href="tel:+77779772777"'));
+    assert(regulatorListedMfo.body.includes('href="https://www.gov.kz/org/ardfm/financial-organizations/53?lang=ru"'));
+    const noPublishedPhone = await get('/mfo/' + mfoByBin('260440014195').slug);
+    const directPhoneSection = noPublishedPhone.body.match(/collector-data-row--phone[\s\S]*?<\/div>/)?.[0];
+    assert.match(directPhoneSection, /Нет подтверждённого номера/);
+    assert(!directPhoneSection.includes('tel:'), 'missing MFO numbers must not fall back to the publisher');
     for (const locale of ['kk', 'en', 'zh', 'tr']) {
       const { response, body } = await get(`/${locale}/companies`);
       assert.equal(response.status, 200);

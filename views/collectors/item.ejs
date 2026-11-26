@@ -28,7 +28,6 @@ function dataRow(icon, label, value, options) {
 }
 
 const phone = item.phones && item.phones[0] ? item.phones[0] : '';
-const phoneHref = phone ? 'tel:' + phone.replace(/[^\d+]/g, '') : '';
 const email = item.emails && item.emails[0] ? item.emails[0] : '';
 const site = item.sites && item.sites[0] ? item.sites[0] : '';
 const siteHref = site ? (/^https?:\/\//i.test(site) ? site : 'https://' + site) : '';
@@ -58,7 +57,7 @@ const schema = {
   ],
 };
 
-const pageStyles = '<link rel="stylesheet" href="/css/collector-item.css?v=20260716-1">';
+const pageStyles = '<link rel="stylesheet" href="/css/collector-item.css?v=20261126-1">';
 const detailsHtml = lowContentBoost({ entityLabel: 'этот коллектор', entityLabelGenitive: 'этого коллектора' })
   .replace('Что делать, если по вам есть взыскание', 'Подробные рекомендации');
 
@@ -80,9 +79,11 @@ const body = pageStyles
   + '<div class="collector-container">'
   + '<div class="collector-layout">'
   + '<section class="collector-card" aria-label="Сведения о коллекторском агентстве">'
+  + include('../partials/registry-phone-row', {
+      label: 'Телефон коллекторского агентства', phones: item.phones || [], fallback: 'Номер не опубликован',
+    })
   + dataRow('bi-geo-alt', 'Адрес', item.address)
   + dataRow('bi-person', 'Руководитель', item.leader)
-  + dataRow('bi-telephone', 'Телефон', phone, { href: phoneHref })
   + dataRow('bi-envelope', 'Email', email, { href: email ? 'mailto:' + email : '' })
   + dataRow('bi-globe2', 'Веб-сайт', site, { href: siteHref, external: true })
   + dataRow('bi-file-earmark-text', 'Регистрационный номер', item.regNum ? 'Регистрация: ' + item.regNum : '')
@@ -105,7 +106,7 @@ const body = pageStyles
   + '<li><i class="bi bi-check-lg"></i><span>Сопроводим при общении с коллектором</span></li>'
   + '<li><i class="bi bi-check-lg"></i><span>Защитим от нарушений ваших прав</span></li>'
   + '</ul>'
-  + '<a class="collector-help__cta" href="https://wa.me/77003097566?text=Здравствуйте!+Коллектор+требует+оплату,+нужна+консультация." target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Получить бесплатную консультацию</a>'
+  + '<a class="collector-help__cta" href="https://wa.me/77003097566?text=Здравствуйте!+Коллектор+требует+оплату,+нужна+консультация." target="_blank" rel="noopener"><i class="bi bi-whatsapp" aria-hidden="true"></i> Получить юридическую помощь в ZakonExpert</a>'
   + '<p class="collector-help__response"><i class="bi bi-clock"></i> Ответ специалиста в течение 10 минут</p>'
   + '</section>'
   + '<section class="collector-warning" aria-labelledby="collector-warning-title">'

@@ -17,6 +17,8 @@ const detail = {
   breadcrumbs: [{ href: '/mfo', label: 'МФО Казахстана' }, { label: item.name }],
   badges: [{ icon: 'bi-file-earmark-text', label: 'Реестр АРРФР' }, { icon: 'bi-shield-check', label: 'Финансовая организация', active: true }],
   rows: [
+    { label: 'Телефон МФО', phones, fallback: 'Нет подтверждённого номера' },
+    { icon: 'bi-globe2', label: 'Источник телефона', value: phoneSource && new URL(phoneSource).hostname, href: phoneSource, external: true },
     { icon: 'bi-geo-alt', label: 'Адрес', value: item.address },
     { icon: 'bi-person', label: 'Руководитель', value: item.leader },
     { icon: 'bi-person-vcard', label: 'БИН', value: item.bin ? 'БИН: ' + item.bin : '' },
@@ -41,6 +43,6 @@ const detail = {
   backUrl: '/mfo',
   backLabel: 'Все МФО Казахстана',
 };
-const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260716-1">' + include('../partials/registry-item-body', { detail });
+const body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">' + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

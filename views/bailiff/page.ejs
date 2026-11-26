@@ -14,10 +14,6 @@ function formatPhone(value) {
 }
 var nameTitle = titleCase(bailiff.name);
 var rawPhones = (bailiff.phones || []).map(function(value) { return String(value || '').trim(); }).filter(Boolean);
-var phoneText = rawPhones.map(formatPhone).join(' · ');
-var firstPhone = rawPhones.length ? rawPhones[0].replace(/\D/g, '') : '';
-if (firstPhone.length === 11 && firstPhone[0] === '8') firstPhone = '7' + firstPhone.slice(1);
-if (firstPhone.length === 10) firstPhone = '7' + firstPhone;
 var verifiedDate = bailiff.updatedAt
   ? new Date(bailiff.updatedAt).toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' })
   : '';
@@ -50,8 +46,8 @@ var detail = {
     { icon: 'bi-file-earmark-check', label: bailiff.license ? ('Лицензия № ' + bailiff.license) : 'Лицензия не указана', active: Boolean(bailiff.license) },
   ],
   rows: [
+    { label: 'Телефон судебного исполнителя (ЧСИ)', phones: rawPhones.map(formatPhone), fallback: 'Не указан в сводном реестре' },
     { icon: 'bi-geo-alt', label: 'Адрес', value: bailiff.address },
-    { icon: 'bi-telephone', label: 'Телефон ЧСИ', value: phoneText || 'Не указан в сводном реестре', href: firstPhone ? 'tel:+' + firstPhone : '' },
     { icon: 'bi-envelope', label: 'Email', value: bailiff.email || 'Не указан в сводном реестре', href: bailiff.email ? 'mailto:' + bailiff.email : '' },
     { icon: 'bi-file-earmark-check', label: 'Лицензия', value: bailiff.license ? ('№ ' + bailiff.license + (bailiff.licenseDate ? ' от ' + bailiff.licenseDate : '')) : 'Не указана в сводном реестре' },
     { icon: 'bi-database-check', label: 'Официальная проверка', value: 'АИС органов исполнительного производства' + (verifiedDate ? ' · база ZakonExpert обновлена ' + verifiedDate : ''), href: 'https://aisoip.adilet.gov.kz/', external: true },
@@ -92,7 +88,7 @@ var detail = {
   backUrl: '/bailiffs',
   backLabel: 'Все ЧСИ Казахстана',
 };
-var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20260824-1">'
+var body = '<link rel="stylesheet" href="/css/registry-item.css?v=20261126-1">'
   + include('../partials/registry-item-body', { detail });
 %>
 <%- include('../news/layout', { title: pageTitle, description: pageDesc, canonical, ogType: 'website', ogImage: null, schema, noindex: false, body }) %>

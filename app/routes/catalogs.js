@@ -4,7 +4,19 @@ const path = require('path');
 const { lowContentBoost } = require('../../modules/seo-blocks');
 const { resolveLegacyCatalogItem } = require('../../modules/seo-url-policy');
 const { getBankArrestPathForBank } = require('../../modules/bank-arrest-pages');
+const { isRegistryContactSuppressed } = require('../../modules/registry-privacy');
+const ardfmMicrofinancePhones = require('../../config/ardfm-microfinance-phones.json');
+const mfoPublicPhones = require('../../config/mfo-public-phones.json');
 const { ROOT_DIR } = require('../paths');
+
+function publicMicrofinancePhones(bin) {
+  const contact = mfoPublicPhones[bin] || {
+    phones: ardfmMicrofinancePhones.phonesByBin[bin] || [],
+    source: ardfmMicrofinancePhones.source,
+  };
+  const phones = contact.phones.filter(phone => !isRegistryContactSuppressed('companies', bin, phone));
+  return { phones, phoneSource: phones.length ? contact.source : '' };
+}
 
 function registerCatalogRoutes(app, dependencies) {
   const {
@@ -130,7 +142,7 @@ function registerCatalogRoutes(app, dependencies) {
       if (alias) return res.redirect(301, `/mfo/${alias.slug}`);
     }
     if (!item) return sendNotFound(res);
-    res.render('mfo/item', { item, lowContentBoost });
+    res.render('mfo/item', { item, ...publicMicrofinancePhones(item.bin), lowContentBoost });
   });
 
   app.get('/lombards', (req, res) => {
@@ -149,7 +161,7 @@ function registerCatalogRoutes(app, dependencies) {
       if (alias) return res.redirect(301, `/lombards/${alias.slug}`);
     }
     if (!item) return sendNotFound(res);
-    res.render('lombards/item', { item, lowContentBoost });
+    res.render('lombards/item', { item, ...publicMicrofinancePhones(item.bin), lowContentBoost });
   });
 
   // ===== BIN SEARCH =====
